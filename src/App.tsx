@@ -28395,6 +28395,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 createSubWallet={createSubWallet}
                 setOneCTDepositAddress={setOneCTDepositAddress}
                 scaAddress={scaAddress}
+                signTypedDataAsync={signTypedDataAsync}
               />
             }
           />

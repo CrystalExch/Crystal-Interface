@@ -34,6 +34,7 @@ import walleticon from '../../assets/wallet_icon.svg';
 import { updateBuyPreset, updateSellPreset } from '../../utils/presetManager';
 import { zeroXAbi } from '../../abis/zeroXAbi.ts';
 import { zeroXActionsAbi } from '../../abis/zeroXActionsAbi.ts';
+import { TokenAbi } from '../../abis/TokenAbi.ts';
 
 import './MemeInterface.css';
 
@@ -133,6 +134,7 @@ interface MemeInterfaceProps {
   createSubWallet: any;
   setOneCTDepositAddress: any;
   scaAddress: any;
+  signTypedDataAsync: any;
 }
 
 const STATS_HTTP_BASE = 'https://api.crystal.exchange';
@@ -365,6 +367,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   createSubWallet,
   setOneCTDepositAddress,
   scaAddress,
+  signTypedDataAsync
 }) => {
   const getSliderPosition = (
     activeView: 'chart' | 'trades' | 'ordercenter',
@@ -2000,7 +2003,7 @@ useEffect(() => {
                       functionName: 'execute',
                       args: [{
                         recipient: account.address as `0x${string}`,
-                        buyToken: token.id as `0x${string}`,
+                        buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
                         minAmountOut: BigInt(0n),
                       }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
                     }),
@@ -2041,7 +2044,7 @@ useEffect(() => {
                       functionName: 'execute',
                       args: [{
                         recipient: account.address as `0x${string}`,
-                        buyToken: token.id as `0x${string}`,
+                        buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
                         minAmountOut: BigInt(0n),
                       }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
                     }),
@@ -2166,7 +2169,7 @@ useEffect(() => {
                   functionName: 'execute',
                   args: [{
                     recipient: account.address as `0x${string}`,
-                    buyToken: token.id as `0x${string}`,
+                    buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
                     minAmountOut: BigInt(0n),
                   }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
                 }),
@@ -2207,7 +2210,7 @@ useEffect(() => {
                   functionName: 'execute',
                   args: [{
                     recipient: account.address as `0x${string}`,
-                    buyToken: token.id as `0x${string}`,
+                    buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
                     minAmountOut: BigInt(0n),
                   }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
                 }),
@@ -2264,7 +2267,7 @@ useEffect(() => {
 
           const isNadFun = token.source === 'nadfun';
           const sellContractAddress = isNadFun
-            ? settings.chainConfig[activechain].nadFunRouter
+            ? token.migrated ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
             : routerAddress;
 
           txId = `multisell-${Date.now()}`;
@@ -2500,10 +2503,10 @@ useEffect(() => {
             amountTokenWei = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
             isExactInput = true;
           } else if (inputCurrency === 'TOKEN') {
-            amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+            amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18 / 0.99));
             isExactInput = false;
           } else {
-            amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+            amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18 / 0.99));
             isExactInput = false;
           }
 
@@ -2519,31 +2522,124 @@ useEffect(() => {
 
           const isNadFun = token.source === 'nadfun';
           const sellContractAddress = isNadFun
-            ? settings.chainConfig[activechain].nadFunRouter
+            ? token.migrated ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
             : routerAddress;
-
+            
           walletPopup.updateTransactionConfirming(
             txId,
             tradeAmount,
             inputCurrency === 'TOKEN' ? token.symbol : 'MON',
             token.symbol,
           );
-
           let sellUo;
-          if (isNadFun) {
-            sellUo = {
-              target: sellContractAddress as `0x${string}`,
-              data: encodeFunctionData({
-                abi: NadFunAbi,
-                functionName: 'sell',
+          if (isNadFun && sellInputMode != 'percentage') {
+            let inputAmountWei = BigInt(Number(amountTokenWei) / token.price * 1.5)
+            const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
+            const sellToken = token.id as `0x${string}`
+            const nonce = 0n
+            const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
+            
+            const signature = await signTypedDataAsync({
+              typedData: {
+                domain: {
+                  name: token.name,
+                  version: '1',
+                  chainId: activechain,
+                  verifyingContract: sellToken,
+                },
+                types: {
+                  Permit: [
+                    { name: 'owner', type: 'address' },
+                    { name: 'spender', type: 'address' },
+                    { name: 'value', type: 'uint256' },
+                    { name: 'nonce', type: 'uint256' },
+                    { name: 'deadline', type: 'uint256' },
+                  ],
+                },
+                primaryType: 'Permit',
+                message: {
+                  owner: account.address,
+                  spender: settler,
+                  value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                  nonce,
+                  deadline,
+                },
+              },
+            })
+            
+            const sigHex = signature.slice(2)
+            const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
+            const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
+            const v = Number(`0x${sigHex.slice(128, 130)}`)
+            
+            const actions: any = []
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: ['0x0000000000000000000000000000000000000000', 0n, sellToken, 0n, encodeFunctionData({
+                abi: TokenAbi,
+                functionName: 'permit',
                 args: [
                   account.address as `0x${string}`,
-                  token.id as `0x${string}`,
-                  amountTokenWei,
+                  settler,
+                  115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                  deadline,
+                  v,
+                  r,
+                  s
                 ],
+              })],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: ['0x0000000000000000000000000000000000000000', 0n, sellToken, 0n, encodeFunctionData({
+                abi: TokenAbi,
+                functionName: 'transferFrom',
+                args: [account.address as `0x${string}`, settler, inputAmountWei],
+              })],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [token.id, 10000n, sellContractAddress, 4n, encodeFunctionData({
+                abi: NadFunAbi,
+                functionName: 'exactOutSell',
+                args: [{
+                  amountInMax: 0n,
+                  amountOut: amountTokenWei,
+                  token: token.id as `0x${string}`,
+                  to: settler as `0x${string}`,
+                  deadline: deadline,
+                }],
+              })],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 100n, '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d', 0n, '0x'],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 10000n, account.address as `0x${string}`, 0n, '0x'],
+            }))
+            sellUo = {
+              target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+              data: encodeFunctionData({
+                abi: zeroXAbi,
+                functionName: 'execute',
+                args: [{
+                  recipient: account.address as `0x${string}`,
+                  buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                  minAmountOut: BigInt(0n),
+                }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
               }),
               value: 0n,
             };
+          }
+          else if (isNadFun) {
+
           } else {
             sellUo = {
               target: sellContractAddress as `0x${string}`,
@@ -3423,7 +3519,7 @@ useEffect(() => {
                 if (activeTradeType === 'sell' && sellInputMode === 'percentage') {
                   const percent = parseFloat(value) || 0;
                   setSliderPercent(Math.min(100, Math.max(0, percent)));
-                  setTradeAmount(percent == 0 ? '' : Math.min(100, Math.max(0, percent)).toString());
+                  setTradeAmount(value);
                 }
                 else if (activeTradeType == 'buy') {
                   const currentBalance = getTotalSelectedWalletsBalance();
@@ -3458,13 +3554,13 @@ useEffect(() => {
                       // Converting from token amount to percentage
                       const currentAmount = parseFloat(tradeAmount) || 0;
                       const percentage = currentBalance > 0 ? (currentAmount / currentBalance) * 100 : 0;
-                      setTradeAmount(percentage.toFixed(2));
+                      setTradeAmount(percentage == 0 ? '' : percentage.toFixed(2));
                       setSliderPercent(percentage);
                     } else {
                       // Converting from percentage to token amount
                       const percentage = parseFloat(tradeAmount) || 0;
                       const tokenAmount = (currentBalance * percentage) / 100;
-                      setTradeAmount(tokenAmount == 0 ? '0.00' : formatTradeAmount(tokenAmount));
+                      setTradeAmount(tokenAmount == 0 ? '' : formatTradeAmount(tokenAmount));
                     }
 
                     return newMode;
