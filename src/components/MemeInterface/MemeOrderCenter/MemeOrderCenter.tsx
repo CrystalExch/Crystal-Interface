@@ -1770,7 +1770,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                     : `${trade.caller?.slice(0, 6) || ''}...${trade.caller?.slice(-4) || ''}`;
 
                 const tradeUSD = trade.nativeAmount * monUsdPrice;
-                const mcUSD = trade.price * monUsdPrice * 1_000_000_000;
+                const mcUSD = trade.price * monUsdPrice * 1_000_000_000_000_000_000;
                 const positive = trade.isBuy;
 
                 const maxAmount = Math.max(...trades.slice(0, 100).map((t: any) => Math.abs(t.nativeAmount * monUsdPrice)));
@@ -2019,7 +2019,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                 <button
                   className={`filter-icon-button ${hasActiveFilters ? 'active' : ''}`}
                   onClick={() => setShowFiltersPopup(true)}
-                  style={{paddingRight: "15px"}}
+                  style={{ paddingRight: "15px" }}
                 >
                   <img
                     className="filter-icon"
@@ -2092,7 +2092,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           </div>
         </div>
       )}
-            <TransactionFiltersPopup
+      <TransactionFiltersPopup
         isOpen={showFiltersPopup}
         onClose={() => setShowFiltersPopup(false)}
         onApplyFilters={handleApplyFilters}

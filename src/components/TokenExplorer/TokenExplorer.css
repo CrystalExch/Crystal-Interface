@@ -819,7 +819,7 @@
 
 
 .explorer-token-image-container.graduated .token-explorer-launchpad-logo-container {
-  border-color: #ffd700;
+  border-color: #ffd700 !important;
 }
 
 .explorer-token-image-container.graduated .token-explorer-launchpad-logo {
@@ -4744,3 +4744,5 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
       #ff8f00 270deg,
       #ffd700 360deg);
 }
+
+

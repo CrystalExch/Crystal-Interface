@@ -1850,7 +1850,7 @@
 }
 
 .meme-interface-token-info-container-meme.graduated .header-launchpad-logo-container {
-  border-color: #ffd700;
+  border-color: #ffd700 !important
 }
 
 .meme-interface-token-info-container-meme.graduated .header-launchpad-logo {

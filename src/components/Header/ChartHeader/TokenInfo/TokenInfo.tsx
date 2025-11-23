@@ -1466,7 +1466,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 <div className="header-launchpad-logo-container">
                   {memeTokenData.source === 'nadfun' ? (
                     <Tooltip content="nad.fun">
-                      <svg width="10" height="10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <svg width="10" height="10" viewBox="0 0 32 32" className="header-launchpad-logo" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <defs>
                           <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
                             <stop offset="0%" stopColor="#7C55FF" stopOpacity="1" />
