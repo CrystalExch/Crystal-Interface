@@ -114,7 +114,7 @@
   height: 33px;
   justify-content: center;
   letter-spacing: -0.3px;
-  margin-top: 0.3rem;
+  margin-top: 0.5rem;
   padding: 0.55rem;
   transition: all 0.2s;
   width: 100%;
@@ -355,10 +355,11 @@
 .earnings-section {
   background: rgb(6, 6, 6);
   border-radius: 12px;
-  padding: 0.25rem 1rem 0.25rem 1rem;
-  max-width: 350px;
-  min-width: 350px;
+  padding: 0rem 0rem 0rem 2rem;
+  max-width: 375px;
+  min-width: 375px;
   flex-shrink: 0;
+  align-content: center;
 }
 
 .earnings-dashboard {
@@ -575,11 +576,6 @@
   margin: 0.2rem 0.5rem 0.5rem 0.5rem;
 }
 
-.left-column {
-  display: flex;
-  gap: 4px;
-}
-
 .refer-section {
   display: flex;
   flex-direction: column;
@@ -588,7 +584,6 @@
   border-radius: 8px;
   width: 50%;
   gap: 4px;
-  padding-left: 10px;
 }
 
 .refer-header-content{
@@ -780,6 +775,12 @@
   position: absolute;
   top: 0;
   width: 100%;
+}
+
+.referral-grid {
+  display: flex;
+  gap: 40px;
+  padding: 20px 30px;
 }
 
 @media (max-width: 1020px) {

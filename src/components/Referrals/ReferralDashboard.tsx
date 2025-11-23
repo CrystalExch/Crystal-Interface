@@ -254,104 +254,102 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
           </div>
 
           <div className="referral-grid">
-            <div className="left-column">
-              <div className="refer-section">
-                <div className="refer-header">
-                  <div className="refer-header-content">
-                    <h2 className="earnings-title">Share & Earn</h2>
-                    <p className="earnings-subtitle">
-                      Invite friends and earn rewards
-                    </p>
-                  </div>
-                  <button
-                    className="action-button"
-                    onClick={() => setShowModal(true)}
-                  >
-                    {refLink ? 'Customize' : 'Create'}
-                  </button>
+            <div className="refer-section">
+              <div className="refer-header">
+                <div className="refer-header-content">
+                  <h2 className="earnings-title">Share & Earn</h2>
+                  <p className="earnings-subtitle">
+                    Invite friends and earn rewards
+                  </p>
                 </div>
+                <button
+                  className="action-button"
+                  onClick={() => setShowModal(true)}
+                >
+                  {refLink ? 'Customize' : 'Create'}
+                </button>
+              </div>
 
-                <div className="referral-link-box">
-                  {refLink ? (
-                    <>
-                      <span className="link-text">
-                        <span className="link-base">
-                          https://app.crystal.exchange?ref=
-                        </span>
-                        <span className="link-url">{refLink}</span>
-                      </span>
-                      <div className="link-actions">
-                        <div className="ref-icon-container" onClick={handleCopy}>
-                          <svg
-                            className={`ref-copy-icon ${
-                              copySuccess ? 'hidden' : ''
-                            }`}
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#aaaecf"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <rect
-                              x="9"
-                              y="9"
-                              width="13"
-                              height="13"
-                              rx="2"
-                              ry="2"
-                            />
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                          </svg>
-                          <svg
-                            className={`ref-check-icon ${
-                              copySuccess ? 'visible' : ''
-                            }`}
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#aaaecf"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M8 12l3 3 6-6" />
-                          </svg>
-                        </div>
-                        <div
-                          className="referral-share-button"
-                          onClick={() => {
-                            const tweetText =
-                              "Join me on @CrystalExch, the EVM's first fully on-chain orderbook exchange, now live on @monad_xyz.\n\nUse my referral link for a 25% discount on all fees:\n\n";
-                            const url = `https://app.crystal.exchange?ref=${refLink}`;
-                            window.open(
-                              `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                                tweetText
-                              )}&url=${encodeURIComponent(url)}`,
-                              '_blank'
-                            );
-                          }}
-                        >
-                          <Share2 size={13} />
-                        </div>
-                      </div>
-                    </>
-                  ) : (
+              <div className="referral-link-box">
+                {refLink ? (
+                  <>
                     <span className="link-text">
-                      No referral link created yet
+                      <span className="link-base">
+                        https://app.crystal.exchange?ref=
+                      </span>
+                      <span className="link-url">{refLink}</span>
                     </span>
-                  )}
-                </div>
+                    <div className="link-actions">
+                      <div className="ref-icon-container" onClick={handleCopy}>
+                        <svg
+                          className={`ref-copy-icon ${
+                            copySuccess ? 'hidden' : ''
+                          }`}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#aaaecf"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <rect
+                            x="9"
+                            y="9"
+                            width="13"
+                            height="13"
+                            rx="2"
+                            ry="2"
+                          />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                        <svg
+                          className={`ref-check-icon ${
+                            copySuccess ? 'visible' : ''
+                          }`}
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="#aaaecf"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M8 12l3 3 6-6" />
+                        </svg>
+                      </div>
+                      <div
+                        className="referral-share-button"
+                        onClick={() => {
+                          const tweetText =
+                            "Join me on @CrystalExch, the EVM's first fully on-chain orderbook exchange, now live on @monad_xyz.\n\nUse my referral link for a 25% discount on all fees:\n\n";
+                          const url = `https://app.crystal.exchange?ref=${refLink}`;
+                          window.open(
+                            `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                              tweetText
+                            )}&url=${encodeURIComponent(url)}`,
+                            '_blank'
+                          );
+                        }}
+                      >
+                        <Share2 size={13} />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <span className="link-text">
+                    No referral link created yet
+                  </span>
+                )}
               </div>
-              <div className="enter-code-container">
-                <EnterCode
-                  usedRefLink={usedRefLink}
-                  setUsedRefLink={handleSetRef}
-                  refLink={refLink}
-                  inputValue={typedRefCode}
-                  setInputValue={setTypedRefCode}
-                />
-              </div>
+            </div>
+            <div className="enter-code-container">
+              <EnterCode
+                usedRefLink={usedRefLink}
+                setUsedRefLink={handleSetRef}
+                refLink={refLink}
+                inputValue={typedRefCode}
+                setInputValue={setTypedRefCode}
+              />
             </div>
           </div>
 

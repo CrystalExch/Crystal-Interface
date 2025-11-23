@@ -341,39 +341,30 @@ const displayName = username && username.trim() !== ''
 
   return (
     <>
-      {!hasAffiliateAccess ? (
-        <ReferralLandingPage
-          address={address}
-          connected={account.connected}
-          setpopup={setpopup}
-          setShowModal={setShowModal}
-        />
-      ) : (
-        <ReferralDashboard
-          tokenList={tokenList}
-          address={address}
-          usedRefLink={usedRefLink}
-          totalClaimableFees={totalClaimableFees}
-          claimableFees={claimableFees}
-          refLink={refLink}
-          setShowModal={setShowModal}
-          account={account}
-          referredCount={referredCount}
-          commissionBonus={commissionBonus}
-          displayName={displayName}
-          client={client}
-          isLoading={isLoading}
-          bgLoaded={bgLoaded}
-          setBgLoaded={setBgLoaded}
-          copySuccess={copySuccess}
-          handleCopy={handleCopy}
-          handleClaimFees={handleClaimFees}
-          handleSetRef={handleSetRef}
-          typedRefCode={typedRefCode}
-          setTypedRefCode={setTypedRefCode}
-          isSigning={isSigning}
-        />
-      )}
+      <ReferralDashboard
+        tokenList={tokenList}
+        address={address}
+        usedRefLink={usedRefLink}
+        totalClaimableFees={totalClaimableFees}
+        claimableFees={claimableFees}
+        refLink={refLink}
+        setShowModal={setShowModal}
+        account={account}
+        referredCount={referredCount}
+        commissionBonus={commissionBonus}
+        displayName={displayName}
+        client={client}
+        isLoading={isLoading}
+        bgLoaded={bgLoaded}
+        setBgLoaded={setBgLoaded}
+        copySuccess={copySuccess}
+        handleCopy={handleCopy}
+        handleClaimFees={handleClaimFees}
+        handleSetRef={handleSetRef}
+        typedRefCode={typedRefCode}
+        setTypedRefCode={setTypedRefCode}
+        isSigning={isSigning}
+      />
 
       {/* Modal rendered for both landing page and dashboard */}
       <CustomLinkModal

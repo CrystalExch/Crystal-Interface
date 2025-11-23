@@ -3,7 +3,7 @@ import './EnterACode.css';
 
 interface EnterACodeProps {
   usedRefLink?: string;
-  setUsedRefLink: (refLink: string) => Promise<boolean>;
+  setUsedRefLink: any;
   refLink: string;
   inputValue: string;
   setInputValue: (val: string) => void;
