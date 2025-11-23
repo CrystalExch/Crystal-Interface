@@ -917,5 +917,54 @@
 }
 
 .meme-search-token-name-container:hover .meme-search-copy-btn svg {
+ 
   color: #d8dbf5;
+}
+
+
+.meme-search-launchpad-logo {
+  width: 10px;
+}
+
+.meme-search-launchpad-logo-container {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: black;
+  width: 17px;
+  height: 17px;
+  border-radius: 20px;
+  border: 1px solid #aaaecf;
+  bottom: -7px;
+  right: -7px;
+}
+
+.meme-search-token-avatar-container.graduated .meme-search-launchpad-logo-container {
+  border-color: #ffd700 !important;
+}
+
+.meme-search-token-avatar-container.graduated .meme-search-launchpad-logo {
+  filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-rotate(311deg) brightness(117%) contrast(86%);
+}
+
+.meme-search-token-avatar-container.nadfun-token .meme-search-launchpad-logo-container {
+  border-color: #AD5FFB;
+}
+
+.meme-search-token-avatar-container.nadfun-token {
+  background: conic-gradient(from 135deg,
+    #AD5FFB 0deg,
+    #AD5FFB var(--progress-angle),
+    rgba(173, 95, 251, 0.2) var(--progress-angle),
+    rgba(173, 95, 251, 0.2) 360deg);
+}
+
+.meme-search-token-avatar-container.nadfun-token.graduated {
+  background: conic-gradient(from 135deg,
+      #ffd700 0deg,
+      #ffed4e 90deg,
+      #ffc107 180deg,
+      #ff8f00 270deg,
+      #ffd700 360deg);
 }

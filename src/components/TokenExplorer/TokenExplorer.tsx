@@ -2731,16 +2731,16 @@ const TokenRow = React.memo<{
 
             <div className="explorer-second-row">
               <div className="explorer-price-section">
-                <span 
-  className="explorer-time-created"
-  style={{
-    color: (Math.floor(Date.now() / 1000) - token.created) > 3600 
-      ? '#f77f7d' 
-      : 'rgb(67, 254, 154)'
-  }}
->
-  {formatTimeAgo(token.created)}
-</span>
+                <span
+                  className="explorer-time-created"
+                  style={{
+                    color: (Math.floor(Date.now() / 1000) - token.created) > 3600
+                      ? '#f77f7d'
+                      : 'rgb(67, 254, 154)'
+                  }}
+                >
+                  {formatTimeAgo(token.created)}
+                </span>
                 {displaySettings.visibleRows.socials && (
                   <>
                     {!!token.twitterHandle && (
