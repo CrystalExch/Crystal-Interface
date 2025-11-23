@@ -751,15 +751,15 @@ const Tracker: React.FC<TrackerProps> = ({
     }
   }, [externalWallets]);
 
-  useEffect(() => {
-    if (!externalWallets && localWallets.length >= 0) {
-      saveWalletsToStorage(localWallets);
-      window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: localWallets, source: 'widget' } }));
-    }
-    if (onWalletsChange) {
-      onWalletsChange(localWallets);
-    }
-  }, [localWallets, externalWallets, onWalletsChange]);
+useEffect(() => {
+  if (!externalWallets && localWallets.length >= 0) {
+    saveWalletsToStorage(localWallets);
+    window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: localWallets, source: 'tracker' } }));
+  }
+  if (onWalletsChange) {
+    onWalletsChange(localWallets);
+  }
+}, [localWallets, externalWallets, onWalletsChange]);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -772,14 +772,14 @@ const Tracker: React.FC<TrackerProps> = ({
       }
     };
 
-    const handleCustomWalletUpdate = (e: CustomEvent) => {
-      if (e.detail && e.detail.source !== 'widget' && !externalWallets) {
-        const updatedWallets = e.detail.wallets;
-        if (JSON.stringify(updatedWallets) !== JSON.stringify(localWallets)) {
-          setLocalWallets(updatedWallets);
-        }
-      }
-    };
+const handleCustomWalletUpdate = (e: CustomEvent) => {
+  if (e.detail && e.detail.source !== 'tracker' && !externalWallets) {
+    const updatedWallets = e.detail.wallets;
+    if (JSON.stringify(updatedWallets) !== JSON.stringify(localWallets)) {
+      setLocalWallets(updatedWallets);
+    }
+  }
+};
 
     window.addEventListener('storage', handleStorageChange as EventListener);
     window.addEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
