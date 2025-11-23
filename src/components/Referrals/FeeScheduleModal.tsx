@@ -94,90 +94,22 @@ const FeeScheduleModal: React.FC<FeeScheduleModalProps> = ({ isOpen, onClose }) 
             </p>
           </div>
 
-          {/* Referral Rewards System */}
-          <div className="fee-schedule-section">
-            <h3 className="fee-schedule-subsection-title">3-Tier Referral Commission System</h3>
-            <p className="fee-schedule-subsection-description">
-              Earn passive income from your referral network across 3 levels:
-            </p>
-            <div className="referral-tiers-grid">
-              <div className="referral-tier-card">
-                <div className="referral-tier-header">
-                  <span className="referral-tier-badge level-1">Level 1</span>
-                  <span className="referral-tier-percentage">30%</span>
-                </div>
-                <div className="referral-tier-title">Direct Referrals</div>
-                <div className="referral-tier-description">
-                  Earn 30% commission on fees from anyone who signs up using your referral link.
-                </div>
-                <div className="referral-tier-example">
-                  Example: Referral trades $10,000 → You earn $30
-                </div>
-              </div>
-              <div className="referral-tier-card">
-                <div className="referral-tier-header">
-                  <span className="referral-tier-badge level-2">Level 2</span>
-                  <span className="referral-tier-percentage">3%</span>
-                </div>
-                <div className="referral-tier-title">Indirect Referrals</div>
-                <div className="referral-tier-description">
-                  Earn 3% commission on fees from users referred by your Level 1 referrals.
-                </div>
-                <div className="referral-tier-example">
-                  Example: L2 referral trades $10,000 → You earn $3
-                </div>
-              </div>
-              <div className="referral-tier-card">
-                <div className="referral-tier-header">
-                  <span className="referral-tier-badge level-3">Level 3</span>
-                  <span className="referral-tier-percentage">2%</span>
-                </div>
-                <div className="referral-tier-title">Extended Network</div>
-                <div className="referral-tier-description">
-                  Earn 2% commission on fees from users referred by your Level 2 referrals.
-                </div>
-                <div className="referral-tier-example">
-                  Example: L3 referral trades $10,000 → You earn $2
-                </div>
-              </div>
-            </div>
-            <div className="referral-benefits-note">
-              <strong>Bonus:</strong> Users who sign up with a referral link receive a 10% discount on all trading fees!
-            </div>
-          </div>
-
-          {/* Main Fee Tiers Table */}
+          {/* Main Fee Tiers List */}
           <div className="fee-schedule-section">
             <div className="fee-schedule-table-wrapper">
-              <table className="fee-schedule-table">
-                <thead>
-                  <tr>
-                    <th>Tier</th>
-                    <th>14D Volume</th>
-                    <th>Taker</th>
-                    <th>Maker</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {feeTiers.map((tier) => (
-                    <tr key={tier.tier}>
-                      <td className="modal-tier-cell">
-                        <span className={`modal-tier-badge tier-${tier.tier}`}>
-                          {tier.name}
-                        </span>
-                      </td>
-                      <td className="modal-volume-cell">{tier.volume}</td>
-                      <td className="modal-fee-cell">{tier.spotTaker}</td>
-                      <td className="modal-fee-cell modal-maker-fee">
-                        {tier.spotMaker}
-                        {tier.spotMaker.startsWith('-') && (
-                          <span className="modal-rebate-indicator">rebate</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {feeTiers.map((tier) => (
+                <div key={tier.tier} className="fee-tier-requirement-item achieved">
+                  <div className={`tier-requirement-badge tier-${tier.tier}`}>
+                    {tier.name}
+                  </div>
+                  <div className="fee-tier-requirement-details">
+                    <span className="fee-tier-requirement-volume">{tier.volume} volume</span>
+                    <span className="fee-tier-requirement-benefits">
+                      Taker: {tier.spotTaker} • Maker: {tier.spotMaker}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

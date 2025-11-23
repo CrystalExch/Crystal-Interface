@@ -205,64 +205,6 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
           </span>
         </div>
       </div>
-
-      <div className="fee-tier-requirements">
-        <h4 className="fee-tier-requirements-title">Tier Requirements</h4>
-        <div className="fee-tier-requirements-list">
-          <div
-            className={`fee-tier-requirement-item ${
-              tradingVolume >= 0 ? 'achieved' : ''
-            }`}
-          >
-            <div className="tier-requirement-badge bronze">Bronze</div>
-            <div className="fee-tier-requirement-details">
-              <span className="fee-tier-requirement-volume">0+ MON volume</span>
-              <span className="fee-tier-requirement-benefits">
-                0.00% Cashback • 0.02% Referral Fees
-              </span>
-            </div>
-          </div>
-          <div
-            className={`fee-tier-requirement-item ${
-              tradingVolume >= 100000 ? 'achieved' : ''
-            }`}
-          >
-            <div className="tier-requirement-badge silver">Silver</div>
-            <div className="fee-tier-requirement-details">
-              <span className="fee-tier-requirement-volume">100K+ MON volume</span>
-              <span className="fee-tier-requirement-benefits">
-                30% L1 • 3% L2 • 2% L3
-              </span>
-            </div>
-          </div>
-          <div
-            className={`fee-tier-requirement-item ${
-              tradingVolume >= 500000 ? 'achieved' : ''
-            }`}
-          >
-            <div className="tier-requirement-badge gold">Gold</div>
-            <div className="fee-tier-requirement-details">
-              <span className="fee-tier-requirement-volume">500K+ MON volume</span>
-              <span className="fee-tier-requirement-benefits">
-                30% L1 • 3% L2 • 2% L3
-              </span>
-            </div>
-          </div>
-          <div
-            className={`fee-tier-requirement-item ${
-              tradingVolume >= 1000000 ? 'achieved' : ''
-            }`}
-          >
-            <div className="tier-requirement-badge diamond">Diamond</div>
-            <div className="fee-tier-requirement-details">
-              <span className="fee-tier-requirement-volume">1M+ MON volume</span>
-              <span className="fee-tier-requirement-benefits">
-                30% L1 • 3% L2 • 2% L3
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
     </>
   );
