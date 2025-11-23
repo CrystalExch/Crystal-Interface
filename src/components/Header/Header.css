@@ -399,16 +399,10 @@
   display: flex;
   flex-direction: column;
   color: #fff;
-  
-  /* Start hidden */
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px);
-  
-  /* Smooth transition */
   transition: all 0.2s ease;
-  
-  /* Prevent interaction when hidden */
   pointer-events: none;
 }
 

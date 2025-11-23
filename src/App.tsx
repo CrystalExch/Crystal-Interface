@@ -473,7 +473,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     CurveTokenListed: '0xaa090437ef524cee1d4e0825c0caff2203af3b38ab39624d8ff7fab67e219704',
     CurveSync: '0xfd4bb47bd45abdbdb2ecd61052c9571773f9cde876e2a7745f488c20b30ab10a',
   };
-  
+
   const CRYSTAL_EVENTS = {
     LaunchpadTrade: '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e',
     MarketCreated: '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b',
@@ -2044,9 +2044,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     (tokenIn == weth && tokenOut == eth);
 
   const loading = stateloading
-    // (stateloading ||
-    //   tradesloading ||
-    //   addressinfoloading);
+  // (stateloading ||
+  //   tradesloading ||
+  //   addressinfoloading);
 
   const monUsdPrice = 0.05;
 
@@ -4749,7 +4749,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 const normalized = normalizeTrade({
                   caller: callerAddr,
-                  id: tradeId,  
+                  id: tradeId,
                   isBuy: isBuy,
                   price: endPrice,
                   symbol: symbol,
@@ -4781,7 +4781,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 setTrackedWalletTrades(prev =>
                   prev.map(t =>
-                    t.id === tradeId  
+                    t.id === tradeId
                       ? { ...t, token: mcfg?.baseAsset, tokenName: mcfg?.baseAsset, tokenIcon: mcfg?.icon }
                       : t
                   )
@@ -5076,7 +5076,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 const normalized = normalizeTrade({
                   caller: callerAddr,
-                  id: tradeId,  
+                  id: tradeId,
                   isBuy: isBuy,
                   price: price,
                   symbol: symbol,
@@ -5107,7 +5107,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 setTrackedWalletTrades(prev =>
                   prev.map(t =>
-                    t.id === tradeId  
+                    t.id === tradeId
                       ? { ...t, token: symbol, tokenName: name, tokenIcon: icon }
                       : t
                   )
@@ -5493,13 +5493,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const synchex = syncEvent.data.replace(/^0x/, '');
               const syncwords: string[] = [];
               for (let i = 0; i < synchex.length; i += 64) syncwords.push(synchex.slice(i, i + 64));
-        
+
               const reserveQuote = BigInt('0x' + syncwords[2]);
               const reserveBase = BigInt('0x' + syncwords[3]);
               const price =
-              reserveBase == 0n
-                ? 0
-                : Number(reserveQuote) / Number(reserveBase);
+                reserveBase == 0n
+                  ? 0
+                  : Number(reserveQuote) / Number(reserveBase);
 
               const isBuy = log.topics?.[0] == NAD_FUN_EVENTS.CurveBuy;
               const callerAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
@@ -5508,11 +5508,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const hex = log.data.replace(/^0x/, '');
               const words: string[] = [];
               for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
-        
+
               const toNum = (x: bigint) => Number(x) / 1e18;
               const amountIn = toNum(BigInt('0x' + words[0]));
               const amountOut = toNum(BigInt('0x' + words[1]));
-        
+
               dispatch({
                 type: 'UPDATE_MARKET',
                 id: tokenAddr,
@@ -5544,7 +5544,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 const normalized = normalizeTrade({
                   caller: callerAddr,
-                  id: tradeId,  
+                  id: tradeId,
                   isBuy: isBuy,
                   price: price,
                   symbol: symbol,
@@ -5575,7 +5575,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 setTrackedWalletTrades(prev =>
                   prev.map(t =>
-                    t.id === tradeId  
+                    t.id === tradeId
                       ? { ...t, token: symbol, tokenName: name, tokenIcon: icon }
                       : t
                   )
@@ -6014,26 +6014,26 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           memeSelectedInterval === "1s"
             ? 1
             : memeSelectedInterval === "5s"
-            ? 5
-            : memeSelectedInterval === "15s"
-            ? 15
-            : memeSelectedInterval === "1m"
-            ? 60
-            : memeSelectedInterval === "5m"
-            ? 300
-            : memeSelectedInterval === "15m"
-            ? 900
-            : memeSelectedInterval === "1h"
-            ? 3600
-            : memeSelectedInterval === "4h"
-            ? 14400
-            : 86400;
+              ? 5
+              : memeSelectedInterval === "15s"
+                ? 15
+                : memeSelectedInterval === "1m"
+                  ? 60
+                  : memeSelectedInterval === "5m"
+                    ? 300
+                    : memeSelectedInterval === "15m"
+                      ? 900
+                      : memeSelectedInterval === "1h"
+                        ? 3600
+                        : memeSelectedInterval === "4h"
+                          ? 14400
+                          : 86400;
 
         const trackedParam =
           trackedAddresses.length > 0
             ? `?tracked=${[...new Set(trackedAddresses)]
-                .map((a) => a.toLowerCase())
-                .join(",")}`
+              .map((a) => a.toLowerCase())
+              .join(",")}`
             : "";
 
         const res = await fetch(
@@ -6052,7 +6052,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (isCancelled || !m) return;
         const tradesSource =
           trackedAddresses.length > 0 &&
-          (Array.isArray(m.trackedTrades) || Array.isArray(m.trackedtrades))
+            (Array.isArray(m.trackedTrades) || Array.isArray(m.trackedtrades))
             ? (Array.isArray(m.trackedTrades) ? m.trackedTrades : m.trackedtrades)
             : (Array.isArray(m.trades) ? m.trades : []);
 
@@ -6096,12 +6096,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             memeSelectedInterval === "1d"
               ? "1D"
               : memeSelectedInterval === "4h"
-              ? "240"
-              : memeSelectedInterval === "1h"
-              ? "60"
-              : memeSelectedInterval.endsWith("s")
-              ? memeSelectedInterval.slice(0, -1).toUpperCase() + "S"
-              : memeSelectedInterval.slice(0, -1);
+                ? "240"
+                : memeSelectedInterval === "1h"
+                  ? "60"
+                  : memeSelectedInterval.endsWith("s")
+                    ? memeSelectedInterval.slice(0, -1).toUpperCase() + "S"
+                    : memeSelectedInterval.slice(0, -1);
 
           setChartData([bars, m.symbol + "MON" + resForChart, true]);
         }
@@ -6157,8 +6157,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           status: m.migrated
             ? "graduated"
             : price * TOTAL_SUPPLY > 616254
-            ? "graduating"
-            : "new",
+              ? "graduating"
+              : "new",
           price,
           marketCap: price * TOTAL_SUPPLY,
           buyTransactions: Number(m.buyTxs ?? 0),
@@ -6233,8 +6233,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           setMemeHolders([]);
           memeHoldersMapRef.current = new Map();
         }
-        
-        
+
+
         if (Array.isArray(m.topTraders)) {
           const rows: any[] = m.topTraders;
           const out: Holder[] = [];
@@ -6668,19 +6668,19 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         ...([
           token.source === "nadfun"
             ? {
-                disabled: false,
-                to: settings.chainConfig[activechain].nadFunBondingCurve,
-                abi: NadFunAbi,
-                functionName: "curves",
-                args: [token.id]
-              }
+              disabled: false,
+              to: settings.chainConfig[activechain].nadFunBondingCurve,
+              abi: NadFunAbi,
+              functionName: "curves",
+              args: [token.id]
+            }
             : {
-                disabled: false,
-                to: balancegetter,
-                abi: CrystalDataHelperAbi,
-                functionName: "getVirtualReserves",
-                args: [router, token.id, weth, BigInt(1000000), BigInt(1), BigInt(100)]
-              }
+              disabled: false,
+              to: balancegetter,
+              abi: CrystalDataHelperAbi,
+              functionName: "getVirtualReserves",
+              args: [router, token.id, weth, BigInt(1000000), BigInt(1), BigInt(100)]
+            }
         ])
       ];
 
@@ -7320,7 +7320,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     document.title = title;
   }, [trades, location.pathname, activeMarket, perpsMarketsData, perpsActiveMarketKey]);
-  
+
   // process ob on orders or amountsquote change
   useEffect(() => {
     if (prevOrderData && Array.isArray(prevOrderData) && prevOrderData.length >= 4) {
@@ -8095,9 +8095,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   ]); */
 
   // temp vars
-  const refetch = () => {};
+  const refetch = () => { };
   const isLoading = false;
-  const rpcQueryData = {gasEstimate: 0n};
+  const rpcQueryData = { gasEstimate: 0n };
 
   // // trades processing
   // useEffect(() => {
@@ -11401,7 +11401,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const [arbUSDCBalance, setarbUSDCBalance] = useState(0n);
   const perpsDepositDisabled = !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning || (parseFloat(perpsDepositAmount) > (Number(arbUSDCBalance) / 1e6))
-  
+
   useEffect(() => {
     if (popup != 30 && popup != 31) return;
 
@@ -11416,24 +11416,24 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         const rpc = "https://arb1.arbitrum.io/rpc";
         const usdc = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
-        
+
         const data =
           "0x70a08231" +
-          scaAddress.toLowerCase().replace("0x","").padStart(64, "0");
-        
+          scaAddress.toLowerCase().replace("0x", "").padStart(64, "0");
+
         const body = {
           jsonrpc: "2.0",
           id: 1,
           method: "eth_call",
           params: [{ to: usdc, data }, "latest"]
         };
-        
+
         const res = await fetch(rpc, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body)
         });
-        
+
         if (!res.ok) return;
 
         const msg = await res.json();
@@ -28723,26 +28723,27 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           <Route path="/trackers"
             element={
               <Tracker
-                isBlurred={isBlurred}
-                setpopup={setpopup}
-                onImportWallets={handleImportWallets}
                 monUsdPrice={monUsdPrice}
                 walletTokenBalances={walletTokenBalances}
+                activechain={activechain}
+                settings={settings}
+                allTrades={trackedWalletTrades}
                 tokenList={memoizedTokenList}
-                tokensByStatus={tokensByStatus}
                 marketsData={marketsData}
                 tradesByMarket={tradesByMarket}
+                setpopup={setpopup}
+                currentPopup={popup}
                 sendUserOperationAsync={sendUserOperationAsync}
+                terminalRefetch={terminalRefetch}
+                nonces={nonces}
+                subWallets={subWallets}
+                activeWalletPrivateKey={oneCTSigner}
                 account={{
                   connected: connected,
                   address: address,
                   chainId: userchain,
                 }}
-                trades={memeTrades}
-                trackedWalletsRef={trackedWalletsRef}
-                trackedWalletTradesRef={trackedWalletTradesRef}
-                trackedWalletTrades={trackedWalletTrades}
-                setTrackedWalletTrades={setTrackedWalletTrades}
+                selectedWallets={selectedWallets}
               />
             } />
           <Route path="/perps" element={<Navigate to={`/perps/${perpsActiveMarketKey}`} replace />} />
