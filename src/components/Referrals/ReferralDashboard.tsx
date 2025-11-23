@@ -140,55 +140,6 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
         ) : (
         <div className="referral-body-section">
           <div className="referral-top-section">
-            <div className="referral-background-wrapper">
-              <div className="main-title-container">
-                <h1 className="main-title">Earn Rewards</h1>
-                <h1 className="referrals-subtitle">Share & Earn with Friends</h1>
-              </div>
-              <div className="referral-background-container">
-                <div className="referral-bg-placeholder">
-                  <img
-                    src={ReferralBackground}
-                    className="referral-background"
-                    onLoad={() => setBgLoaded(true)}
-                    style={{ display: bgLoaded ? 'block' : 'none' }}
-                  />
-                  {!bgLoaded && (
-                    <div className="referral-bg-placeholder-content"></div>
-                  )}
-                </div>
-                <span className="referral-loader"></span>
-                <div className="features-grid">
-                  <div className="feature-card-left">
-                    <div className="feature-icon">
-                      <Users size={20} />
-                    </div>
-                    <h3 className="feature-title">Community Rewards</h3>
-                    <p className="feature-description">
-                      Earn together with your referrals
-                    </p>
-                  </div>
-                  <div className="feature-card-middle">
-                    <div className="feature-icon">
-                      <Zap size={20} />
-                    </div>
-                    <h3 className="feature-title">Instant Tracking</h3>
-                    <p className="feature-description">
-                      Real-time referral updates
-                    </p>
-                  </div>
-                  <div className="feature-card-right">
-                    <div className="feature-icon">
-                      <TrendingUp size={20} />
-                    </div>
-                    <h3 className="feature-title">Tier Benefits</h3>
-                    <p className="feature-description">
-                      Unlock exclusive rewards
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
             <div className="earnings-section">
               <div className="referred-count">
                 <img src={defaultPfp} className="referral-pfp" />
@@ -249,6 +200,10 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
               </button>
               <div className="help-text">
                 Claim your referral earnings from trading fees
+              </div>
+            </div>
+            <div className="referral-background-wrapper">
+              <div className="main-title-container">
               </div>
             </div>
           </div>
@@ -386,3 +341,4 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
 };
 
 export default ReferralDashboard;
+
