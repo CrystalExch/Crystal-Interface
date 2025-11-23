@@ -52,7 +52,7 @@ interface QuickBuyWidgetProps {
   setChain?: () => void;
   activechain: number;
   routerAddress?: string;
-  setpopup?: (value: number) => void;
+  setpopup: (value: number) => void;
   subWallets?: Array<{ address: string; privateKey: string }>;
   walletTokenBalances?: { [address: string]: any };
   activeWalletPrivateKey?: string;
@@ -69,6 +69,8 @@ interface QuickBuyWidgetProps {
   selectedWallets: Set<string>;
   setSelectedWallets: React.Dispatch<React.SetStateAction<Set<string>>>;
   isTerminalDataFetching: any;
+  createSubWallet: any;
+  setOneCTDepositAddress: any;
 }
 
 const Tooltip: React.FC<{
@@ -259,6 +261,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   selectedWallets,
   setSelectedWallets,
   isTerminalDataFetching,
+  createSubWallet,
+  setOneCTDepositAddress,
 }) => {
   const [position, setPosition] = useState(() => {
     try {
@@ -2577,12 +2581,15 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                     </>
                   )}
 
-                  {/* Add Wallet button - shown only when there's exactly 1 subwallet */}
-                  {subWallets.length === 1 && (
+                  {subWallets.length < 10 && (
                     <div
                       className="quickbuy-add-wallet-button"
-                      onClick={() => {
-                        window.location.href = '/portfolio?tab=wallets';
+                      onClick={async () => {
+                        let isSuccess = await createSubWallet(true);
+                        if (isSuccess) {
+                          setOneCTDepositAddress(isSuccess);
+                          setpopup(25);
+                        }
                       }}
                     >
                       <svg

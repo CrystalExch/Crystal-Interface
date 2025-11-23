@@ -226,17 +226,7 @@ type MCMode = 'MC' | 'Price';
 interface Props {
   trades: RawTrade[];
   tokenList?: any[];
-  market?:
-  | {
-    baseAsset?: string;
-    quoteAsset?: string;
-    quoteAddress?: string;
-  }
-  | any;
-  tradesByMarket?: any;
-  markets?: any;
   tokendict?: any;
-  usdc?: string;
   wethticker?: string;
   ethticker?: string;
   onMarketSelect?: (m: any) => void;
@@ -264,10 +254,6 @@ const STORAGE_KEY = 'tracked_wallets_data';
 export default function MemeTradesComponent({
   trades,
   tokenList = [],
-  market,
-  tradesByMarket,
-  markets,
-  usdc,
   wethticker,
   ethticker,
   onMarketSelect,
@@ -402,20 +388,6 @@ export default function MemeTradesComponent({
     [wethticker, ethticker],
   );
 
-  const usdPer = useCallback(
-    (symbol?: string): number => {
-      if (!symbol || !tradesByMarket || !markets) return 0;
-      const sym = resolveNative(symbol);
-      if (usdc && sym === 'USDC') return 1;
-      const pair = `${sym}USDC`;
-      const top = tradesByMarket[pair]?.[0]?.[3];
-      const pf = Number(markets[pair]?.priceFactor) || 1;
-      if (!top || !pf) return 0;
-      return Number(top) / pf;
-    },
-    [tradesByMarket, markets, resolveNative, usdc],
-  );
-
   const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
   const toSub = (n: number) =>
     String(n)
@@ -466,19 +438,8 @@ export default function MemeTradesComponent({
     return `${neg}0.0${toSub(zeros)}${tail2}`;
   }
 
-  const fetchLatestPriceInQuote = (tradesArr: RawTrade[]): number | null => {
-    if (!tradesArr || tradesArr.length === 0) return null;
-    const sorted = [...tradesArr].sort((a, b) => b.timestamp - a.timestamp);
-    return sorted[0]?.price ?? null;
-  };
-
   const viewTrades: ViewTrade[] = useMemo(() => {
     if (!displayTrades?.length) return [];
-
-    const latestQuotePerBase = fetchLatestPriceInQuote(trades) ?? 0;
-    const quoteUsd = usdPer(market?.quoteAsset);
-    const monUsd =
-      usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker);
 
     let filteredTrades = displayTrades;
 
@@ -504,26 +465,8 @@ export default function MemeTradesComponent({
         const sign = r.isBuy ? 1 : -1;
         let amountMON = sign * (r.nativeAmount ?? 0);
 
-        if (!amountMON) {
-          const priceInQuote = r.price ?? latestQuotePerBase;
-          if (
-            market?.quoteAsset &&
-            (market.quoteAsset === wethticker ||
-              market.quoteAsset === ethticker)
-          ) {
-            amountMON = sign * (r.tokenAmount ?? 0) * priceInQuote;
-          } else {
-            if (monUsd > 0 && quoteUsd > 0) {
-              const amountUSDfromToken =
-                sign * (r.tokenAmount ?? 0) * priceInQuote * quoteUsd;
-              amountMON = amountUSDfromToken / monUsd;
-            } else {
-              amountMON = 0;
-            }
-          }
-        }
 
-        amountUSD = monUsd > 0 ? Math.abs(amountMON) * monUsd : 0;
+        amountUSD = monUsdPrice > 0 ? Math.abs(amountMON) * monUsdPrice : 0;
 
         // Filter by min USD
         if (transactionFilters.minUSD.trim() !== '') {
@@ -568,25 +511,7 @@ export default function MemeTradesComponent({
 
       let amountMON = sign * (r.nativeAmount ?? 0);
 
-      if (!amountMON) {
-        const priceInQuote = r.price ?? latestQuotePerBase;
-        if (
-          market?.quoteAsset &&
-          (market.quoteAsset === wethticker || market.quoteAsset === ethticker)
-        ) {
-          amountMON = sign * (r.tokenAmount ?? 0) * priceInQuote;
-        } else {
-          if (monUsd > 0 && quoteUsd > 0) {
-            const amountUSDfromToken =
-              sign * (r.tokenAmount ?? 0) * priceInQuote * quoteUsd;
-            amountMON = amountUSDfromToken / monUsd;
-          } else {
-            amountMON = 0;
-          }
-        }
-      }
-
-      const amountUSD = monUsd > 0 ? amountMON * monUsd : 0;
+      const amountUSD = monUsdPrice > 0 ? amountMON * monUsdPrice : 0;
       
       let short: string;
       let emoji: string | undefined;
@@ -634,8 +559,6 @@ export default function MemeTradesComponent({
     });
   }, [
     displayTrades,
-    market?.quoteAsset,
-    usdPer,
     ethticker,
     wethticker,
     currentUserAddress,

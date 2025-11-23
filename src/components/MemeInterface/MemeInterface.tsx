@@ -72,9 +72,6 @@ interface MemeInterfaceProps {
   account: { connected: boolean; address: string; chainId: number };
   setChain: () => void;
   tokendict?: { [key: string]: any };
-  tradesByMarket?: any;
-  markets?: any;
-  usdc?: string;
   wethticker?: string;
   ethticker?: string;
   address: any;
@@ -131,6 +128,8 @@ interface MemeInterfaceProps {
   trackedWalletsRef: any;
   isPaused?: boolean;
   backlogCount?: number;
+  createSubWallet: any;
+  setOneCTDepositAddress: any;
 }
 
 const STATS_HTTP_BASE = 'https://api.crystal.exchange';
@@ -316,9 +315,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   account,
   setChain,
   tokendict = {},
-  tradesByMarket,
-  markets,
-  usdc,
   wethticker,
   ethticker,
   address,
@@ -363,6 +359,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   trackedWalletsRef,
   isPaused,
   backlogCount,
+  createSubWallet,
+  setOneCTDepositAddress
 }) => {
   const getSliderPosition = (
     activeView: 'chart' | 'trades' | 'ordercenter',
@@ -2659,15 +2657,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             <MemeTradesComponent
               tokenList={tokenList}
               trades={trades}
-              market={{
-                id: token.id,
-                quoteAddress: 'YOUR_QUOTE_ADDRESS',
-                quoteAsset: 'USDC',
-              }}
-              tradesByMarket={tradesByMarket}
-              markets={markets}
               tokendict={tokendict}
-              usdc={usdc}
               wethticker={wethticker}
               ethticker={ethticker}
               onMarketSelect={onMarketSelect}
@@ -2872,8 +2862,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               <span style={{ color: '#e0e8fd73', fontSize: 17, cursor: 'not-allowed' }}>Limit</span>
             </Tooltip>
           </div>
-          {subWallets.length > 0 && (
-            <div className="meme-wallet-dropdown-container" ref={walletDropdownRef}>
+          <div className="meme-wallet-dropdown-container" ref={walletDropdownRef}>
               <button
                 className={`meme-wallet-dropdown-trigger ${isWalletDropdownOpen ? 'active' : ''}`}
                 onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
@@ -2885,11 +2874,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   <img src={monadicon} className="meme-wallet-mon-small-icon" alt="MON" />
                   <span>{formatNumberWithCommas(getTotalSelectedWalletsBalance(), 2)}</span>
                 </div>
-
-
               </button>
             </div>
-          )}
         </div>
         {isWalletDropdownOpen && account.connected && (
 
@@ -3021,294 +3007,287 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   </div>
 
                   <div className="meme-wallet-dropdown-list">
-                    {subWallets.length === 0 ? (
-                      <div className="meme-wallet-dropdown-empty">
-                        <div className="meme-wallet-dropdown-empty-text">
-                          No wallets available
-                        </div>
-                        <div className="meme-wallet-dropdown-empty-subtitle">
-                          Create wallets in Portfolio section
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        {walletsWithToken.map((wallet, index) => {
-                          const balance = getWalletBalance(wallet.address);
-                          const isSelected = selectedWallets.has(wallet.address);
-                          const tokenBalance = getWalletTokenBalance(wallet.address);
-                          const isActive = isWalletActive(wallet.privateKey);
+                    <>
+                      {walletsWithToken.map((wallet, index) => {
+                        const balance = getWalletBalance(wallet.address);
+                        const isSelected = selectedWallets.has(wallet.address);
+                        const tokenBalance = getWalletTokenBalance(wallet.address);
+                        const isActive = isWalletActive(wallet.privateKey);
 
-                          return (
-                            <div
-                              key={wallet.address}
-                              className={`meme-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-                              onClick={() => toggleWalletSelection(wallet.address)}
-                            >
-                              <div className="meme-wallet-checkbox-container">
-                                <input
-                                  type="checkbox"
-                                  className="meme-wallet-checkbox"
-                                  checked={isSelected}
-                                  readOnly
-                                />
+                        return (
+                          <div
+                            key={wallet.address}
+                            className={`meme-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                            onClick={() => toggleWalletSelection(wallet.address)}
+                          >
+                            <div className="meme-wallet-checkbox-container">
+                              <input
+                                type="checkbox"
+                                className="meme-wallet-checkbox"
+                                checked={isSelected}
+                                readOnly
+                              />
+                            </div>
+
+                            <div className="meme-wallet-info">
+                              <div className="meme-wallet-name">
+                                {getWalletName(wallet.address, index)}
+                                <Tooltip content="Primary Wallet">
+                                  {isActive && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                      <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                      <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                      <path d="m20 9-3 9" />
+                                      <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                      <path d="M7 18 4 9" />
+                                      <circle cx="12" cy="4" r="2" />
+                                      <circle cx="20" cy="7" r="2" />
+                                      <circle cx="4" cy="7" r="2" />
+                                    </svg>
+                                  )}
+                                </Tooltip>
                               </div>
-
-                              <div className="meme-wallet-info">
-                                <div className="meme-wallet-name">
-                                  {getWalletName(wallet.address, index)}
-                                  <Tooltip content="Primary Wallet">
-                                    {isActive && (
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
-                                        <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-                                        <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
-                                        <path d="m20 9-3 9" />
-                                        <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
-                                        <path d="M7 18 4 9" />
-                                        <circle cx="12" cy="4" r="2" />
-                                        <circle cx="20" cy="7" r="2" />
-                                        <circle cx="4" cy="7" r="2" />
-                                      </svg>
-                                    )}
-                                  </Tooltip>
-                                </div>
-                                <div
-                                  className="meme-wallet-address"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    copyToClipboard(wallet.address, 'Wallet address copied');
-                                  }}
-                                  style={{ cursor: 'pointer' }}
+                              <div
+                                className="meme-wallet-address"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(wallet.address, 'Wallet address copied');
+                                }}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                {wallet.address.slice(0, 4)}...
+                                {wallet.address.slice(-4)}
+                                <svg
+                                  className="meme-wallet-address-copy-icon"
+                                  width="11"
+                                  height="11"
+                                  viewBox="0 0 24 24"
+                                  fill="currentColor"
                                 >
-                                  {wallet.address.slice(0, 4)}...
-                                  {wallet.address.slice(-4)}
-                                  <svg
-                                    className="meme-wallet-address-copy-icon"
-                                    width="11"
-                                    height="11"
-                                    viewBox="0 0 24 24"
-                                    fill="currentColor"
-                                  >
-                                    <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                                  </svg>
-                                </div>
-                              </div>
-
-                              <div className="meme-wallet-balance">
-                                {(() => {
-                                  const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-                                  const balanceWei = walletTokenBalances[wallet.address]?.[
-                                    settings.chainConfig[activechain]?.eth
-                                  ] || 0n;
-                                  const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
-
-                                  return (
-                                    <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
-                                      <div
-                                        className={`meme-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
-                                      >
-                                        <img
-                                          src={monadicon}
-                                          className="meme-wallet-mon-icon"
-                                          alt="MON"
-                                        />
-                                        {formatNumberWithCommas(balance, 2)}
-                                      </div>
-                                    </Tooltip>
-                                  );
-                                })()}
-                              </div>
-
-                              <div className="meme-wallet-tokens">
-                                {tokenBalance > 0 ? (
-                                  <Tooltip content="Tokens">
-                                    <div
-                                      className={`meme-wallet-token-amount ${isBlurred ? 'blurred' : ''}`}
-                                    >
-                                      {token.image && (
-                                        <img
-                                          src={token.image}
-                                          className="meme-wallet-token-icon"
-                                          alt={token.symbol}
-                                          onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                          }}
-                                        />
-                                      )}
-                                      <span className="meme-wallet-token-balance">
-                                        {formatNumberWithCommas(tokenBalance, 2)}
-                                      </span>
-                                    </div>
-                                  </Tooltip>
-                                ) : null}
+                                  <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                </svg>
                               </div>
                             </div>
-                          );
-                        })}
 
-                        {hasTokenHolders && walletsWithoutToken.length > 0 && (
-                          <div className="meme-wallets-section-label">
-                            <button
-                              className="meme-wallet-action-btn"
-                              onClick={() => {
-                                if (allWithoutSelected) {
-                                  setSelectedWallets((prev) => {
-                                    const next = new Set(prev);
-                                    walletsWithoutTokenAddrs.forEach((a) => next.delete(a));
-                                    return next;
-                                  });
-                                } else {
-                                  setSelectedWallets((prev) => {
-                                    const next = new Set(prev);
-                                    walletsWithoutTokenAddrs.forEach((a) => next.add(a));
-                                    return next;
-                                  });
-                                }
-                              }}
-                            >
-                              {allWithoutSelected ? 'Unselect All' : 'Select All'}
-                            </button>
+                            <div className="meme-wallet-balance">
+                              {(() => {
+                                const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                                const balanceWei = walletTokenBalances[wallet.address]?.[
+                                  settings.chainConfig[activechain]?.eth
+                                ] || 0n;
+                                const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
 
-                            <button
-                              className="meme-wallet-action-btn"
-                              onClick={selectAllWithBalanceWithoutToken}
-                            >
-                              Select All With Balance
-                            </button>
-                          </div>
-                        )}
-
-                        {walletsWithoutToken.map((wallet, index) => {
-                          const balance = getWalletBalance(wallet.address);
-                          const isSelected = selectedWallets.has(wallet.address);
-                          const tokenCount = getWalletTokenCount(wallet.address);
-                          const isActive = isWalletActive(wallet.privateKey);
-
-                          return (
-                            <div
-                              key={wallet.address}
-                              className={`meme-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-                              onClick={() => toggleWalletSelection(wallet.address)}
-                            >
-                              <div className="meme-wallet-checkbox-container">
-                                <input
-                                  type="checkbox"
-                                  className="meme-wallet-checkbox"
-                                  checked={isSelected}
-                                  readOnly
-                                />
-                              </div>
-
-                              <div className="meme-wallet-info">
-                                <div className="meme-wallet-name">
-                                  {getWalletName(
-                                    wallet.address,
-                                    index + walletsWithToken.length,
-                                  )}
-                                                                    <Tooltip content="Primary Wallet">
-                                    {isActive && (
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
-                                        <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-                                        <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
-                                        <path d="m20 9-3 9" />
-                                        <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
-                                        <path d="M7 18 4 9" />
-                                        <circle cx="12" cy="4" r="2" />
-                                        <circle cx="20" cy="7" r="2" />
-                                        <circle cx="4" cy="7" r="2" />
-                                      </svg>
-                                    )}
-                                  </Tooltip>
-                                </div>
-                                <div
-                                  className="meme-wallet-address"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    copyToClipboard(wallet.address, 'Wallet address copied');
-                                  }}
-                                  style={{ cursor: 'pointer' }}
-                                >
-                                  {wallet.address.slice(0, 4)}...
-                                  {wallet.address.slice(-4)}
-                                  <svg
-                                    className="meme-wallet-address-copy-icon"
-                                    width="11"
-                                    height="11"
-                                    viewBox="0 0 24 24"
-                                    fill="currentColor"
-                                  >
-                                    <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                                  </svg>
-                                </div>
-                              </div>
-
-                              <div className="meme-wallet-balance">
-                                {(() => {
-                                  const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-                                  const balanceWei = walletTokenBalances[wallet.address]?.[
-                                    settings.chainConfig[activechain]?.eth
-                                  ] || 0n;
-                                  const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
-
-                                  return (
-                                    <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
-                                      <div
-                                        className={`meme-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
-                                      >
-                                        <img
-                                          src={monadicon}
-                                          className="meme-wallet-mon-icon"
-                                          alt="MON"
-                                        />
-                                        {formatNumberWithCommas(balance, 2)}
-                                      </div>
-                                    </Tooltip>
-                                  );
-                                })()}
-                              </div>
-
-                              <div className="meme-wallet-tokens">
-                                <Tooltip content="Tokens">
-                                  <div className="meme-wallet-token-count">
-                                    <div className="meme-wallet-token-structure-icons">
-                                      <div className="token1"></div>
-                                      <div className="token2"></div>
-                                      <div className="token3"></div>
+                                return (
+                                  <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                    <div
+                                      className={`meme-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                    >
+                                      <img
+                                        src={monadicon}
+                                        className="meme-wallet-mon-icon"
+                                        alt="MON"
+                                      />
+                                      {formatNumberWithCommas(balance, 2)}
                                     </div>
-                                    <span className="meme-wallet-total-tokens">
-                                      {tokenCount}
+                                  </Tooltip>
+                                );
+                              })()}
+                            </div>
+
+                            <div className="meme-wallet-tokens">
+                              {tokenBalance > 0 ? (
+                                <Tooltip content="Tokens">
+                                  <div
+                                    className={`meme-wallet-token-amount ${isBlurred ? 'blurred' : ''}`}
+                                  >
+                                    {token.image && (
+                                      <img
+                                        src={token.image}
+                                        className="meme-wallet-token-icon"
+                                        alt={token.symbol}
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                        }}
+                                      />
+                                    )}
+                                    <span className="meme-wallet-token-balance">
+                                      {formatNumberWithCommas(tokenBalance, 2)}
                                     </span>
                                   </div>
                                 </Tooltip>
-                              </div>
+                              ) : null}
                             </div>
-                          );
-                        })}
+                          </div>
+                        );
+                      })}
 
-                        {subWallets.length < 10 && (
-                          <div
-                            className="quickbuy-add-wallet-button"
+                      {hasTokenHolders && walletsWithoutToken.length > 0 && (
+                        <div className="meme-wallets-section-label">
+                          <button
+                            className="meme-wallet-action-btn"
                             onClick={() => {
-                              window.location.href = '/portfolio?tab=wallets';
+                              if (allWithoutSelected) {
+                                setSelectedWallets((prev) => {
+                                  const next = new Set(prev);
+                                  walletsWithoutTokenAddrs.forEach((a) => next.delete(a));
+                                  return next;
+                                });
+                              } else {
+                                setSelectedWallets((prev) => {
+                                  const next = new Set(prev);
+                                  walletsWithoutTokenAddrs.forEach((a) => next.add(a));
+                                  return next;
+                                });
+                              }
                             }}
                           >
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <line x1="12" y1="5" x2="12" y2="19"></line>
-                              <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            <span>Add Wallet</span>
+                            {allWithoutSelected ? 'Unselect All' : 'Select All'}
+                          </button>
+
+                          <button
+                            className="meme-wallet-action-btn"
+                            onClick={selectAllWithBalanceWithoutToken}
+                          >
+                            Select All With Balance
+                          </button>
+                        </div>
+                      )}
+
+                      {walletsWithoutToken.map((wallet, index) => {
+                        const balance = getWalletBalance(wallet.address);
+                        const isSelected = selectedWallets.has(wallet.address);
+                        const tokenCount = getWalletTokenCount(wallet.address);
+                        const isActive = isWalletActive(wallet.privateKey);
+
+                        return (
+                          <div
+                            key={wallet.address}
+                            className={`meme-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                            onClick={() => toggleWalletSelection(wallet.address)}
+                          >
+                            <div className="meme-wallet-checkbox-container">
+                              <input
+                                type="checkbox"
+                                className="meme-wallet-checkbox"
+                                checked={isSelected}
+                                readOnly
+                              />
+                            </div>
+
+                            <div className="meme-wallet-info">
+                              <div className="meme-wallet-name">
+                                {getWalletName(
+                                  wallet.address,
+                                  index + walletsWithToken.length,
+                                )}
+                                                                  <Tooltip content="Primary Wallet">
+                                  {isActive && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                      <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                      <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                      <path d="m20 9-3 9" />
+                                      <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                      <path d="M7 18 4 9" />
+                                      <circle cx="12" cy="4" r="2" />
+                                      <circle cx="20" cy="7" r="2" />
+                                      <circle cx="4" cy="7" r="2" />
+                                    </svg>
+                                  )}
+                                </Tooltip>
+                              </div>
+                              <div
+                                className="meme-wallet-address"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(wallet.address, 'Wallet address copied');
+                                }}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                {wallet.address.slice(0, 4)}...
+                                {wallet.address.slice(-4)}
+                                <svg
+                                  className="meme-wallet-address-copy-icon"
+                                  width="11"
+                                  height="11"
+                                  viewBox="0 0 24 24"
+                                  fill="currentColor"
+                                >
+                                  <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                </svg>
+                              </div>
+                            </div>
+
+                            <div className="meme-wallet-balance">
+                              {(() => {
+                                const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                                const balanceWei = walletTokenBalances[wallet.address]?.[
+                                  settings.chainConfig[activechain]?.eth
+                                ] || 0n;
+                                const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+
+                                return (
+                                  <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                    <div
+                                      className={`meme-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                    >
+                                      <img
+                                        src={monadicon}
+                                        className="meme-wallet-mon-icon"
+                                        alt="MON"
+                                      />
+                                      {formatNumberWithCommas(balance, 2)}
+                                    </div>
+                                  </Tooltip>
+                                );
+                              })()}
+                            </div>
+
+                            <div className="meme-wallet-tokens">
+                              <Tooltip content="Tokens">
+                                <div className="meme-wallet-token-count">
+                                  <div className="meme-wallet-token-structure-icons">
+                                    <div className="token1"></div>
+                                    <div className="token2"></div>
+                                    <div className="token3"></div>
+                                  </div>
+                                  <span className="meme-wallet-total-tokens">
+                                    {tokenCount}
+                                  </span>
+                                </div>
+                              </Tooltip>
+                            </div>
                           </div>
-                        )}
-                      </>
-                    )}
+                        );
+                      })}
+
+                      {subWallets.length < 10 && (
+                        <div
+                          className="quickbuy-add-wallet-button"
+                          onClick={async () => {
+                            let isSuccess = await createSubWallet(true);
+                            if (isSuccess) {
+                              setOneCTDepositAddress(isSuccess);
+                              setpopup(25);
+                            }
+                          }}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                          </svg>
+                          <span>Add Wallet</span>
+                        </div>
+                      )}
+                    </>
                   </div>
                 </>
               );
@@ -4969,6 +4948,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         selectedWallets={selectedWallets}
         setSelectedWallets={setSelectedWallets}
         isTerminalDataFetching={isTerminalDataFetching}
+        createSubWallet={createSubWallet}
+        setOneCTDepositAddress={setOneCTDepositAddress}
       />
 
       {hoveredSimilarTokenImage &&

@@ -519,187 +519,130 @@ const Footer: React.FC<FooterProps> = ({
                 </div>
 
                 <div className="wallet-dropdown-list" >
-                  {true ? (
-                    <>
-                      <div style={{
-                        transition: 'all 0.2s ease'
-                      }}>
-                        {subWallets.map((wallet, index) => {
-                          const balance = getWalletBalance(wallet.address);
-                          const isSelected = selectedWallets.has(wallet.address);
-                          const isActive = isWalletActive(wallet.privateKey);
-                          return (
-                            <React.Fragment key={wallet.address}>
-                              <div
-                                key={wallet.address}
-                                className={`footer-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-                                onClick={() =>
-                                  toggleWalletSelection(wallet.address)
-                                }
-                              >
-                                <div className="quickbuy-wallet-checkbox-container">
-                                  <input
-                                    type="checkbox"
-                                    className="quickbuy-wallet-checkbox selection"
-                                    checked={isSelected}
-                                    readOnly
-                                  />
-                                </div>
-                                <div className="wallet-dropdown-info">
-                                  <div className="quickbuy-wallet-name">
-                                    {getWalletName(wallet.address, index)}
-                                    {isActive && (
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
-                                        <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-                                        <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
-                                        <path d="m20 9-3 9" />
-                                        <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
-                                        <path d="M7 18 4 9" />
-                                        <circle cx="12" cy="4" r="2" />
-                                        <circle cx="20" cy="7" r="2" />
-                                        <circle cx="4" cy="7" r="2" />
-                                      </svg>
-                                    )}
-                                  </div>
-                                  <div
-                                    className="wallet-dropdown-address"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyToClipboard(wallet.address, 'Wallet address copied');
-                                    }}
-                                    style={{ cursor: 'pointer' }}
-                                  >
-                                    {wallet.address.slice(0, 6)}...
-                                    {wallet.address.slice(-4)}
-                                    <svg
-                                      className="wallet-dropdown-address-copy-icon"
-                                      width="11"
-                                      height="11"
-                                      viewBox="0 0 24 24"
-                                      fill="currentColor"
-                                      style={{ marginLeft: '2px' }}
-                                    >
-                                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                                    </svg>
-                                  </div>
-                                </div>
-                                <div className="wallet-dropdown-balance">
-                                  {(() => {
-                                    const gasReserve = BigInt(settings.chainConfig[activeChain].gasamount ?? 0);
-                                    const balanceWei = walletTokenBalances[wallet.address]?.[
-                                      settings.chainConfig[activeChain]?.eth
-                                    ] || 0n;
-                                    const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
-
-                                    return (
-                                      <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
-                                        <div
-                                          className={`wallet-dropdown-balance-amount ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
-                                        >
-                                          <img
-                                            src={monadicon}
-                                            className="wallet-dropdown-mon-icon"
-                                            alt="MON"
-                                          />
-                                          {formatNumberWithCommas(balance, 2)}
-                                        </div>
-                                      </Tooltip>
-                                    );
-                                  })()}
-                                </div>
-                                <div className="wallet-drag-tokens">
-                                  <div className="wallet-token-count">
-                                    <div className="wallet-token-structure-icons">
-                                      <div className="token1"></div>
-                                      <div className="token2"></div>
-                                      <div className="token3"></div>
-                                    </div>
-                                    <span className="wallet-total-tokens">
-                                      {getWalletTokenCount(wallet.address)}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </React.Fragment>
-                          );
-                        })}
-                        {subWallets.length < 10 && (
+                  <div>
+                    {subWallets.map((wallet, index) => {
+                      const balance = getWalletBalance(wallet.address);
+                      const isSelected = selectedWallets.has(wallet.address);
+                      const isActive = isWalletActive(wallet.privateKey);
+                      return (
+                        <React.Fragment key={wallet.address}>
                           <div
-                            className="quickbuy-add-wallet-button"
-                            onClick={() => {
-                              createSubWallet()
-                            }}
+                            key={wallet.address}
+                            className={`footer-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                            onClick={() =>
+                              toggleWalletSelection(wallet.address)
+                            }
                           >
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <line x1="12" y1="5" x2="12" y2="19"></line>
-                              <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            <span>Add Wallet</span>
-                          </div>
-                        )}
-                      </div>
-                      {subWallets.length == 0 && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          transform: 'translate(-50%, -50%)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '12px',
-                          zIndex: 10,
-                          pointerEvents: 'auto'
-                        }}>
-                          <button
-                            onClick={() => {
-                              if (subWallets.length > 0) {
-                                setpopup(28);
-                              } else {
-                                setpopup(28);
-                              }
-                              setIsWalletDropdownOpen(false);
-                            }}
-                            className="enable-1ct-button"
-                          >
-                            Enable 1CT
-                          </button>
+                            <div className="quickbuy-wallet-checkbox-container">
+                              <input
+                                type="checkbox"
+                                className="quickbuy-wallet-checkbox selection"
+                                checked={isSelected}
+                                readOnly
+                              />
+                            </div>
+                            <div className="wallet-dropdown-info">
+                              <div className="quickbuy-wallet-name">
+                                {getWalletName(wallet.address, index)}
+                                {isActive && (
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                    <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                    <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                    <path d="m20 9-3 9" />
+                                    <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                    <path d="M7 18 4 9" />
+                                    <circle cx="12" cy="4" r="2" />
+                                    <circle cx="20" cy="7" r="2" />
+                                    <circle cx="4" cy="7" r="2" />
+                                  </svg>
+                                )}
+                              </div>
+                              <div
+                                className="wallet-dropdown-address"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(wallet.address, 'Wallet address copied');
+                                }}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                {wallet.address.slice(0, 6)}...
+                                {wallet.address.slice(-4)}
+                                <svg
+                                  className="wallet-dropdown-address-copy-icon"
+                                  width="11"
+                                  height="11"
+                                  viewBox="0 0 24 24"
+                                  fill="currentColor"
+                                  style={{ marginLeft: '2px' }}
+                                >
+                                  <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                </svg>
+                              </div>
+                            </div>
+                            <div className="wallet-dropdown-balance">
+                              {(() => {
+                                const gasReserve = BigInt(settings.chainConfig[activeChain].gasamount ?? 0);
+                                const balanceWei = walletTokenBalances[wallet.address]?.[
+                                  settings.chainConfig[activeChain]?.eth
+                                ] || 0n;
+                                const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
 
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="wallet-dropdown-no-subwallets" style={{
-                      position: 'relative',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '40px 20px'
-                    }}>
-                      {subWallets.length == 0 ? (
-                        <button
-                          onClick={() => {
-                            setpopup(28);
-                            setIsWalletDropdownOpen(false);
-                          }}
-                          className="enable-1ct-button"
+                                return (
+                                  <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                    <div
+                                      className={`wallet-dropdown-balance-amount ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                    >
+                                      <img
+                                        src={monadicon}
+                                        className="wallet-dropdown-mon-icon"
+                                        alt="MON"
+                                      />
+                                      {formatNumberWithCommas(balance, 2)}
+                                    </div>
+                                  </Tooltip>
+                                );
+                              })()}
+                            </div>
+                            <div className="wallet-drag-tokens">
+                              <div className="wallet-token-count">
+                                <div className="wallet-token-structure-icons">
+                                  <div className="token1"></div>
+                                  <div className="token2"></div>
+                                  <div className="token3"></div>
+                                </div>
+                                <span className="wallet-total-tokens">
+                                  {getWalletTokenCount(wallet.address)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </React.Fragment>
+                      );
+                    })}
+                    {subWallets.length < 10 && (
+                      <div
+                        className="quickbuy-add-wallet-button"
+                        onClick={() => {
+                          createSubWallet()
+                        }}
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                         >
-                          Enable 1CT and Create Subwallet
-                        </button>
-                      ) : (
-                        <p>No wallets found. Create a wallet to get started.</p>
-                      )}
-                    </div>
-                  )}
+                          <line x1="12" y1="5" x2="12" y2="19"></line>
+                          <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Add Wallet</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

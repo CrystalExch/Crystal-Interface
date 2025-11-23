@@ -9851,64 +9851,64 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   //   })();
   // }, [activechain]);
 
-  // // mobile trade
-  // useEffect(() => {
-  //   const handleEscapeKey = (event: KeyboardEvent) => {
-  //     if (event.key === 'Escape' && popup != 11) {
-  //       setpopup(0);
-  //       setSendUsdValue('');
-  //       setSendInputAmount('');
-  //       setSendAmountIn(BigInt(0));
-  //       settokenString('');
-  //       window.dispatchEvent(new Event('high-impact-cancel'));
-  //       setSelectedConnector(null);
+  // mobile trade
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && popup != 11) {
+        setpopup(0);
+        setSendUsdValue('');
+        setSendInputAmount('');
+        setSendAmountIn(BigInt(0));
+        settokenString('');
+        window.dispatchEvent(new Event('high-impact-cancel'));
+        setSelectedConnector(null);
 
-  //       if (showTrade && !simpleView) {
-  //         document.body.style.overflow = 'auto'
-  //         document.querySelector('.right-column')?.classList.add('hide');
-  //         document.querySelector('.right-column')?.classList.remove('show');
-  //         document.querySelector('.trade-mobile-switch')?.classList.remove('open');
-  //         setShowTrade(false);
-  //       }
-  //     }
-  //   };
-  //   const handleMouseDown = (e: MouseEvent) => {
-  //     setpopup((popup) => {
-  //       if (showTrade && popup == 0 && !simpleView) {
-  //         const rectangleElement = document.querySelector('.rectangle');
-  //         if (
-  //           rectangleElement &&
-  //           !rectangleElement.contains(e.target as Node)
-  //         ) {
-  //           document.body.style.overflow = 'auto'
-  //           document.querySelector('.right-column')?.classList.add('hide');
-  //           document.querySelector('.right-column')?.classList.remove('show');
-  //           document.querySelector('.trade-mobile-switch')?.classList.remove('open');
-  //           setShowTrade(false);
-  //         }
-  //       }
+        if (showTrade && !simpleView) {
+          document.body.style.overflow = 'auto'
+          document.querySelector('.right-column')?.classList.add('hide');
+          document.querySelector('.right-column')?.classList.remove('show');
+          document.querySelector('.trade-mobile-switch')?.classList.remove('open');
+          setShowTrade(false);
+        }
+      }
+    };
+    const handleMouseDown = (e: MouseEvent) => {
+      setpopup((popup) => {
+        if (showTrade && popup == 0 && !simpleView) {
+          const rectangleElement = document.querySelector('.rectangle');
+          if (
+            rectangleElement &&
+            !rectangleElement.contains(e.target as Node)
+          ) {
+            document.body.style.overflow = 'auto'
+            document.querySelector('.right-column')?.classList.add('hide');
+            document.querySelector('.right-column')?.classList.remove('show');
+            document.querySelector('.trade-mobile-switch')?.classList.remove('open');
+            setShowTrade(false);
+          }
+        }
 
-  //       if (!popupref.current?.contains(e.target as Node) && popup != 11) {
-  //         setSendUsdValue('');
-  //         setSendInputAmount('');
-  //         setSendAmountIn(BigInt(0));
-  //         settokenString('');
-  //         window.dispatchEvent(new Event('high-impact-cancel'));
-  //         return 0;
-  //       }
-  //       return popup;
-  //     });
-  //   };
-  //   const handleResize = () => setWindowWidth(window.innerWidth);
-  //   document.addEventListener('keydown', handleEscapeKey);
-  //   document.addEventListener('mousedown', handleMouseDown);
-  //   window.addEventListener('resize', handleResize);
-  //   return () => {
-  //     document.removeEventListener('keydown', handleEscapeKey);
-  //     document.removeEventListener('mousedown', handleMouseDown);
-  //     window.removeEventListener('resize', handleResize);
-  //   };
-  // }, [showTrade]);
+        if (!popupref.current?.contains(e.target as Node) && popup != 11) {
+          setSendUsdValue('');
+          setSendInputAmount('');
+          setSendAmountIn(BigInt(0));
+          settokenString('');
+          window.dispatchEvent(new Event('high-impact-cancel'));
+          return 0;
+        }
+        return popup;
+      });
+    };
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    document.addEventListener('keydown', handleEscapeKey);
+    document.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+      document.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [showTrade]);
 
   // url
   useEffect(() => {
@@ -28120,10 +28120,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setOneCTSigner={setOneCTSigner}
                 refetch={refetch}
                 isBlurred={isBlurred}
-                tradesByMarket={tradesByMarket}
-                markets={markets}
                 tokendict={tokendict}
-                usdc={usdc}
                 wethticker={wethticker}
                 ethticker={ethticker}
                 terminalRefetch={terminalRefetch}
@@ -28159,6 +28156,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 isLoadingTrades={isLoadingTrades}
                 setIsLoadingTrades={setIsLoadingTrades}
                 trackedWalletsRef={trackedWalletsRef}
+                createSubWallet={createSubWallet}
+                setOneCTDepositAddress={setOneCTDepositAddress}
               />
             }
           />
