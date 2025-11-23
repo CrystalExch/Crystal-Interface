@@ -87,108 +87,81 @@
   margin: -0.5rem 0 1rem 0;
 }
 
-/* Fee Schedule Table */
+/* Fee Tiers List */
 .fee-schedule-table-wrapper {
-  overflow-x: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fee-tier-requirement-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  opacity: 0.5;
+  transition: all 0.2s;
 }
 
-.fee-schedule-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8rem;
-}
-
-.fee-schedule-table thead {
-  background: rgba(170, 174, 207, 0.1);
-}
-
-.fee-schedule-table th {
-  color: rgba(255, 255, 255, 0.8);
-  font-weight: 500;
-  padding: 0.75rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 0.75rem;
-}
-
-.fee-schedule-table td {
-  color: rgba(255, 255, 255, 0.9);
-  padding: 0.9rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.fee-schedule-table tbody tr:hover {
+.fee-tier-requirement-item.achieved {
+  opacity: 1;
+  border-color: rgba(170, 174, 207, 0.2);
   background: rgba(170, 174, 207, 0.05);
 }
 
-.fee-schedule-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* Table Cell Styling */
-.modal-tier-cell {
-  font-weight: 600;
-}
-
-.modal-tier-badge {
-  display: inline-block;
-  padding: 0.3rem 0.6rem;
+.tier-requirement-badge {
+  padding: 0.3rem 0.7rem;
   border-radius: 4px;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #000;
+  white-space: nowrap;
 }
 
-.modal-tier-badge.tier-1 {
+.tier-requirement-badge.tier-1 {
   background: #CD7F32;
 }
 
-.modal-tier-badge.tier-2 {
+.tier-requirement-badge.tier-2 {
   background: #C0C0C0;
 }
 
-.modal-tier-badge.tier-3 {
+.tier-requirement-badge.tier-3 {
   background: #FFD700;
 }
 
-.modal-tier-badge.tier-4 {
+.tier-requirement-badge.tier-4 {
   background: #B9F2FF;
 }
 
-.modal-tier-badge.tier-5 {
+.tier-requirement-badge.tier-5 {
   background: #4A4A4A;
 }
 
-.modal-tier-badge.tier-6 {
+.tier-requirement-badge.tier-6 {
   background: linear-gradient(135deg, #9D4EDD 0%, #7B2CBF 100%);
 }
 
-.modal-volume-cell {
-  color: rgba(255, 255, 255, 0.8);
+.fee-tier-requirement-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.fee-tier-requirement-volume {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
   font-weight: 500;
 }
 
-.modal-fee-cell {
-  font-weight: 500;
-  font-family: 'Courier New', monospace;
-}
-
-.modal-maker-fee {
-  position: relative;
-}
-
-.modal-rebate-indicator {
-  display: inline-block;
-  margin-left: 0.3rem;
-  padding: 0.1rem 0.4rem;
-  background: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
-  border-radius: 3px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  font-family: sans-serif;
+.fee-tier-requirement-benefits {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.7rem;
+  font-weight: 300;
 }
 
 /* Rebate Tiers Grid */
@@ -300,93 +273,6 @@
   margin: 0 0 0.5rem 0;
 }
 
-.referral-tiers-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.referral-tier-card {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(170, 174, 207, 0.15);
-  border-radius: 6px;
-  padding: 1rem;
-}
-
-.referral-tier-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-}
-
-.referral-tier-badge {
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #000;
-}
-
-.referral-tier-badge.level-1 {
-  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-}
-
-.referral-tier-badge.level-2 {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-}
-
-.referral-tier-badge.level-3 {
-  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
-}
-
-.referral-tier-percentage {
-  color: #aaaecf;
-  font-size: 1.2rem;
-  font-weight: 700;
-  font-family: 'Courier New', monospace;
-}
-
-.referral-tier-title {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.85rem;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-}
-
-.referral-tier-description {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.7rem;
-  line-height: 1.4;
-  margin-bottom: 0.75rem;
-}
-
-.referral-tier-example {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.65rem;
-  font-style: italic;
-  padding: 0.5rem;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
-  border-left: 2px solid #aaaecf;
-}
-
-.referral-benefits-note {
-  background: rgba(170, 174, 207, 0.1);
-  border: 1px solid rgba(170, 174, 207, 0.2);
-  border-radius: 6px;
-  padding: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-
-.referral-benefits-note strong {
-  color: #aaaecf;
-  font-weight: 600;
-}
-
 .staking-amount {
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.8rem;
@@ -449,16 +335,7 @@
     padding: 15px;
   }
 
-  .fee-schedule-table {
-    font-size: 0.7rem;
-  }
-
-  .fee-schedule-table th,
-  .fee-schedule-table td {
-    padding: 0.6rem 0.5rem;
-  }
-
-  .tier-badge {
+  .tier-requirement-badge {
     font-size: 0.65rem;
     padding: 0.25rem 0.5rem;
   }

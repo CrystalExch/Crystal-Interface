@@ -1775,89 +1775,89 @@ const Perps: React.FC<PerpsProps> = ({
               </div>
             </>
           )}
-<div className="perps-trade-input-wrapper">
-  <span style={{ whiteSpace: 'nowrap' }}>Size</span>
-  <input
-    type="text"
-    inputMode="decimal"
-    placeholder="0.00"
-    value={inputString}
-    disabled={!perpsIsLoaded || !leverageIsLoaded}
-    onChange={(e) => {
-      setInputString(e.target.value)
-      const percentage =
-        Number(availableBalance) == 0
-          ? Number(e.target.value) > 0 ? 100 : 0
-          : Math.min(
-            100,
-            Math.floor(
-              Number(e.target.value) * 100 / (Number(availableBalance) * Number(leverage))
-            ),
-          );
-      setSliderPercent(percentage);
-      const slider = document.querySelector(
-        '.perps-balance-amount-slider',
-      );
-      const popup = document.querySelector(
-        '.perps-slider-percentage-popup',
-      );
-      if (slider && popup) {
-        const rect = slider.getBoundingClientRect();
-        (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
-          }px`;
-      }
-    }}
-    className="perps-trade-input"
-    autoFocus
-  />
-  <div
-    className="perps-size-unit-dropdown"
-    tabIndex={-1}
-    onBlur={(e) => {
-      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-        setIsSizeUnitDropdownOpen(false);
-      }
-    }}
-  >
-    <div
-      className="perps-size-unit-button"
-      onClick={() => setIsSizeUnitDropdownOpen(!isSizeUnitDropdownOpen)}
-    >
-      <span className="perps-size-unit-value">{sizeUnit}</span>
-      <svg
-        className={`perps-size-unit-arrow ${isSizeUnitDropdownOpen ? 'open' : ''}`}
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        width="16"
-        height="16"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <polyline points="6 9 12 15 18 9"></polyline>
-      </svg>
-    </div>
-    {isSizeUnitDropdownOpen && (
-      <div className="perps-size-unit-dropdown-menu">
-        {['USD', activeMarket?.baseAsset || 'BTC'].map((option) => (
-          <div
-            key={option}
-            className="perps-size-unit-option"
-            onClick={() => {
-              setSizeUnit(option);
-              setIsSizeUnitDropdownOpen(false);
-            }}
-          >
-            {option}
+          <div className="perps-trade-input-wrapper">
+            <span style={{ whiteSpace: 'nowrap' }}>Size</span>
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={inputString}
+              disabled={!perpsIsLoaded || !leverageIsLoaded}
+              onChange={(e) => {
+                if (!/^\d*\.?\d{0,18}$/.test(e.target.value)) return;
+                setInputString(e.target.value)
+                const percentage =
+                  Number(availableBalance) == 0
+                    ? Number(e.target.value) > 0 ? 100 : 0
+                    : Math.min(
+                      100,
+                      Math.floor(
+                        Number(e.target.value) * 100 / (Number(availableBalance) * Number(leverage))
+                      ),
+                    );
+                setSliderPercent(percentage);
+                const slider = document.querySelector(
+                  '.perps-balance-amount-slider',
+                );
+                const popup = document.querySelector(
+                  '.perps-slider-percentage-popup',
+                );
+                if (slider && popup) {
+                  const rect = slider.getBoundingClientRect();
+                  (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                    }px`;
+                }
+              }}
+              className="perps-trade-input"
+              autoFocus
+            />
+            <div
+              className="perps-size-unit-dropdown"
+              tabIndex={-1}
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setIsSizeUnitDropdownOpen(false);
+                }
+              }}
+            >
+              <div
+                className="perps-size-unit-button"
+                onClick={() => setIsSizeUnitDropdownOpen(!isSizeUnitDropdownOpen)}
+              >
+                <span className="perps-size-unit-value">{sizeUnit}</span>
+                <svg
+                  className={`perps-size-unit-arrow ${isSizeUnitDropdownOpen ? 'open' : ''}`}
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+              {isSizeUnitDropdownOpen && (
+                <div className="perps-size-unit-dropdown-menu">
+                  {['USD', activeMarket?.baseAsset || 'BTC'].map((option) => (
+                    <div
+                      key={option}
+                      className="perps-size-unit-option"
+                      onClick={() => {
+                        setSizeUnit(option);
+                        setIsSizeUnitDropdownOpen(false);
+                      }}
+                    >
+                      {option}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        ))}
-      </div>
-    )}
-  </div>
-</div>
-
           <div className="perps-balance-slider-wrapper">
             <div className="perps-slider-container perps-slider-mode">
               <input
@@ -2205,11 +2205,11 @@ const Perps: React.FC<PerpsProps> = ({
                 await handleTrade();
               }
             }}
-            disabled={address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0 || (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize)) || Number(inputString) > (Number(availableBalance) * Number(leverage)))}
+            disabled={true || address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0 || (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize)) || Number(inputString) > (Number(availableBalance) * Number(leverage)))}
           >
             {isSigning ? (
               <div className="perps-button-spinner"></div>
-            ) : (address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : (inputString && (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize))) ? `Order size must be >${activeMarket?.minOrderSize} ${activeMarket?.baseAsset}` :
+            ) : (address ? (Object.keys(signer).length == 0 ? 'Coming Soon!' : (inputString && (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize))) ? `Order size must be >${activeMarket?.minOrderSize} ${activeMarket?.baseAsset}` :
               Number(inputString) > (Number(availableBalance) * Number(leverage)) ? 'Insufficient Margin' : activeOrderType === "Market"
                 ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
                 : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`) : 'Connect Wallet'

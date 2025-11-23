@@ -1536,7 +1536,7 @@ display: flex;
 .perps-size-unit-dropdown-menu {
     position: absolute;
     top: calc(100% + 2px);
-    right: 0;
+    left: 50%;
     background: rgb(9, 9, 9);
     border: 1px solid rgba(179, 184, 249, 0.15);
     border-radius: 5px;

@@ -482,6 +482,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     Transfer: '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
   }
 
+  const UNIV3_EVENTS = {
+    Swap: '0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67'
+  }
+
   const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
   const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
   const [selectedSellPreset, setSelectedSellPreset] = useState(1);
@@ -6267,14 +6271,17 @@ const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(() =>
         }
       } catch (e) {
         console.error("Error fetching token data:", e);
-        setTokenData((p: any) => ({
-          ...p,
-          price: 0,
-          marketCap: 0,
-          volume24h: 0,
-          buyTransactions: 0,
-          sellTransactions: 0,
-        }));
+        const resForChart =
+        memeSelectedInterval === "1d"
+          ? "1D"
+          : memeSelectedInterval === "4h"
+            ? "240"
+            : memeSelectedInterval === "1h"
+              ? "60"
+              : memeSelectedInterval.endsWith("s")
+                ? memeSelectedInterval.slice(0, -1).toUpperCase() + "S"
+                : memeSelectedInterval.slice(0, -1);
+        setChartData([[], token.symbol + "MON" + resForChart, true]);
         setMemeTrades([]);
         setMemeHolders([]);
         setMemeTopTraders([]);
@@ -7259,7 +7266,7 @@ const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(() =>
   }, [trades, location.pathname, activeMarket, perpsMarketsData, perpsActiveMarketKey]);
 
   // process ob on orders or amountsquote change
-  useEffect(() => {
+  /* useEffect(() => {
     if (prevOrderData && Array.isArray(prevOrderData) && prevOrderData.length >= 4) {
       try {
         const buyOrdersRaw: bigint[] = [];
@@ -7333,7 +7340,7 @@ const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(() =>
         console.error(error);
       }
     }
-  }, [amountsQuote, orders.length > 0]);
+  }, [amountsQuote, orders.length > 0]); */
 
   // process data
   /* useLayoutEffect(() => {
