@@ -826,6 +826,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                           style={{ cursor: 'pointer' }}
                         >
                           <div className="meme-token-content">
+                            <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
                             <div
                               className={`meme-search-token-avatar-container ${
                                 status === 'graduated' ? 'meme-search-graduated' : ''
@@ -940,7 +941,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                 </div>
                               </div>
                             </div>
-
+</div>
                             <div className="meme-token-stats">
                               <div className="meme-search-stat-item">
                                 <p className="meme-search-stat-label">MC</p>
@@ -989,70 +990,6 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                 </>
               )}
 
-              {showMarkets && (
-                <>
-                  <div className="meme-search-section">
-                    <div className="meme-search-section-header">Markets</div>
-                  </div>
-                  {filteredMarkets.map((market) => {
-                    const marketName = tokendict?.[market?.baseAddress]?.name;
-
-                    return (
-                      <div
-                        key={market.address}
-                        className="meme-token-row"
-                        onClick={() => handleMarketClick(market)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <div className="meme-token-content">
-                          <div className="meme-token-avatar">
-                            <img
-                              src={market.image}
-                              alt={market.baseAsset}
-                              className="meme-token-image"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                const placeholder = e.currentTarget.parentElement?.querySelector(
-                                  '.meme-search-avatar-placeholder',
-                                ) as HTMLElement;
-                                if (placeholder) placeholder.style.display = 'flex';
-                              }}
-                            />
-                            <div className="meme-search-avatar-placeholder">
-                              {market.baseAsset?.slice(0, 2) || '??'}
-                            </div>
-                          </div>
-
-                          <div className="meme-market-token-header">
-                            <div className="meme-token-meta">
-                              <div className="meme-search-market-name">{marketName}</div>
-                              <h3 className="meme-search-token-symbol">
-                                {market.baseAsset}/{market.quoteAsset}
-                              </h3>
-                            </div>
-                          </div>
-
-                          <div className="meme-token-stats">
-                            <div className="meme-search-stat-item">
-                              <p className="meme-search-stat-label">P</p>
-                              <span className="meme-search-stat-value">{market.currentPrice}</span>
-                            </div>
-                            <div className="meme-search-stat-item">
-                              <p className="meme-search-stat-label">24h</p>
-                              <span className="meme-search-stat-value">{market.priceChange}</span>
-                            </div>
-                            <div className="meme-search-stat-item">
-                              <p className="meme-search-stat-label">Vol</p>
-                              <span className="meme-search-stat-value">{market.volume}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </>
-              )}
-
               {showTokens && (
                 <>
                   {showMarkets && (
@@ -1088,6 +1025,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                         style={{ cursor: 'pointer' }}
                       >
                         <div className="meme-token-content">
+                            <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
                           <div
                             className={`meme-search-token-avatar-container ${
                               status === 'graduated' ? 'meme-search-graduated' : ''
@@ -1201,6 +1139,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                 )}
                               </div>
                             </div>
+                          </div>
                           </div>
 
                           <div className="meme-token-stats">
