@@ -4324,10 +4324,6 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
   color: #d8dcff;
 }
 
-.wallet-action-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
 
 .subwallet-total-balance {
   align-items: center;

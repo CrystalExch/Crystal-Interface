@@ -1119,7 +1119,7 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
   },
   metricColoring: true,
   metricColors: {
-    marketCap: { range1: '#d8dcff', range2: '#f9e782ff', range3: '#82f9a4ff' },
+    marketCap: { range1: '#ffffff', range2: '#d8dcff', range3: '#82f9a4ff' },
     volume: { range1: '#ffffff', range2: '#ffffff', range3: '#ffffff' },
     holders: { range1: '#ffffff', range2: '#ffffff', range3: '#ffffff' },
   },
@@ -1847,9 +1847,9 @@ const DisplayDropdown: React.FC<{
                                         range,
                                         metric === 'marketCap'
                                           ? range === 'range1'
-                                            ? '#d8dcff'
+                                            ? '#ffffff'
                                             : range === 'range2'
-                                              ? '#f9e782ff'
+                                              ? '#d8dcff'
                                               : '#82f9a4ff'
                                           : '#ffffff',
                                       )
@@ -4507,12 +4507,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               >
                 {subWallets.length > 0 &&
                   (<>
-                    <div className="footer-wallet-dropdown-header"
-                      style={{
-                        opacity: !activeWalletPrivateKey ? 0.3 : 1,
-                        transition: 'all 0.2s ease',
-                        backdropFilter: !activeWalletPrivateKey ? 'blur(3px)' : 'none'
-                      }}>
+                    <div className="footer-wallet-dropdown-header">
                       <div className="footer-wallet-dropdown-actions">
                         <button
                           className="wallet-action-btn"

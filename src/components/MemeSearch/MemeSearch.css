@@ -48,30 +48,22 @@
 }
 
 .meme-search-bar {
+  display: flex;
   position: relative;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  padding: 15px
 }
 
-.meme-search-icon {
-  position: absolute;
-  left: 32px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
-  width: 20px;
-  height: 20px;
-}
 
 .meme-search-input {
   width: 100%;
   background: none;
   border-radius: 6px;
-  padding: 0px 16px 12px 20px;
   color: white;
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   box-sizing: border-box;
   transition: border-color 0.2s, box-shadow 0.2s;
-  letter-spacing: -0.5px;
+  letter-spacing: -1px;
   border: none;
   outline: none;
 }
@@ -152,7 +144,6 @@
 
 .meme-token-details {
   display: flex;
-  flex-direction: column;
   gap: 4px;
 }
 
@@ -185,7 +176,7 @@
 
 .meme-search-token-age {
   color: #d8dcff;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   margin: 0;
 }
 
@@ -358,8 +349,9 @@
 
 .meme-token-header {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: space-between;
+  margin-left: -25px;
 }
 
 .meme-market-token-header {
@@ -371,8 +363,6 @@
 .meme-token-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
 }
 
 .meme-token-address {
@@ -683,15 +673,6 @@
 
 
 
-
-
-.meme-top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 40px;
-  padding: 15px;
-}
 
 .meme-search-time,
 .meme-search-market-cap,
