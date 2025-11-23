@@ -1719,12 +1719,6 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-    if (isLoadingTrades) {
-      setIsLoadingTrades(false);
-    }
-  }, [trades]);
-
-  useEffect(() => {
     if (onTokenDataChange) {
       onTokenDataChange({
         address: token.id,
