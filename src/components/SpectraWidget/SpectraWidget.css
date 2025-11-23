@@ -1892,13 +1892,11 @@
   opacity: 0.5;
 }
 
-.spectra-mc-value,
-.mc-value {
+.spectra-mc-value{
   color: #d8dcff !important;
   font-size: 0.8rem;
 }
 
-/* Metrics Size Variations */
 .spectra-third-row.metrics-size-small .spectra-metrics-container {
   gap: 8px;
 }

@@ -714,7 +714,7 @@
   color: #e6e7f6;
   font-size: 0.75rem;
   left: 50%;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.5px;
   opacity: 1;
   padding: 0.25rem 0.5rem;
   pointer-events: none;
@@ -723,6 +723,7 @@
   transform: translateX(-50%);
   transition: opacity 0.3s ease-in-out;
   white-space: nowrap;
+  font-weight: 300;
 }
 
 .holding-icon {
@@ -3540,7 +3541,7 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 .metric-color-item {
   align-items: center;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 6px;
+  border-radius: 4px;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -3772,39 +3773,38 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 }
 
 .explorer-token-row.metric-colored.market-cap-range1 .explorer-market-cap .mc-value {
-  color: var(--metric-market-cap-range1, #d8dcff) !important;
+  color: var(--metric-market-cap-range1) !important;
 }
 
-.explorer-token-row.metric-colored.market-cap-range2 .explorer-market-cap .explorer-market-cap {
-  color: var(--metric-market-cap-range2, #eab308) !important;
+.explorer-token-row.metric-colored.market-cap-range2 .explorer-market-cap .mc-value {
+  color: var(--metric-market-cap-range2 ) !important;
 }
 
-.explorer-token-row.metric-colored.market-cap-range3 .explorer-market-cap .explorer-market-cap {
-  color: var(--metric-market-cap-range3, #14b8a6) !important;
+.explorer-token-row.metric-colored.market-cap-range3 .explorer-market-cap .mc-value {
+  color: var(--metric-market-cap-range3) !important;
 }
-
 .explorer-token-row.metric-colored.volume-range1 .explorer-volume .mc-value {
-  color: var(--metric-volume-range1, #ffffff) !important;
+  color: var(--metric-volume-range1) !important;
 }
 
 .explorer-token-row.metric-colored.volume-range2 .explorer-volume .mc-value {
-  color: var(--metric-volume-range2, #ffffff) !important;
+  color: var(--metric-volume-range2) !important;
 }
 
 .explorer-token-row.metric-colored.volume-range3 .explorer-volume .mc-value {
-  color: var(--metric-volume-range3, #ffffff) !important;
+  color: var(--metric-volume-range3) !important;
 }
 
 .explorer-token-row.metric-colored.holders-range1 .explorer-stat-item .explorer-stat-value {
-  color: var(--metric-holders-range1, #ffffff) !important;
+  color: var(--metric-holders-range1) !important;
 }
 
 .explorer-token-row.metric-colored.holders-range2 .explorer-stat-item .explorer-stat-value {
-  color: var(--metric-holders-range2, #ffffff) !important;
+  color: var(--metric-holders-range2) !important;
 }
 
 .explorer-token-row.metric-colored.holders-range3 .explorer-stat-item .explorer-stat-value {
-  color: var(--metric-holders-range3, #ffffff) !important;
+  color: var(--metric-holders-range3) !important;
 }
 
 .column-drag-container {

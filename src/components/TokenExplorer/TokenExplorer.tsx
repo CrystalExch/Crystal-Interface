@@ -1119,7 +1119,7 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
   },
   metricColoring: true,
   metricColors: {
-    marketCap: { range1: '#d8dcff', range2: '#eab308', range3: '#14b8a6' },
+    marketCap: { range1: '#d8dcff', range2: '#f9e782ff', range3: '#82f9a4ff' },
     volume: { range1: '#ffffff', range2: '#ffffff', range3: '#ffffff' },
     holders: { range1: '#ffffff', range2: '#ffffff', range3: '#ffffff' },
   },
@@ -1129,18 +1129,20 @@ const BLACKLIST_DEFAULTS: BlacklistSettings = { items: [] };
 const getMetricColorClasses = (
   token: Token | undefined,
   display: DisplaySettings,
+  monUsdPrice: number,
 ) => {
   if (!token || !display?.metricColors || !display?.metricColoring) return null;
 
   const classes: string[] = [];
   const cssVars: Record<string, string> = {};
 
+  const marketCapUsd = token.marketCap * monUsdPrice;
   if (typeof token.marketCap === 'number' && !isNaN(token.marketCap)) {
-    if (token.marketCap < 30000) {
+    if (marketCapUsd < 30000) {
       classes.push('market-cap-range1');
       cssVars['--metric-market-cap-range1'] =
         display.metricColors.marketCap.range1;
-    } else if (token.marketCap < 150000) {
+    } else if (marketCapUsd < 150000) {
       classes.push('market-cap-range2');
       cssVars['--metric-market-cap-range2'] =
         display.metricColors.marketCap.range2;
@@ -1151,12 +1153,12 @@ const getMetricColorClasses = (
     }
   }
 
-  // Volume coloring
+  const volumeUsd = token.volume24h * monUsdPrice;
   if (typeof token.volume24h === 'number' && !isNaN(token.volume24h)) {
-    if (token.volume24h < 1000) {
+    if (volumeUsd < 1000) {
       classes.push('volume-range1');
       cssVars['--metric-volume-range1'] = display.metricColors.volume.range1;
-    } else if (token.volume24h < 2000) {
+    } else if (volumeUsd < 2000) {
       classes.push('volume-range2');
       cssVars['--metric-volume-range2'] = display.metricColors.volume.range2;
     } else {
@@ -1165,7 +1167,6 @@ const getMetricColorClasses = (
     }
   }
 
-  // Holders coloring
   if (typeof token.holders === 'number' && !isNaN(token.holders)) {
     if (token.holders < 10) {
       classes.push('holders-range1');
@@ -1848,8 +1849,8 @@ const DisplayDropdown: React.FC<{
                                           ? range === 'range1'
                                             ? '#d8dcff'
                                             : range === 'range2'
-                                              ? '#eab308'
-                                              : '#14b8a6'
+                                              ? '#f9e782ff'
+                                              : '#82f9a4ff'
                                           : '#ffffff',
                                       )
                                     }
@@ -2462,8 +2463,8 @@ const TokenRow = React.memo<{
     [token.sellTransactions, totalTransactions],
   );
 
-  const metricData = hasMetricColoring(displaySettings)
-    ? getMetricColorClasses(token, displaySettings)
+const metricData = hasMetricColoring(displaySettings)
+    ? getMetricColorClasses(token, displaySettings, monUsdPrice)
     : null;
   const cssVariables: CSSVars = metricData?.cssVars || {};
   const [imageError, setImageError] = useState(false);
@@ -3348,7 +3349,7 @@ const TokenRow = React.memo<{
               pointerEvents: 'none',
             }}
           >
-            BONDING: {bondingPercentage.toFixed(1)}%
+            Bonding: {bondingPercentage.toFixed(1)}%
           </div>,
           document.body,
         )}
