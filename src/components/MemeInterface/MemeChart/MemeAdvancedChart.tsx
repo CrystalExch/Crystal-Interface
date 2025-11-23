@@ -847,7 +847,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
     return () => {
       setChartReady(false);
-      dataRef.current = {};
       widgetRef.current.remove();
     };
   }, [token.symbol != 'UNKNOWN', showUSD, showMarketCap]);

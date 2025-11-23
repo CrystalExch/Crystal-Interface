@@ -1927,6 +1927,7 @@ useEffect(() => {
   }, [activeTradeType]);
 
   const handleTrade = async () => {
+    console.log(token)
     if (!tradeAmount || !account.connected) return;
     if (activeOrderType === 'Limit' && !limitPrice) return;
 
