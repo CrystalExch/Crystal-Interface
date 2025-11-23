@@ -1,34 +1,42 @@
-const subscriptMap: { [digit: string]: string } = {
-  '0': '₀',
-  '1': '₁',
-  '2': '₂',
-  '3': '₃',
-  '4': '₄',
-  '5': '₅',
-  '6': '₆',
-  '7': '₇',
-  '8': '₈',
-  '9': '₉',
-};
+export interface FormattedNumber {
+  type: 'simple' | 'subscript';
+  text: string;
+  subscriptValue?: number;
+  beforeSubscript?: string;
+  afterSubscript?: string;
+  isNegative?: boolean;
+  prefix?: string;
+}
 
 export const formatBalance = (
   rawValue: string | number,
   mode: 'usd' | 'token',
-): string => {
+): FormattedNumber => {
   let valueStr = typeof rawValue === 'number' ? rawValue.toString() : rawValue;
   let num = parseFloat(valueStr);
-  const isNegative = num < 0
-  num = Math.abs(num)
+  const isNegative = num < 0;
+  num = Math.abs(num);
   valueStr = num.toString();
+  const prefix = mode === 'usd' ? '$' : '';
+
   if (num === 0) {
-    return mode === 'usd' ? '$0.00' : '0.00';
+    return { 
+      type: 'simple', 
+      text: mode === 'usd' ? '0.00' : '0.00',
+      isNegative,
+      prefix
+    };
   }
 
   const threshold = mode === 'usd' ? 0.01 : 0.0001;
-  const prefix = mode === 'usd' ? '$' : '';
 
   if (num > 0 && num < threshold) {
-    return isNegative ? mode === 'usd' ? '-$0.00' : '-0.0001' : mode === 'usd' ? '$0.00' : '0.0001';
+    return { 
+      type: 'simple', 
+      text: mode === 'usd' ? '0.00' : '0.0001',
+      isNegative,
+      prefix
+    };
   }
 
   if (valueStr.toLowerCase().includes('e')) {
@@ -41,7 +49,12 @@ export const formatBalance = (
 
   if (mode === 'usd') {
     fracPart = fracPart.padEnd(2, '0').slice(0, 2);
-    return `${isNegative ? '-' : ''}${prefix}${intPart}.${fracPart}`;
+    return { 
+      type: 'simple', 
+      text: `${intPart}.${fracPart}`,
+      isNegative,
+      prefix
+    };
   }
 
   if (fracPart) {
@@ -55,26 +68,40 @@ export const formatBalance = (
     }
 
     if (zerosCount > 3) {
-      const remainder = fracPart.slice(zerosCount);
-      const zerosSubscript = zerosCount
-        .toString()
-        .split('')
-        .map((digit) => subscriptMap[digit] || digit)
-        .join('');
-
-      return `${isNegative ? '-' : ''}${intPart}.0${zerosSubscript}${remainder}`;
+      const remainder = fracPart.slice(zerosCount, zerosCount + 3);
+      return {
+        type: 'subscript',
+        text: `${intPart}.0${remainder}`,
+        subscriptValue: zerosCount,
+        beforeSubscript: `${intPart}.0`,
+        afterSubscript: remainder,
+        isNegative,
+        prefix
+      };
     } else {
-      return `${isNegative ? '-' : ''}${intPart}.${fracPart}`;
+      return { 
+        type: 'simple', 
+        text: `${intPart}.${fracPart}`,
+        isNegative,
+        prefix
+      };
     }
   }
 
-  return `${isNegative ? '-' : ''}${intPart}`;
+  return { 
+    type: 'simple', 
+    text: intPart,
+    isNegative,
+    prefix
+  };
 };
 
-export const formatSubscript = (value: string): string => {
-  if (!value) return '';
+export const formatSubscript = (value: string): FormattedNumber => {
+  if (!value) {
+    return { type: 'simple', text: '0.00' };
+  }
 
-  const neg = value.startsWith('-') ? '-' : '';
+  const isNegative = value.startsWith('-');
   let raw = value.replace(/^[+-]/, '').replace(/,/g, '');
 
   if (/[eE]/.test(raw)) {
@@ -99,26 +126,46 @@ export const formatSubscript = (value: string): string => {
   if (fractionalPart) {
     let zerosCount = 0;
     for (const ch of fractionalPart) {
-      if (ch === '0') zerosCount++; else break;
+      if (ch === '0') zerosCount++;
+      else break;
     }
     const remainder = fractionalPart.slice(zerosCount);
+    
     if (zerosCount > 3 && remainder) {
-      const remainder = fractionalPart.slice(zerosCount);
-      const zerosSub = zerosCount.toString().split('').map(d => subscriptMap[d]||d).join('');
-      return `${neg}${formattedInteger}.0${zerosSub}${remainder}`;
+      const limitedRemainder = remainder.slice(0, 1);
+      return {
+        type: 'subscript',
+    text: `${formattedInteger}.0${limitedRemainder}`,
+        subscriptValue: zerosCount,
+        beforeSubscript: `${formattedInteger}.0`,
+        afterSubscript: limitedRemainder,
+        isNegative
+      }
     }
-    return `${neg}${formattedInteger}.${fractionalPart}`;
+    
+    return { 
+      type: 'simple', 
+      text: `${formattedInteger}.${fractionalPart}`,
+      isNegative
+    };
   }
 
-  return neg + formattedInteger;
+  return { 
+    type: 'simple', 
+    text: formattedInteger,
+    isNegative
+  };
 };
 
 export const formatCommas = (value: string) => {
   const [integerPart, fractionalPart] = value.split('.');
-
   const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
   return fractionalPart
     ? `${formattedInteger}.${fractionalPart}`
     : formattedInteger;
 };
+
+export function formatRound(num: number, decimals: number): string {
+  const temp = num.toFixed(decimals);
+  return formatCommas(temp);
+}
