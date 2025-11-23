@@ -5580,7 +5580,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   )
                 );
               }
-              
+
               if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
                 setTokenData(p => ({
                   ...p,
@@ -5901,9 +5901,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const memeDevTokenIdsRef = useRef<Set<string>>(new Set());
   const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(false);
-  const memeLastInvalidateRef = useRef(0);
-  const pendingTradesRef = useRef<Array<any>>([]);
-  const queuedUpdatesRef = useRef<Array<any>>([]);
 
   const calcDevHoldingPct = (list: Holder[], dev?: string) => {
     if (!dev) return 0;
@@ -6008,6 +6005,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     let price = 0;
 
     setIsLoadingTrades(true);
+    setMemeTrades([]);
 
     const fetchMemeTokenData = async () => {
       try {
@@ -6515,6 +6513,96 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     token.dev,
   ]);
 
+  useEffect(() => {
+    if (!trackedWalletTrades || trackedWalletTrades.length === 0 || trackedWallets.length === 0) {
+      return;
+    }
+
+    const formatAmount = (amount: number, decimals: number = 2) => {
+      if (amount >= 1e9) return `${(amount / 1e9).toFixed(decimals)}B`;
+      if (amount >= 1e6) return `${(amount / 1e6).toFixed(decimals)}M`;
+      if (amount >= 1e3) return `${(amount / 1e3).toFixed(decimals)}K`;
+      return amount.toFixed(decimals);
+    };
+
+    const formatMarketCap = (marketCap: number) => {
+      const usd = monUsdPrice ? marketCap * monUsdPrice : marketCap;
+      return '$' + formatAmount(usd, 1);
+    };
+
+    trackedWalletTrades.forEach((trade: any) => {
+      if (shownTradeIds.current.has(trade.id)) {
+        return;
+      }
+
+
+      const trackedWallet = trackedWallets.find(
+        w => w.address.toLowerCase() === trade.walletAddress?.toLowerCase()
+      );
+
+      if (!trackedWallet) {
+        return;
+      }
+
+      shownTradeIds.current.add(trade.id);
+
+      let actionText = '';
+      if (trade.type === 'buy') {
+        actionText = trade.isFirstBuy ? 'bought' : 'bought more';
+      } else if (trade.type === 'sell') {
+        actionText = trade.soldAll ? 'sold all' : 'sold some';
+      } else {
+        actionText = trade.type;
+      }
+
+      const title = `${actionText} ${trade.token || trade.tokenSymbol || 'token'}`;
+      const subtitle = `${formatAmount(trade.amount, 2)} at ${formatMarketCap(trade.marketCap)} MC`;
+
+
+      const notificationId = `tracked-trade-${trade.id}`;
+
+      showLoadingPopup(notificationId, {
+        title,
+        subtitle,
+        tokenImage: trade.tokenIcon,
+        walletAddress: trackedWallet.address,
+        timestamp: trade.timestamp || Date.now(),
+        isClickable: true,
+        actionType: trade.type,
+        onClick: () => {
+          if (trade.tokenAddress) {
+            navigate(`/meme/${trade.tokenAddress}`);
+          }
+        }
+      });
+
+      setTimeout(() => {
+        updatePopup(notificationId, {
+          title,
+          subtitle,
+          variant: 'success',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: trade.tokenIcon,
+          walletAddress: trackedWallet.address,
+          timestamp: trade.timestamp || Date.now(),
+          isClickable: true,
+          actionType: trade.type,
+          onClick: () => {
+            if (trade.tokenAddress) {
+              navigate(`/meme/${trade.tokenAddress}`);
+            }
+          }
+        });
+      }, 50);
+    });
+
+    if (shownTradeIds.current.size > 1000) {
+      const idsArray = Array.from(shownTradeIds.current);
+      shownTradeIds.current = new Set(idsArray.slice(-1000));
+    }
+  }, [trackedWalletTrades, trackedWallets, monUsdPrice]);
+
   // data loop, reuse to have every single rpc call method in this loop
   const { data: terminalQueryData, isFetching: isTerminalDataFetching, dataUpdatedAt: terminalDataUpdatedAt, refetch: terminalRefetch } = useQuery({
     queryKey: [
@@ -6874,96 +6962,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       graduated: null
     };
   });
-
-  useEffect(() => {
-    if (!trackedWalletTrades || trackedWalletTrades.length === 0 || trackedWallets.length === 0) {
-      return;
-    }
-
-    const formatAmount = (amount: number, decimals: number = 2) => {
-      if (amount >= 1e9) return `${(amount / 1e9).toFixed(decimals)}B`;
-      if (amount >= 1e6) return `${(amount / 1e6).toFixed(decimals)}M`;
-      if (amount >= 1e3) return `${(amount / 1e3).toFixed(decimals)}K`;
-      return amount.toFixed(decimals);
-    };
-
-    const formatMarketCap = (marketCap: number) => {
-      const usd = monUsdPrice ? marketCap * monUsdPrice : marketCap;
-      return '$' + formatAmount(usd, 1);
-    };
-
-    trackedWalletTrades.forEach((trade: any) => {
-      if (shownTradeIds.current.has(trade.id)) {
-        return;
-      }
-
-
-      const trackedWallet = trackedWallets.find(
-        w => w.address.toLowerCase() === trade.walletAddress?.toLowerCase()
-      );
-
-      if (!trackedWallet) {
-        return;
-      }
-
-      shownTradeIds.current.add(trade.id);
-
-      let actionText = '';
-      if (trade.type === 'buy') {
-        actionText = trade.isFirstBuy ? 'bought' : 'bought more';
-      } else if (trade.type === 'sell') {
-        actionText = trade.soldAll ? 'sold all' : 'sold some';
-      } else {
-        actionText = trade.type;
-      }
-
-      const title = `${actionText} ${trade.token || trade.tokenSymbol || 'token'}`;
-      const subtitle = `${formatAmount(trade.amount, 2)} at ${formatMarketCap(trade.marketCap)} MC`;
-
-
-      const notificationId = `tracked-trade-${trade.id}`;
-
-      showLoadingPopup(notificationId, {
-        title,
-        subtitle,
-        tokenImage: trade.tokenIcon,
-        walletAddress: trackedWallet.address,
-        timestamp: trade.timestamp || Date.now(),
-        isClickable: true,
-        actionType: trade.type,
-        onClick: () => {
-          if (trade.tokenAddress) {
-            navigate(`/meme/${trade.tokenAddress}`);
-          }
-        }
-      });
-
-      setTimeout(() => {
-        updatePopup(notificationId, {
-          title,
-          subtitle,
-          variant: 'success',
-          confirmed: true,
-          isLoading: false,
-          tokenImage: trade.tokenIcon,
-          walletAddress: trackedWallet.address,
-          timestamp: trade.timestamp || Date.now(),
-          isClickable: true,
-          actionType: trade.type,
-          onClick: () => {
-            if (trade.tokenAddress) {
-              navigate(`/meme/${trade.tokenAddress}`);
-            }
-          }
-        });
-      }, 50);
-    });
-
-    if (shownTradeIds.current.size > 1000) {
-      const idsArray = Array.from(shownTradeIds.current);
-      shownTradeIds.current = new Set(idsArray.slice(-1000));
-    }
-  }, [trackedWalletTrades, trackedWallets, monUsdPrice]);
 
   const handleOpenFiltersForColumn = useCallback((columnType: 'new' | 'graduating' | 'graduated') => {
     setExplorerFiltersActiveTab(columnType);
@@ -28472,6 +28470,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 trackedWalletsRef={trackedWalletsRef}
                 createSubWallet={createSubWallet}
                 setOneCTDepositAddress={setOneCTDepositAddress}
+                scaAddress={scaAddress}
               />
             }
           />
