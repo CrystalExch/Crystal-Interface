@@ -32,7 +32,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         name: 'Diamond',
         tier: 4,
         color: '#B9F2FF',
-        gradient: 'linear-gradient(135deg, #B9F2FF 0%, #7DD3FC 100%)',
+        gradient: 'linear-gradient(135deg, #B9F2FF 0%, #4DB8E8 100%)',
         takerFee: '0.030%',
         makerFee: '0.000%',
         minVolume: 1000000,
@@ -44,7 +44,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         name: 'Gold',
         tier: 3,
         color: '#FFD700',
-        gradient: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+        gradient: 'linear-gradient(135deg, #F5D576 0%, #CC8400 100%)',
         takerFee: '0.035%',
         makerFee: '0.005%',
         minVolume: 500000,
@@ -61,7 +61,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         name: 'Silver',
         tier: 2,
         color: '#C0C0C0',
-        gradient: 'linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%)',
+        gradient: 'linear-gradient(135deg, #D4D4D4 0%, #7A7A7A 100%)',
         takerFee: '0.040%',
         makerFee: '0.010%',
         minVolume: 100000,
@@ -77,7 +77,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
       name: 'Bronze',
       tier: 1,
       color: '#CD7F32',
-      gradient: 'linear-gradient(135deg, #CD7F32 0%, #B87333 100%)',
+      gradient: 'linear-gradient(135deg, #D4915A 0%, #8B5A1E 100%)',
       takerFee: '0.050%',
       makerFee: '0.020%',
       minVolume: 0,
@@ -136,17 +136,9 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         <div className="fee-tier-header">
           <div className="fee-tier-header-left">
             <h3 className="referrals-fee-tier-title">Your Fee Tier</h3>
-            <div className="fee-tier-badge-wrapper">
-              <button className="tier-nav-button" onClick={handlePrevTier}>
-                <ChevronLeft size={14} />
-              </button>
-              <div className="fee-tier-badge" style={{ background: tier.gradient }}>
-                <TrendingDown size={16} />
-                <span className="fee-tier-badge-name">{tier.name}</span>
-              </div>
-              <button className="tier-nav-button" onClick={handleNextTier}>
-                <ChevronRight size={14} />
-              </button>
+            <div className="fee-tier-badge" style={{ background: tier.gradient }}>
+              <TrendingDown size={16} />
+              <span className="fee-tier-badge-name">{tier.name}</span>
             </div>
           </div>
           <button className="view-schedule-button" onClick={onViewFeeSchedule}>
@@ -163,22 +155,14 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
 
       {tier.next && (
         <div className="fee-tier-progress">
-          <div className="fee-tier-progress-bar-wrapper">
-            <button className="tier-nav-button" onClick={handlePrevTier}>
-              <ChevronLeft size={14} />
-            </button>
-            <div className="fee-tier-progress-bar">
-              <div
-                className="fee-tier-progress-fill"
-                style={{
-                  width: `${progressPercentage}%`,
-                  background: tier.gradient,
-                }}
-              />
-            </div>
-            <button className="tier-nav-button" onClick={handleNextTier}>
-              <ChevronRight size={14} />
-            </button>
+          <div className="fee-tier-progress-bar">
+            <div
+              className="fee-tier-progress-fill"
+              style={{
+                width: `${progressPercentage}%`,
+                background: tier.gradient,
+              }}
+            />
           </div>
           <p className="fee-tier-progress-text">
             {formatVolume(tradingVolume)} / {formatVolume(tier.next.minVolume)}
