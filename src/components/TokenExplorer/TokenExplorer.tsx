@@ -1769,7 +1769,7 @@ const DisplayDropdown: React.FC<{
                           ['top10Holders', 'Top 10 Holders'],
                           ['devHolding', 'Dev Holding'],
                           ['snipers', 'Snipers'],
-                     //     ['insiders', 'Insiders'],
+                          //     ['insiders', 'Insiders'],
                         ] as Array<[keyof DisplaySettings['visibleRows'], string]>
                       ).map(([k, label]) => (
                         <div
@@ -2463,7 +2463,7 @@ const TokenRow = React.memo<{
     [token.sellTransactions, totalTransactions],
   );
 
-const metricData = hasMetricColoring(displaySettings)
+  const metricData = hasMetricColoring(displaySettings)
     ? getMetricColorClasses(token, displaySettings, monUsdPrice)
     : null;
   const cssVariables: CSSVars = metricData?.cssVars || {};
@@ -2731,9 +2731,16 @@ const metricData = hasMetricColoring(displaySettings)
 
             <div className="explorer-second-row">
               <div className="explorer-price-section">
-                <span className="explorer-time-created">
-                  {formatTimeAgo(token.created)}
-                </span>
+                <span 
+  className="explorer-time-created"
+  style={{
+    color: (Math.floor(Date.now() / 1000) - token.created) > 3600 
+      ? '#f77f7d' 
+      : 'rgb(67, 254, 154)'
+  }}
+>
+  {formatTimeAgo(token.created)}
+</span>
                 {displaySettings.visibleRows.socials && (
                   <>
                     {!!token.twitterHandle && (
@@ -2831,24 +2838,24 @@ const metricData = hasMetricColoring(displaySettings)
                       </Tooltip>
                     </a>
 
-                       {token.source === 'nadfun' && (
-                    <Tooltip content="View on nad.fun">
-                      <a
-                        className="token-info-meme-interface-social-btn"
-                        href={`https://d1ngwdlq1quo47.cloudfront.net/tokens/${token.tokenAddress}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <svg width="13" height="13" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <defs>
-                            <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
+                    {token.source === 'nadfun' && (
+                      <Tooltip content="View on nad.fun">
+                        <a
+                          className="token-info-meme-interface-social-btn"
+                          href={`https://d1ngwdlq1quo47.cloudfront.net/tokens/${token.tokenAddress}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <svg width="13" height="13" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                              <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
 
-                            </linearGradient>
-                          </defs>
-                          <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
-                        </svg>                       </a>
-                    </Tooltip>
-                  )}
+                              </linearGradient>
+                            </defs>
+                            <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
+                          </svg>                       </a>
+                      </Tooltip>
+                    )}
                   </>
                 )}
               </div>
@@ -3166,30 +3173,35 @@ const metricData = hasMetricColoring(displaySettings)
         >
           <div className="explorer-metrics-container">
             {displaySettings.visibleRows.volume && (
-              <Tooltip content="Volume">
-                <div className="explorer-volume">
-                  <span className="mc-label">V</span>
-                  <span className="mc-value">
-                    {formatPrice(
-                      token.volume24h * monUsdPrice,
-                      displaySettings.noDecimals,
-                    )}
-                  </span>
-                </div>
-              </Tooltip>
+              <div>
+                <Tooltip content="Volume">
+                  <div className="explorer-volume">
+                    <span className="mc-label">V</span>
+                    <span className="mc-value">
+                      {formatPrice(
+                        token.volume24h * monUsdPrice,
+                        displaySettings.noDecimals,
+                      )}
+                    </span>
+                  </div>
+                </Tooltip>
+              </div>
             )}
             {displaySettings.visibleRows.marketCap && (
-              <Tooltip content="Market Cap">
-                <div className="explorer-market-cap">
-                  <span className="mc-label">MC</span>
-                  <span className="mc-value">
-                    {formatPrice(
-                      token.marketCap * monUsdPrice,
-                      displaySettings.noDecimals,
-                    )}
-                  </span>
-                </div>
-              </Tooltip>
+              <div>
+                <Tooltip content="Market Cap">
+                  <div className="explorer-market-cap">
+                    <span className="mc-label">MC</span>
+                    <span className="mc-value">
+                      {formatPrice(
+                        token.marketCap * monUsdPrice,
+                        displaySettings.noDecimals,
+                      )}
+                    </span>
+                  </div>
+                </Tooltip>
+              </div>
+
             )}
           </div>
 
@@ -4550,13 +4562,13 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                       const isSelected = selectedWallets.has(wallet.address);
 
                       return (
-                      <div
-                        key={wallet.address}
-                        className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-                        onClick={() =>
-                          toggleWalletSelection(wallet.address)
-                        }
-                      >
+                        <div
+                          key={wallet.address}
+                          className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                          onClick={() =>
+                            toggleWalletSelection(wallet.address)
+                          }
+                        >
                           <div className="quickbuy-wallet-checkbox-container">
                             <input
                               type="checkbox"
@@ -4569,18 +4581,18 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                             <div className="wallet-dropdown-name">
                               {getWalletName(wallet.address, index)}
                               <Tooltip content="Primary Wallet">
-                              {isActive && (
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
-                                  <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-                                  <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
-                                  <path d="m20 9-3 9" />
-                                  <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
-                                  <path d="M7 18 4 9" />
-                                  <circle cx="12" cy="4" r="2" />
-                                  <circle cx="20" cy="7" r="2" />
-                                  <circle cx="4" cy="7" r="2" />
-                                </svg>
-                              )}
+                                {isActive && (
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                    <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                    <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                    <path d="m20 9-3 9" />
+                                    <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                    <path d="M7 18 4 9" />
+                                    <circle cx="12" cy="4" r="2" />
+                                    <circle cx="20" cy="7" r="2" />
+                                    <circle cx="4" cy="7" r="2" />
+                                  </svg>
+                                )}
                               </Tooltip>
                             </div>
                             <div className="wallet-dropdown-address"

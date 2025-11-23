@@ -442,7 +442,7 @@
 }
 
 .explorer-time-created {
-  color: #d8dbf5;
+  color: rgb(67, 254, 154);
   font-size: 0.85rem;
   letter-spacing: 0.5px;
   margin-right: 5px;
@@ -3175,6 +3175,7 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 
 .metrics-size-small .mc-value {
   font-size: 0.85rem;
+  letter-spacing: -0.3px;
 }
 
 .metrics-size-small .explorer-fee-total,
@@ -3198,7 +3199,8 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 
 .metrics-size-large .mc-value {
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 450;
+  letter-spacing: -0.5px;
 }
 
 .metrics-size-large .explorer-fee-total,
