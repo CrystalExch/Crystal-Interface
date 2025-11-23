@@ -236,7 +236,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
             <div className="fee-tier-requirement-details">
               <span className="fee-tier-requirement-volume">100K+ MON volume</span>
               <span className="fee-tier-requirement-benefits">
-                0.00% Cashback • 0.01% Referral Fees
+                30% L1 • 3% L2 • 2% L3
               </span>
             </div>
           </div>
@@ -249,7 +249,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
             <div className="fee-tier-requirement-details">
               <span className="fee-tier-requirement-volume">500K+ MON volume</span>
               <span className="fee-tier-requirement-benefits">
-                0.00% Cashback • 0.005% Referral Fees
+                30% L1 • 3% L2 • 2% L3
               </span>
             </div>
           </div>
