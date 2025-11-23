@@ -50,8 +50,9 @@
   padding-bottom: 0;
   user-select: none;
   cursor: move;
-  min-height: 40px;
+  min-height: 42px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  max-height: 42px;
 }
 
 .wtw-filters-title {
@@ -118,7 +119,6 @@
   padding: 0px 10px;
   min-height: 40px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-  background: rgb(6, 6, 6);
   flex-wrap: wrap;
   row-gap: 10px;
   position: relative;
