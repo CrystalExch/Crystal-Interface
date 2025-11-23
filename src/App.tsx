@@ -5532,8 +5532,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   return tempset;
                 }
                 let tokenInfo: any = null;
+
                 Object.values(tokensByStatus).forEach((tokens: any[]) => {
-                  const found = tokens.find(t => t.tokenAddress?.toLowerCase() === tokenAddr);
+                  const found = tokens.find(t => t.tokenAddress?.toLowerCase() == tokenAddr);
                   if (found) tokenInfo = found;
                 });
 
@@ -20125,6 +20126,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       </div>
     </>
   );
+
+  useEffect(() => {
+    
+  }, []);
   
   const tempswap = (
     <div className="rectangle">
