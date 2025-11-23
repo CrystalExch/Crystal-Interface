@@ -1,5 +1,5 @@
-import React from 'react';
-import { TrendingDown, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { TrendingDown, Info, ChevronLeft, ChevronRight } from 'lucide-react';
 import './FeeTier.css';
 
 interface FeeTierProps {
@@ -12,6 +12,7 @@ interface TierInfo {
   name: string;
   tier: number;
   color: string;
+  gradient: string;
   takerFee: string;
   makerFee: string;
   minVolume: number;
@@ -24,48 +25,18 @@ interface TierInfo {
 }
 
 const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onViewFeeSchedule }) => {
+  const [testTierLevel, setTestTierLevel] = useState<number | null>(null);
   const getTierInfo = (volume: number): TierInfo => {
-    if (volume >= 10000000) {
-      return {
-        name: 'Enchanted Netherite',
-        tier: 6,
-        color: '#9D4EDD',
-        takerFee: '0.020%',
-        makerFee: '-0.005%',
-        minVolume: 10000000,
-        next: null,
-      };
-    }
-    if (volume >= 5000000) {
-      return {
-        name: 'Netherite',
-        tier: 5,
-        color: '#4A4A4A',
-        takerFee: '0.025%',
-        makerFee: '-0.003%',
-        minVolume: 5000000,
-        next: {
-          name: 'Enchanted Netherite',
-          tier: 6,
-          needed: 10000000 - volume,
-          minVolume: 10000000,
-        },
-      };
-    }
     if (volume >= 1000000) {
       return {
         name: 'Diamond',
         tier: 4,
         color: '#B9F2FF',
+        gradient: 'linear-gradient(135deg, #B9F2FF 0%, #7DD3FC 100%)',
         takerFee: '0.030%',
         makerFee: '0.000%',
         minVolume: 1000000,
-        next: {
-          name: 'Netherite',
-          tier: 5,
-          needed: 5000000 - volume,
-          minVolume: 5000000,
-        },
+        next: null,
       };
     }
     if (volume >= 500000) {
@@ -73,6 +44,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         name: 'Gold',
         tier: 3,
         color: '#FFD700',
+        gradient: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
         takerFee: '0.035%',
         makerFee: '0.005%',
         minVolume: 500000,
@@ -89,6 +61,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         name: 'Silver',
         tier: 2,
         color: '#C0C0C0',
+        gradient: 'linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%)',
         takerFee: '0.040%',
         makerFee: '0.010%',
         minVolume: 100000,
@@ -104,6 +77,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
       name: 'Bronze',
       tier: 1,
       color: '#CD7F32',
+      gradient: 'linear-gradient(135deg, #CD7F32 0%, #B87333 100%)',
       takerFee: '0.050%',
       makerFee: '0.020%',
       minVolume: 0,
@@ -116,12 +90,33 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
     };
   };
 
-  const tier = getTierInfo(tradingVolume);
+  const getTierByLevel = (level: number): TierInfo => {
+    const volumes = [0, 0, 100000, 500000, 1000000];
+    return getTierInfo(volumes[level]);
+  };
+
+  const tier = testTierLevel !== null ? getTierByLevel(testTierLevel) : getTierInfo(tradingVolume);
   const progressPercentage = tier.next
     ? ((tradingVolume - tier.minVolume) /
         (tier.next.minVolume - tier.minVolume)) *
       100
     : 100;
+
+  const handlePrevTier = () => {
+    if (testTierLevel === null) {
+      setTestTierLevel(tier.tier - 1 < 1 ? 1 : tier.tier - 1);
+    } else {
+      setTestTierLevel(testTierLevel - 1 < 1 ? 1 : testTierLevel - 1);
+    }
+  };
+
+  const handleNextTier = () => {
+    if (testTierLevel === null) {
+      setTestTierLevel(tier.tier + 1 > 4 ? 4 : tier.tier + 1);
+    } else {
+      setTestTierLevel(testTierLevel + 1 > 4 ? 4 : testTierLevel + 1);
+    }
+  };
 
   const formatVolume = (vol: number): string => {
     if (vol >= 1000000) {
@@ -141,9 +136,17 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         <div className="fee-tier-header">
           <div className="fee-tier-header-left">
             <h3 className="referrals-fee-tier-title">Your Fee Tier</h3>
-            <div className="fee-tier-badge" style={{ backgroundColor: tier.color }}>
-              <TrendingDown size={16} />
-              <span className="fee-tier-badge-name">{tier.name}</span>
+            <div className="fee-tier-badge-wrapper">
+              <button className="tier-nav-button" onClick={handlePrevTier}>
+                <ChevronLeft size={14} />
+              </button>
+              <div className="fee-tier-badge" style={{ background: tier.gradient }}>
+                <TrendingDown size={16} />
+                <span className="fee-tier-badge-name">{tier.name}</span>
+              </div>
+              <button className="tier-nav-button" onClick={handleNextTier}>
+                <ChevronRight size={14} />
+              </button>
             </div>
           </div>
           <button className="view-schedule-button" onClick={onViewFeeSchedule}>
@@ -154,20 +157,28 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         {tier.next && (
           <div className="fee-tier-next-info">
             <span className="fee-tier-next-label">Next Tier:</span>
-            <span className="fee-tier-next-name">{tier.next.name}</span>
+            <span className={`fee-tier-next-name tier-${tier.next.name.toLowerCase().replace(' ', '-')}`}>{tier.next.name}</span>
           </div>
         )}
 
       {tier.next && (
         <div className="fee-tier-progress">
-          <div className="fee-tier-progress-bar">
-            <div
-              className="fee-tier-progress-fill"
-              style={{
-                width: `${progressPercentage}%`,
-                backgroundColor: tier.color,
-              }}
-            />
+          <div className="fee-tier-progress-bar-wrapper">
+            <button className="tier-nav-button" onClick={handlePrevTier}>
+              <ChevronLeft size={14} />
+            </button>
+            <div className="fee-tier-progress-bar">
+              <div
+                className="fee-tier-progress-fill"
+                style={{
+                  width: `${progressPercentage}%`,
+                  background: tier.gradient,
+                }}
+              />
+            </div>
+            <button className="tier-nav-button" onClick={handleNextTier}>
+              <ChevronRight size={14} />
+            </button>
           </div>
           <p className="fee-tier-progress-text">
             {formatVolume(tradingVolume)} / {formatVolume(tier.next.minVolume)}
@@ -262,33 +273,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
             <div className="fee-tier-requirement-details">
               <span className="fee-tier-requirement-volume">1M+ MON volume</span>
               <span className="fee-tier-requirement-benefits">
-                0.00% Cashback • 0.00% Referral Fees
-              </span>
-            </div>
-          </div>
-          <div
-            className={`fee-tier-requirement-item ${
-              tradingVolume >= 5000000 ? 'achieved' : ''
-            }`}
-          >
-            <div className="tier-requirement-badge netherite">Netherite</div>
-            <div className="fee-tier-requirement-details">
-              <span className="fee-tier-requirement-volume">5M+ MON volume</span>
-              <span className="fee-tier-requirement-benefits">
-                0.003% Cashback • 0.00% Referral Fees
-              </span>
-            </div>
-          </div>
-          <div
-            className={`fee-tier-requirement-item ${
-              tradingVolume >= 10000000 ? 'achieved' : ''
-            }`}
-          >
-            <div className="tier-requirement-badge enchanted-netherite">Enchanted Netherite</div>
-            <div className="fee-tier-requirement-details">
-              <span className="fee-tier-requirement-volume">10M+ MON volume</span>
-              <span className="fee-tier-requirement-benefits">
-                0.005% Cashback • 0.00% Referral Fees
+                30% L1 • 3% L2 • 2% L3
               </span>
             </div>
           </div>
