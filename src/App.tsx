@@ -11146,7 +11146,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const [arbUSDCBalance, setarbUSDCBalance] = useState(0n);
   const perpsDepositDisabled = !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning || (parseFloat(perpsDepositAmount) > (Number(arbUSDCBalance) / 1e6))
-
+  
   useEffect(() => {
     if (popup != 30 && popup != 31) return;
 
@@ -28216,7 +28216,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 trackedWalletsRef={trackedWalletsRef}
                 createSubWallet={createSubWallet}
                 setOneCTDepositAddress={setOneCTDepositAddress}
-                scaAddress={scaAddress}
               />
             }
           />
