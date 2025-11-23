@@ -358,6 +358,71 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   account,
   selectedWallets,
 }) => {
+
+  const copyToClipboard = async (text: string, label = 'Address copied') => {
+    const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, {
+          title: label,
+          subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+        });
+        setTimeout(() => {
+          updatePopup(txId, {
+            title: label,
+            subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+            variant: 'success',
+            confirmed: true,
+            isLoading: false,
+          });
+        }, 100);
+      }
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        if (showLoadingPopup && updatePopup) {
+          showLoadingPopup(txId, {
+            title: label,
+            subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+          });
+          setTimeout(() => {
+            updatePopup(txId, {
+              title: label,
+              subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+              variant: 'success',
+              confirmed: true,
+              isLoading: false,
+            });
+          }, 100);
+        }
+      } catch (fallbackErr) {
+        if (showLoadingPopup && updatePopup) {
+          showLoadingPopup(txId, {
+            title: 'Copy Failed',
+            subtitle: 'Unable to copy to clipboard',
+          });
+          setTimeout(() => {
+            updatePopup(txId, {
+              title: 'Copy Failed',
+              subtitle: 'Unable to copy to clipboard',
+              variant: 'error',
+              confirmed: true,
+              isLoading: false,
+            });
+          }, 100);
+        }
+      } finally {
+        document.body.removeChild(ta);
+      }
+    }
+  };
   const savedState = loadWidgetState();
 
   const getWalletNotificationPreferences = (): Record<string, boolean> => {
@@ -807,11 +872,11 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       onSnapChange(isSnapped, size.width);
     }
   }, [isSnapped, size.width, onSnapChange]);
-useEffect(() => {
-  if (hasInitiallyLoaded) {
-    saveWidgetState({ position, size, isSnapped, activeTab, isOpen });
-  }
-}, [position, size, isSnapped, activeTab, isOpen, hasInitiallyLoaded]);
+  useEffect(() => {
+    if (hasInitiallyLoaded) {
+      saveWidgetState({ position, size, isSnapped, activeTab, isOpen });
+    }
+  }, [position, size, isSnapped, activeTab, isOpen, hasInitiallyLoaded]);
   useEffect(() => {
     const walletAddresses = localWallets.map(w => w.address.toLowerCase());
     const allEnabled = !walletAddresses.some(addr => notificationPrefs[addr] === false);
@@ -1716,7 +1781,7 @@ useEffect(() => {
                         <div className="wtw-wallet-avatar">
                           <span className="wtw-wallet-emoji-avatar">{wallet.emoji}</span>
                         </div>
-                        <div className="wtw-wallet-name-display">
+                        <div className="wtw-wallet-name-container">
                           <div className="wtw-wallet-name-container">
                             {editingWallet === wallet.id ? (
                               <input
@@ -1751,7 +1816,13 @@ useEffect(() => {
                                 />
                               </div>
                             )}
-                            <div className="wtw-wallet-address">
+                            <div className="wtw-wallet-address"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (wallet.address) {
+                                  copyToClipboard(wallet.address, 'Wallet address copied');
+                                }
+                              }}>
                               {formatAddress(wallet.address)}
                               <button
                                 className="wtw-copy-address"
