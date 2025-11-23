@@ -1070,6 +1070,17 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       return raw > gasReserve; // Only include wallets with balance greater than gas reserve
     });
 
+    if (!token.reserveQuote) {
+      const txId = `quickbuy-error-${Date.now()}`;
+      updatePopup?.(txId, {
+        title: 'Please wait',
+        subtitle: 'Data is still loading',
+        variant: 'error',
+        isLoading: false,
+      });
+      return;
+    }
+
     if (targets.length === 0) {
       const txId = `quickbuy-error-${Date.now()}`;
       updatePopup?.(txId, {

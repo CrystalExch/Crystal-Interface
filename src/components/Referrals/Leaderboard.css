@@ -28,15 +28,16 @@
 }
 
 .leaderboard-username {
-  color: #aaaecf;
-  font-size: 1.1rem;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: -0.3px;
 }
 
 .leaderboard-user-rank {
-  color: #7f82ac;
-  font-size: 0.85rem;
-  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+  font-weight: 400;
 }
 
 .leaderboard-username-skeleton {
@@ -53,16 +54,34 @@
 
 .leaderboard-table-section {
   background: rgb(6 6 6);
-  border: 1.5px solid #1c1c23;
   border-radius: 12px;
   padding: 24px;
   margin-left: 10px;
+  position: relative;
+}
+
+.leaderboard-user-badge {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.leaderboard-user-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
 }
 
 .leaderboard-title {
-  color: #aaaecf;
-  font-size: 1.3rem;
-  font-weight: 600;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+  margin: 0;
   margin-bottom: 20px;
 }
 
@@ -81,22 +100,21 @@
 }
 
 .leaderboard-table th {
-  color: #7f82ac;
-  font-size: 0.85rem;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  font-weight: 500;
   padding: 12px 16px;
   text-align: left;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: -0.3px;
 }
 
 .leaderboard-table tbody tr {
-  border-bottom: 1px solid #1c1c23;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   transition: background 0.2s;
 }
 
 .leaderboard-table tbody tr:hover {
-  background: rgb(15 15 18);
+  background: rgba(170, 174, 207, 0.03);
 }
 
 .leaderboard-table tbody tr.user-row {
@@ -109,8 +127,9 @@
 }
 
 .leaderboard-table td {
-  color: #aaaecf;
-  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
+  font-weight: 400;
   padding: 14px 16px;
 }
 

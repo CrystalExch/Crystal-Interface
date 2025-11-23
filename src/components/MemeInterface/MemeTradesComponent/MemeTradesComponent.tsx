@@ -249,7 +249,6 @@ interface Props {
   onFilterSet: any;
 }
 
-const STORAGE_KEY = 'tracked_wallets_data';
 
 export default function MemeTradesComponent({
   trades,
