@@ -1271,11 +1271,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         <button
                           className={`meme-filter-action-btn ${trackedAddresses.includes(row.wallet.toLowerCase()) ? 'active' : ''}`}
                           onClick={() => onToggleTrackedAddress?.(row.wallet)}
-                          title={
-                            trackedAddresses.includes(row.wallet.toLowerCase())
-                              ? 'Untrack'
-                              : 'Track'
-                          }
                         >
                           <img
                             src={
@@ -1303,7 +1298,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               <div
                 className="meme-oc-header-cell clickable"
                 onClick={() => setShowTokenBalance((v) => !v)}
-                title="toggle balance view"
                 style={{ cursor: 'pointer' }}
               >
                 {showTokenBalance
@@ -1345,7 +1339,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                           )}
                           <span
                             className={`oc-meme-wallet-address ${walletDisplay.isUser ? 'current-user' : walletDisplay.isTracked ? 'tracked-wallet' : ''}`}
-                            title={row.address}
                           >
                             {walletDisplay.text}
                           </span>
@@ -1506,11 +1499,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         <button
                           className={`meme-filter-action-btn ${trackedAddresses.includes(row.address.toLowerCase()) ? 'active' : ''}`}
                           onClick={() => onToggleTrackedAddress?.(row.address)}
-                          title={
-                            trackedAddresses.includes(row.address.toLowerCase())
-                              ? 'Untrack'
-                              : 'Track'
-                          }
                         >
                           <img
                             src={
@@ -1586,7 +1574,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                               )}
                               <span
                                 className="oc-meme-wallet-address meme-clickable-token"
-                                title={t.name || t.symbol || t.id}
                                 onClick={() => {
                                   if (t.id != token.id) {
                                     navigate(`/meme/${t.id}`)
@@ -2023,7 +2010,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                   setAmountMode((prev) => (prev === 'MON' ? 'USD' : 'MON'))
                 }
                 className="meme-oc-currency-toggle"
-                title={`Switch to ${amountMode === 'MON' ? 'USD' : 'MON'} display`}
               >
                 <img src={switchicon} className="meme-currency-switch-icon" />
                 {amountMode}
@@ -2033,7 +2019,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                 <button
                   className={`filter-icon-button ${hasActiveFilters ? 'active' : ''}`}
                   onClick={() => setShowFiltersPopup(true)}
-                  title="Advanced Filters"
                   style={{paddingRight: "15px"}}
                 >
                   <img

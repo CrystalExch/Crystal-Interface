@@ -3317,16 +3317,16 @@ const Portfolio: React.FC<PortfolioProps> = ({
             >
               Wallets
             </span>
+           <span
+              className={`portfolio-tab-title ${activeTab === 'trenches' ? 'active' : 'nonactive'}`}
+              onClick={() => setActiveTab('trenches')}
+            >
+              Trenches
+            </span>
             <span
               className="portfolio-tab-title perpetuals"
             >
               Perpetuals
-            </span>
-            <span
-              className="portfolio-tab-title perpetuals"
-            // onClick={() => setActiveTab('trenches')}
-            >
-              Trenches
             </span>
           </div>
           <div className="search-wallet-wrapper">

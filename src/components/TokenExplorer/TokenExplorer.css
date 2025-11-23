@@ -4734,3 +4734,13 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 .quickbuy-wallet-item.active .wallet-dropdown-name {
   color: #d8dcff;
 }
+
+
+.explorer-token-row.nadfun-token .explorer-token-image-container.graduated {
+  background: conic-gradient(from 135deg,
+      #ffd700 0deg,
+      #ffed4e 90deg,
+      #ffc107 180deg,
+      #ff8f00 270deg,
+      #ffd700 360deg);
+}

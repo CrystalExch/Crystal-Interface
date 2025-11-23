@@ -666,7 +666,6 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  margin-right: 8px;
   margin-top: -3px;
   min-width: 0;
 }

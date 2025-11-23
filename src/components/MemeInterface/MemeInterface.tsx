@@ -836,7 +836,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       return true;
     }
   });
-  const [isTradesTabVisible, setIsTradesTabVisible] = useState(false);
+const [isTradesTabVisible, setIsTradesTabVisible] = useState(() => {
+  try {
+    const cached = localStorage.getItem('crystal_trades_panel_visible');
+    return cached ? JSON.parse(cached) : false;
+  } catch {
+    return false;
+  }
+});
   const [isOCTradesHovered, setIsOCTradesHovered] = useState(false);
   const [tradeAmount, setTradeAmount] = useState('');
   const [limitPrice, setLimitPrice] = useState('');
@@ -876,9 +883,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
       const mouseDelta = e.clientY - initialMousePosRef.current;
       const newHeight = Math.max(
-        150, // minimum height
+        150, 
         Math.min(
-          window.innerHeight - 400, // maximum height (leaves room for chart/orderbook) - CHANGED from 200 to 400
+          window.innerHeight - 400,
           initialHeightRef.current - mouseDelta
         )
       );
@@ -1062,7 +1069,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       );
     };
   }, []);
-
+useEffect(() => {
+  localStorage.setItem('crystal_trades_panel_visible', JSON.stringify(isTradesTabVisible));
+}, [isTradesTabVisible]);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
