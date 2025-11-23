@@ -644,11 +644,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const saved = localStorage.getItem('spectra-widget-open');
     return saved === 'true';
   });
-
+const getWidgetOpenState = (): boolean => {
+  try {
+    const stored = localStorage.getItem('wallet_tracker_widget_state');
+    if (stored) return JSON.parse(stored).isOpen ?? false;
+  } catch (error) {
+  }
+  return false;
+};
   useEffect(() => {
     localStorage.setItem('spectra-widget-open', String(isSpectraWidgetOpen));
   }, [isSpectraWidgetOpen]); const [isPNLWidgetOpen, setIsPNLWidgetOpen] = useState(false);
-  const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(false);
+const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(() => getWidgetOpenState());
 
   const [trackerWidgetSnap, setTrackerWidgetSnap] = useState<'left' | 'right' | null>(null);
   const [trackerWidgetWidth, setTrackerWidgetWidth] = useState(400);

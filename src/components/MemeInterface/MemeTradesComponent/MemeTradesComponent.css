@@ -254,7 +254,7 @@
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 9;
   pointer-events: none;
-  background-color: rgb(6, 6, 6);
+  backdrop-filter: blur(20px);
 }
 
 .pause-indicator.visible {

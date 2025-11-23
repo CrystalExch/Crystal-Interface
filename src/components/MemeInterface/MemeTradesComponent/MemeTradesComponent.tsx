@@ -442,10 +442,8 @@ export default function MemeTradesComponent({
 
     let filteredTrades = displayTrades;
 
-    // Apply transaction filters
     if (hasActiveFilters) {
       filteredTrades = displayTrades.filter((r) => {
-        // Filter by maker address
         if (transactionFilters.makerAddress.trim() !== '') {
           const filterValues = transactionFilters.makerAddress
             .toLowerCase()
@@ -459,7 +457,6 @@ export default function MemeTradesComponent({
           }
         }
 
-        // Calculate USD amount for filtering
         let amountUSD = 0;
         const sign = r.isBuy ? 1 : -1;
         let amountMON = sign * (r.nativeAmount ?? 0);
@@ -467,7 +464,6 @@ export default function MemeTradesComponent({
 
         amountUSD = monUsdPrice > 0 ? Math.abs(amountMON) * monUsdPrice : 0;
 
-        // Filter by min USD
         if (transactionFilters.minUSD.trim() !== '') {
           const minUSD = parseFloat(transactionFilters.minUSD);
           if (!isNaN(minUSD) && amountUSD < minUSD) {
@@ -475,7 +471,6 @@ export default function MemeTradesComponent({
           }
         }
 
-        // Filter by max USD
         if (transactionFilters.maxUSD.trim() !== '') {
           const maxUSD = parseFloat(transactionFilters.maxUSD);
           if (!isNaN(maxUSD) && amountUSD > maxUSD) {
@@ -586,7 +581,6 @@ export default function MemeTradesComponent({
     const val = Math.abs(v);
 
     if (amountMode === 'USDC') {
-      // >=$1k uses K/M/B/T; otherwise compact dollars
       return val >= 1_000 ? `$${formatKMBT(val, 2)}` : `$${val.toFixed(2)}`;
     }
 

@@ -1484,8 +1484,16 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               </div>
 
               <div className="meme-interface-token-meta-row">
-                <span className="meme-interface-token-created">{formatTimeAgo(Number(memeTokenData.created))}</span>
-
+                <span
+                  className="meme-interface-token-created"
+                  style={{
+                    color: (Math.floor(Date.now() / 1000) - Number(memeTokenData.created)) > 21600
+                      ? '#ef7878'
+                      : 'rgb(67, 254, 154)'
+                  }}
+                >
+                  {formatTimeAgo(Number(memeTokenData.created))}
+                </span>
                 <div className="meme-interface-token-social-links">
 
                   {memeTokenData.twitterHandle && (

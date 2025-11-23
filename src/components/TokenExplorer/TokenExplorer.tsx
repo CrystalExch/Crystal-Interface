@@ -2734,7 +2734,7 @@ const TokenRow = React.memo<{
                 <span
                   className="explorer-time-created"
                   style={{
-                    color: (Math.floor(Date.now() / 1000) - token.created) > 3600
+                    color: (Math.floor(Date.now() / 1000) - token.created) > 21600
                       ? '#f77f7d'
                       : 'rgb(67, 254, 154)'
                   }}

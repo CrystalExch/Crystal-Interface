@@ -81,7 +81,33 @@ interface WalletTrackerWidgetProps {
 type TrackerTab = 'wallets' | 'trades' | 'monitor';
 
 const STORAGE_KEY = 'tracked_wallets_data';
+const WIDGET_STATE_KEY = 'wallet_tracker_widget_state';
+interface WidgetState {
+  position: { x: number; y: number };
+  size: { width: number; height: number };
+  isOpen: boolean;
+  isSnapped: 'left' | 'right' | null;
+  activeTab: TrackerTab;
+}
 
+const loadWidgetState = (): Partial<WidgetState> => {
+  try {
+    const stored = localStorage.getItem(WIDGET_STATE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch (error) {
+    console.error('Error loading widget state:', error);
+  }
+  return {};
+};
+
+const saveWidgetState = (state: Partial<WidgetState>) => {
+  try {
+    const currentState = loadWidgetState();
+    localStorage.setItem(WIDGET_STATE_KEY, JSON.stringify({ ...currentState, ...state }));
+  } catch (error) {
+    console.error('Error saving widget state:', error);
+  }
+};
 function chainCfgOf(activechain?: string | number, settings?: any) {
   const cc = settings?.chainConfig;
   return (
@@ -332,6 +358,8 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   account,
   selectedWallets,
 }) => {
+  const savedState = loadWidgetState();
+
   const getWalletNotificationPreferences = (): Record<string, boolean> => {
     try {
       const stored = localStorage.getItem('wallet_notifications_preferences');
@@ -351,14 +379,11 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   });
   const crystal = '/CrystalLogo.png';
   const widgetRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ x: 100, y: 100 });
-  const [size, setSize] = useState({ width: 600, height: 700 });
 
 
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState('');
-  const [isSnapped, setIsSnapped] = useState<'left' | 'right' | null>(null);
   const [snapZoneHover, setSnapZoneHover] = useState<'left' | 'right' | null>(null);
   const dragStartPos = useRef({ x: 0, y: 0 });
   const resizeStartPos = useRef({ x: 0, y: 0 });
@@ -367,8 +392,24 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   const snapHoverTimeout = useRef<NodeJS.Timeout | null>(null);
   const presnapState = useRef<{ position: { x: number; y: number }; size: { width: number; height: number } } | null>(null);
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TrackerTab>('wallets');
   const [searchQuery, setSearchQuery] = useState('');
+  const [position, setPosition] = useState({
+    x: savedState.position?.x ?? 100,
+    y: savedState.position?.y ?? 100
+  });
+
+  const [size, setSize] = useState({
+    width: savedState.size?.width ?? 600,
+    height: savedState.size?.height ?? 700
+  });
+
+  const [isSnapped, setIsSnapped] = useState<'left' | 'right' | null>(
+    savedState.isSnapped ?? null
+  );
+
+  const [activeTab, setActiveTab] = useState<TrackerTab>(
+    savedState.activeTab ?? 'wallets'
+  );
   const [localWallets, setLocalWallets] = useState<TrackedWallet[]>([]);
   const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const [editingWallet, setEditingWallet] = useState<string | null>(null);
@@ -766,7 +807,11 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       onSnapChange(isSnapped, size.width);
     }
   }, [isSnapped, size.width, onSnapChange]);
-
+useEffect(() => {
+  if (hasInitiallyLoaded) {
+    saveWidgetState({ position, size, isSnapped, activeTab, isOpen });
+  }
+}, [position, size, isSnapped, activeTab, isOpen, hasInitiallyLoaded]);
   useEffect(() => {
     const walletAddresses = localWallets.map(w => w.address.toLowerCase());
     const allEnabled = !walletAddresses.some(addr => notificationPrefs[addr] === false);
@@ -946,23 +991,23 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     if (s < 86400) return `${Math.floor(s / 3600)}h`;
     return `${Math.floor(s / 86400)}d`;
   };
-useEffect(() => {
-  if (externalWallets) {
-    setLocalWallets(externalWallets);
-  } else {
-    setLocalWallets(loadWalletsFromStorage());
-  }
-  setHasInitiallyLoaded(true);
-}, [externalWallets]);
-useEffect(() => {
-  if (!externalWallets && hasInitiallyLoaded) {
-    saveWalletsToStorage(localWallets);
-    window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: localWallets, source: 'widget' } }));
-  }
-  if (onWalletsChange) {
-    onWalletsChange(localWallets);
-  }
-}, [localWallets, externalWallets, onWalletsChange, hasInitiallyLoaded]);
+  useEffect(() => {
+    if (externalWallets) {
+      setLocalWallets(externalWallets);
+    } else {
+      setLocalWallets(loadWalletsFromStorage());
+    }
+    setHasInitiallyLoaded(true);
+  }, [externalWallets]);
+  useEffect(() => {
+    if (!externalWallets && hasInitiallyLoaded) {
+      saveWalletsToStorage(localWallets);
+      window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: localWallets, source: 'widget' } }));
+    }
+    if (onWalletsChange) {
+      onWalletsChange(localWallets);
+    }
+  }, [localWallets, externalWallets, onWalletsChange, hasInitiallyLoaded]);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {

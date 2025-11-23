@@ -209,10 +209,10 @@ const Tooltip: React.FC<{
                             top: `${tooltipPosition.top}px`,
                             left: `${tooltipPosition.left}px`,
                             transform: `${position === 'top' || position === 'bottom'
-                                    ? 'translateX(-50%)'
-                                    : position === 'left' || position === 'right'
-                                        ? 'translateY(-50%)'
-                                        : 'none'
+                                ? 'translateX(-50%)'
+                                : position === 'left' || position === 'right'
+                                    ? 'translateY(-50%)'
+                                    : 'none'
                                 } scale(${isVisible ? 1 : 0})`,
                             opacity: isVisible ? 1 : 0,
                             zIndex: 9999,
@@ -899,8 +899,16 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                                                 </div>
 
                                                                 <div className="meme-token-details">
-                                                                    <p className="meme-search-token-age">{formatTimeAgo(token.created)}</p>
-                                                                    <div className="meme-social-links">
+                                                                    <p
+                                                                        className="meme-search-token-age"
+                                                                        style={{
+                                                                            color: (Math.floor(Date.now() / 1000) - token.created) > 21600
+                                                                                ? '#ef7878'
+                                                                                : 'rgb(67, 254, 154)'
+                                                                        }}
+                                                                    >
+                                                                        {formatTimeAgo(token.created)}
+                                                                    </p>                                                                    <div className="meme-social-links">
                                                                         {!!token.twitterHandle && (
                                                                             <TwitterHover url={token.twitterHandle}>
                                                                                 <a

@@ -350,7 +350,7 @@
 }
 
 .meme-usd-amount.sell {
-  color: rgb(240, 103, 103);
+  color: #ef7878;
 }
 
 .meme-token-amount {
@@ -369,7 +369,7 @@
 }
 
 .meme-pnl.negative {
-  color: rgb(240, 103, 103);
+  color: #ef7878;
 }
 
 .meme-remaining {
@@ -411,7 +411,7 @@
 }
 
 .meme-migrated.no {
-  color: rgb(240, 103, 103);
+  color: #ef7878;
 }
 
 .meme-order-type {
@@ -426,7 +426,7 @@
 }
 
 .meme-order-type.sell {
-  color: rgb(240, 103, 103);
+  color: #ef7878;
 }
 
 .meme-action-btn {
@@ -1658,7 +1658,7 @@
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 9;
   pointer-events: none;
-  background-color: rgb(6, 6, 6);
+  backdrop-filter: blur(20px);
 }
 
 .meme-oc-pause-indicator.visible {
@@ -1687,4 +1687,9 @@
   font-size: 0.9rem;
   font-weight: 400;
   letter-spacing: -0.5px;
+}
+
+.oc-meme-wallet-address:hover{
+  text-decoration: underline;
+  cursor: pointer;
 }
