@@ -408,7 +408,7 @@ const Footer: React.FC<FooterProps> = ({
               </div>
             </Tooltip>
             <div ref={dropdownRef} style={{ position: 'relative' }}>
-              <Tooltip content={subWallets.length == 0 ? "Enable 1CT" : "Manage Wallets"}>
+              <Tooltip content={"Manage Wallets"}>
                 <button
                   className="footer-transparent-button"
                   onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}

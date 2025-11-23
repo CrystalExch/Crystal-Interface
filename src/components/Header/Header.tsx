@@ -687,7 +687,7 @@ const Header: React.FC<HeaderProps> = ({
             <span className="meme-search-keybind">/</span>
 
           </button> */}
-          <button
+          {/* <button
             type="button"
             className="history-button"
             onClick={() => setIsTransactionHistoryOpen(true)}
@@ -699,7 +699,7 @@ const Header: React.FC<HeaderProps> = ({
             {pendingNotifs > 99 && (
               <span className="tx-notification-badge">99+</span>
             )}
-          </button>
+          </button> */}
           <div>
             <button
               type="button"

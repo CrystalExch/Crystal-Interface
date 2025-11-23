@@ -1947,15 +1947,10 @@ useEffect(() => {
           const walletsArray = Array.from(selectedWallets);
           const amountPerWallet = parseFloat(tradeAmount) / walletsArray.length;
           const totalAmount = parseFloat(tradeAmount);
-          const fee = 99000n;
-          const iva = BigInt(Math.round(totalAmount * 1e18)) * fee / 100000n;
-          const vNative = token.reserveQuote + iva;
-          const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
-          const estimatedTokens = Number(token.reserveBase - vToken) / 1e18;
 
           const isNadFun = token.source === 'nadfun';
           const contractAddress = isNadFun
-            ? settings.chainConfig[activechain].nadFunRouter
+            ? token.migrated ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
             : routerAddress;
 
           txId = `multibuy-${Date.now()}`;
@@ -1977,25 +1972,82 @@ useEffect(() => {
 
               let uo;
               if (isNadFun) {
-                const fee = 99000n;
-                const iva = value * fee / 100000n;
-                const vNative = token.reserveQuote + iva;
-                const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
-                const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
-                uo = {
-                  target: contractAddress as `0x${string}`,
-                  data: encodeFunctionData({
-                    abi: NadFunAbi,
-                    functionName: 'buy',
-                    args: [{
-                      amountOutMin: BigInt(output),
-                      token: token.id as `0x${string}`,
-                      to: walletAddr as `0x${string}`,
-                      deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
-                    }],
-                  }),
-                  value,
-                };
+                if (token.migrated) {
+                  const actions: any = []
+                  actions.push(encodeFunctionData({
+                    abi: zeroXActionsAbi,
+                    functionName: 'BASIC',
+                    args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                      abi: NadFunAbi,
+                      functionName: 'buy',
+                      args: [{
+                        amountOutMin: BigInt(1n),
+                        token: token.id as `0x${string}`,
+                        to: account.address as `0x${string}`,
+                        deadline: 0n,
+                      }],
+                    })],
+                  }))
+                  actions.push(encodeFunctionData({
+                    abi: zeroXActionsAbi,
+                    functionName: 'BASIC',
+                    args: [settings.chainConfig[activechain].eth, 10000n, '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d', 0n, '0x'],
+                  }))
+                  uo = {
+                    target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                    data: encodeFunctionData({
+                      abi: zeroXAbi,
+                      functionName: 'execute',
+                      args: [{
+                        recipient: account.address as `0x${string}`,
+                        buyToken: token.id as `0x${string}`,
+                        minAmountOut: BigInt(0n),
+                      }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                    }),
+                    value,
+                  };
+                }
+                else {
+                  const fee = 99000n;
+                  const iva = value * fee / 100000n;
+                  const vNative = token.reserveQuote + iva;
+                  const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+                  const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+    
+                  const actions: any = []
+                  actions.push(encodeFunctionData({
+                    abi: zeroXActionsAbi,
+                    functionName: 'BASIC',
+                    args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                      abi: NadFunAbi,
+                      functionName: 'buy',
+                      args: [{
+                        amountOutMin: BigInt(output),
+                        token: token.id as `0x${string}`,
+                        to: account.address as `0x${string}`,
+                        deadline: 0n,
+                      }],
+                    })],
+                  }))
+                  actions.push(encodeFunctionData({
+                    abi: zeroXActionsAbi,
+                    functionName: 'BASIC',
+                    args: [settings.chainConfig[activechain].eth, 10000n, '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d', 0n, '0x'],
+                  }))
+                  uo = {
+                    target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                    data: encodeFunctionData({
+                      abi: zeroXAbi,
+                      functionName: 'execute',
+                      args: [{
+                        recipient: account.address as `0x${string}`,
+                        buyToken: token.id as `0x${string}`,
+                        minAmountOut: BigInt(0n),
+                      }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                    }),
+                    value,
+                  };
+                }
               } else {
                 const fee = 99000n;
                 const iva = value * fee / 100000n;
@@ -2032,26 +2084,29 @@ useEffect(() => {
                     walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
                       (p: any) => p[5] != params[5],
                     );
-                  return true;
+                  return [true, amountPerWallet];
                 })
                 .catch(() => {
                   if (walletNonce)
                     walletNonce.pendingtxs = walletNonce.pendingtxs.filter(
                       (p: any) => p[5] != params[5],
                     );
-                  return false;
+                  return [false, 0];
                 });
               buyPromises.push(buyPromise);
             }
 
             const results = await Promise.allSettled(buyPromises);
             const successfulBuys = results.filter(
-              (result) => result.status === 'fulfilled' && result.value === true,
+              (result) => result.status === 'fulfilled' && result.value?.[0] === true,
             ).length;
-
+            const total = results.reduce(
+              (a, r) => r.status === 'fulfilled' ? a + r.value[1] : a,
+              0
+            );
             updatePopup?.(txId, {
               title: 'Buy Complete',
-              subtitle: `${successfulBuys}/${walletsArray.length} wallet${walletsArray.length > 1 ? 's' : ''} • Got ~${formatNumberWithCommas(estimatedTokens, 2)} ${token.symbol}`,
+              subtitle: `${successfulBuys}/${walletsArray.length} wallet${walletsArray.length > 1 ? 's' : ''} • Spent ~${formatNumberWithCommas(total, 2)} ${'MON'}`,
               variant: 'success',
               isLoading: false,
             });
@@ -2068,7 +2123,7 @@ useEffect(() => {
         } else {
           const isNadFun = token.source === 'nadfun';
           const contractAddress = isNadFun
-            ? settings.chainConfig[activechain].nadFunRouter
+            ? token.migrated ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
             : routerAddress;
 
           txId = walletPopup.showBuyTransaction(
@@ -2083,26 +2138,82 @@ useEffect(() => {
 
           let uo;
           if (isNadFun) {
-            const fee = 99000n;
-            const iva = value * fee / 100000n;
-            const vNative = token.reserveQuote + iva;
-            const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
-            const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+            if (token.migrated) {
+              const actions: any = []
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                  abi: NadFunAbi,
+                  functionName: 'buy',
+                  args: [{
+                    amountOutMin: BigInt(1n),
+                    token: token.id as `0x${string}`,
+                    to: account.address as `0x${string}`,
+                    deadline: 0n,
+                  }],
+                })],
+              }))
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: [settings.chainConfig[activechain].eth, 10000n, '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d', 0n, '0x'],
+              }))
+              uo = {
+                target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: zeroXAbi,
+                  functionName: 'execute',
+                  args: [{
+                    recipient: account.address as `0x${string}`,
+                    buyToken: token.id as `0x${string}`,
+                    minAmountOut: BigInt(0n),
+                  }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                }),
+                value,
+              };
+            }
+            else {
+              const fee = 99000n;
+              const iva = value * fee / 100000n;
+              const vNative = token.reserveQuote + iva;
+              const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+              const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
 
-            uo = {
-              target: contractAddress as `0x${string}`,
-              data: encodeFunctionData({
-                abi: NadFunAbi,
-                functionName: 'buy',
-                args: [{
-                  amountOutMin: BigInt(output),
-                  token: token.id as `0x${string}`,
-                  to: account.address as `0x${string}`,
-                  deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
-                }],
-              }),
-              value,
-            };
+              const actions: any = []
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                  abi: NadFunAbi,
+                  functionName: 'buy',
+                  args: [{
+                    amountOutMin: BigInt(output),
+                    token: token.id as `0x${string}`,
+                    to: account.address as `0x${string}`,
+                    deadline: 0n,
+                  }],
+                })],
+              }))
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: [settings.chainConfig[activechain].eth, 10000n, '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d', 0n, '0x'],
+              }))
+              uo = {
+                target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: zeroXAbi,
+                  functionName: 'execute',
+                  args: [{
+                    recipient: account.address as `0x${string}`,
+                    buyToken: token.id as `0x${string}`,
+                    minAmountOut: BigInt(0n),
+                  }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                }),
+                value,
+              };
+            }
           } else {
             const fee = 99000n;
             const iva = value * fee / 100000n;
@@ -4474,7 +4585,7 @@ useEffect(() => {
                   </div>
                   <div className="dev-address-bottom">
                     <div className="dev-address-bottom-left">
-                      <Tooltip content="View funding wallet on MonadScan">
+                      <Tooltip content="View funding wallet on Monad Explorer">
                         <div
                           className="funding-location"
                           onClick={() =>
