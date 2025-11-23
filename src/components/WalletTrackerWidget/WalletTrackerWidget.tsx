@@ -370,6 +370,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   const [activeTab, setActiveTab] = useState<TrackerTab>('wallets');
   const [searchQuery, setSearchQuery] = useState('');
   const [localWallets, setLocalWallets] = useState<TrackedWallet[]>([]);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const [editingWallet, setEditingWallet] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
@@ -945,24 +946,23 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     if (s < 86400) return `${Math.floor(s / 3600)}h`;
     return `${Math.floor(s / 86400)}d`;
   };
-
-  useEffect(() => {
-    if (externalWallets) {
-      setLocalWallets(externalWallets);
-    } else {
-      setLocalWallets(loadWalletsFromStorage());
-    }
-  }, [externalWallets]);
-
-  useEffect(() => {
-    if (!externalWallets && localWallets.length >= 0) {
-      saveWalletsToStorage(localWallets);
-      window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: localWallets, source: 'widget' } }));
-    }
-    if (onWalletsChange) {
-      onWalletsChange(localWallets);
-    }
-  }, [localWallets, externalWallets, onWalletsChange]);
+useEffect(() => {
+  if (externalWallets) {
+    setLocalWallets(externalWallets);
+  } else {
+    setLocalWallets(loadWalletsFromStorage());
+  }
+  setHasInitiallyLoaded(true);
+}, [externalWallets]);
+useEffect(() => {
+  if (!externalWallets && hasInitiallyLoaded) {
+    saveWalletsToStorage(localWallets);
+    window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: localWallets, source: 'widget' } }));
+  }
+  if (onWalletsChange) {
+    onWalletsChange(localWallets);
+  }
+}, [localWallets, externalWallets, onWalletsChange, hasInitiallyLoaded]);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {

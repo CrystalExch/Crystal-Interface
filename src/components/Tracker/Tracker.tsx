@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, X, Edit2 } from 'lucide-react';
-import '../WalletTrackerWidget/WalletTrackerWidget.css'; 
+import '../WalletTrackerWidget/WalletTrackerWidget.css';
 import './Tracker.css'
 import monadicon from '../../assets/monadlogo.svg';
 import copy from '../../assets/copy.svg';
@@ -363,6 +363,7 @@ const Tracker: React.FC<TrackerProps> = ({
   const [activeTab, setActiveTab] = useState<TrackerTab>('wallets');
   const [searchQuery, setSearchQuery] = useState('');
   const [localWallets, setLocalWallets] = useState<TrackedWallet[]>([]);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const [editingWallet, setEditingWallet] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
@@ -749,18 +750,17 @@ const Tracker: React.FC<TrackerProps> = ({
     } else {
       setLocalWallets(loadWalletsFromStorage());
     }
+    setHasInitiallyLoaded(true);
   }, [externalWallets]);
-
-useEffect(() => {
-  if (!externalWallets && localWallets.length >= 0) {
-    saveWalletsToStorage(localWallets);
-    window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: localWallets, source: 'tracker' } }));
-  }
-  if (onWalletsChange) {
-    onWalletsChange(localWallets);
-  }
-}, [localWallets, externalWallets, onWalletsChange]);
-
+  useEffect(() => {
+    if (!externalWallets && hasInitiallyLoaded) {
+      saveWalletsToStorage(localWallets);
+      window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: localWallets, source: 'tracker' } }));
+    }
+    if (onWalletsChange) {
+      onWalletsChange(localWallets);
+    }
+  }, [localWallets, externalWallets, onWalletsChange, hasInitiallyLoaded]);
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY && e.newValue) {
@@ -772,14 +772,14 @@ useEffect(() => {
       }
     };
 
-const handleCustomWalletUpdate = (e: CustomEvent) => {
-  if (e.detail && e.detail.source !== 'tracker' && !externalWallets) {
-    const updatedWallets = e.detail.wallets;
-    if (JSON.stringify(updatedWallets) !== JSON.stringify(localWallets)) {
-      setLocalWallets(updatedWallets);
-    }
-  }
-};
+    const handleCustomWalletUpdate = (e: CustomEvent) => {
+      if (e.detail && e.detail.source !== 'tracker' && !externalWallets) {
+        const updatedWallets = e.detail.wallets;
+        if (JSON.stringify(updatedWallets) !== JSON.stringify(localWallets)) {
+          setLocalWallets(updatedWallets);
+        }
+      }
+    };
 
     window.addEventListener('storage', handleStorageChange as EventListener);
     window.addEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
@@ -1239,7 +1239,7 @@ const handleCustomWalletUpdate = (e: CustomEvent) => {
   };
 
   return (
-    <div className="tracker-container" style={{ 
+    <div className="tracker-container" style={{
       position: 'relative',
       width: '100%',
       height: '100vh',
@@ -1288,42 +1288,42 @@ const handleCustomWalletUpdate = (e: CustomEvent) => {
           </div>
         )}
         <div className="wtw-widget-header-right">
-                {activeTab === 'wallets' && (
-        <div className="wtw-header">
-          <div className="wtw-header-actions">
-            <div className="wtw-search-bar">
-              <div className="wtw-search">
-                <Search size={14} className="wtw-search-icon" />
-                <input
-                  type="text"
-                  className="wtw-search-input"
-                  placeholder="Search by name or addr..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+          {activeTab === 'wallets' && (
+            <div className="wtw-header">
+              <div className="wtw-header-actions">
+                <div className="wtw-search-bar">
+                  <div className="wtw-search">
+                    <Search size={14} className="wtw-search-icon" />
+                    <input
+                      type="text"
+                      className="wtw-search-input"
+                      placeholder="Search by name or addr..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <button
+                  className="wtw-import-button"
+                  onClick={() => setShowImportPopup(true)}
+                >
+                  Import
+                </button>
+                <button
+                  className="wtw-export-button"
+                  onClick={handleExport}
+                >
+                  Export
+                </button>
+                <button
+                  className="wtw-add-button"
+                  onClick={() => setShowAddWalletModal(true)}
+                >
+                  Add Wallet
+                </button>
               </div>
             </div>
-            <button
-              className="wtw-import-button"
-              onClick={() => setShowImportPopup(true)}
-            >
-              Import
-            </button>
-            <button
-              className="wtw-export-button"
-              onClick={handleExport}
-            >
-              Export
-            </button>
-            <button
-              className="wtw-add-button"
-              onClick={() => setShowAddWalletModal(true)}
-            >
-              Add Wallet
-            </button>
-          </div>
-        </div>
-      )}
+          )}
           {activeTab === 'trades' && (
             <div className="wtw-header-actions">
               <Tooltip content="Live Trade Settings">
