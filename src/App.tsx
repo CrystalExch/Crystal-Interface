@@ -4174,7 +4174,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             } = action.updates;
             const status = s == 'graduated'
               ? 'graduated'
-              : (rest?.price ?? t?.price) * TOTAL_SUPPLY > (t.source == 'crystal' ? 12500 : 500000)
+              : (rest?.price ?? t?.price) * TOTAL_SUPPLY > (t.source == 'crystal' ? 12500 : 616254)
                 ? 'graduating'
                 : 'new'
 
@@ -5901,7 +5901,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           created: m.timestamp,
           status: m.migrated
             ? "graduated"
-            : price * TOTAL_SUPPLY > 500000
+            : price * TOTAL_SUPPLY > 616254
             ? "graduating"
             : "new",
           price,
@@ -11143,6 +11143,60 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       )}
     </>
   );
+
+  const [arbUSDCBalance, setarbUSDCBalance] = useState(0n);
+  const perpsDepositDisabled = !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning || (parseFloat(perpsDepositAmount) > (Number(arbUSDCBalance) / 1e6))
+  
+  useEffect(() => {
+    if (popup != 30 && popup != 31) return;
+
+    let disposed = false;
+    let inFlight: AbortController | null = null;
+
+    const tick = async () => {
+      if (disposed) return;
+      try {
+        inFlight?.abort();
+        inFlight = new AbortController();
+
+        const rpc = "https://arb1.arbitrum.io/rpc";
+        const usdc = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
+        
+        const data =
+          "0x70a08231" +
+          scaAddress.toLowerCase().replace("0x","").padStart(64, "0");
+        
+        const body = {
+          jsonrpc: "2.0",
+          id: 1,
+          method: "eth_call",
+          params: [{ to: usdc, data }, "latest"]
+        };
+        
+        const res = await fetch(rpc, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        
+        if (!res.ok) return;
+
+        const msg = await res.json();
+        setarbUSDCBalance(BigInt(msg?.result))
+      } catch (e) {
+        console.log(e)
+      }
+    };
+
+    const handle = setInterval(tick, 3000);
+    tick();
+
+    return () => {
+      disposed = true;
+      inFlight?.abort();
+      clearInterval(handle);
+    };
+  }, [popup, scaAddress]);
 
   // input tokenlist
   const TokenList1 = (
@@ -19290,11 +19344,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         Converting
                         <div className="">
                           <span>Balance: </span>
-                          <span>0.00</span>
+                          <span>{(Number(arbUSDCBalance) / 1e6).toFixed(2)}</span>
                           <button
                             className="perps-max-button"
                             onClick={() => {
-                              const usdcBalance = tokenBalances['0xaf88d065e77c8cC2239327C5EDb3A432268e5831'] || 0n;
+                              const usdcBalance = arbUSDCBalance || 0n;
                               const maxAmount = (Number(usdcBalance) / 1e6).toFixed(2);
                               setPerpsDepositAmount(maxAmount);
                             }}
@@ -19358,13 +19412,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               <div className="modal-footer">
                 <button
                   className={`perps-confirm-button ${isVaultDepositSigning ? 'signing' : ''}`}
-                  disabled={!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning}
+                  disabled={perpsDepositDisabled}
                   style={{
-                    opacity: !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning ? 0.5 : 1,
-                    cursor: !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning ? 'not-allowed' : 'pointer'
+                    opacity: perpsDepositDisabled ? 0.5 : 1,
+                    cursor: perpsDepositDisabled ? 'not-allowed' : 'pointer'
                   }}
                   onClick={async () => {
-                    if (!perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning) return;
+                    if (perpsDepositDisabled) return;
 
                     try {
                       setIsVaultDepositSigning(true);
@@ -19411,6 +19465,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     </div>
                   ) : !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 ? (
                     'Minimum deposit: 1 USDC'
+                  ) : parseFloat(perpsDepositAmount) > (Number(arbUSDCBalance) / 1e6) ? (
+                    'Insufficient Balance'
                   ) : (
                     'Deposit'
                   )}
@@ -19465,7 +19521,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         Receiving
                         <div className="">
                           <span>Balance: </span>
-                          <span>0.00</span>
+                          <span>{(Number(arbUSDCBalance) / 1e6).toFixed(2)}</span>
                         </div>
                       </div>
                       <div className="perps-input-bottom-row">
@@ -19480,9 +19536,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         </div>
                       </div>
                     </div>
-
-
-
                   </div>
                 </div>
               </div>
