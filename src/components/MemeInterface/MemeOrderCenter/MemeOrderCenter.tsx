@@ -1949,8 +1949,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             </button>
 
             <button
-              //onClick={onToggleTradesTab}
-              style={{cursor: 'not-allowed'}}
+              onClick={onToggleTradesTab}
               className={`meme-oc-trades-toggle-button ${isTradesTabVisible ? 'active' : ''}`}
             >
               {isTradesTabVisible ? (
