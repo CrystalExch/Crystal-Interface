@@ -481,6 +481,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     CurveTokenListed: '0xaa090437ef524cee1d4e0825c0caff2203af3b38ab39624d8ff7fab67e219704',
     CurveSync: '0xfd4bb47bd45abdbdb2ecd61052c9571773f9cde876e2a7745f488c20b30ab10a',
   };
+  
+  const CRYSTAL_EVENTS = {
+    LaunchpadTrade: '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e',
+    MarketCreated: '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b',
+    Trade: '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
+    Transfer: '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+  }
 
   const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
   const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
@@ -614,6 +621,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       });
     }
   }, [sellSlippageValue, sellPriorityFee, selectedSellPreset]);
+
   // constants
   useEffect(() => {
     if (!localStorage.getItem("noSSR")) {
@@ -680,6 +688,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     setWalletTrackerWidgetSnap(snapSide);
     setWalletTrackerWidgetWidth(width);
   }, []);
+
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const TOTAL_SUPPLY = 1e9;
   const nadFunBondingCurve = settings.chainConfig[activechain].nadFunBondingCurve;
@@ -2137,10 +2146,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     reducer,
     initialState,
   );
-  const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-  const MARKET_CREATED_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
-  const TRADE_EVENT = '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982';
-  const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
   const explorerWsRef = useRef<WebSocket | null>(null);
   const explorerPingIntervalRef = useRef<any>(null);
@@ -4169,7 +4174,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             } = action.updates;
             const status = s == 'graduated'
               ? 'graduated'
-              : (rest?.price ?? t?.price) * TOTAL_SUPPLY > 12500
+              : (rest?.price ?? t?.price) * TOTAL_SUPPLY > (t.source == 'crystal' ? 12500 : 500000)
                 ? 'graduating'
                 : 'new'
 
@@ -4423,7 +4428,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const updateMarket = useCallback(
     (log: any) => {
-      if (log.topics?.[0] !== MARKET_UPDATE_EVENT) return;
+      if (log.topics?.[0] !== CRYSTAL_EVENTS.LaunchpadTrade) return;
 
       const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
 
@@ -4629,7 +4634,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               'monadLogs',
               {
                 address: settings.chainConfig[activechain].router,
-                topics: [[TRADE_EVENT, MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']],
+                topics: [[CRYSTAL_EVENTS.Trade, CRYSTAL_EVENTS.MarketCreated, CRYSTAL_EVENTS.LaunchpadTrade, '0xa2e7361c23d7820040603b83c0cd3f494d377bac69736377d75bb56c651a5098']],
               },
             ],
           }),
@@ -4706,7 +4711,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               txReceiptResolvers.current.delete(log['transactionHash']);
             }
 
-            if (log.topics?.[0] === TRADE_EVENT) {
+            if (log.topics?.[0] === CRYSTAL_EVENTS.Trade) {
               const marketAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
               const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
 
@@ -5042,10 +5047,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               return tempset;
             }
-            else if (log.topics?.[0] === MARKET_CREATED_EVENT) {
+            else if (log.topics?.[0] === CRYSTAL_EVENTS.MarketCreated) {
               addMarket(log);
             }
-            else if (log.topics?.[0] === MARKET_UPDATE_EVENT) {
+            else if (log.topics?.[0] === CRYSTAL_EVENTS.LaunchpadTrade) {
               updateMarket(log);
               const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
               const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
@@ -5677,7 +5682,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         return updated;
       });
     } catch (e) {
-      console.error('failed to decode MARKET_CREATED_EVENT', e);
+      console.error('failed to decode CRYSTAL_EVENTS.MarketCreated', e);
     }
   }, []);
 
@@ -5896,7 +5901,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           created: m.timestamp,
           status: m.migrated
             ? "graduated"
-            : price * TOTAL_SUPPLY > 12500
+            : price * TOTAL_SUPPLY > 500000
             ? "graduating"
             : "new",
           price,
@@ -28445,12 +28450,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 router={router}
                 address={scaAddress}
                 orderCenterHeight={orderCenterHeight}
-                tokenList={memoizedTokenList}
                 setSendTokenIn={setSendTokenIn}
                 setpopup={setpopup}
                 sortConfig={memoizedSortConfig}
                 onSort={emptyFunction}
-                tokenBalances={tokenBalances}
                 activeSection={activeSection}
                 setActiveSection={setActiveSection}
                 filter={filter}
@@ -28465,7 +28468,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 openEditOrderSizePopup={openEditOrderSizePopup}
                 wethticker={wethticker}
                 ethticker={ethticker}
-                memoizedTokenList={memoizedTokenList}
                 memoizedSortConfig={memoizedSortConfig}
                 emptyFunction={emptyFunction}
                 handleSetChain={handleSetChain}

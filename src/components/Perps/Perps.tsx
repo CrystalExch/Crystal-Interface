@@ -28,13 +28,11 @@ interface PerpsProps {
   router: any;
   address: any;
   orderCenterHeight: number;
-  tokenList: any[];
   setSendTokenIn: any;
   setpopup: (value: number) => void;
   hideMarketFilter?: boolean;
   sortConfig: any;
   onSort: (config: any) => void;
-  tokenBalances: any;
   activeSection: 'balances' | 'orders' | 'tradeHistory' | 'orderHistory';
   setActiveSection: any;
   filter: 'all' | 'buy' | 'sell';
@@ -51,7 +49,6 @@ interface PerpsProps {
   openEditOrderSizePopup: (order: any) => void;
   wethticker: any;
   ethticker: any;
-  memoizedTokenList: any;
   memoizedSortConfig: any;
   emptyFunction: any;
   handleSetChain: any;
@@ -95,12 +92,10 @@ const Perps: React.FC<PerpsProps> = ({
   address,
   orderCenterHeight,
   hideMarketFilter = false,
-  tokenList,
   setSendTokenIn,
   setpopup,
   sortConfig,
   onSort,
-  tokenBalances,
   activeSection,
   setActiveSection,
   filter,
@@ -117,7 +112,6 @@ const Perps: React.FC<PerpsProps> = ({
   openEditOrderSizePopup,
   wethticker,
   ethticker,
-  memoizedTokenList,
   memoizedSortConfig,
   emptyFunction,
   handleSetChain,
@@ -2542,13 +2536,13 @@ const Perps: React.FC<PerpsProps> = ({
           }
           orderCenterHeight={orderCenterHeight}
           hideBalances={true}
-          tokenList={memoizedTokenList}
+          tokenList={[]}
           onMarketSelect={handlePerpsMarketSelect}
           setSendTokenIn={setSendTokenIn}
           setpopup={setpopup}
           sortConfig={memoizedSortConfig}
           onSort={emptyFunction}
-          tokenBalances={tokenBalances}
+          tokenBalances={[]}
           activeSection={perpsActiveSection}
           setActiveSection={setPerpsActiveSection}
           filter={filter}
