@@ -160,7 +160,7 @@ export const translations: any = {
     noSelfRefer: 'You cannot use your own referral code',
     customizeWarning: 'If you change your custom link, the previous one will stop working.',
     createWarning: 'Create a custom referral link',
-    referralSubtitle: "Get a 25% fee discount when you use a friend or creator's referral code!",
+    referralSubtitle: "Get a 25% fee discount when you use a friend/creator's referral code!",
     yourLink: 'Your referral link:',
     createCode: 'Create referral code',
     signTxn: 'Sign Transaction',
