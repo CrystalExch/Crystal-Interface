@@ -543,6 +543,7 @@
   transition: all 0.3s ease;
   display: block;
   box-shadow: 0 0 0 2px rgb(9, 9, 9);
+  z-index: 1;
 }
 
 .meme-search-avatar-placeholder {
@@ -938,6 +939,7 @@
   border: 1px solid #aaaecf;
   bottom: -7px;
   right: -7px;
+  z-index: 2;
 }
 
 .meme-search-token-avatar-container.graduated .meme-search-launchpad-logo-container {

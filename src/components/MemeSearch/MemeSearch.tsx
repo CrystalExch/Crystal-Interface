@@ -511,7 +511,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
             dev: (m.creator as string) || '',
             name: (m.name as string) || '',
             symbol: (m.symbol as string) || '',
-            image: (m.metadata_cid as string) || '',
+            image: m.metadata_cid || '',
             description: m.description || '',
             twitterHandle: twitter || '',
             website: website || '',
@@ -519,11 +519,11 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
             telegramHandle: telegram || '',
             created: createdTimestamp,
             price,
-            marketCap: price * TOTAL_SUPPLY,
+marketCap: Number(m.marketcap_usd ?? 0),
             change24h: 0,
             buyTransactions: Number(m.tx?.buy ?? 0),
             sellTransactions: Number(m.tx?.sell ?? 0),
-            volume24h: volume,
+volume24h: Number(m.volume_usd ?? 0),
             volumeDelta: 0,
             launchedTokens: Number(m.developer_tokens_created ?? 0),
             graduatedTokens: Number(m.developer_tokens_graduated ?? 0),
@@ -549,6 +549,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
 
             const searchQuery = searchTerm.trim();
             const url = `${BACKEND_BASE_URL}/search/query?query=${encodeURIComponent(searchQuery)}&limit=100`;
+            console.log('🔍 Search URL:', url);
 
             const res = await fetch(url, {
                 method: 'GET',
@@ -561,15 +562,15 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
             const json = await res.json();
-
-            // The backend should return an array of tokens
-            // Adjust based on your actual response structure
+            console.log('📦 Raw API Response:', json);
+            console.log('📦 First result:', json?.tokens?.[0] || json?.results?.[0] || json?.[0]);
             const rows = json?.tokens ?? json?.results ?? json ?? [];
 
             const processedTokens = Array.isArray(rows)
                 ? rows.map((row: any) => mapBackendTokenToUi(row))
                 : [];
-
+            console.log('✅ Processed tokens:', processedTokens);
+            console.log('🖼️ First token image:', processedTokens[0]?.image); ''
             if (!controller.signal.aborted) {
                 setTokens(processedTokens);
             }
