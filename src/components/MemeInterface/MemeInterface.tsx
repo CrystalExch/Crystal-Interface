@@ -4606,7 +4606,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   <div className="meme-setting-item">
                     <div className="meme-setting-input-wrapper">
                       <input
-                        type="number"
+                        type="decimal"
                         className="meme-setting-input"
                         value={
                           settingsMode === 'buy'
@@ -4637,7 +4637,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   <div className="meme-setting-item">
                     <div className="meme-setting-input-wrapper">
                       <input
-                        type="number"
+                        type="decimal"
                         className="meme-setting-input"
                         value={
                           settingsMode === 'buy'

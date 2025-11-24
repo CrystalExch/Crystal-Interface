@@ -143,7 +143,7 @@ const TradingPresetsPopup: React.FC<TradingPresetsPopupProps> = ({ onClose, buyP
           <div className="trading-presets-inputs">
             <div className="trading-preset-input-group">
               <input 
-                type="text" 
+                type="decimal" 
                 value={slippage} 
                 onChange={(e) => setSlippage(e.target.value)} 
                 className="trading-preset-input"
@@ -159,7 +159,7 @@ const TradingPresetsPopup: React.FC<TradingPresetsPopupProps> = ({ onClose, buyP
 
             <div className="trading-preset-input-group">
               <input 
-                type="text" 
+                type="decimal" 
                 value={priority} 
                 onChange={(e) => setPriority(e.target.value)} 
                 className="trading-preset-input"
