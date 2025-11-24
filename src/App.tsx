@@ -648,18 +648,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const saved = localStorage.getItem('spectra-widget-open');
     return saved === 'true';
   });
-const getWidgetOpenState = (): boolean => {
-  try {
-    const stored = localStorage.getItem('wallet_tracker_widget_state');
-    if (stored) return JSON.parse(stored).isOpen ?? false;
-  } catch (error) {
-  }
-  return false;
-};
+  const getWidgetOpenState = (): boolean => {
+    try {
+      const stored = localStorage.getItem('wallet_tracker_widget_state');
+      if (stored) return JSON.parse(stored).isOpen ?? false;
+    } catch (error) {
+    }
+    return false;
+  };
   useEffect(() => {
     localStorage.setItem('spectra-widget-open', String(isSpectraWidgetOpen));
   }, [isSpectraWidgetOpen]); const [isPNLWidgetOpen, setIsPNLWidgetOpen] = useState(false);
-const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(() => getWidgetOpenState());
+  const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(() => getWidgetOpenState());
 
   const [trackerWidgetSnap, setTrackerWidgetSnap] = useState<'left' | 'right' | null>(null);
   const [trackerWidgetWidth, setTrackerWidgetWidth] = useState(400);
@@ -6275,15 +6275,15 @@ const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(() =>
       } catch (e) {
         console.error("Error fetching token data:", e);
         const resForChart =
-        memeSelectedInterval === "1d"
-          ? "1D"
-          : memeSelectedInterval === "4h"
-            ? "240"
-            : memeSelectedInterval === "1h"
-              ? "60"
-              : memeSelectedInterval.endsWith("s")
-                ? memeSelectedInterval.slice(0, -1).toUpperCase() + "S"
-                : memeSelectedInterval.slice(0, -1);
+          memeSelectedInterval === "1d"
+            ? "1D"
+            : memeSelectedInterval === "4h"
+              ? "240"
+              : memeSelectedInterval === "1h"
+                ? "60"
+                : memeSelectedInterval.endsWith("s")
+                  ? memeSelectedInterval.slice(0, -1).toUpperCase() + "S"
+                  : memeSelectedInterval.slice(0, -1);
         setChartData([[], token.symbol + "MON" + resForChart, true]);
         setTokenData({ ...token, created: Math.floor(Date.now() / 1000), mini: [{open: 0.000083878 * 1e9}] });
         setMemeTrades([]);
@@ -10692,25 +10692,25 @@ const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(() =>
     queryKey: ['madhouse_quote', tokenIn, tokenOut, address, activechain, slippage.toString(), amountIn ? amountIn.toString() : null],
     queryFn: async () => {
       const allowanceBody = JSON.stringify({
-        jsonrpc:'2.0',
-        id:1,
-        method:'eth_call',
-        params:[{
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'eth_call',
+        params: [{
           to: tokenIn,
-          data:'0xdd62ed3e' + address.replace('0x','').padStart(64,'0') + settings.chainConfig[activechain]?.madHouseRouter.replace('0x','').padStart(64,'0')
-        },'latest']
+          data: '0xdd62ed3e' + address.replace('0x', '').padStart(64, '0') + settings.chainConfig[activechain]?.madHouseRouter.replace('0x', '').padStart(64, '0')
+        }, 'latest']
       })
       const [aggregatorRes, allowanceRes] = await Promise.all([
-        fetch(`https://api.madhouse.ag/swap/v1/quote?chain=${activechain}&tokenIn=${tokenIn == eth ? '0x0000000000000000000000000000000000000000' : tokenIn}&tokenOut=${tokenOut == eth ? '0x0000000000000000000000000000000000000000' : tokenOut}&amountIn=${amountIn.toString()}&slippage=${(10000-Number(slippage)) / 10000}`).then(r => r.json()),
+        fetch(`https://api.madhouse.ag/swap/v1/quote?chain=${activechain}&tokenIn=${tokenIn == eth ? '0x0000000000000000000000000000000000000000' : tokenIn}&tokenOut=${tokenOut == eth ? '0x0000000000000000000000000000000000000000' : tokenOut}&amountIn=${amountIn.toString()}&slippage=${(10000 - Number(slippage)) / 10000}`).then(r => r.json()),
         fetch(HTTP_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: allowanceBody }).then(r => r.json())
       ])
-      return {aggregatorRes, allowanceRes: BigInt(allowanceRes?.result)}
+      return { aggregatorRes, allowanceRes: BigInt(allowanceRes?.result) }
     },
     enabled: !!tokenIn && !!tokenOut && !!address && !!activechain && !!amountIn && ['swap'].includes(location.pathname.split('/')[1]),
     refetchInterval: 3000,
     gcTime: 0
   })
-  
+
   useLayoutEffect(() => {
     if (!isQuoteFetching && tempQueryData?.aggregatorRes) {
       if (!txPending.current && !debounceTimerRef.current) {
@@ -10722,7 +10722,7 @@ const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(() =>
           setstateloading(false);
           console.log(tempQueryData?.aggregatorRes)
           setamountOutSwap(BigInt(tempQueryData?.aggregatorRes?.amountOut || 0))
-          setoutputString((Number(tempQueryData?.aggregatorRes?.amountOut || 0) / (10**Number(tokendict[tokenOut].decimals))).toString())
+          setoutputString((Number(tempQueryData?.aggregatorRes?.amountOut || 0) / (10 ** Number(tokendict[tokenOut].decimals))).toString())
         }
       }
     } else {
@@ -19968,6 +19968,14 @@ const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(() =>
               marketsData={marketsData}
               tokendict={tokendict}
               onMarketSelect={onMarketSelect}
+              subWallets={subWallets}
+              selectedWallets={selectedWallets}
+              setSelectedWallets={setSelectedWallets}
+              walletTokenBalances={walletTokenBalances}
+              address={address}
+              createSubWallet={createSubWallet}
+              activeWalletPrivateKey={oneCTSigner}
+              activechain={activechain}
             />
           </div>
         ) : null}

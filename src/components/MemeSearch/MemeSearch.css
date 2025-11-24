@@ -970,3 +970,362 @@
       #ff8f00 270deg,
       #ffd700 360deg);
 }
+
+
+/* Wallet Dropdown Styles - EXACT copy from Footer + QuickBuy */
+.meme-search-wallet-button {
+    background: none;
+    border: 1px solid rgba(179, 184, 249, 0.15);
+    border-radius: 20px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 300;
+    height: 23px;
+    overflow: hidden;
+    padding: 6px 8px 6px 12px;
+    transition: all 0.1s ease;
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+}
+
+.meme-search-wallet-icon {
+    width: 14px;
+    height: 14px;
+    opacity: 0.5;
+}
+
+.meme-search-mon-icon {
+    width: 13px;
+    height: 13px;
+    margin-right: 4px;
+}
+
+.meme-search-wallet-dropdown-arrow {
+    transition: transform 0.2s ease;
+    opacity: 0.35;
+}
+
+.meme-search-wallet-dropdown-arrow.open {
+    transform: rotate(180deg);
+}
+
+.meme-search-wallet-dropdown-panel {
+    top: 0;
+    right: 0;
+    position: absolute;
+    width: 300px;
+    background: rgb(9, 9, 9);
+    border: 1px solid rgba(179, 184, 249, 0.12);
+    border-radius: 4px;
+    box-shadow: 0 20px 20px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    color: #fff;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+    pointer-events: none;
+}
+
+.meme-search-wallet-dropdown-panel.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+    margin-top: 30px;
+}
+
+.meme-search-wallet-dropdown-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 4px 12px;
+    padding-top: 10px;
+    padding-right: 8px;
+    transition: all 0.2s ease;
+}
+
+.meme-search-wallet-dropdown-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wallet-dropdown-list {
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(179, 184, 249, 0.2) transparent;
+}
+
+.wallet-dropdown-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.wallet-dropdown-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.wallet-dropdown-list::-webkit-scrollbar-thumb {
+    background: rgba(179, 184, 249, 0.2);
+    border-radius: 3px;
+}
+
+.meme-search-wallet-item {
+    align-items: center;
+    border: 1px solid transparent;
+    border-bottom: 1px solid rgba(179, 184, 249, 0.05);
+    cursor: pointer;
+    display: flex;
+    gap: 8px;
+    padding: 11px 12px;
+    transition: all 0.2s ease;
+    line-height: 1.3;
+}
+
+.meme-search-wallet-item:hover {
+    background: rgba(179, 184, 249, 0.05);
+}
+
+.meme-search-wallet-item.active .quickbuy-wallet-name {
+    color: #d8dcff;
+}
+
+
+.quickbuy-wallet-checkbox-container {
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    justify-content: center;
+}
+
+.quickbuy-wallet-checkbox {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background: transparent;
+    border: 1px solid rgba(170, 174, 207, 0.3);
+    border-radius: 5px;
+    cursor: pointer;
+    flex-shrink: 0;
+    height: 16px;
+    margin-top: 2px;
+    position: relative;
+    transition: all 0.2s ease;
+    width: 16px;
+}
+
+.quickbuy-wallet-checkbox:hover {
+    background: rgba(170, 174, 207, 0.05);
+    border-color: rgba(170, 174, 207, 0.6);
+}
+
+.quickbuy-wallet-checkbox:checked {
+    border-color: #d8dcff;
+}
+
+.quickbuy-wallet-checkbox:checked::after {
+    background-color: #d8dcff;
+    border-radius: 3px;
+    content: '';
+    height: 10.5px;
+    left: 2px;
+    position: absolute;
+    top: 2px;
+    width: 10.5px;
+}
+
+.wallet-dropdown-info {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    margin-top: -3px;
+    min-width: 0;
+}
+
+.quickbuy-wallet-name {
+    display: flex;
+    align-items: center;
+    color: #fff;
+    font-size: 0.9rem;
+    letter-spacing: -0.3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wallet-dropdown-address {
+    font-size: 12px;
+    color: rgb(142, 142, 160);
+    display: flex;
+    align-items: center;
+    transition: color 0.2s ease;
+    gap: 3px;
+    line-height: 1;
+}
+
+.wallet-dropdown-address:hover {
+    color: #d8dcff;
+}
+
+.wallet-dropdown-address-copy-icon {
+    flex-shrink: 0;
+}
+
+.wallet-dropdown-balance {
+    align-items: flex-end;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    margin-right: 8px;
+    width: 85px;
+}
+
+.wallet-dropdown-balance-amount {
+    align-items: center;
+    border: 1px solid rgba(179, 184, 249, 0.1);
+    border-radius: 20px;
+    color: #ced0df;
+    display: flex;
+    font-size: 0.8rem;
+    font-weight: 400;
+    gap: 3px;
+    letter-spacing: -0.2px;
+    padding: 2px 6px;
+}
+
+.wallet-dropdown-balance-amount.insufficient-gas {
+    border-color: rgba(235, 112, 112, 0.3);
+    color: rgb(235, 112, 112);
+}
+
+.wallet-dropdown-balance-amount.insufficient-gas .wallet-dropdown-mon-icon {
+    opacity: 0.8;
+}
+
+.wallet-dropdown-mon-icon {
+    flex-shrink: 0;
+    height: 12px;
+    width: 12px;
+}
+
+.wallet-drag-tokens {
+    align-items: flex-end;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    min-width: 65px;
+}
+
+.wallet-token-count {
+    align-items: center;
+    border: 1px solid rgba(179, 184, 249, 0.1);
+    border-radius: 20px;
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    padding: 2px 6px;
+}
+
+.wallet-token-structure-icons {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+}
+
+.wallet-total-tokens {
+    color: #999;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.token1 {
+    background-color: rgba(34, 34, 39, 1);
+    border-radius: 3px;
+    flex-shrink: 0;
+    height: 12px;
+    position: relative;
+    transition: all 0.2s ease;
+    width: 12px;
+    z-index: 2;
+}
+
+.token2 {
+    background-color: rgb(53, 53, 60);
+    border-radius: 3px;
+    flex-shrink: 0;
+    height: 12px;
+    margin-left: -6px;
+    position: relative;
+    transition: all 0.2s ease;
+    width: 12px;
+    z-index: 1;
+}
+
+.token3 {
+    background-color: rgb(82, 82, 88);
+    border-radius: 3px;
+    flex-shrink: 0;
+    height: 12px;
+    margin-left: -6px;
+    position: relative;
+    transition: all 0.2s ease;
+    width: 12px;
+    z-index: 0;
+}
+
+.quickbuy-add-wallet-button {
+    align-items: center;
+    color: #ced0df;
+    cursor: pointer;
+    display: flex;
+    font-size: 0.9rem;
+    gap: 8px;
+    letter-spacing: -0.3px;
+    padding: 13px 16px;
+    transition: all 0.2s ease;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+
+.quickbuy-add-wallet-button:hover {
+    background: rgba(179, 184, 249, 0.04);
+}
+
+.quickbuy-add-wallet-button svg {
+    flex-shrink: 0;
+}
+
+.wallet-action-btn {
+    align-items: center;
+    background: rgba(179, 184, 249, 0.05);
+    border-radius: 20px;
+    color: #ced0df;
+    cursor: pointer;
+    display: flex;
+    font-size: 0.75rem;
+    letter-spacing: -0.2px;
+    padding: 2px 8px;
+    transition: all 0.2s ease;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    user-select: none !important;
+    white-space: nowrap;
+}
+
+.wallet-action-btn:hover:not(:disabled) {
+    background: rgba(179, 184, 249, 0.1);
+    color: #d8dcff;
+}
+
+.wallet-action-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}

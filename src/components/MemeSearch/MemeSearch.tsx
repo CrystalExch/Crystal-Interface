@@ -7,6 +7,7 @@ import avatar from '../../assets/avatar.png';
 import tweet from '../../assets/tweet.png';
 import lightning from '../../assets/flash.png';
 import monadicon from '../../assets/monad.svg';
+import walleticon from '../../assets/wallet_icon.svg';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
@@ -14,6 +15,11 @@ import { settings as appSettings } from '../../settings';
 
 const BACKEND_BASE_URL = 'https://api.crystal.exchange';
 const TOTAL_SUPPLY = 1e9;
+
+interface SubWallet {
+    address: string;
+    privateKey: string;
+}
 
 export interface Token {
     id: string;
@@ -76,6 +82,13 @@ interface MemeSearchProps {
     tokendict: any;
     setpopup: any;
     activechain?: number;
+    subWallets?: Array<SubWallet>;
+    selectedWallets?: Set<string>;
+    setSelectedWallets?: (wallets: Set<string>) => void;
+    walletTokenBalances?: Record<string, any>;
+    address: string;
+    createSubWallet?: any;
+    activeWalletPrivateKey?: string;
 }
 
 const Tooltip: React.FC<{
@@ -104,7 +117,7 @@ const Tooltip: React.FC<{
 
         switch (position) {
             case 'top':
-                top = rect.top + scrollY - tooltipRect.height - 5;
+                top = rect.top + scrollY - tooltipRect.height - 20;
                 left = rect.left + scrollX + rect.width / 2;
                 break;
             case 'bottom':
@@ -296,6 +309,13 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
     tokendict,
     setpopup,
     activechain = 10143,
+    subWallets = [],
+    selectedWallets = new Set(),
+    setSelectedWallets,
+    walletTokenBalances = {},
+    address,
+    createSubWallet,
+    activeWalletPrivateKey,
 }) => {
     const navigate = useNavigate();
     const crystalLogo = '/CrystalLogo.png'
@@ -330,7 +350,6 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                 }, 100);
             }
         } catch (err) {
-            console.error('Copy failed', err);
             if (showLoadingPopup && updatePopup) {
                 showLoadingPopup(txId, {
                     title: 'Copy Failed',
@@ -354,7 +373,57 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
     const [loading, setLoading] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [buyingTokens, setBuyingTokens] = useState<Set<string>>(new Set());
+const [buyingTokens, setBuyingTokens] = useState<Set<string>>(new Set());
+    const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
+    const walletDropdownRef = useRef<HTMLDivElement>(null);
+
+    const isWalletActive = (privateKey: string) => {
+        return activeWalletPrivateKey === privateKey;
+    };
+
+    const formatNumberWithCommas = (value: number, decimals: number = 2): string => {
+        return value.toLocaleString('en-US', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+        });
+    };
+
+    const toggleWalletSelection = useCallback(
+        (address: string) => {
+            if (!setSelectedWallets) return;
+
+            const newSelected = new Set(selectedWallets);
+            if (newSelected.has(address)) {
+                newSelected.delete(address);
+            } else {
+                newSelected.add(address);
+            }
+            setSelectedWallets(newSelected);
+        },
+        [selectedWallets, setSelectedWallets],
+    );
+
+    const selectAllWallets = useCallback(() => {
+        if (!setSelectedWallets) return;
+        const allAddresses = new Set(subWallets.map((w) => w.address));
+        setSelectedWallets(allAddresses);
+    }, [subWallets, setSelectedWallets]);
+
+    const unselectAllWallets = useCallback(() => {
+        if (!setSelectedWallets) return;
+        setSelectedWallets(new Set());
+    }, [setSelectedWallets]);
+
+    const selectAllWithBalance = useCallback(() => {
+        if (!setSelectedWallets) return;
+        const walletsWithBalance = subWallets
+            .filter((wallet) => {
+                const balance = getWalletBalance(wallet.address);
+                return balance > 0;
+            })
+            .map((w) => w.address);
+        setSelectedWallets(new Set(walletsWithBalance));
+    }, [subWallets, setSelectedWallets]);
 
     const [searchHistory, setSearchHistory] = useState<string[]>(() => {
         try {
@@ -383,7 +452,37 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         }
     });
 
-    const abortRef = useRef<AbortController | null>(null);
+const abortRef = useRef<AbortController | null>(null);
+
+    const getWalletBalance = useCallback(
+        (address: string): number => {
+            const balances = walletTokenBalances[address];
+            if (!balances) return 0;
+
+            const ethAddress = appSettings.chainConfig[activechain]?.eth;
+            if (!ethAddress) return 0;
+
+            const balance = balances[ethAddress];
+            if (!balance) return 0;
+
+            return Number(balance) / 10 ** 18;
+        },
+        [walletTokenBalances, activechain],
+    );
+
+    const getWalletTokenCount = useCallback(
+        (address: string): number => {
+            const balanceData = walletTokenBalances[address];
+            if (!balanceData || !Array.isArray(balanceData)) return 0;
+            return balanceData.filter((token: any) => parseFloat(token.balance) > 0).length;
+        },
+        [walletTokenBalances],
+    );
+
+    const getWalletName = (address: string, index: number): string => {
+        const savedName = localStorage.getItem(`wallet_name_${address}`);
+        return savedName || `Wallet ${index + 1}`;
+    };
 
     const saveSearchHistory = (history: string[]) => {
         try {
@@ -437,7 +536,32 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
         const activePreset = activePresets?.new || 1;
         const presetAmount = buyPresets?.[activePreset]?.amount;
         return presetAmount || '5';
-    }, [quickAmounts, activePresets, buyPresets]);
+}, [quickAmounts, activePresets, buyPresets]);
+
+    const totalSelectedBalance = useMemo(() => {
+        if (selectedWallets.size === 0) {
+            return getWalletBalance(address);
+        }
+        return Array.from(selectedWallets).reduce((total, w) => {
+            return total + getWalletBalance(w);
+        }, 0);
+    }, [selectedWallets, getWalletBalance, address]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (walletDropdownRef.current && !walletDropdownRef.current.contains(event.target as Node)) {
+                setIsWalletDropdownOpen(false);
+            }
+        };
+
+        if (isWalletDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isWalletDropdownOpen]);
 
     const handleQuickBuy = async (token: Token, event: React.MouseEvent) => {
         event.stopPropagation();
@@ -448,8 +572,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
             const amount = getCurrentQuickBuyAmount();
             await onQuickBuy(token, amount);
         } catch (e) {
-            console.error('Quick buy failed:', e);
-        } finally {
+                } finally {
             setBuyingTokens((prev) => {
                 const s = new Set(prev);
                 s.delete(token.id);
@@ -519,11 +642,11 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
             telegramHandle: telegram || '',
             created: createdTimestamp,
             price,
-marketCap: Number(m.marketcap_usd ?? 0),
+            marketCap: Number(m.marketcap_usd ?? 0),
             change24h: 0,
             buyTransactions: Number(m.tx?.buy ?? 0),
             sellTransactions: Number(m.tx?.sell ?? 0),
-volume24h: Number(m.volume_usd ?? 0),
+            volume24h: Number(m.volume_usd ?? 0),
             volumeDelta: 0,
             launchedTokens: Number(m.developer_tokens_created ?? 0),
             graduatedTokens: Number(m.developer_tokens_graduated ?? 0),
@@ -549,7 +672,6 @@ volume24h: Number(m.volume_usd ?? 0),
 
             const searchQuery = searchTerm.trim();
             const url = `${BACKEND_BASE_URL}/search/query?query=${encodeURIComponent(searchQuery)}&limit=100`;
-            console.log('🔍 Search URL:', url);
 
             const res = await fetch(url, {
                 method: 'GET',
@@ -562,22 +684,17 @@ volume24h: Number(m.volume_usd ?? 0),
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
             const json = await res.json();
-            console.log('📦 Raw API Response:', json);
-            console.log('📦 First result:', json?.tokens?.[0] || json?.results?.[0] || json?.[0]);
             const rows = json?.tokens ?? json?.results ?? json ?? [];
 
             const processedTokens = Array.isArray(rows)
                 ? rows.map((row: any) => mapBackendTokenToUi(row))
                 : [];
-            console.log('✅ Processed tokens:', processedTokens);
-            console.log('🖼️ First token image:', processedTokens[0]?.image); ''
             if (!controller.signal.aborted) {
                 setTokens(processedTokens);
             }
         } catch (e: any) {
             if (e?.name !== 'AbortError') {
                 setError('Failed to load search results.');
-                console.error('Search fetch failed:', e);
             }
         } finally {
             if (!controller.signal.aborted) {
@@ -592,12 +709,8 @@ volume24h: Number(m.volume_usd ?? 0),
             if (tokens.length === 0) return tokens;
 
             try {
-                // If you have a batch endpoint, use it here
-                // For now, we'll just return the cached tokens
-                // since we don't have current prices
                 return tokens;
             } catch (e) {
-                console.warn('Failed to fetch recently viewed from backend:', e);
                 return tokens;
             }
         },
@@ -744,12 +857,161 @@ volume24h: Number(m.volume_usd ?? 0),
                     <>
                         {error && <div className="meme-search-error">{error}</div>}
 
-                        {showCombinedRecent && (
+{showCombinedRecent && (
                             <div className="meme-search-section">
-                                <div className="meme-search-section-header">History</div>
+                                <div className="meme-search-section-header">
+                                    <span>History</span>
+                                    <div ref={walletDropdownRef} style={{ position: 'relative' }}>
+                                        <button
+                                            className="meme-search-wallet-button"
+                                            onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
+                                        >
+                                            <img src={walleticon} className="meme-search-wallet-icon" alt="Wallet" />
+                                            <span>{selectedWallets.size}</span>
+                                            {totalSelectedBalance > 0 ? (
+                                                <>
+                                                    <img src={monadicon} className="meme-search-mon-icon" alt="MON" />
+                                                    <span>{formatNumberWithCommas(totalSelectedBalance, 2)}</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <img src={monadicon} className="meme-search-mon-icon" alt="MON" />
+                                                    <span>0</span>
+                                                </>
+                                            )}
+                                            <svg
+                                                className={`meme-search-wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                            >
+                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                            </svg>
+                                        </button>
+
+                                        <div className={`meme-search-wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
+                                            <div className="meme-search-wallet-dropdown-header">
+                                                <div className="meme-search-wallet-dropdown-actions">
+                                                    <button
+                                                        className="wallet-action-btn"
+                                                        onClick={
+                                                            selectedWallets.size === subWallets.length
+                                                                ? unselectAllWallets
+                                                                : selectAllWallets
+                                                        }
+                                                    >
+                                                        {selectedWallets.size === subWallets.length ? 'Unselect All' : 'Select All'}
+                                                    </button>
+                                                    <button className="wallet-action-btn" onClick={selectAllWithBalance}>
+                                                        Select All with Balance
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="wallet-dropdown-list">
+                                                <div>
+                                                    {subWallets.map((wallet, index) => {
+                                                        const balance = getWalletBalance(wallet.address);
+                                                        const isSelected = selectedWallets.has(wallet.address);
+                                                        const isActive = isWalletActive(wallet.privateKey);
+                                                        return (
+                                                            <React.Fragment key={wallet.address}>
+                                                                <div
+                                                                    className={`meme-search-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                                                                    onClick={() => toggleWalletSelection(wallet.address)}
+                                                                >
+                                                                    <div className="quickbuy-wallet-checkbox-container">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            className="quickbuy-wallet-checkbox selection"
+                                                                            checked={isSelected}
+                                                                            readOnly
+                                                                        />
+                                                                    </div>
+                                                                    <div className="wallet-dropdown-info">
+                                                                        <div className="quickbuy-wallet-name">
+                                                                            {getWalletName(wallet.address, index)}
+                                                                            {isActive && (
+                                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                                                                    <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                                                                    <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                                                                    <path d="m20 9-3 9" />
+                                                                                    <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                                                                    <path d="M7 18 4 9" />
+                                                                                    <circle cx="12" cy="4" r="2" />
+                                                                                    <circle cx="20" cy="7" r="2" />
+                                                                                    <circle cx="4" cy="7" r="2" />
+                                                                                </svg>
+                                                                            )}
+                                                                        </div>
+                                                                        <div
+                                                                            className="wallet-dropdown-address"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                copyToClipboard(wallet.address);
+                                                                            }}
+                                                                            style={{ cursor: 'pointer' }}
+                                                                        >
+                                                                            {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                                                                            <svg className="wallet-dropdown-address-copy-icon" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: '2px' }}>
+                                                                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                                                            </svg>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="wallet-dropdown-balance">
+                                                                        {(() => {
+                                                                            const gasReserve = BigInt(appSettings.chainConfig[activechain].gasamount ?? 0);
+                                                                            const balanceWei = walletTokenBalances[wallet.address]?.[appSettings.chainConfig[activechain]?.eth] || 0n;
+                                                                            const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+
+                                                                            return (
+                                                                                <Tooltip content={hasInsufficientGas ? 'Not enough for gas, transactions will revert' : 'MON Balance'}>
+                                                                                    <div className={`wallet-dropdown-balance-amount ${hasInsufficientGas ? 'insufficient-gas' : ''}`}>
+                                                                                        <img src={monadicon} className="wallet-dropdown-mon-icon" alt="MON" />
+                                                                                        {formatNumberWithCommas(balance, 2)}
+                                                                                    </div>
+                                                                                </Tooltip>
+                                                                            );
+                                                                        })()}
+                                                                    </div>
+                                                                    <div className="wallet-drag-tokens">
+                                                                        <div className="wallet-token-count">
+                                                                            <div className="wallet-token-structure-icons">
+                                                                                <div className="token1"></div>
+                                                                                <div className="token2"></div>
+                                                                                <div className="token3"></div>
+                                                                            </div>
+                                                                            <span className="wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </React.Fragment>
+                                                        );
+                                                    })}
+                                                    {subWallets.length < 10 && (
+                                                        <div
+                                                            className="quickbuy-add-wallet-button"
+                                                            onClick={() => {
+                                                                createSubWallet?.();
+                                                            }}
+                                                        >
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                            </svg>
+                                                            <span>Add Wallet</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
-
                         {searchTerm.trim().length >= 2 && (loading || isSearching) && (
                             <div className="meme-search-loading">Searching...</div>
                         )}
@@ -968,15 +1230,15 @@ volume24h: Number(m.volume_usd ?? 0),
                                                         <div className="meme-token-stats">
                                                             <div className="meme-search-stat-item">
                                                                 <p className="meme-search-stat-label">MC</p>
-                                                                <span className="meme-search-stat-value">{formatPrice(token.marketCap)}</span>
+                                                                <span className="meme-search-stat-value">${formatPrice(token.marketCap)}</span>
                                                             </div>
                                                             <div className="meme-search-stat-item">
                                                                 <p className="meme-search-stat-label">V</p>
-                                                                <span className="meme-search-stat-value">{formatPrice(token.volume24h)}</span>
+                                                                <span className="meme-search-stat-value">${formatPrice(token.volume24h)}</span>
                                                             </div>
                                                             <div className="meme-search-stat-item">
                                                                 <p className="meme-search-stat-label">L</p>
-                                                                <span className="meme-search-stat-value">{formatPrice(69000)}</span>
+                                                                <span className="meme-search-stat-value">${formatPrice(69000)}</span>
                                                             </div>
                                                         </div>
 
