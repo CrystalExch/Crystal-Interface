@@ -117,7 +117,7 @@ const Tooltip: React.FC<{
 
         switch (position) {
             case 'top':
-                top = rect.top + scrollY - tooltipRect.height - 5;
+                top = rect.top + scrollY - tooltipRect.height - 20;
                 left = rect.left + scrollX + rect.width / 2;
                 break;
             case 'bottom':
@@ -1230,15 +1230,15 @@ const abortRef = useRef<AbortController | null>(null);
                                                         <div className="meme-token-stats">
                                                             <div className="meme-search-stat-item">
                                                                 <p className="meme-search-stat-label">MC</p>
-                                                                <span className="meme-search-stat-value">{formatPrice(token.marketCap)}</span>
+                                                                <span className="meme-search-stat-value">${formatPrice(token.marketCap)}</span>
                                                             </div>
                                                             <div className="meme-search-stat-item">
                                                                 <p className="meme-search-stat-label">V</p>
-                                                                <span className="meme-search-stat-value">{formatPrice(token.volume24h)}</span>
+                                                                <span className="meme-search-stat-value">${formatPrice(token.volume24h)}</span>
                                                             </div>
                                                             <div className="meme-search-stat-item">
                                                                 <p className="meme-search-stat-label">L</p>
-                                                                <span className="meme-search-stat-value">{formatPrice(69000)}</span>
+                                                                <span className="meme-search-stat-value">${formatPrice(69000)}</span>
                                                             </div>
                                                         </div>
 
