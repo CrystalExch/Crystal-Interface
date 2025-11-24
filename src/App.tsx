@@ -2076,7 +2076,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     gcTime: 0
   })
 
-  const monUsdPrice = storkData?.price || 0.05;
+  const monUsdPrice = storkData?.price || 0.03;
 
   const [walletTokenBalances, setWalletTokenBalances] = useState<any>({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
