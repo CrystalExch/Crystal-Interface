@@ -1419,7 +1419,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         throw new Error('Invalid token price');
       }
 
-      // Get all wallets that hold this token
       const allWalletAddresses = [
         userAddr,
         ...subWallets.map((w) => w.address),
@@ -1434,7 +1433,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         throw new Error('No tokens to sell');
       }
 
-      // Calculate total tokens across all wallets
       const decimals = tokendict?.[position.tokenId]?.decimals || 18;
       const totalTokenBalance = walletsWithToken.reduce((sum, addr) => {
         const balance = walletTokenBalances?.[addr]?.[position.tokenId];
@@ -1442,7 +1440,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         return sum + Number(balance) / 10 ** Number(decimals);
       }, 0);
 
-      // Calculate how many tokens we need to sell
       const tokensToSell = monAmountNum / tokenPrice;
 
       if (tokensToSell > totalTokenBalance) {
@@ -1456,7 +1453,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         position.symbol,
       );
 
-      // Distribute sell proportionally across wallets
       const transferPromises = [];
       let remainingToSell = tokensToSell;
 
@@ -1468,7 +1464,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
         const walletTokens = Number(walletBalance) / 10 ** Number(decimals);
 
-        // Calculate this wallet's share proportionally
         const walletShare = Math.min(
           (walletTokens / totalTokenBalance) * tokensToSell,
           remainingToSell,

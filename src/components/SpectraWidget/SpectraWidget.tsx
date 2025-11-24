@@ -2916,7 +2916,6 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
 
     setIsDragging(true);
 
-    // Add global mouse capture to handle mouse leaving window
     if (e.target && 'setPointerCapture' in e.target) {
       (e.target as HTMLElement).setPointerCapture((e.nativeEvent as PointerEvent).pointerId);
     }
