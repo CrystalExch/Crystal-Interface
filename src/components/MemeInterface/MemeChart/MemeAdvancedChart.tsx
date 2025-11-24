@@ -115,7 +115,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       const raw = localStorage.getItem('meme_chart_showMarketCap');
       return raw ? JSON.parse(raw) === true : false;
     } catch {
-      return false;
+      return true;
     }
   });
   const [showUSD, setShowUSD] = useState<boolean>(() => {
@@ -123,7 +123,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       const raw = localStorage.getItem('meme_chart_showUSD');
       return raw ? JSON.parse(raw) === true : false;
     } catch {
-      return false;
+      return true;
     }
   });
   const subWalletAddressesRef = useRef<string[]>(
