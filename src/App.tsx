@@ -4529,7 +4529,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             if (createdTimestamp > 1e10) {
               createdTimestamp = Math.floor(createdTimestamp / 1000);
             }
-            const volume = Number(m.native_volume / 1e18 ?? 0);
+            const volume = Number(m.native_volume / 1e18);
             const holdersRaw = Number(m.holders ?? 0);
             const devHoldingRaw = Number(m.developer_holding ?? 0);
             const top10HoldingRaw = Number(m.top10_holding ?? 0);

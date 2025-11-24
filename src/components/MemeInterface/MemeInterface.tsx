@@ -856,8 +856,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [isOCTradesHovered, setIsOCTradesHovered] = useState(false);
   const [tradeAmount, setTradeAmount] = useState('');
   const [limitPrice, setLimitPrice] = useState('');
-  const [quoteValue, setQuoteValue] = useState<number | undefined>(undefined);
-  const [inputCurrency, setInputCurrency] = useState<'MON' | 'TOKEN'>('MON');
   const [sellInputMode, setSellInputMode] = useState<'percentage' | 'token'>('percentage');
   const [sliderPercent, setSliderPercent] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -1579,8 +1577,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
       setTradeAmount(amount);
       setActiveTradeType('buy');
-      setInputCurrency('MON');
-      handleTrade();
+      handleTrade(tradeAmount);
     } else {
       const pct = BigInt(parseInt(amount.replace('%', ''), 10));
       const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
@@ -1602,8 +1599,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
       setTradeAmount(tokenAmount.toString());
       setActiveTradeType('sell');
-      setInputCurrency('TOKEN');
-      handleTrade();
+      handleTrade(tradeAmount);
     }
   };
 
@@ -1866,58 +1862,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     [handlePresetInputSubmit],
   );
 
-  useEffect(() => {
-    const id = setTimeout(() => {
-      if (
-        !tradeAmount ||
-        tradeAmount === '' ||
-        !currentPrice ||
-        currentPrice === 0
-      ) {
-        setQuoteValue(undefined);
-        return;
-      }
-
-      const amt = parseFloat(tradeAmount);
-
-      if (isNaN(amt) || amt <= 0) {
-        setQuoteValue(undefined);
-        return;
-      }
-
-      let converted = 0;
-
-      if (activeTradeType === 'buy') {
-        converted = amt / currentPrice;
-      } else {
-        if (inputCurrency === 'TOKEN') {
-          converted = amt * currentPrice;
-        } else {
-          converted = amt / currentPrice;
-        }
-      }
-
-      setQuoteValue(converted);
-    }, 400);
-
-    return () => clearTimeout(id);
-  }, [tradeAmount, currentPrice, activeTradeType, inputCurrency]);
-
-  useEffect(() => {
-    if (activeTradeType === 'sell') {
-      setInputCurrency('TOKEN');
-    } else if (activeTradeType === 'buy') {
-      setInputCurrency('MON');
-    }
-  }, [activeTradeType]);
-
-  const handleTrade = async () => {
+  const handleTrade = async (tradeAmount: string) => {
     if (!tradeAmount || !account.connected) return;
     if (activeOrderType === 'Limit' && !limitPrice) return;
 
-    const targetChainId =
-      settings.chainConfig[activechain]?.chainId || activechain;
-    if (account.chainId !== targetChainId) {
+    if (account.chainId !== activechain) {
       walletPopup.showChainSwitchRequired(
         settings.chainConfig[activechain]?.name || 'Monad',
       );
@@ -2117,7 +2066,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
           txId = walletPopup.showBuyTransaction(
             tradeAmount,
-            inputCurrency,
+            'MON',
             token.symbol,
             token.image,
           );
@@ -2225,15 +2174,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           walletPopup.updateTransactionConfirming(
             txId,
             tradeAmount,
-            inputCurrency,
+            'MON',
             token.symbol,
           );
           await sendUserOperationAsync({ uo });
           walletPopup.updateTransactionSuccess(txId, {
-            tokenAmount: Number(quoteValue ?? 0),
+            tokenAmount: Number(0),
             spentAmount: Number(tradeAmount),
             tokenSymbol: token.symbol,
-            currencyUnit: inputCurrency,
+            currencyUnit: 'MON',
           });
 
           terminalRefetch();
@@ -2286,7 +2235,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 let inputAmountWei = BigInt(Number(amountTokenWei) / token.price * (1 + Number(sellSlippageValue) / 100))
                 if (inputAmountWei > walletBalance) {
                   amountTokenWei = amountTokenWei * walletBalance / inputAmountWei
-                  inputAmountWei = BigInt(Number(amountTokenWei) / token.price * (1 + Number(sellSlippageValue) / 100))
+                  inputAmountWei = BigInt(Math.floor(Number(amountTokenWei) / token.price * (1 + Number(sellSlippageValue) / 100)))
                 }
                 const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
                 const sellToken = token.id as `0x${string}`
@@ -2632,7 +2581,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         } else {
           txId = walletPopup.showSellTransaction(
             tradeAmount,
-            inputCurrency === 'TOKEN' ? token.symbol : 'MON',
+            'MON',
             token.symbol,
             token.image,
           );
@@ -2643,9 +2592,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           if (sellInputMode === 'percentage') {
             amountTokenWei = parseFloat(tradeAmount) >= 100 ? walletTokenBalances?.[userAddr]?.[token.id] : BigInt(Math.floor(Number(walletTokenBalances?.[userAddr]?.[token.id]) * parseFloat(tradeAmount) / 100));
             isExactInput = true;
-          } else if (inputCurrency === 'TOKEN') {
-            amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18 / 0.99));
-            isExactInput = false;
           } else {
             amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18 / 0.99));
             isExactInput = false;
@@ -2665,7 +2611,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           walletPopup.updateTransactionConfirming(
             txId,
             tradeAmount,
-            inputCurrency === 'TOKEN' ? token.symbol : 'MON',
+            'MON',
             token.symbol,
           );
           let sellUo;
@@ -4416,7 +4362,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   );
                   setChain();
                 } else {
-                  handleTrade();
+                  handleTrade(tradeAmount);
                 }
               }
             }}
@@ -5772,6 +5718,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         isTerminalDataFetching={isTerminalDataFetching}
         createSubWallet={createSubWallet}
         setOneCTDepositAddress={setOneCTDepositAddress}
+        signTypedDataAsync={signTypedDataAsync}
       />
 
       {hoveredSimilarTokenImage &&

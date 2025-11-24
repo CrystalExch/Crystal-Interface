@@ -26,6 +26,10 @@ import slippage from '../../../assets/slippage.svg';
 import switchicon from '../../../assets/switch.svg';
 import walleticon from '../../../assets/wallet_icon.svg';
 import { settings } from '../../../settings';
+import { zeroXAbi } from '../../../abis/zeroXAbi';
+import { zeroXActionsAbi } from '../../../abis/zeroXActionsAbi';
+import { CrystalDataHelperAbi } from '../../../abis/CrystalDataHelperAbi';
+import { TokenAbi } from '../../../abis/TokenAbi';
 
 import './QuickBuyWidget.css';
 
@@ -71,6 +75,7 @@ interface QuickBuyWidgetProps {
   isTerminalDataFetching: any;
   createSubWallet: any;
   setOneCTDepositAddress: any;
+  signTypedDataAsync: any;
 }
 
 const Tooltip: React.FC<{
@@ -263,6 +268,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   isTerminalDataFetching,
   createSubWallet,
   setOneCTDepositAddress,
+  signTypedDataAsync
 }) => {
   if (window.innerWidth < 1020) return (<></>)
   const [position, setPosition] = useState(() => {
@@ -1171,31 +1177,88 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         if (!pk) continue;
         const isNadFun = token.source === 'nadfun';
         const contractAddress = isNadFun
-          ? settings.chainConfig[activechain].nadFunRouter
-          : routerAddress;
+        ? token.migrated ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
+        : routerAddress;
 
         let uo;
         if (isNadFun) {
-          const fee = 99000n;
-          const iva = partWei * fee / 100000n;
-          const vNative = token.reserveQuote + iva;
-          const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
-          const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+          if (token.migrated) {
+            let minOutput = BigInt(Number(partWei) / token.price * (1 - Number(buySlippageValue) / 100))
+            const actions: any = []
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                abi: NadFunAbi,
+                functionName: 'buy',
+                args: [{
+                  amountOutMin: BigInt(minOutput == 0n ? 1n : minOutput),
+                  token: token.id as `0x${string}`,
+                  to: addr as `0x${string}`,
+                  deadline: 0n,
+                }],
+              })],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
+            }))
+            uo = {
+              target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+              data: encodeFunctionData({
+                abi: zeroXAbi,
+                functionName: 'execute',
+                args: [{
+                  recipient: addr as `0x${string}`,
+                  buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                  minAmountOut: BigInt(0n),
+                }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+              }),
+              value: partWei,
+            };
+          }
+          else {
+            const fee = 99000n;
+            const iva = partWei * fee / 100000n;
+            const vNative = token.reserveQuote + iva;
+            const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+            const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
 
-          uo = {
-            target: contractAddress as `0x${string}`,
-            data: encodeFunctionData({
-              abi: NadFunAbi,
-              functionName: 'buy',
-              args: [{
-                amountOutMin: BigInt(output),
-                token: token.id as `0x${string}`,
-                to: addr as `0x${string}`,
-                deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
-              }],
-            }),
-            value: partWei,
-          };
+            const actions: any = []
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                abi: NadFunAbi,
+                functionName: 'buy',
+                args: [{
+                  amountOutMin: BigInt(output),
+                  token: token.id as `0x${string}`,
+                  to: addr as `0x${string}`,
+                  deadline: 0n,
+                }],
+              })],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
+            }))
+            uo = {
+              target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+              data: encodeFunctionData({
+                abi: zeroXAbi,
+                functionName: 'execute',
+                args: [{
+                  recipient: addr as `0x${string}`,
+                  buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                  minAmountOut: BigInt(0n),
+                }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+              }),
+              value: partWei,
+            };
+          }
         } else {
           const fee = 99000n;
           const iva = partWei * fee / 100000n;
@@ -1299,7 +1362,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       });
       return;
     }
-
+    const isNadFun = token.source === 'nadfun';
     const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
     targets = targets.filter(addr => {
       const tokenBalance = walletTokenBalances[addr]?.[token.id] ?? 0n;
@@ -1335,6 +1398,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       amountUnit: sellMode === 'percent' ? '%' : 'MON',
       tokenImage: token.image,
     });
+    const sellContractAddress = isNadFun
+    ? token.migrated ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
+    : routerAddress;
 
     try {
       let skippedZero = 0;
@@ -1345,7 +1411,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         for (const addr of targets) {
           const balWei: bigint =
             walletTokenBalances[addr]?.[token.id] ?? 0n;
-          const amountWei = pct >= 100n ? balWei : (balWei * pct) / 100n;
+          let amountWei = pct >= 100n ? balWei : (balWei * pct) / 100n;
 
           if (amountWei <= 0n) {
             skippedZero++;
@@ -1358,16 +1424,127 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             skippedInsufficient++;
             continue;
           }
+          let uo;
+          if (isNadFun) {
+            const actions: any = []
+            let inputAmountWei = BigInt(Number(amountWei) * token.price * (1 - Number(sellSlippageValue) / 100))
+            const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
+            const sellToken = token.id as `0x${string}`
+            const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
+            if (token?.allowance?.[addr]?.allowance < amountWei) {
+              const nonce = token?.allowance?.[addr]?.nonce ?? 0n
+            
+              const signature = await signTypedDataAsync(
+                {
+                  domain: {
+                    name: token.name,
+                    version: '1',
+                    chainId: activechain,
+                    verifyingContract: sellToken,
+                  },
+                  types: {
+                    Permit: [
+                      { name: 'owner', type: 'address' },
+                      { name: 'spender', type: 'address' },
+                      { name: 'value', type: 'uint256' },
+                      { name: 'nonce', type: 'uint256' },
+                      { name: 'deadline', type: 'uint256' },
+                    ],
+                  },
+                  primaryType: 'Permit',
+                  message: {
+                    owner: addr,
+                    spender: settler,
+                    value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                    nonce,
+                    deadline,
+                  },
+                }, wally?.privateKey
+              )
+              
+              const sigHex = signature.slice(2)
+              const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
+              const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
+              const v = Number(`0x${sigHex.slice(128, 130)}`)
+              
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
+                  abi: CrystalDataHelperAbi,
+                  functionName: 'tryPermit',
+                  args: [
+                    sellToken,
+                    addr as `0x${string}`,
+                    settler,
+                    115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                    deadline,
+                    v,
+                    r,
+                    s
+                  ],
+                })],
+              }))
+            }
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: ['0x0000000000000000000000000000000000000000', 0n, sellToken, 0n, encodeFunctionData({
+                abi: TokenAbi,
+                functionName: 'transferFrom',
+                args: [addr as `0x${string}`, settler, amountWei],
+              })],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [token.id, 10000n, sellContractAddress, 4n, encodeFunctionData({
+                abi: NadFunAbi,
+                functionName: 'sell',
+                args: [{
+                  amountIn: 0n,
+                  amountOutMin: inputAmountWei,
+                  token: token.id as `0x${string}`,
+                  to: settler as `0x${string}`,
+                  deadline: deadline,
+                }],
+              })],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 100n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 10000n, addr as `0x${string}`, 0n, '0x'],
+            }))
+            uo = {
+              target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+              data: encodeFunctionData({
+                abi: zeroXAbi,
+                functionName: 'execute',
+                args: [{
+                  recipient: addr as `0x${string}`,
+                  buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                  minAmountOut: BigInt(0n),
+                }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+              }),
+              value: 0n,
+            };
+          } else {
+            uo = {
+              target: routerAddress as `0x${string}`,
+              data: encodeFunctionData({
+                abi: CrystalRouterAbi,
+                functionName: 'sell',
+                args: [true, token.id as `0x${string}`, amountWei, 0n],
+              }),
+              value: 0n,
+            };
+          }
 
-          const uo = {
-            target: routerAddress as `0x${string}`,
-            data: encodeFunctionData({
-              abi: CrystalRouterAbi,
-              functionName: 'sell',
-              args: [true, token.id as `0x${string}`, amountWei, 0n],
-            }),
-            value: 0n,
-          };
 
           const wallet = nonces.current.get(addr);
           const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, true, false, 1, addr];
@@ -1401,7 +1578,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           });
           return;
         }
-        const totalMonWei = BigInt(Math.round(totalMon * 1e18));
+        const totalMonWei = BigInt(Math.round(totalMon * 1e18 / 0.99));
         const parts = distributeEvenly(totalMonWei, targets.length);
 
         for (let i = 0; i < targets.length; i++) {
@@ -1414,13 +1591,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
           const balWei: bigint =
             walletTokenBalances[addr]?.[token.id] ?? 0n;
-          let reqTokenWei = 0n;
-          if (tokenPrice > 0) {
-            const partMon = Number(partMonWei) / 1e18;
-            const tokens = partMon / tokenPrice;
-            reqTokenWei = BigInt(Math.floor(tokens * 1e18));
-          }
-          const amountWei = reqTokenWei > balWei ? balWei : reqTokenWei;
+          let amountWei = totalMonWei / BigInt(targets.length);
+
           if (amountWei <= 0n) {
             skippedInsufficient++;
             continue;
@@ -1432,16 +1604,131 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             skippedInsufficient++;
             continue;
           }
-
-          const uo = {
-            target: routerAddress as `0x${string}`,
-            data: encodeFunctionData({
-              abi: CrystalRouterAbi,
-              functionName: 'sell',
-              args: [false, token.id as `0x${string}`, amountWei * 2n, partMonWei],
-            }),
-            value: 0n,
-          };
+          let uo;
+          if (isNadFun) {
+            const actions: any = []
+            let inputAmountWei = BigInt(Number(amountWei) / token.price * (1 + Number(sellSlippageValue) / 100))
+            if (inputAmountWei > balWei) {
+              amountWei = amountWei * balWei / inputAmountWei
+              inputAmountWei = BigInt(Number(amountWei) / token.price * (1 + Number(sellSlippageValue) / 100))
+            }
+            const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
+            const sellToken = token.id as `0x${string}`
+            const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
+            if (token?.allowance?.[addr]?.allowance < inputAmountWei) {
+              const nonce = token?.allowance?.[addr]?.nonce ?? 0n
+              
+              const signature = await signTypedDataAsync(
+                {
+                  domain: {
+                    name: token.name,
+                    version: '1',
+                    chainId: activechain,
+                    verifyingContract: sellToken,
+                  },
+                  types: {
+                    Permit: [
+                      { name: 'owner', type: 'address' },
+                      { name: 'spender', type: 'address' },
+                      { name: 'value', type: 'uint256' },
+                      { name: 'nonce', type: 'uint256' },
+                      { name: 'deadline', type: 'uint256' },
+                    ],
+                  },
+                  primaryType: 'Permit',
+                  message: {
+                    owner: addr,
+                    spender: settler,
+                    value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                    nonce,
+                    deadline,
+                  },
+                }, wally?.privateKey
+              )
+              
+              const sigHex = signature.slice(2)
+              const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
+              const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
+              const v = Number(`0x${sigHex.slice(128, 130)}`)
+              
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
+                  abi: CrystalDataHelperAbi,
+                  functionName: 'tryPermit',
+                  args: [
+                    sellToken,
+                    addr as `0x${string}`,
+                    settler,
+                    115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                    deadline,
+                    v,
+                    r,
+                    s
+                  ],
+                })],
+              }))
+            }
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: ['0x0000000000000000000000000000000000000000', 0n, sellToken, 0n, encodeFunctionData({
+                abi: TokenAbi,
+                functionName: 'transferFrom',
+                args: [addr as `0x${string}`, settler, inputAmountWei],
+              })],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [token.id, 10000n, sellContractAddress, 4n, encodeFunctionData({
+                abi: NadFunAbi,
+                functionName: 'exactOutSell',
+                args: [{
+                  amountInMax: 0n,
+                  amountOut: amountWei,
+                  token: token.id as `0x${string}`,
+                  to: settler as `0x${string}`,
+                  deadline: deadline,
+                }],
+              })],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 100n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 10000n, addr as `0x${string}`, 0n, '0x'],
+            }))
+            uo = {
+              target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+              data: encodeFunctionData({
+                abi: zeroXAbi,
+                functionName: 'execute',
+                args: [{
+                  recipient: addr as `0x${string}`,
+                  buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                  minAmountOut: BigInt(0n),
+                }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+              }),
+              value: 0n,
+            };
+          }
+          else {
+            uo = {
+              target: routerAddress as `0x${string}`,
+              data: encodeFunctionData({
+                abi: CrystalRouterAbi,
+                functionName: 'sell',
+                args: [false, token.id as `0x${string}`, amountWei * 2n, partMonWei],
+              }),
+              value: 0n,
+            };
+          }
           const wallet = nonces.current.get(addr);
           const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, true, false, 1, addr];
           if (wallet) wallet.nonce += 1;
