@@ -5865,14 +5865,21 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               const toUint = (hex: string) => BigInt('0x' + hex);
 
-              const sqrtToPrice = (sqrt: bigint) =>
-                Number((sqrt * sqrt) >> 192n);
-
+              function decodeSqrtPriceX96(sqrtPriceX96: bigint): number {
+                const numerator = sqrtPriceX96 * sqrtPriceX96;
+                const denominator = 1n << 192n;
+              
+                const scale = 1_000_000n;
+              
+                const scaled = (numerator * scale) / denominator;
+                return Number(scaled) / 1_000_000;
+              }
+              
               const amount0 = toInt256(words[0]);
               const amount1 = toInt256(words[1]);
               const sqrtPriceX96 = toUint(words[2]);
 
-              let price = sqrtToPrice(sqrtPriceX96);
+              let price = decodeSqrtPriceX96(sqrtPriceX96);
               let tokenInfo: any = null;
               Object.values(tokensByStatusRef.current).forEach((tokens: any[]) => {
                 const found = tokens.find(t => t.market?.toLowerCase() == pool);
@@ -5928,6 +5935,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
                 const tradeId = `${log.transactionHash}-${log.logIndex}`;
+
 
                 if (processedTradeIds.current.has(tradeId)) {
                   return tempset;
