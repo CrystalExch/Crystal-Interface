@@ -3592,6 +3592,15 @@ const Portfolio: React.FC<PortfolioProps> = ({
             </div>
           </div>
         </div>
+        <div className="trenches-second-row ">
+              <div className="trenches-time-controls">
+                <div className="trenches-time-button">1d</div>
+                <div className="trenches-time-button">7d</div>
+                <div className="trenches-time-button">30d</div>
+                <div className="trenches-time-button-active">MAX</div>
+              </div>
+
+        </div>
         <div className="portfolio-content-container">
           {renderTabContent()}
         </div>
