@@ -720,7 +720,7 @@ const abortRef = useRef<AbortController | null>(null);
     useEffect(() => {
         const term = searchTerm.trim();
 
-        if (term.length < 2) {
+        if (term.length < 1) {
             setIsSearching(false);
             setLoading(false);
             setTokens([]);
