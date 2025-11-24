@@ -304,7 +304,7 @@ const Loader = () => {
   const location = useLocation();
 
   useEffect(() => {
-    if (location.pathname.startsWith("/perps")) {
+    if (true) {
       setReady(true)
       return;
     };
@@ -6614,10 +6614,10 @@ const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(() =>
           token.source === "nadfun"
             ? {
               disabled: false,
-              to: settings.chainConfig[activechain].nadFunBondingCurve,
-              abi: NadFunAbi,
-              functionName: "curves",
-              args: [token.id]
+              to: balancegetter,
+              abi: CrystalDataHelperAbi,
+              functionName: "getReserves",
+              args: [settings.chainConfig[activechain].nadFunBondingCurve, '0x98f7497e7790a4F39b4eD8a71b547156c34da190', weth, token.id]
             }
             : {
               disabled: false,
@@ -6833,7 +6833,7 @@ const [isWalletTrackerWidgetOpen, setIsWalletTrackerWidgetOpen] = useState(() =>
 
       if (groupResults?.mainGroup?.at(-1)?.result) {
         const reservesData = groupResults?.mainGroup?.at(-1)?.result;
-        setTokenData((prev: any) => ({ ...prev, reserveQuote: token.source === "nadfun" ? reservesData[2] : reservesData[0], reserveBase: token.source === "nadfun" ? reservesData[3] : reservesData[1] }));
+        setTokenData((prev: any) => ({ ...prev, migrated: token.source === "nadfun" ? reservesData[2] : prev.migrated, reserveQuote: token.source === "nadfun" ? reservesData[0] : reservesData[0], reserveBase: token.source === "nadfun" ? reservesData[1] : reservesData[1] }));
       }
       return { readContractData: groupResults, gasEstimate: gasEstimate }
     },

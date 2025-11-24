@@ -531,6 +531,7 @@ export const translations: any = {
     perps: 'Perps',
     spectra: 'Spectra',
     spectraUsesFixedLayout: 'Spectra uses a fixed layout',
+    noActivePositions: 'No active positions'
   },
   CN: {
     trade: "交易",

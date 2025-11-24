@@ -57,9 +57,9 @@ export const settings: any = {
       weth: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701',
       usdc: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea',
       balancegetter:
-        '0xa4B83d09ab1b04AB847Ad4f2D8061c1a7f8fd3D9' as `0x${string}`,
+        '0x5c130fd1F4432FEA24D82d7343B92203C9FB76C1' as `0x${string}`,
       router: '0xed8FeB0b185bf7842F46Ed0Ee4DBD0A13F68E3C7' as `0x${string}`,
-      referralManager: '0xa4B83d09ab1b04AB847Ad4f2D8061c1a7f8fd3D9' as `0x${string}`,
+      referralManager: '0x5c130fd1F4432FEA24D82d7343B92203C9FB76C1' as `0x${string}`,
       launchpadRouter: '0xed8FeB0b185bf7842F46Ed0Ee4DBD0A13F68E3C7' as `0x${string}`,
       crystalVaults: "0x9FbbC911E84b78cb40439DF7d7065Eb1b68b527D" as `0x${string}`,
       multicall3: '0xb092ef5Eba57357112E8BbD5be2b6CfE984D6838' as `0x${string}`,

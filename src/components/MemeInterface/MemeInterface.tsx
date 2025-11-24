@@ -35,6 +35,7 @@ import { updateBuyPreset, updateSellPreset } from '../../utils/presetManager';
 import { zeroXAbi } from '../../abis/zeroXAbi.ts';
 import { zeroXActionsAbi } from '../../abis/zeroXActionsAbi.ts';
 import { TokenAbi } from '../../abis/TokenAbi.ts';
+import { CrystalDataHelperAbi } from '../../abis/CrystalDataHelperAbi.ts';
 
 import './MemeInterface.css';
 
@@ -2576,10 +2577,11 @@ useEffect(() => {
             actions.push(encodeFunctionData({
               abi: zeroXActionsAbi,
               functionName: 'BASIC',
-              args: ['0x0000000000000000000000000000000000000000', 0n, sellToken, 0n, encodeFunctionData({
-                abi: TokenAbi,
-                functionName: 'permit',
+              args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
+                abi: CrystalDataHelperAbi,
+                functionName: 'tryPermit',
                 args: [
+                  sellToken,
                   account.address as `0x${string}`,
                   settler,
                   115792089237316195423570985008687907853269984665640564039457584007913129639935n,
