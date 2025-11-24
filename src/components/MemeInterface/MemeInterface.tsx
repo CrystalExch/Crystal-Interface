@@ -1036,14 +1036,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const userAddressesSet = useMemo(() => {
     const addresses = new Set<string>();
-    if (userAddr) {
-      addresses.add(userAddr.toLowerCase());
+    if (scaAddress) {
+      addresses.add(scaAddress.toLowerCase());
     }
     subWallets.forEach(w => {
       addresses.add(w.address.toLowerCase());
     });
     return addresses;
-  }, [userAddr, subWallets]);
+  }, [scaAddress, subWallets]);
 
   const openInExplorer = (addr: string) =>
     window.open(`${explorer}/token/${addr}`, '_blank');
