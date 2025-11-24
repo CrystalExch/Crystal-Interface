@@ -3075,9 +3075,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         </div>
         <div className="meme-trade-inputs-row">
           <div className="meme-order-type-container">
-            <span style={{ fontSize: 17 }}>Market</span>
+            <span>Market</span>
             <Tooltip content="Limit orders coming soon">
-              <span style={{ color: '#e0e8fd73', fontSize: 17, cursor: 'not-allowed' }}>Limit</span>
+              <span style={{ color: '#e0e8fd73', cursor: 'not-allowed' }}>Limit</span>
             </Tooltip>
           </div>
           <div className="meme-wallet-dropdown-container" ref={walletDropdownRef}>
@@ -3086,17 +3086,38 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
               >
                 <img src={walleticon} className="meme-wallet-icon" alt="Wallets" />
-                <span className="meme-wallet-count">{selectedWallets.size}</span>
-
-                <div className="meme-wallet-total-balance">
+                {selectedWallets.size == 0 ? <Tooltip content="Primary Wallet">
+                  {(
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d8dcff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px', verticalAlign: 'middle' }}>
+                      <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                      <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                      <path d="m20 9-3 9" />
+                      <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                      <path d="M7 18 4 9" />
+                      <circle cx="12" cy="4" r="2" />
+                      <circle cx="20" cy="7" r="2" />
+                      <circle cx="4" cy="7" r="2" />
+                    </svg>
+                  )}
+                </Tooltip> : 
+                <span className="meme-wallet-count">{selectedWallets.size}</span>}
+                {activeTradeType == 'buy' ? <div className="meme-wallet-total-balance">
                   <img src={monadicon} className="meme-wallet-mon-small-icon" alt="MON" />
                   <span>{formatNumberWithCommas(getTotalSelectedWalletsBalance(), 2)}</span>
+                </div> : 
+                <><div className="meme-wallet-total-balance" style={{marginRight: '8px'}}>
+                  <img src={token.image} className="meme-wallet-mon-small-icon" alt="MON" />
+                  <span>{formatNumberWithCommas(getTotalSelectedWalletsTokenBalance(), 2)}</span>
                 </div>
+                <div className="meme-wallet-total-balance">
+                  <img src={monadicon} className="meme-wallet-mon-small-icon" alt="MON" />
+                  <span>{formatNumberWithCommas(getTotalSelectedWalletsTokenBalance() * token.price, 2)}</span>
+                </div>
+                </>}
               </button>
             </div>
         </div>
         {isWalletDropdownOpen && account.connected && (
-
           <div className="meme-wallet-dropdown-panel" ref={walletDropdownPanelRef}>
             {(() => {
               const walletsWithToken = subWallets.filter(
@@ -3322,7 +3343,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                                       <img
                                         src={token.image}
                                         className="meme-wallet-token-icon"
-                                        alt={token.symbol}
                                         onError={(e) => {
                                           e.currentTarget.style.display = 'none';
                                         }}

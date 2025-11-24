@@ -2695,7 +2695,8 @@
 }
 .meme-wallet-mon-small-icon{
   width: 13px;
-  height: 13px; 
+  height: 13px;
+  border-radius: 3px;
 }
 
 .meme-wallet-total-balance{
@@ -2717,7 +2718,7 @@
   align-items: center;
   border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 20px;
-  padding: 2px 12px;
+  padding: 2px 10px 2px 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -3070,7 +3071,7 @@
 .meme-order-type-container{
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   color: #ffffffdf;
 }
 
