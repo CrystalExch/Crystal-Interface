@@ -3703,7 +3703,7 @@
 }
 
 .trenches-balance-value-small {
-  font-size: 16px;
+  font-size: 1.1rem;
   color: #fff;
 }
 
@@ -4641,3 +4641,12 @@
 
 
 
+
+
+.positive {
+  color: rgb(67, 254, 154);
+}
+
+.negative {
+  color: rgb(235, 112, 112);
+}

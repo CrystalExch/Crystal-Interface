@@ -265,10 +265,10 @@ type State = {
 type Action =
   | { type: 'INIT'; tokens: Token[] }
   | { type: 'ADD_MARKET'; token: Partial<Token> }
-  | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
-  | { type: 'UPDATE_MARKET_BY_ADDRESS'; tokenAddress: string; updates: Partial<Token> }  // NEW
+  | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token>, liveState?: any }
+  | { type: 'UPDATE_MARKET_BY_ADDRESS'; tokenAddress: string; updates: Partial<Token> } 
   | { type: 'GRADUATE_MARKET'; id: string }
-  | { type: 'GRADUATE_MARKET_BY_ADDRESS'; tokenAddress: string }  // NEW
+  | { type: 'GRADUATE_MARKET_BY_ADDRESS'; tokenAddress: string }  
   | { type: 'HIDE_TOKEN'; id: string }
   | { type: 'SHOW_TOKEN'; id: string }
   | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' }
@@ -4200,10 +4200,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
 
       case 'UPDATE_MARKET': {
-        const buckets = { ...state.tokensByStatus };
-        let movedToken: any;
+    const live = action?.liveState ?? state.tokensByStatus;
+        const buckets = { ...live };
+                let movedToken: any;
         (Object.keys(buckets) as Token['status'][]).forEach((s) => {
-          buckets[s] = buckets[s].flatMap((t) => {
+        buckets[s] = buckets[s].flatMap((t: any) => {
             if (t.id.toLowerCase() !== action.id.toLowerCase()) return [t];
 
             const {
@@ -4246,10 +4247,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
 
       case 'GRADUATE_MARKET': {
-        const buckets = { ...state.tokensByStatus };
+        const live = action?.liveState ?? state.tokensByStatus;
+        const buckets = { ...live };
         let movedToken: any;
         (Object.keys(buckets) as Token['status'][]).forEach((s) => {
-          buckets[s] = buckets[s].flatMap((t) => {
+          buckets[s] = buckets[s].flatMap((t: any) => {
             if (t.id.toLowerCase() !== action.id.toLowerCase()) return [t];
 
             const status = 'graduated'
@@ -4258,7 +4260,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               movedToken = {
                 ...t,
                 status: status,
-                progress: 100, // Set progress to 100% when graduated
+                progress: 100, 
               }
               return []
             }
@@ -5489,7 +5491,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   buyTransactions: isBuy ? 1 : 0,
                   sellTransactions: isBuy ? 0 : 1,
                   volumeDelta: (isBuy ? amountIn : amountOut),
-                }
+                 },
+                liveState: tokensByStatusRef.current,
               });
 
               if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
@@ -5868,7 +5871,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   buyTransactions: isBuy ? 1 : 0,
                   sellTransactions: isBuy ? 0 : 1,
                   volumeDelta: (isBuy ? amountIn : amountOut),
-                }
+               },
+                liveState: tokensByStatusRef.current,
               });
 
               if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {

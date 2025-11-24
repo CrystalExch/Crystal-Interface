@@ -360,8 +360,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
   setOneCTDepositAddress,
   monUsdPrice
 }) => {
-    const navigate = useNavigate();
-  
+  const navigate = useNavigate();
+
   const fmt = (v: number, d = 2): string => {
     if (!Number.isFinite(v)) return String(v);
     if (v === 0) return '0';
@@ -2264,6 +2264,21 @@ const Portfolio: React.FC<PortfolioProps> = ({
     setTotalVolume(parseFloat(volume.toFixed(2)));
   }, [tradehistory, days]);
 
+  const totalUnrealizedPnl = positions?.reduce((sum, p) => {
+    return sum + (p.pnlNative || 0)
+  }, 0) || 0
+  const totalUnrealizedPnlNative =
+    positions?.reduce((sum, p) => sum + (p.pnlNative || 0), 0) || 0
+
+  const totalUnrealizedPnlUsd = totalUnrealizedPnlNative * monUsdPrice
+
+  const unrealizedClass =
+    totalUnrealizedPnlNative >= 0 ? 'positive' : 'negative'
+
+  const unrealizedSign =
+    totalUnrealizedPnlNative >= 0 ? '+' : '-'
+
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'spot':
@@ -2978,22 +2993,28 @@ const Portfolio: React.FC<PortfolioProps> = ({
                     <div className="trenches-balance-label">Total Value</div>
                     <div className={`trenches-balance-value ${isBlurred ? 'blurred' : ''}`}>
                       <span className="wallet-dropdown-value">
-                      ${formatNumberWithCommas(
-                        subWallets.reduce((total, wallet) =>
-                          total + (getWalletBalance(wallet.address) * monUsdPrice),
-                          0
-                        ) + getWalletBalance(scaAddress) * monUsdPrice, 2)}
-                    </span>
+                        ${formatNumberWithCommas(
+                          subWallets.reduce((total, wallet) =>
+                            total + (getWalletBalance(wallet.address) * monUsdPrice),
+                            0
+                          ) + getWalletBalance(scaAddress) * monUsdPrice, 2)}
+                      </span>
                     </div>
                   </div>
                   <div className="trenches-balance-item">
                     <div className="trenches-balance-label">Unrealized PNL</div>
-                    <div className={`trenches-balance-value-small ${isBlurred ? 'blurred' : ''}`}>
-                      $0
+                    <div
+                      className={`trenches-balance-value-small ${unrealizedClass} ${isBlurred ? 'blurred' : ''}`}
+                    >
+                      {unrealizedSign}${
+                        formatNumberWithCommas(Math.abs(totalUnrealizedPnlUsd), 2)
+                      }
                     </div>
                   </div>
+
+
                   <div className="trenches-balance-item">
-                    <div className="trenches-balance-label">Available Balance</div>
+                    <div className="trenches-balance-label">Realized PNL</div>
                     <div className={`trenches-balance-value-small ${isBlurred ? 'blurred' : ''}`}>
                       $0
                     </div>
