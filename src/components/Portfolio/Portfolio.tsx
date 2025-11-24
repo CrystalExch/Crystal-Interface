@@ -380,7 +380,14 @@ const Portfolio: React.FC<PortfolioProps> = ({
     if (abs >= 1e3) return (v / 1e3).toFixed(2) + 'K';
     return v.toLocaleString('en-US', { maximumFractionDigits: d });
   };
-
+  const formatNumberWithCommas = (num: number, decimals = 2) => {
+    if (num === 0) return "0";
+    if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;
+    if (num >= 1e6) return `${(num / 1e6).toFixed(decimals)}M`;
+    if (num >= 1e3) return `${(num / 1e3).toFixed(decimals)}K`;
+    if (num >= 1) return num.toLocaleString("en-US", { maximumFractionDigits: decimals });
+    return num.toFixed(Math.min(decimals, 8));
+  };
   const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
     if (mode === 'USD' && monPrice > 0) {
       return `$${fmt(v * monPrice)}`;
@@ -2970,7 +2977,13 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   <div className="trenches-balance-item">
                     <div className="trenches-balance-label">Total Value</div>
                     <div className={`trenches-balance-value ${isBlurred ? 'blurred' : ''}`}>
-                      $0
+                      <span className="wallet-dropdown-value">
+                      ${formatNumberWithCommas(
+                        subWallets.reduce((total, wallet) =>
+                          total + (getWalletBalance(wallet.address) * monUsdPrice),
+                          0
+                        ) + getWalletBalance(scaAddress) * monUsdPrice, 2)}
+                    </span>
                     </div>
                   </div>
                   <div className="trenches-balance-item">
