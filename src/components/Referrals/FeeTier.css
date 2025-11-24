@@ -89,7 +89,7 @@
 }
 
 .fee-tier-next-name.tier-diamond {
-  background: linear-gradient(135deg, #B9F2FF 0%, #4DB8E8 100%);
+  background: linear-gradient(135deg, #aaaecf 0%, #7f82a1 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -286,19 +286,19 @@
 }
 
 .fee-tier-requirement-badge.tier-1 {
-  background: #CD7F32;
+  background: linear-gradient(135deg, #D4915A 0%, #8B5A1E 100%);
 }
 
 .fee-tier-requirement-badge.tier-2 {
-  background: #C0C0C0;
+  background: linear-gradient(135deg, #D4D4D4 0%, #7A7A7A 100%);
 }
 
 .fee-tier-requirement-badge.tier-3 {
-  background: #FFD700;
+  background: linear-gradient(135deg, #F5D576 0%, #CC8400 100%);
 }
 
 .fee-tier-requirement-badge.tier-4 {
-  background: #B9F2FF;
+  background: linear-gradient(135deg, #aaaecf 0%, #7f82a1 100%);
 }
 
 .fee-tier-requirement-badge.tier-5 {
@@ -310,19 +310,19 @@
 }
 
 .tier-requirement-badge.bronze {
-  background: #CD7F32;
+  background: linear-gradient(135deg, #D4915A 0%, #8B5A1E 100%);
 }
 
 .tier-requirement-badge.silver {
-  background: #C0C0C0;
+  background: linear-gradient(135deg, #D4D4D4 0%, #7A7A7A 100%);
 }
 
 .tier-requirement-badge.gold {
-  background: #FFD700;
+  background: linear-gradient(135deg, #F5D576 0%, #CC8400 100%);
 }
 
 .tier-requirement-badge.diamond {
-  background: #B9F2FF;
+  background: linear-gradient(135deg, #aaaecf 0%, #7f82a1 100%);
 }
 
 .tier-requirement-badge.netherite {

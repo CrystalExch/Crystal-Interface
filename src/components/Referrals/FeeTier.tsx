@@ -15,6 +15,8 @@ interface TierInfo {
   gradient: string;
   takerFee: string;
   makerFee: string;
+  cashback: string;
+  referralCommission: string;
   minVolume: number;
   next: {
     name: string;
@@ -31,10 +33,12 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
       return {
         name: 'Diamond',
         tier: 4,
-        color: '#B9F2FF',
-        gradient: 'linear-gradient(135deg, #B9F2FF 0%, #4DB8E8 100%)',
+        color: '#aaaecf',
+        gradient: 'linear-gradient(135deg, #aaaecf 0%, #7f82a1 100%)',
         takerFee: '0.030%',
         makerFee: '0.000%',
+        cashback: '20%',
+        referralCommission: '10%',
         minVolume: 1000000,
         next: null,
       };
@@ -47,6 +51,8 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         gradient: 'linear-gradient(135deg, #F5D576 0%, #CC8400 100%)',
         takerFee: '0.035%',
         makerFee: '0.005%',
+        cashback: '15%',
+        referralCommission: '10%',
         minVolume: 500000,
         next: {
           name: 'Diamond',
@@ -64,6 +70,8 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         gradient: 'linear-gradient(135deg, #D4D4D4 0%, #7A7A7A 100%)',
         takerFee: '0.040%',
         makerFee: '0.010%',
+        cashback: '10%',
+        referralCommission: '10%',
         minVolume: 100000,
         next: {
           name: 'Gold',
@@ -80,6 +88,8 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
       gradient: 'linear-gradient(135deg, #D4915A 0%, #8B5A1E 100%)',
       takerFee: '0.050%',
       makerFee: '0.020%',
+      cashback: '5%',
+      referralCommission: '10%',
       minVolume: 0,
       next: {
         name: 'Silver',
@@ -187,21 +197,21 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
 
       <div className="fee-tier-benefits">
         <div className="fee-tier-benefit-card">
-          <span className="fee-tier-benefit-label">Cashback Commissions</span>
+          <span className="fee-tier-benefit-label">Cashback</span>
           <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
-            {commissionBonus}
+            {tier.cashback}
           </span>
           <span className="fee-tier-benefit-description">
-            crystals earned
+            cashback
           </span>
         </div>
         <div className="fee-tier-benefit-card">
-          <span className="fee-tier-benefit-label">Referral Commissions</span>
+          <span className="fee-tier-benefit-label">Referral Commission</span>
           <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
-            10%
+            {tier.referralCommission}
           </span>
           <span className="fee-tier-benefit-description">
-            of referral fees
+            referral commission
           </span>
         </div>
       </div>
