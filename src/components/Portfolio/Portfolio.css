@@ -3825,7 +3825,6 @@
 .trenches-activity-header {
   padding-left: 20px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-  border-top: 1px solid rgba(179, 184, 249, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -4623,3 +4622,22 @@
   background-color: rgb(6, 6, 6);
   border-top: 1px solid rgba(179, 184, 249, 0.1);
 }
+
+.meme-portfolio-token-icon {
+  border-radius: 4px;
+  flex-shrink: 0;
+  height: 27px;
+  margin-right: 4px;
+  -o-object-fit: cover;
+  object-fit: cover;
+  width: 27px;
+}
+
+
+.portfolio-meme-oc-item{
+  display: flex;
+}
+
+
+
+

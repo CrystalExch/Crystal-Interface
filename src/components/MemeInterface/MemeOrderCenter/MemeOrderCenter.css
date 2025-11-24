@@ -355,7 +355,7 @@
 
 .meme-token-amount {
   color: #e3e5f39c;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   margin-top: -2px;
 }
 
@@ -479,48 +479,6 @@
   border-radius: 3px;
 }
 
-
-@media (max-width: 768px) {
-  .meme-oc-section-content[data-section="positions"] .meme-oc-header,
-  .meme-oc-section-content[data-section="positions"] .meme-oc-item {
-    gap: 10px;
-    grid-template-columns: 2fr 1fr 1fr;
-  }
-
-  .meme-oc-section-content[data-section="orders"] .meme-oc-header,
-  .meme-oc-section-content[data-section="orders"] .meme-oc-item {
-    gap: 10px;
-    grid-template-columns: 2fr 1fr 1fr;
-  }
-
-  .meme-oc-section-content[data-section="holders"] .meme-oc-header,
-  .meme-oc-section-content[data-section="holders"] .meme-oc-item,
-  .meme-oc-section-content[data-section="topTraders"] .meme-oc-header,
-  .meme-oc-section-content[data-section="topTraders"] .meme-oc-item {
-    gap: 10px;
-    grid-template-columns: 2fr 1fr 1fr;
-  }
-
-  .meme-oc-section-content[data-section="devTokens"] .meme-oc-header,
-  .meme-oc-section-content[data-section="devTokens"] .meme-oc-item {
-    gap: 10px;
-    grid-template-columns: 2fr 1fr 1fr;
-  }
-
-  .meme-wallet-tags,
-  .meme-token-tags {
-    display: none;
-  }
-
-  .meme-trade-info {
-    font-size: 0.7rem;
-  }
-
-  .meme-oc-section-content .meme-oc-header-cell:nth-child(n+4),
-  .meme-oc-section-content .meme-oc-cell:nth-child(n+4) {
-    display: none;
-  }
-}
 
 .meme-ordercenter-tooltip-container {
   display: inline-block;

@@ -21,6 +21,7 @@ import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTrans
 import './Portfolio.css'
 import circle from '../../assets/circle_handle.png'
 import PortfolioBalance from './PortfolioBalance';
+import { useNavigate } from 'react-router-dom';
 
 
 const Tooltip: React.FC<{
@@ -359,31 +360,33 @@ const Portfolio: React.FC<PortfolioProps> = ({
   setOneCTDepositAddress,
   monUsdPrice
 }) => {
+    const navigate = useNavigate();
+  
   const fmt = (v: number, d = 2): string => {
-  if (!Number.isFinite(v)) return String(v);
-  if (v === 0) return '0';
-  if (d <= 0) return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    if (!Number.isFinite(v)) return String(v);
+    if (v === 0) return '0';
+    if (d <= 0) return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
 
-  const abs = Math.abs(v);
-  const threshold = Math.pow(10, -d);
-  const thresholdStr = '0.' + '0'.repeat(d - 1) + '1';
+    const abs = Math.abs(v);
+    const threshold = Math.pow(10, -d);
+    const thresholdStr = '0.' + '0'.repeat(d - 1) + '1';
 
-  if (abs < threshold) {
-    return v > 0 ? `<${thresholdStr}` : `>-${thresholdStr}`;
-  }
+    if (abs < threshold) {
+      return v > 0 ? `<${thresholdStr}` : `>-${thresholdStr}`;
+    }
 
-  if (abs >= 1e9) return (v / 1e9).toFixed(2) + 'B';
-  if (abs >= 1e6) return (v / 1e6).toFixed(2) + 'M';
-  if (abs >= 1e3) return (v / 1e3).toFixed(2) + 'K';
-  return v.toLocaleString('en-US', { maximumFractionDigits: d });
-};
+    if (abs >= 1e9) return (v / 1e9).toFixed(2) + 'B';
+    if (abs >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return (v / 1e3).toFixed(2) + 'K';
+    return v.toLocaleString('en-US', { maximumFractionDigits: d });
+  };
 
-const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
-  if (mode === 'USD' && monPrice > 0) {
-    return `$${fmt(v * monPrice)}`;
-  }
-  return `${fmt(v)}`;
-};
+  const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
+    if (mode === 'USD' && monPrice > 0) {
+      return `$${fmt(v * monPrice)}`;
+    }
+    return `${fmt(v)}`;
+  };
   const copyToClipboard = async (text: string, label = 'Address copied') => {
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
@@ -510,8 +513,8 @@ const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
   const [exportingWallet, setExportingWallet] = useState<{ address: string, privateKey: string } | null>(null);
   const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set());
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
-const [tokenImageErrors, setTokenImageErrors] = useState<Record<string, boolean>>({});
-const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
+  const [tokenImageErrors, setTokenImageErrors] = useState<Record<string, boolean>>({});
+  const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
   const showDistributionSuccess = useCallback((amount: string, sourceCount: number, destCount: number) => {
     const txId = `distribution-${Date.now()}`;
     const formattedAmount = parseFloat(amount).toFixed(1);
@@ -3068,13 +3071,13 @@ const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
                   ))}
                 </div>
                 <div className="pnl-calendar-ratio-container">
-                      <div className="pnl-calendar-ratio-buy"></div>
-                      <div className="pnl-calendar-ratio-sell"></div>
-                    </div>
+                  <div className="pnl-calendar-ratio-buy"></div>
+                  <div className="pnl-calendar-ratio-sell"></div>
+                </div>
               </div>
             </div>
 
-          <div className="trenches-activity-section">
+            <div className="trenches-activity-section">
               <div className="trenches-activity-header">
                 <div className="trenches-activity-tabs">
                   {[
@@ -3098,7 +3101,7 @@ const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
                   />
                 </div>
               </div>
-<div className="meme-oc-section-content" data-section="positions">
+              <div className="meme-oc-section-content" data-section="positions">
                 <div className="meme-oc-header">
                   <div className="meme-oc-header-cell">Token</div>
                   <div
@@ -3143,14 +3146,14 @@ const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
                                     <img
                                       src={tokenImageUrl}
                                       alt={p.symbol}
-                                      className="meme-token-icon"
+                                      className="meme-portfolio-token-icon"
                                       onError={() => {
                                         setTokenImageErrors(prev => ({ ...prev, [p.tokenId]: true }));
                                       }}
                                     />
                                   ) : (
                                     <div
-                                      className="meme-token-icon"
+                                      className="meme-portfoliotoken-icon"
                                       style={{
                                         backgroundColor: 'rgba(35, 34, 41, .7)',
                                         display: 'flex',
@@ -3168,7 +3171,9 @@ const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
                                   )}
                                   <span
                                     className="oc-meme-wallet-address meme-clickable-token"
-                                    style={{ cursor: 'default' }}
+                                    onClick={() => {
+                                      navigate(`/meme/${p.tokenId}`)
+                                    }}
                                   >
                                     {tokenShort}
                                   </span>
@@ -3515,7 +3520,7 @@ const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
       <div className="portfolio-specific-page">
         <div className="portfolio-top-row">
           <div className="portfolio-tab-selector">
-                        <span
+            <span
               className={`portfolio-tab-title ${activeTab === 'trenches' ? 'active' : 'nonactive'}`}
               onClick={() => setActiveTab('trenches')}
             >
