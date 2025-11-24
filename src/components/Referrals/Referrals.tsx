@@ -123,28 +123,59 @@ const Referrals: React.FC<ReferralProps> = ({
       setIsLoading(false);
       return;
     }
-    
+
     (async () => {
       const refs = (await readContracts(config, {
         contracts: [
           {
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
-            functionName: 'addressToRefCode', // Fixed: was 'addressToRef'
+            functionName: 'addressToRefCode',
             args: [address ?? '0x0000000000000000000000000000000000000000'],
           },
           {
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
-            functionName: 'addressToRefCode', // Fixed: was 'addressToRef'
-            args: [
-              usedRefAddress ?? '0x0000000000000000000000000000000000000000',
-            ],
+            functionName: 'addressToReferrer',
+            args: [address ?? '0x0000000000000000000000000000000000000000'],
+          },
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'referrerToReferredAddressCount',
+            args: [address ?? '0x0000000000000000000000000000000000000000'],
           },
         ],
       })) as any[];
+
       setRefLink(refs[0].result);
-      setUsedRefLink(refs[1].result);
+
+      // Get the referrer address and fetch their code
+      const referrerAddress = refs[1].result as `0x${string}`;
+      if (referrerAddress && referrerAddress !== '0x0000000000000000000000000000000000000000') {
+        setUsedRefAddress(referrerAddress);
+
+        // Fetch the referrer's code
+        const referrerCodeResult = (await readContracts(config, {
+          contracts: [
+            {
+              abi: CrystalReferralAbi,
+              address: settings.chainConfig[activechain].referralManager,
+              functionName: 'addressToRefCode',
+              args: [referrerAddress],
+            },
+          ],
+        })) as any[];
+
+        setUsedRefLink(referrerCodeResult[0].result);
+      } else {
+        setUsedRefLink('');
+        setUsedRefAddress('0x0000000000000000000000000000000000000000');
+      }
+
+      // Set on-chain referred count
+      const onChainCount = Number(refs[2].result || 0);
+      setReferredCount(onChainCount);
     })();
 
     if (!address) {
@@ -162,19 +193,37 @@ const Referrals: React.FC<ReferralProps> = ({
         const res = await fetch(
           `https://api.crystal.exchange/user_info/${address.toLowerCase()}`
         )
+
+        // Silently handle 404 for new users
+        if (!res.ok) {
+          if (res.status === 404) {
+            setUsername('')
+            // Don't reset referred count on 404 - keep on-chain value
+            setCommissionBonus(0)
+            setIsLoading(false)
+            return
+          }
+          throw new Error(`HTTP ${res.status}`)
+        }
+
         const data = await res.json()
         setUsername(data.username || '')
-        setReferredCount(data.referred_users || 0)
+        // Only update referred count from API if it exists and is greater than 0
+        // Otherwise keep the on-chain count
+        if (data.referred_users && data.referred_users > 0) {
+          setReferredCount(data.referred_users)
+        }
         const pts = parseFloat(data.referral_points?.toString() || '0')
         setCommissionBonus(parseFloat(customRound(pts, 4)))
         setIsLoading(false)
-        setIsLoading(false)
       } catch (err) {
-        console.error('user_info fetch failed', err)
+        // Only log non-404 errors
+        if (!(err instanceof Error && err.message.includes('404'))) {
+          console.error('user_info fetch failed', err)
+        }
         setUsername('')
-        setReferredCount(0)
+        // Don't reset referred count on error - keep on-chain value
         setCommissionBonus(0)
-        setIsLoading(false)
         setIsLoading(false)
       }
     }
@@ -185,6 +234,7 @@ const Referrals: React.FC<ReferralProps> = ({
   }, [address]);
 
   const handleCreateRef = async () => {
+    setError('');
     try {
       let lookup
       lookup = (await readContracts(config, {
@@ -192,7 +242,7 @@ const Referrals: React.FC<ReferralProps> = ({
           {
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
-            functionName: 'refCodeToAddress', // Fixed: was 'refToAddress'
+            functionName: 'refCodeToAddress',
             args: [refLinkString.toLowerCase()],
           },
         ],
@@ -202,26 +252,34 @@ const Referrals: React.FC<ReferralProps> = ({
         setError('Code already taken'); // t('codeTaken')
         return false;
       }
+
       const hash = await sendUserOperationAsync({
         uo: {
           target: settings.chainConfig[activechain].referralManager,
           data: encodeFunctionData({
             abi: CrystalReferralAbi,
             functionName: 'setReferral',
-            args: [refLinkString],
+            args: [refLinkString.toLowerCase()],
           }),
           value: 0n,
         },
       });
       await waitForTxReceipt(hash.hash);
-      setRefLink(refLinkString);
+      setRefLink(refLinkString.toLowerCase());
       return true;
     } catch (error) {
+      console.error('Error creating code:', error);
       return false;
     }
   };
 
   const handleSetRef = async (used: string) => {
+    // Prevent self-referral
+    if (used !== '' && used.toLowerCase() === refLink.toLowerCase()) {
+      setError('Cannot use your own referral code'); // t('noSelfRefer')
+      return false;
+    }
+
     let lookup
     if (used !== '') {
       lookup = (await readContracts(config, {
@@ -229,14 +287,14 @@ const Referrals: React.FC<ReferralProps> = ({
           {
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
-            functionName: 'refCodeToAddress', // Fixed: was 'refToAddress'
+            functionName: 'refCodeToAddress',
             args: [used.toLowerCase()],
           },
         ],
       })) as any[];
 
       if (lookup[0].result === '0x0000000000000000000000000000000000000000') {
-        setError('Referral code not found'); // t('setRefFailed')
+        setError('Referral code not found'); // t('codeNotFound')
         return false;
       }
     }
@@ -269,13 +327,13 @@ const Referrals: React.FC<ReferralProps> = ({
               data: encodeFunctionData({
                 abi: CrystalReferralAbi,
                 functionName: 'setUsedRef',
-                args: [used],
+                args: [used.toLowerCase()],
               }),
               value: 0n,
             },
           });
           await waitForTxReceipt(hash.hash);
-          setUsedRefLink(used);
+          setUsedRefLink(used.toLowerCase());
           setUsedRefAddress(lookup?.[0].result as `0x${string}`)
           return true;
         } catch (error) {
