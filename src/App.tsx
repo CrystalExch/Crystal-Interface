@@ -1096,7 +1096,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             receipt = r
           }),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('transaction timeout')), 5000)
+            setTimeout(() => reject(new Error('transaction timeout')), 3000)
           ),
         ]);
       }
