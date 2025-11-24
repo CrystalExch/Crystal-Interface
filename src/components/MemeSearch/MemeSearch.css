@@ -1016,7 +1016,7 @@
     top: 0;
     right: 0;
     position: absolute;
-    width: 300px;
+    width: 320px;
     background: rgb(9, 9, 9);
     border: 1px solid rgba(179, 184, 249, 0.12);
     border-radius: 4px;
@@ -1167,7 +1167,6 @@
     align-items: center;
     transition: color 0.2s ease;
     gap: 3px;
-    line-height: 1;
 }
 
 .wallet-dropdown-address:hover {
@@ -1183,7 +1182,6 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    margin-right: 8px;
     width: 85px;
 }
 

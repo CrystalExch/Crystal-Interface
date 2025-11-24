@@ -1,8 +1,8 @@
 .wtw-container {
   position: fixed;
   background: rgb(8, 8, 8);
-  border: 1px solid rgba(179, 184, 249, 0.15);
-  border-radius: 6px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 4px;
   width: 600px;
   max-height: 90vh;
   display: flex;
