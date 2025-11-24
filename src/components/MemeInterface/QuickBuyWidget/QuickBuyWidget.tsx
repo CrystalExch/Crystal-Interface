@@ -606,6 +606,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       return next;
     });
   }, [setSelectedWallets]);
+
   const selectAllWithBalance = () => {
     const walletsWithBalance = subWallets.filter(
       (wallet) => getWalletBalance(wallet.address) > 0,
@@ -754,7 +755,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   const unselectAllWallets = useCallback(() => {
     setSelectedWallets(new Set());
   }, [setSelectedWallets]);
-
 
   const selectAllWithBalanceWithoutToken = useCallback(() => {
     const walletsWithoutToken = subWallets.filter(
