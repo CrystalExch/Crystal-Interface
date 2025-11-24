@@ -826,10 +826,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   });
 
   const [oneCTDepositAddress, setOneCTDepositAddress] = useState('');
-  const [oneCTSigner, setOneCTSigner] = useState('');
-
-  const [oneCTSig, setOneCTSig] = useState('');
-
+  const [oneCTSigner, setOneCTSigner] = useState(() => {
+    const saved = localStorage.getItem('crystal_active_wallet_private_key');
+    return saved ? saved : '';
+  });
+  const [oneCTSig, setOneCTSig] = useState(() => {
+    const saved = localStorage.getItem('crystal_onect_signature');
+    return saved ? saved : '';
+  });
 
   const validOneCT = !!oneCTSigner
   const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
@@ -840,44 +844,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : (client ? undefined : scaAddress) as `0x${string}`
   const connected = address != undefined
   const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
-
-
-  const getStorageKey = (scaAddr: string | undefined, key: string) => {
-    if (!scaAddr) return null;
-    return `crystal_${scaAddr.toLowerCase()}_${key}`;
-  };
-
-  const loadWalletsFromStorage = (scaAddr: string | undefined) => {
-    if (!scaAddr) return [];
+  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>(
+    loadWalletsFromStorage()
+  );
+  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(() => {
     try {
-      const key = getStorageKey(scaAddr, 'sub_wallets');
-      if (!key) return [];
-      const saved = localStorage.getItem(key);
-      return saved ? JSON.parse(saved) : [];
-    } catch (error) {
-      console.error('Error loading wallets:', error);
-      return [];
-    }
-  };
-
-  const saveWalletsToStorage = (scaAddr: string | undefined, wallets: Array<{ address: string, privateKey: string }>) => {
-    if (!scaAddr) return;
-    try {
-      const key = getStorageKey(scaAddr, 'sub_wallets');
-      if (key) {
-        localStorage.setItem(key, JSON.stringify(wallets));
-      }
-    } catch (error) {
-      console.error('Error saving wallets:', error);
-    }
-  };
-
-  const loadSelectedWalletsFromStorage = (scaAddr: string | undefined, subWallets: Array<{ address: string, privateKey: string }>, oneCTSigner: string) => {
-    if (!scaAddr) return new Set();
-    try {
-      const key = getStorageKey(scaAddr, 'selected_wallets');
-      if (!key) return new Set();
-      const saved = localStorage.getItem(key);
+      const saved = localStorage.getItem('crystal_selected_wallets');
       if (saved) {
         const addresses = JSON.parse(saved);
         if (Array.isArray(addresses) && addresses.length > 0) {
@@ -888,76 +860,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       console.error('Error loading selected wallets:', error);
     }
 
-    return oneCTSigner
-      ? new Set(subWallets.filter(w => w.privateKey === oneCTSigner).map(w => w.address))
-      : subWallets?.[0]?.address
-        ? new Set([subWallets[0].address])
-        : new Set();
-  };
-
-  const saveSelectedWalletsToStorage = (scaAddr: string | undefined, selectedWallets: Set<string>) => {
-    if (!scaAddr) return;
-    try {
-      const key = getStorageKey(scaAddr, 'selected_wallets');
-      if (key) {
-        localStorage.setItem(key, JSON.stringify(Array.from(selectedWallets)));
-      }
-    } catch (error) {
-      console.error('Error saving selected wallets:', error);
-    }
-  };
-
-  const loadOneCTSignerFromStorage = (scaAddr: string | undefined) => {
-    if (!scaAddr) return '';
-    try {
-      const key = getStorageKey(scaAddr, 'active_wallet_private_key');
-      if (!key) return '';
-      return localStorage.getItem(key) || '';
-    } catch (error) {
-      console.error('Error loading OneCT signer:', error);
-      return '';
-    }
-  };
-
-  const saveOneCTSignerToStorage = (scaAddr: string | undefined, privateKey: string) => {
-    if (!scaAddr) return;
-    try {
-      const key = getStorageKey(scaAddr, 'active_wallet_private_key');
-      if (key) {
-        localStorage.setItem(key, privateKey);
-      }
-    } catch (error) {
-      console.error('Error saving OneCT signer:', error);
-    }
-  };
-
-  const loadOneCTSigFromStorage = (scaAddr: string | undefined) => {
-    if (!scaAddr) return '';
-    try {
-      const key = getStorageKey(scaAddr, 'onect_signature');
-      if (!key) return '';
-      return localStorage.getItem(key) || '';
-    } catch (error) {
-      console.error('Error loading OneCT signature:', error);
-      return '';
-    }
-  };
-
-  const saveOneCTSigToStorage = (scaAddr: string | undefined, sig: string) => {
-    if (!scaAddr) return;
-    try {
-      const key = getStorageKey(scaAddr, 'onect_signature');
-      if (key) {
-        localStorage.setItem(key, sig);
-      }
-    } catch (error) {
-      console.error('Error saving OneCT signature:', error);
-    }
-  };
-  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>([]);
-
-  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
-
+    return (oneCTSigner ? new Set(
+      subWallets
+        .filter(w => w.privateKey == oneCTSigner)
+        .map(w => w.address)
+    ) : subWallets?.[0]?.address ? new Set([subWallets?.[0]?.address]) : new Set())
+  });
 
   useEffect(() => {
     try {
@@ -1025,43 +933,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     marketSearchTerm: ''
   });
 
-  useEffect(() => {
-    if (scaAddress) {
-      const wallets = loadWalletsFromStorage(scaAddress);
-      setSubWallets(wallets);
-
-      const signer = loadOneCTSignerFromStorage(scaAddress);
-      setOneCTSigner(signer);
-
-      const sig = loadOneCTSigFromStorage(scaAddress);
-      setOneCTSig(sig);
-
-      const selected = loadSelectedWalletsFromStorage(scaAddress, wallets, signer);
-      setSelectedWallets(selected);
-    } else {
-      setSubWallets([]);
-      setOneCTSigner('');
-      setOneCTSig('');
-      setSelectedWallets(new Set());
-    }
-  }, [scaAddress]);
-
-  useEffect(() => {
-    saveSelectedWalletsToStorage(scaAddress, selectedWallets);
-  }, [selectedWallets, scaAddress]);
-
   const createSubWallet = async (setMain: boolean = false) => {
     try {
-      if (!scaAddress) {
-        console.error('No SCA address connected');
-        return;
-      }
       if (subWallets.length > 9) return;
-
-      let tempsig;
+      let tempsig
       if (oneCTSig) {
-        tempsig = oneCTSig;
-      } else {
+        tempsig = oneCTSig
+      }
+      else {
         tempsig = await signTypedDataAsync({
           typedData: {
             types: {
@@ -1076,9 +955,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               account: 1,
             }
           }
-        });
-        saveOneCTSigToStorage(scaAddress, tempsig);
-        setOneCTSig(tempsig);
+        })
+        localStorage.setItem('crystal_onect_signature', tempsig)
+        setOneCTSig(tempsig)
       }
 
       const privateKey = '0x' + (BigInt(keccak256('0x' + (BigInt(tempsig) + BigInt(subWallets.length + 1)).toString(16))) % BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141")).toString(16).padStart(64, "0");
@@ -1095,16 +974,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       setSelectedWallets(p => !p.size ? new Set(p).add(walletAddress) : p);
       lastNonceGroupFetch.current = 0;
       setSubWallets(updatedWallets);
-
-      // Save with SCA-namespaced key
-      saveWalletsToStorage(scaAddress, updatedWallets);
-
+      localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
       if (setMain || (!validOneCT && updatedWallets.length === 1)) {
         setOneCTSigner(privateKey);
-        saveOneCTSignerToStorage(scaAddress, privateKey);
+        localStorage.setItem('crystal_active_wallet_private_key', privateKey);
         refetch();
       }
-      return walletAddress;
+      return walletAddress
     } catch (error) {
       console.error('Error creating subwallet:', error);
     }
@@ -1137,8 +1013,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           value: params.uo.value,
           data: params.uo.data,
           gasLimit: gasLimit,
-          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
-          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
+          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || 0) * 1e9)),
+          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || 0) * 1e9)),
           nonce: nonce,
           chainId: activechain
         }
@@ -1175,8 +1051,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           value: params.uo.value,
           data: params.uo.data,
           gasLimit: gasLimit,
-          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
-          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
+          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || 0) * 1e9)),
+          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || 0) * 1e9)),
           nonce: nonce,
           chainId: activechain
         }
@@ -2279,12 +2155,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     initialState,
   );
 
-  const tokensByStatusRef = useRef(tokensByStatus);
-
-  useEffect(() => {
-    tokensByStatusRef.current = tokensByStatus;
-  }, [tokensByStatus]);
-
   const tokenAddress = (matchPath('/meme/:tokenAddress', location.pathname) || matchPath('/board/:tokenAddress', location.pathname))?.params?.tokenAddress?.toLowerCase();
   const explorerWsRef = useRef<WebSocket | null>(null);
   const explorerPingIntervalRef = useRef<any>(null);
@@ -2308,27 +2178,27 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // reload if throttled
   useEffect(() => {
-    if (!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])) return;
+    if (!['board','spectra','meme','launchpad','trackers'].includes(location.pathname.split('/')[1])) return;
     let last = Date.now();
     let throttled = false;
-
+  
     const check = setInterval(() => {
       const now = Date.now();
       if (!throttled && now - last > 5000) throttled = true;
       last = now;
     }, 1000);
-
+  
     const onFocus = () => {
       if (throttled) window.location.reload();
     };
-
+  
     window.addEventListener('focus', onFocus);
-
+  
     return () => {
       clearInterval(check);
       window.removeEventListener('focus', onFocus);
     };
-  }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
+  }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);  
 
   useEffect(() => {
     const updateTrackedWalletsRef = () => {
@@ -4687,7 +4557,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               top10Holding: top10HoldingRaw / 1e25,
               bondingPercentage: m.graduationPercentageBps,
               source: launchpad,
-              market: m.market,
             };
 
             tokens.push(token);
@@ -4722,21 +4591,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           //     },
           //   ],
           // }),
-          JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'sub_uni',
-            method: 'eth_subscribe',
-            params: [
-              'monadLogs',
-              {
-                topics: [
-                  [
-                    UNIV3_EVENTS.Swap,
-                  ]
-                ],
-              },
-            ],
-          }),
           JSON.stringify({
             jsonrpc: '2.0',
             id: 'sub_nadfun',
@@ -5169,7 +5023,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   return tempset;
                 }
                 let tokenInfo: any = null;
-                Object.values(tokensByStatusRef.current).forEach((tokens: any[]) => {
+                Object.values(tokensByStatus).forEach((tokens: any[]) => {
                   const found = tokens.find(t => t.tokenAddress?.toLowerCase() === tokenAddr);
                   if (found) tokenInfo = found;
                 });
@@ -5625,7 +5479,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 }
                 let tokenInfo: any = null;
 
-                Object.values(tokensByStatusRef.current).forEach((tokens: any[]) => {
+                Object.values(tokensByStatus).forEach((tokens: any[]) => {
                   const found = tokens.find(t => t.tokenAddress?.toLowerCase() == tokenAddr);
                   if (found) tokenInfo = found;
                 });
@@ -5920,371 +5774,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 wsPendingLogsRef.current.delete(oldestKey);
               }
               wsPendingLogsRef.current.set(log.hash, log)
-            }
-            else if (log.topics?.[0] == UNIV3_EVENTS.Swap) {
-              const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
-              const pool = log.address.toLowerCase();
-            
-              const hex = log.data.replace(/^0x/, '');
-              const words = [];
-              for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
-            
-              const toInt256 = (hex: string) => {
-                const b = BigInt('0x' + hex);
-                return (b & (1n << 255n)) !== 0n ? b - (1n << 256n) : b;
-              };
-            
-              const toUint = (hex: string) => BigInt('0x' + hex);
-            
-              const sqrtToPrice = (sqrt: bigint) =>
-                Number((sqrt * sqrt) >> 192n);
-            
-              const amount0 = toInt256(words[0]);
-              const amount1 = toInt256(words[1]);
-              const sqrtPriceX96 = toUint(words[2]);
-            
-              let price = sqrtToPrice(sqrtPriceX96);
-              let tokenInfo: any = null;
-              Object.values(tokensByStatusRef.current).forEach((tokens: any[]) => {
-                const found = tokens.find(t => t.market?.toLowerCase() == pool);
-                if (found) tokenInfo = found;
-              });
-              if (!tokenInfo) return tempset;
-              const tokenAddr = tokenInfo.tokenAddress
-              const wethIsToken0 = weth.toLowerCase() < tokenAddr.toLowerCase();
-
-              let nativeDelta: bigint;
-              let tokenDelta: bigint;
-              
-              if (wethIsToken0) {
-                nativeDelta = amount0;
-                tokenDelta = amount1;
-                price = 1 / price
-              } else {
-                nativeDelta = amount1;
-                tokenDelta = amount0; 
-                price = price
-              }
-              
-              const isBuy = nativeDelta > 0n;
-              
-              const nativeAbs = nativeDelta >= 0n ? nativeDelta : -nativeDelta;
-              const tokenAbs = tokenDelta >= 0n ? tokenDelta : -tokenDelta;
-              
-              let amountIn: number;
-              let amountOut: number;
-              
-              const toNum = (x: bigint) => Number(x) / 1e18;
-              
-              if (isBuy) {
-                amountIn = toNum(nativeAbs);
-                amountOut = toNum(tokenAbs);
-              } else {
-                amountIn = toNum(tokenAbs);
-                amountOut = toNum(nativeAbs);
-              }              
-
-              dispatch({
-                type: 'UPDATE_MARKET',
-                id: tokenAddr,
-                updates: {
-                  price: price,
-                  marketCap: price * TOTAL_SUPPLY,
-                  buyTransactions: isBuy ? 1 : 0,
-                  sellTransactions: isBuy ? 0 : 1,
-                  volumeDelta: (isBuy ? amountIn : amountOut),
-                }
-              });
-
-              if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
-                const tradeId = `${log.transactionHash}-${log.logIndex}`;
-
-                if (processedTradeIds.current.has(tradeId)) {
-                  return tempset;
-                }
-
-                const symbol = tokenInfo?.symbol || 'TKN';
-                const name = tokenInfo?.name || 'Unknown';
-                const icon = tokenInfo?.image || undefined;
-
-                const normalized = normalizeTrade({
-                  caller: callerAddr,
-                  id: tradeId,
-                  isBuy: isBuy,
-                  price: price,
-                  symbol: symbol,
-                  name: name,
-                  tokenAddress: tokenAddr,
-                  tokenIcon: icon,
-                  amountIn: amountIn,
-                  amountOut: amountOut,
-                  timestamp: Date.now(),
-                }, trackedWalletsRef.current);
-
-                processedTradeIds.current.add(tradeId);
-
-                setTrackedWalletTrades(prev => {
-                  if (prev.some(t => t.id === tradeId)) {
-                    return prev;
-                  }
-
-                  const updated = [normalized, ...prev];
-                  const kept = updated.slice(0, 50);
-                  const keptIds = new Set(kept.map(t => t.id));
-                  processedTradeIds.current = new Set(
-                    Array.from(processedTradeIds.current).filter(id => keptIds.has(id))
-                  );
-
-                  return kept;
-                });
-
-                setTrackedWalletTrades(prev =>
-                  prev.map(t =>
-                    t.id === tradeId
-                      ? { ...t, token: symbol, tokenName: name, tokenIcon: icon }
-                      : t
-                  )
-                );
-              }
-
-              if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
-                setTokenData(p => ({
-                  ...p,
-                  price,
-                  marketCap: price * TOTAL_SUPPLY,
-                  change24h: p?.mini?.[0]?.open ? ((price * 1e9 - p?.mini?.[0]?.open) / (p?.mini?.[0]?.open) * 100) : p?.change24h,
-                  buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
-                  sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
-                  volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
-                }));
-
-                setMemeTrades(prev => [
-                  {
-                    id: `${log.transactionHash}-${log.logIndex}`,
-                    timestamp: Math.floor(Date.now() / 1000),
-                    isBuy,
-                    price: price,
-                    nativeAmount: isBuy ? amountIn : amountOut,
-                    tokenAmount: isBuy ? amountOut : amountIn,
-                    caller: `0x${log.topics[1].slice(26)}`,
-                  },
-                  ...prev.slice(0, 99),
-                ]);
-
-                setChartData((prev: any) => {
-                  if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
-                  const [bars, key, flag] = prev;
-                  const sel = key?.split('MON').pop() || ''
-                  const RESOLUTION_SECS: Record<string, number> = {
-                    '1S': 1, '5S': 5, '15S': 15, '1m': 60, '5m': 300, '15m': 900,
-                    '1h': 3600, '4h': 14400, '1d': 86400,
-                  };
-                  const resSecs = RESOLUTION_SECS[sel] ?? 60;
-                  const now = Date.now();
-                  const bucket = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
-                  const volNative = isBuy ? amountIn : amountOut;
-
-                  const updated = [...bars];
-                  const last = updated[updated.length - 1];
-                  if (!last || last.time < bucket) {
-                    const prevClose = last?.close ?? price;
-                    const open = prevClose;
-                    const high = Math.max(open, price);
-                    const low = Math.min(open, price);
-                    const newBar = {
-                      time: bucket,
-                      open,
-                      high,
-                      low,
-                      close: price,
-                      volume: volNative || 0,
-                    };
-                    updated.push(newBar);
-                    const cb =
-                      memeRealtimeCallbackRef.current?.[key];
-                    if (cb) cb(newBar);
-                  } else {
-                    const cur = { ...last };
-                    cur.high = Math.max(cur.high, price);
-                    cur.low = Math.min(cur.low, price);
-                    cur.close = price;
-                    cur.volume = (cur.volume || 0) + (volNative || 0);
-                    updated[updated.length - 1] = cur;
-                    const cb =
-                      memeRealtimeCallbackRef.current?.[key];
-                    if (cb) cb(cur);
-                  }
-                  if (updated.length > 1200) updated.splice(0, updated.length - 1200);
-                  return [updated, key, flag];
-                });
-
-                setMemeHolders(prev => {
-                  const arr = prev.slice();
-                  let idx = memeHoldersMapRef.current.get?.(callerAddr);
-                  if (idx == undefined) {
-                    const fresh: Holder = {
-                      address: `0x${log.topics[2].slice(26)}`,
-                      balance: 0,
-                      amountBought: 0,
-                      amountSold: 0,
-                      valueBought: 0,
-                      valueSold: 0,
-                      valueNet: 0,
-                      tokenNet: 0,
-                    };
-                    arr.push(fresh);
-                    idx = arr.length - 1;
-                    memeHoldersMapRef.current.set(callerAddr, idx);
-                  }
-                  const h = { ...arr[idx] };
-                  if (isBuy) {
-                    h.amountBought = (h.amountBought || 0) + amountOut;
-                    h.valueBought = (h.valueBought || 0) + amountIn;
-                    h.balance = (h.balance || 0) + amountOut;
-                  } else {
-                    h.amountSold = (h.amountSold || 0) + amountIn;
-                    h.valueSold = (h.valueSold || 0) + amountOut;
-                    h.balance = Math.max(0, (h.balance || 0) - amountIn);
-                  }
-                  arr[idx] = h;
-
-                  for (let i = 0; i < arr.length; i++) {
-                    const h = arr[i];
-                    const realized = (h.valueSold || 0) - (h.valueBought || 0);
-                    const bal = Math.max(0, h.balance || 0);
-                    arr[i] = { ...h, valueNet: realized + bal * price };
-                  }
-                  const topSum = arr.map(h => Math.max(0, h.balance || 0)).sort((a, b) => b - a).slice(0, 10).reduce((s, n) => s + n, 0);
-                  setMemeTop10HoldingPct((topSum / TOTAL_SUPPLY) * 100);
-                  return arr;
-                });
-
-                setMemeTopTraders(prev => {
-                  const copy = Array.isArray(prev) ? [...prev] : [];
-                  const key = callerAddr;
-                  let idx = memeTopTradersMapRef.current.get(key) ?? -1;
-
-                  if (idx === -1) {
-                    const row: Holder = {
-                      address: `0x${log.topics[2].slice(26)}`,
-                      balance: 0, tokenNet: 0, valueNet: 0,
-                      amountBought: 0, amountSold: 0,
-                      valueBought: 0, valueSold: 0,
-                    };
-                    copy.push(row);
-                    idx = copy.length - 1;
-                    memeTopTradersMapRef.current.set(key, idx);
-                  }
-
-                  const row = { ...copy[idx] };
-                  const curBal = Math.max(0, (row.balance ?? row.amountBought - row.amountSold) || 0);
-                  if (isBuy) {
-                    row.amountBought = (row.amountBought || 0) + amountOut;
-                    row.valueBought = (row.valueBought || 0) + amountIn;
-                    row.balance = curBal + amountOut;
-                  } else {
-                    row.amountSold = (row.amountSold || 0) + amountIn;
-                    row.valueSold = (row.valueSold || 0) + amountOut;
-                    row.balance = Math.max(0, curBal - amountIn);
-                  }
-                  row.tokenNet = (row.amountBought || 0) - (row.amountSold || 0);
-                  copy[idx] = row;
-
-                  for (let i = 0; i < copy.length; i++) {
-                    const r = copy[i];
-                    const bal = Math.max(0, (r.balance ?? r.amountBought - r.amountSold) || 0);
-                    const realized = (r.valueSold || 0) - (r.valueBought || 0);
-                    copy[i] = { ...r, valueNet: realized + bal * price };
-                  }
-
-                  copy.sort((a, b) => b.valueNet - a.valueNet);
-                  if (copy.length > 300) {
-                    const removed = copy.splice(300);
-                    for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
-                  }
-                  copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
-                  return copy;
-                });
-
-                setMemePositions(prev => {
-                  const copy = Array.isArray(prev) ? [...prev] : [];
-                  const allUserAddresses = [
-                    (address || '').toLowerCase(),
-                    ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
-                  ];
-                  const isUserTrade = allUserAddresses.includes(callerAddr);
-                  let idx = memePositionsMapRef.current.get(tokenAddr);
-
-                  if (idx === undefined && isUserTrade) {
-                    const newPos = {
-                      tokenId: memeRef.current.id?.toLowerCase(),
-                      symbol: memeRef.current?.symbol || '',
-                      name: memeRef.current?.name || '',
-                      imageUrl: memeRef.current?.image || '',
-                      metadataCID: '',
-                      boughtTokens: 0,
-                      soldTokens: 0,
-                      spentNative: 0,
-                      receivedNative: 0,
-                      remainingTokens: 0,
-                      remainingPct: 0,
-                      pnlNative: 0,
-                      lastPrice: price,
-                    };
-                    copy.push(newPos);
-                    idx = copy.length - 1;
-                    memePositionsMapRef.current.set(tokenAddr, idx);
-                  }
-                  if (idx === undefined) return prev;
-
-                  const pos = { ...copy[idx] };
-                  pos.lastPrice = price;
-                  if (isUserTrade) {
-                    if (isBuy) {
-                      pos.boughtTokens += amountOut;
-                      pos.spentNative += amountIn;
-                      pos.remainingTokens += amountOut;
-                    } else {
-                      pos.soldTokens += amountIn;
-                      pos.receivedNative += amountOut;
-                      pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
-                    }
-                  }
-                  pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
-
-                  const balance = Math.max(0, pos.remainingTokens);
-                  const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
-                  const unrealized = balance * (pos.lastPrice || 0);
-                  pos.pnlNative = realized + unrealized;
-
-                  copy[idx] = pos;
-
-                  if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
-                    const markToMarket = balance * (pos.lastPrice || 0);
-                    const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
-                    setMemeUserStats({
-                      balance,
-                      amountBought: pos.boughtTokens || 0,
-                      amountSold: pos.soldTokens || 0,
-                      valueBought: pos.spentNative || 0,
-                      valueSold: pos.receivedNative || 0,
-                      valueNet: totalPnL,
-                    });
-                  }
-                  return copy;
-                });
-
-                if (memeDevTokenIdsRef.current.has(tokenAddr)) {
-                  setMemeDevTokens(prev => {
-                    const updated = prev.map(t => {
-                      if ((t.id || '').toLowerCase() !== tokenAddr) return t;
-                      return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Math.floor(Date.now() / 1000) };
-                    });
-                    memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
-                    return updated;
-                  });
-                }
-              }
             }
             return tempset;
           })
@@ -6802,7 +6291,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   ? memeSelectedInterval.slice(0, -1).toUpperCase() + "S"
                   : memeSelectedInterval.slice(0, -1);
         setChartData([[], token.symbol + "MON" + resForChart, true]);
-        setTokenData({ ...token, created: Math.floor(Date.now() / 1000), mini: [{ open: 0.000083878 * 1e9 }] });
+        setTokenData({ ...token, created: Math.floor(Date.now() / 1000), mini: [{open: 0.000083878 * 1e9}] });
         setMemeTrades([]);
         setMemeHolders([]);
         setMemeTopTraders([]);
@@ -11182,26 +10671,26 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       if (scaAddress && popup === 11) {
         setpopup(0);
       }
-      // if (connected) {
-      //   if (!localStorage.getItem("firstConnect")) {
-      //     localStorage.setItem("firstConnect", "true");
-      //     if (window.location.hostname == 'test.crystal.exchange' && address != '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d') {
-      //       (async () => {
-      //         const amountInWei = BigInt(Math.round(30 * 10 ** 18));
-      //         await sendUserOperationAsync({
-      //           uo: {
-      //             target: address as `0x${string}`,
-      //             value: amountInWei,
-      //             data: '0x'
-      //           }
-      //         }, 100000n, 0n, false, '0xb52e8ab1cddc2645f8df7e94578ee0edfce192371feb2633f47e7039f90c67cb', await getTransactionCount(config, { address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any), }))
-      //       })()
-      //     }
-      //     if (!oneCTSigner) {
-      //       setpopup(28)
-      //     }
-      //   }
-      // }
+      if (connected) {
+        if (!localStorage.getItem("firstConnect")) {
+          localStorage.setItem("firstConnect", "true");
+          if (window.location.hostname == 'test.crystal.exchange' && address != '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d') {
+            (async () => {
+              const amountInWei = BigInt(Math.round(30 * 10 ** 18));
+              await sendUserOperationAsync({
+                uo: {
+                  target: address as `0x${string}`,
+                  value: amountInWei,
+                  data: '0x'
+                }
+              }, 100000n, 0n, false, '0xb52e8ab1cddc2645f8df7e94578ee0edfce192371feb2633f47e7039f90c67cb', await getTransactionCount(config, { address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any), }))
+            })()
+          }
+          if (!oneCTSigner) {
+            setpopup(28)
+          }
+        }
+      }
     }
   }, [popup, connected, scaAddress, user != null, loading]);
 
