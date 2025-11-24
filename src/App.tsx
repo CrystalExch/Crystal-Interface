@@ -4551,6 +4551,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               bondingPercentage: m.graduationPercentageBps,
               source: launchpad,
               market: m.market,
+              social1: (m.social1 as string) || '',
+              social2: (m.social2 as string) || '',
+              social3: (m.social3 as string) || '',
+              social4: (m.social4 as string) || '',
             };
 
             tokens.push(token);
