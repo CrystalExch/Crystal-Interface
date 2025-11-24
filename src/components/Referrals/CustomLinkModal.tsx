@@ -3,9 +3,6 @@ import closebutton from '../../assets/close_button.png';
 import { settings } from '../../settings.ts';
 import './CustomLinkModal.css';
 
-// TODO: Get activechain from context or props
-const activechain = 10143; // Monad testnet - temporary hardcoded value
-
 // Temporary translation function
 const t = (key: string) => {
   const translations: Record<string, string> = {

@@ -601,6 +601,7 @@ export const settings: any = {
       madHouseRouter: '0x9a5362f481A6c3e309f31b65f9F7Ad0d7e8A7B7D' as `0x${string}`,
       zeroXSettler: '0x07F37e56bc55B7F927807171647c2EEE95C78f31' as `0x${string}`,
       zeroXAllowanceHolder: '0x0000000000001fF3684f28c67538d4D072C22734' as `0x${string}`,
+      feeAddress: '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d' as `0x${string}`,
     },
   },
 };

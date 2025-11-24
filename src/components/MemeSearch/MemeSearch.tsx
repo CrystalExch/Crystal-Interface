@@ -81,7 +81,7 @@ interface MemeSearchProps {
     marketsData?: Market[];
     tokendict: any;
     setpopup: any;
-    activechain?: number;
+    activechain: number;
     subWallets?: Array<SubWallet>;
     selectedWallets?: Set<string>;
     setSelectedWallets?: (wallets: Set<string>) => void;
@@ -308,7 +308,7 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
     marketsData = [],
     tokendict,
     setpopup,
-    activechain = 10143,
+    activechain,
     subWallets = [],
     selectedWallets = new Set(),
     setSelectedWallets,

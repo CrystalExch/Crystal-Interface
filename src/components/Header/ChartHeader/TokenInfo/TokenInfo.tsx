@@ -1651,7 +1651,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   <span className="meme-interface-metric-label">B. Curve</span>
                   <span
                     className="meme-interface-metric-value"
-                    style={{ color: getBondingColorMeme(bondingPercentage) }}
+                    style={{ color: '#43e17d' }}
                   >
                     Graduated
                   </span>
