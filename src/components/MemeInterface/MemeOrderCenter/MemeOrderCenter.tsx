@@ -124,11 +124,22 @@ interface DevToken {
   holders: number;
 }
 
-const fmt = (v: number, d = 2) => {
+const fmt = (v: number, d = 2): string => {
+  if (!Number.isFinite(v)) return String(v);
   if (v === 0) return '0';
-  if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B';
-  if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M';
-  if (v >= 1e3) return (v / 1e3).toFixed(2) + 'K';
+  if (d <= 0) return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+  const abs = Math.abs(v);
+  const threshold = Math.pow(10, -d);
+  const thresholdStr = '0.' + '0'.repeat(d - 1) + '1';
+
+  if (abs < threshold) {
+    return v > 0 ? `<${thresholdStr}` : `>-${thresholdStr}`;
+  }
+
+  if (abs >= 1e9) return (v / 1e9).toFixed(2) + 'B';
+  if (abs >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+  if (abs >= 1e3) return (v / 1e3).toFixed(2) + 'K';
   return v.toLocaleString('en-US', { maximumFractionDigits: d });
 };
 
