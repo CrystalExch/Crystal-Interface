@@ -4131,7 +4131,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const handleQuickBuy = useCallback(
     async (token: Token, amt: string, buttonType: 'primary' | 'secondary') => {
-      const val = BigInt(amt || '0') * 10n ** 18n;
+      const val = BigInt(parseFloat(amt) * 10 ** 18 || 0);
       if (val === 0n) return;
 
       const targets: string[] = Array.from(selectedWallets);

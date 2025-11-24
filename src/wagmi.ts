@@ -11,5 +11,11 @@ export const config = createConfig({
         { batch: true },
       ),
     ]),
+    [143]: fallback([
+      http(
+        'https://monad-mainnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
+        { batch: true },
+      ),
+    ]),
   },
 });

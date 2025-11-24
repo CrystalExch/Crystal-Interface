@@ -1019,14 +1019,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const signedTx = await (new Wallet(pk)).signTransaction(tx);
         hash = keccak256(signedTx) as `0x${string}`;
 
-        const RPC_URLS = [...new Set([
-          HTTP_URL,
-          'https://testnet-rpc.monad.xyz',
-          'https://rpc.ankr.com/monad_testnet',
-          'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
-          'https://quick-warmhearted-liquid.monad-testnet.quiknode.pro/f6b35b5a851643b1421398dcbccad4ca91ef6a68',
-        ])];
-        RPC_URLS.forEach(url => {
+        const RPC_URLS = settings.chainConfig[activechain].RPC_URLS;
+        RPC_URLS.forEach((url: any) => {
           fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1059,14 +1053,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const signedTx = await onectclient.signTransaction(tx);
         hash = keccak256(signedTx) as `0x${string}`;
 
-        const RPC_URLS = [...new Set([
-          HTTP_URL,
-          'https://testnet-rpc.monad.xyz',
-          'https://rpc.ankr.com/monad_testnet',
-          'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
-          'https://quick-warmhearted-liquid.monad-testnet.quiknode.pro/f6b35b5a851643b1421398dcbccad4ca91ef6a68',
-        ])];
-        RPC_URLS.forEach(url => {
+        const RPC_URLS = settings.chainConfig[activechain].RPC_URLS;
+        RPC_URLS.forEach((url: any) => {
           fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -15548,7 +15536,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                 type="text"
                                 className="input-field"
                                 value={rpcUrl}
-                                placeholder="https://testnet-rpc.monad.xyz"
+                                placeholder="https://rpc.monad.xyz"
                                 onChange={e => {
                                   setRpcUrl(e.target.value)
                                   localStorage.setItem('crystal_rpc_url', e.target.value)
