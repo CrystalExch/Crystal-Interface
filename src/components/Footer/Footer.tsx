@@ -317,6 +317,18 @@ const Footer: React.FC<FooterProps> = ({
     });
   };
 
+  const formatBalanceCompact = (value: number): string => {
+    if (value >= 1_000_000_000) {
+      return (value / 1_000_000_000).toFixed(2) + 'B';
+    } else if (value >= 1_000_000) {
+      return (value / 1_000_000).toFixed(2) + 'M';
+    } else if (value >= 1_000) {
+      return (value / 1_000).toFixed(2) + 'K';
+    } else {
+      return value.toFixed(2);
+    }
+  };
+
   const toggleWalletSelection = useCallback(
     (address: string) => {
       if (!setSelectedWallets) return;
@@ -458,7 +470,7 @@ const Footer: React.FC<FooterProps> = ({
                             alt="MON"
                           />
                           <span>
-                            {formatNumberWithCommas(totalSelectedBalance, 2)}
+                            {formatBalanceCompact(totalSelectedBalance)}
                           </span>
                         </>
                       ) : (
@@ -597,7 +609,7 @@ const Footer: React.FC<FooterProps> = ({
                                         className="wallet-dropdown-mon-icon"
                                         alt="MON"
                                       />
-                                      {formatNumberWithCommas(balance, 2)}
+                                      {formatBalanceCompact(balance)}
                                     </div>
                                   </Tooltip>
                                 );

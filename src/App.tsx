@@ -28812,6 +28812,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 scaAddress={scaAddress}
                 nonces={nonces}
                 setOneCTDepositAddress={setOneCTDepositAddress}
+                positions={memePositions}
+                monUsdPrice={monUsdPrice}
               />
             } />
           <Route path="/trackers"
