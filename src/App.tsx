@@ -265,8 +265,8 @@ type State = {
 type Action =
   | { type: 'INIT'; tokens: Token[] }
   | { type: 'ADD_MARKET'; token: Partial<Token> }
-  | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
-  | { type: 'UPDATE_MARKET_BY_ADDRESS'; tokenAddress: string; updates: Partial<Token> }  // NEW
+  | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token>, liveState?: any }
+  | { type: 'UPDATE_MARKET_BY_ADDRESS'; tokenAddress: string; updates: Partial<Token> }
   | { type: 'GRADUATE_MARKET'; id: string; market?: any }
   | { type: 'HIDE_TOKEN'; id: string }
   | { type: 'SHOW_TOKEN'; id: string }
@@ -2183,27 +2183,27 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // reload if throttled
   useEffect(() => {
-    if (!['board','spectra','meme','launchpad','trackers'].includes(location.pathname.split('/')[1])) return;
+    if (!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])) return;
     let last = Date.now();
     let throttled = false;
-  
+
     const check = setInterval(() => {
       const now = Date.now();
       if (!throttled && now - last > 5000) throttled = true;
       last = now;
     }, 1000);
-  
+
     const onFocus = () => {
       if (throttled) window.location.reload();
     };
-  
+
     window.addEventListener('focus', onFocus);
-  
+
     return () => {
       clearInterval(check);
       window.removeEventListener('focus', onFocus);
     };
-  }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);  
+  }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
 
   useEffect(() => {
     const updateTrackedWalletsRef = () => {
@@ -4199,10 +4199,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
 
       case 'UPDATE_MARKET': {
-        const buckets = { ...state.tokensByStatus };
+        const live = action?.liveState ?? state.tokensByStatus;
+        const buckets = { ...live };
         let movedToken: any;
         (Object.keys(buckets) as Token['status'][]).forEach((s) => {
-          buckets[s] = buckets[s].flatMap((t) => {
+          buckets[s] = buckets[s].flatMap((t: any) => {
             if (t.id.toLowerCase() !== action.id.toLowerCase()) return [t];
 
             const {
@@ -4245,10 +4246,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
 
       case 'GRADUATE_MARKET': {
-        const buckets = { ...state.tokensByStatus };
+        const live = action?.liveState ?? state.tokensByStatus;
+        const buckets = { ...live };
         let movedToken: any;
         (Object.keys(buckets) as Token['status'][]).forEach((s) => {
-          buckets[s] = buckets[s].flatMap((t) => {
+          buckets[s] = buckets[s].flatMap((t: any) => {
             if (t.id.toLowerCase() !== action.id.toLowerCase()) return [t];
 
             const status = 'graduated'
@@ -4258,7 +4260,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 ...t,
                 status: status,
                 market: action.market ? action.market : t.market,
-                progress: 100, // Set progress to 100% when graduated
+                progress: 100,
               }
               return []
             }
@@ -5489,7 +5491,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   buyTransactions: isBuy ? 1 : 0,
                   sellTransactions: isBuy ? 0 : 1,
                   volumeDelta: (isBuy ? amountIn : amountOut),
-                }
+                },
+                liveState: tokensByStatusRef.current,
               });
 
               if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
@@ -5814,25 +5817,25 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             else if (log.topics?.[0] == UNIV3_EVENTS.Swap) {
               const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
               const pool = log.address.toLowerCase();
-            
+
               const hex = log.data.replace(/^0x/, '');
               const words = [];
               for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
-            
+
               const toInt256 = (hex: string) => {
                 const b = BigInt('0x' + hex);
                 return (b & (1n << 255n)) !== 0n ? b - (1n << 256n) : b;
               };
-            
+
               const toUint = (hex: string) => BigInt('0x' + hex);
-            
+
               const sqrtToPrice = (sqrt: bigint) =>
                 Number((sqrt * sqrt) >> 192n);
-            
+
               const amount0 = toInt256(words[0]);
               const amount1 = toInt256(words[1]);
               const sqrtPriceX96 = toUint(words[2]);
-            
+
               let price = sqrtToPrice(sqrtPriceX96);
               let tokenInfo: any = null;
               Object.values(tokensByStatusRef.current).forEach((tokens: any[]) => {
@@ -5845,34 +5848,34 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               let nativeDelta: bigint;
               let tokenDelta: bigint;
-              
+
               if (wethIsToken0) {
                 nativeDelta = amount0;
                 tokenDelta = amount1;
                 price = 1 / price
               } else {
                 nativeDelta = amount1;
-                tokenDelta = amount0; 
+                tokenDelta = amount0;
                 price = price
               }
-              
+
               const isBuy = nativeDelta > 0n;
-              
+
               const nativeAbs = nativeDelta >= 0n ? nativeDelta : -nativeDelta;
               const tokenAbs = tokenDelta >= 0n ? tokenDelta : -tokenDelta;
-              
+
               let amountIn: number;
               let amountOut: number;
-              
+
               const toNum = (x: bigint) => Number(x) / 1e18;
-              
+
               if (isBuy) {
                 amountIn = toNum(nativeAbs);
                 amountOut = toNum(tokenAbs);
               } else {
                 amountIn = toNum(tokenAbs);
                 amountOut = toNum(nativeAbs);
-              }              
+              }
 
               dispatch({
                 type: 'UPDATE_MARKET',
@@ -5883,7 +5886,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   buyTransactions: isBuy ? 1 : 0,
                   sellTransactions: isBuy ? 0 : 1,
                   volumeDelta: (isBuy ? amountIn : amountOut),
-                }
+                },
+                liveState: tokensByStatusRef.current,
               });
 
               if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
@@ -6692,7 +6696,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   ? memeSelectedInterval.slice(0, -1).toUpperCase() + "S"
                   : memeSelectedInterval.slice(0, -1);
         setChartData([[], token.symbol + "MON" + resForChart, true]);
-        setTokenData({ ...token, created: Math.floor(Date.now() / 1000), mini: [{open: 0.000083878 * 1e9}] });
+        setTokenData({ ...token, created: Math.floor(Date.now() / 1000), mini: [{ open: 0.000083878 * 1e9 }] });
         setMemeTrades([]);
         setMemeHolders([]);
         setMemeTopTraders([]);
