@@ -69,7 +69,7 @@ export const settings: any = {
       explorer: 'https://testnet.monadscan.com',
       image: MonadLogo,
       blocktime: 0.4,
-      gasamount: BigInt(130000000000000000),
+      gasamount: BigInt(13000000000000000000),
       markets: {
         MONUSDC: {
           quoteAsset: 'USDC',

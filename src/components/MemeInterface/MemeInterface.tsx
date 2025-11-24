@@ -384,6 +384,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         return 0;
     }
   };
+  
   const isWalletActive = (privateKey: string) => {
     return activeWalletPrivateKey === privateKey;
   };
@@ -1812,23 +1813,24 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         setTempPresetValue(preset.toString());
       } else {
         setSelectedMonPreset(preset);
-        if (activeTradeType === 'buy') {
+        if (activeTradeType === 'sell' && sellInputMode === 'percentage') {
+          const percent = parseFloat(preset.toString()) || 0;
+          setSliderPercent(Math.min(100, Math.max(0, percent)));
           setTradeAmount(preset.toString());
+        }
+        else if (activeTradeType == 'buy') {
           const currentBalance = getTotalSelectedWalletsBalance();
-          const percentage =
-            currentBalance > 0 ? (preset / currentBalance) * 100 : 0;
-          setSliderPercent(Math.min(100, percentage));
-        } else {
-          if (currentPrice > 0) {
-            const tokenAmount = preset / currentPrice;
-            setTradeAmount(tokenAmount.toString());
-            const currentTokenBalance = getTotalSelectedWalletsTokenBalance();
-            const percentage =
-              currentTokenBalance > 0
-                ? (tokenAmount / currentTokenBalance) * 100
-                : 0;
-            setSliderPercent(Math.min(100, percentage));
-          }
+          const currentAmount = parseFloat(preset.toString()) || 0;
+          const percentage = currentBalance > 0 ? (currentAmount / currentBalance) * 100 : 0;
+          setSliderPercent(percentage);
+          setTradeAmount(preset.toString());
+        }
+        else {
+          const currentBalance = getTotalSelectedWalletsTokenBalance() * token.price;
+          const currentAmount = parseFloat(preset.toString()) || 0;
+          const percentage = currentBalance > 0 ? (currentAmount / currentBalance) * 100 : 0;
+          setSliderPercent(percentage);
+          setTradeAmount(preset.toString());
         }
       }
     },
@@ -3783,7 +3785,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   setTradeAmount(value);
                 }
                 else if (activeTradeType == 'buy') {
-                  const currentBalance = getTotalSelectedWalletsBalance();
+                  const currentBalance = getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18) > 0
+                  ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
+                  : 0;
                   const currentAmount = parseFloat(value) || 0;
                   const percentage = currentBalance > 0 ? (currentAmount / currentBalance) * 100 : 0;
                   setSliderPercent(percentage);
@@ -3904,7 +3908,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     );
                     setSliderPercent(newPercent);
                     if (activeTradeType === 'buy') {
-                      const currentBalance = getTotalSelectedWalletsBalance();
+                      const currentBalance = getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18) > 0
+                      ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
+                      : 0;
                       const newAmount = (currentBalance * newPercent) / 100;
                       setTradeAmount(newAmount.toString());
                     } else {
@@ -3935,7 +3941,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     );
                     setSliderPercent(newPercent);
                     if (activeTradeType === 'buy') {
-                      const currentBalance = getTotalSelectedWalletsBalance();
+                      const currentBalance = getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18) > 0
+                      ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
+                      : 0;;
                       const newAmount = (currentBalance * newPercent) / 100;
                       setTradeAmount(newAmount.toString());
                     } else {
@@ -3973,7 +3981,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       return
                     }
                     if (activeTradeType === 'buy') {
-                      const currentBalance = getTotalSelectedWalletsBalance();
+                      const currentBalance = getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18) > 0
+                      ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
+                      : 0;;
                       const newAmount = (currentBalance * percent) / 100;
                       setTradeAmount(formatTradeAmount(newAmount));
                     } else {
@@ -4012,7 +4022,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       onClick={() => {
                         setSliderPercent(markPercent);
                         if (activeTradeType === 'buy') {
-                          const currentBalance = getTotalSelectedWalletsBalance();
+                          const currentBalance = getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18) > 0
+                          ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
+                          : 0;;
                           const newAmount =
                             (currentBalance * markPercent) / 100;
                           setTradeAmount(formatTradeAmount(newAmount));
@@ -4640,7 +4652,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         step="0.001"
                         min="0"
                       />
-                      <span className="meme-setting-unit">MON</span>
+                      <span className="meme-setting-unit">GWEI</span>
                     </div>
                     <label className="meme-setting-label">
                       <img

@@ -1007,14 +1007,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       let receipt: any;
       let err: any;
       if (!!pk) {
-        gasLimit = gasLimit > 0n ? gasLimit : 800000n;
+        gasLimit = gasLimit > 0n ? gasLimit : 1000000n;
         const tx = {
           to: params.uo.target,
           value: params.uo.value,
           data: params.uo.data,
           gasLimit: gasLimit,
-          maxFeePerGas: 120000000000n + (prioFee > 0n ? prioFee : 13000000000n),
-          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
+          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee) * 1e9)),
+          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee) * 1e9)),
           nonce: nonce,
           chainId: activechain
         }
@@ -1043,7 +1043,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         });
       }
       else if (validOneCT && !mainWallet) {
-        gasLimit = gasLimit > 0n ? gasLimit : 800000n;
+        gasLimit = gasLimit > 0n ? gasLimit : 1000000n;
         const wallet = nonces.current.get(onectclient.address);
         nonce = wallet.nonce
         const tx = {
@@ -1051,8 +1051,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           value: params.uo.value,
           data: params.uo.data,
           gasLimit: gasLimit,
-          maxFeePerGas: 120000000000n + (prioFee > 0n ? prioFee : 13000000000n),
-          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
+          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee) * 1e9)),
+          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee) * 1e9)),
           nonce: nonce,
           chainId: activechain
         }
@@ -1136,7 +1136,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       if (err) throw err
       return { hash, receipt }
     },
-    [validOneCT]
+    [validOneCT, buyPriorityFee]
   );
 
   const [perpsActiveMarketKey, setperpsActiveMarketKey] = useState(
@@ -1608,11 +1608,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     3: { ...buyPresets[3], amount: '100' }
   };
 
-  const sellPresets = {
-    1: { slippage: '15', priority: '0.005' },
-    2: { slippage: '12', priority: '0.01' },
-    3: { slippage: '8', priority: '0.03' }
-  };
+  const [sellPresets, setSellPresets] = useState(() => loadSellPresets());
 
   const [monPresets, setMonPresets] = useState(() => {
     try {
@@ -20116,7 +20112,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       step="0.001"
                       min="0"
                     />
-                    <span className="meme-setting-unit">MON</span>
+                    <span className="meme-setting-unit">GWEI</span>
                   </div>
                   <label className="meme-setting-label">
                     <img

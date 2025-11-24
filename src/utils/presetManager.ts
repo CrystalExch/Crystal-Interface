@@ -11,15 +11,15 @@ const BUY_PRESETS_KEY = 'crystal_buy_presets';
 const SELL_PRESETS_KEY = 'crystal_sell_presets';
 
 const DEFAULT_BUY_PRESETS: Presets = {
-  1: { slippage: '20', priority: '0.01' },
-  2: { slippage: '15', priority: '0.005' },
-  3: { slippage: '10', priority: '0.001' },
+  1: { slippage: '30', priority: '100' },
+  2: { slippage: '20', priority: '50' },
+  3: { slippage: '10', priority: '25' },
 };
 
 const DEFAULT_SELL_PRESETS: Presets = {
-  1: { slippage: '15', priority: '0.005' },
-  2: { slippage: '10', priority: '0.003' },
-  3: { slippage: '5', priority: '0.001' },
+  1: { slippage: '50', priority: '100' },
+  2: { slippage: '30', priority: '50' },
+  3: { slippage: '10', priority: '25' },
 };
 
 export const loadBuyPresets = (): Presets => {
