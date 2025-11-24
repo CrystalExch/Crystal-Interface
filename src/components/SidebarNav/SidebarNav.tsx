@@ -180,7 +180,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('crystal.fun')}</span>
               </Link>
             ) */}
-            <Link
+            {/* <Link
               to="/swap"
               className={`view-mode-button ${path === '/swap' || (isTradingPage && simpleView) ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
               onClick={(e) => {
@@ -194,7 +194,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             >
               <img src={swap} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Swap')}</span>
-            </Link>
+            </Link> */}
             {/* !isMobile && (
               <Link
                 to="/earn/liquidity"
