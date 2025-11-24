@@ -20,7 +20,7 @@
 }
 
 .referral-nav-tabs {
-  display: flex;
+  display: none;
   gap: 5px;
   margin-bottom: 10px;
   padding-left: 15px;
@@ -410,7 +410,7 @@
 
 .earnings-title {
   color: rgba(255, 255, 255, 0.7);
-  font-size: 1.05rem;
+  font-size: 1.35rem;
   font-weight: 300;
   margin: 0;
 }
@@ -418,7 +418,7 @@
 .referrals-stats-section {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
   margin-bottom: 1.5rem;
   align-items: flex-start;
 }
@@ -431,19 +431,19 @@
 
 .referrals-stat-label {
   color: rgba(255, 255, 255, 0.6);
-  font-size: 0.85rem;
+  font-size: 1.1rem;
   font-weight: 400;
 }
 
 .referrals-stat-value {
   color: rgba(255, 255, 255, 0.8);
-  font-size: 0.85rem;
-  font-weight: 400;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .earnings-subtitle {
   color: rgb(255 255 255 / 35%);
-  font-size: 0.7rem;
+  font-size: 0.9rem;
   margin: 0;
 }
 
@@ -675,6 +675,7 @@
 .referrals-subtitle{
   color: rgb(215, 215, 215);
   letter-spacing: -0.5px;
+  font-size: 1.15rem;
 }
 .referral-header {
   align-items: center;
