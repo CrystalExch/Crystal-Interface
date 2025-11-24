@@ -182,11 +182,28 @@
 }
 
 .fee-tier-progress-text {
-  padding-top: 10px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.75rem;
+  padding-top: 16px;
+  color: rgba(255, 255, 255, 0.798);
+  font-size: 0.8rem;
   text-align: right;
   margin: 0;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.fee-tier-progress-text:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+.fee-tier-mon-icon {
+  width: 11px;
+  height: 11px;
+  margin-right: 3px;
+  display: inline-block;
+  vertical-align: baseline;
+  position: relative;
+  top: 1px;
 }
 
 /* Max Tier Message */

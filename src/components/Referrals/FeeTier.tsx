@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendingDown, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import monadicon from '../../assets/monadlogo.svg';
 import './FeeTier.css';
 
 interface FeeTierProps {
   tradingVolume: number; // 14-day trading volume in USD
   commissionBonus: number; // Crystals from referrals
   onViewFeeSchedule: () => void;
+  tokenList: any[]; // Token list to get MON price
 }
 
 interface TierInfo {
@@ -26,8 +28,10 @@ interface TierInfo {
   } | null;
 }
 
-const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onViewFeeSchedule }) => {
+const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onViewFeeSchedule, tokenList }) => {
   const [testTierLevel, setTestTierLevel] = useState<number | null>(null);
+  const [showUSD, setShowUSD] = useState<boolean>(true);
+  const [monPrice, setMonPrice] = useState<number>(1);
   const getTierInfo = (volume: number): TierInfo => {
     if (volume >= 1000000) {
       return {
@@ -128,16 +132,53 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
     }
   };
 
-  const formatVolume = (vol: number): string => {
-    if (vol >= 1000000) {
-      const formatted = (vol / 1000000).toFixed(2);
-      return `${parseFloat(formatted)}M MON`;
+  // Set MON price (hardcoded like in App.tsx)
+  useEffect(() => {
+    // Use the same hardcoded price as App.tsx
+    const hardcodedMonPrice = 0.05;
+    setMonPrice(hardcodedMonPrice);
+  }, []);
+
+  const formatMONVolume = (volUSD: number): string => {
+    const volMON = volUSD / monPrice;
+    if (volMON >= 1000000) {
+      const formatted = Math.floor(volMON / 1000000);
+      return `${formatted}M`;
     }
-    if (vol >= 1000) {
-      const formatted = (vol / 1000).toFixed(1);
-      return `${parseFloat(formatted)}K MON`;
+    if (volMON >= 1000) {
+      const formatted = Math.floor(volMON / 1000);
+      return `${formatted}K`;
     }
-    return `${vol.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} MON`;
+    return `${Math.floor(volMON).toLocaleString()}`;
+  };
+
+  const formatUSDVolume = (volUSD: number): string => {
+    if (volUSD >= 1000000) {
+      const formatted = Math.floor(volUSD / 1000000);
+      return `$${formatted}M`;
+    }
+    if (volUSD >= 1000) {
+      const formatted = Math.floor(volUSD / 1000);
+      return `$${formatted}K`;
+    }
+    return `$${Math.floor(volUSD).toLocaleString()}`;
+  };
+
+  const formatDisplay = (volUSD: number): React.ReactNode => {
+    if (showUSD) {
+      return formatUSDVolume(volUSD);
+    } else {
+      return (
+        <>
+          <img src={monadicon} className="fee-tier-mon-icon" alt="MON" />
+          {formatMONVolume(volUSD)}
+        </>
+      );
+    }
+  };
+
+  const toggleDisplay = () => {
+    setShowUSD(!showUSD);
   };
 
   return (
@@ -174,8 +215,8 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
               }}
             />
           </div>
-          <p className="fee-tier-progress-text">
-            {formatVolume(tradingVolume)} / {formatVolume(tier.next.minVolume)}
+          <p className="fee-tier-progress-text" onClick={toggleDisplay}>
+            {formatDisplay(tradingVolume)} / {formatDisplay(tier.next.minVolume)}
           </p>
         </div>
       )}
@@ -183,8 +224,8 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
       {tier.next === null && (
         <>
           <div className="fee-tier-progress">
-            <p className="fee-tier-progress-text">
-              Trading Volume: {formatVolume(tradingVolume)}
+            <p className="fee-tier-progress-text" onClick={toggleDisplay}>
+              Trading Volume: {formatDisplay(tradingVolume)}
             </p>
           </div>
           <div className="fee-tier-max-message">

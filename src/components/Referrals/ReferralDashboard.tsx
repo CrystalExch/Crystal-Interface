@@ -325,6 +325,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
             tradingVolume={tradingVolume}
             commissionBonus={commissionBonus}
             onViewFeeSchedule={() => setShowFeeSchedule(true)}
+            tokenList={tokenList}
           />
 
           {/* Marketing Resources */}
