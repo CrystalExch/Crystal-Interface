@@ -739,10 +739,10 @@ export const settings: any = {
           image: iconwmonad,
           website: 'https://www.monad.xyz/',
         },
-        '0x754704Bc059F8C67012fEd69BC8A327a5aafb603': {
+        '0x00000000efe302beaa2b3e6e1b18d08d69a9012a': {
           ticker: 'USDC',
           name: 'USD Coin',
-          address: '0x754704Bc059F8C67012fEd69BC8A327a5aafb603',
+          address: '0x00000000efe302beaa2b3e6e1b18d08d69a9012a',
           decimals: BigInt(6),
           image: iconusdc,
         },

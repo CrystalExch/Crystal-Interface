@@ -949,7 +949,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             },
             primaryType: 'CrystalOneCT',
             message: {
-              version: 'Crystal v0.0.1 Testnet',
+              version: 'Crystal v0.0.1 Mainnet',
               account: 1,
             }
           }
