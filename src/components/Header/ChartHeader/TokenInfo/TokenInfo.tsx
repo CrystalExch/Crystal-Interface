@@ -1567,7 +1567,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     <Tooltip content="View on nad.fun">
                       <a
                         className="token-info-meme-interface-social-btn"
-                        href={`https://d1ngwdlq1quo47.cloudfront.net/tokens/${memeTokenData.tokenAddress}`}
+                        href={`https://nad.fun/tokens/${memeTokenData.tokenAddress}`}
                         target="_blank"
                         rel="noreferrer"
                       >

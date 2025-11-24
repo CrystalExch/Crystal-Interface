@@ -3009,7 +3009,7 @@ const TokenRow = React.memo<{
                       <Tooltip content="View on nad.fun">
                         <a
                           className="token-info-meme-interface-social-btn"
-                          href={`https://d1ngwdlq1quo47.cloudfront.net/tokens/${token.tokenAddress}`}
+                          href={`https://nad.fun/tokens/${token.tokenAddress}`}
                           target="_blank"
                           rel="noreferrer"
                         >
