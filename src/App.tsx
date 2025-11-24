@@ -2174,22 +2174,25 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   // reload if throttled
   useEffect(() => {
     let last = Date.now();
-    let triggered = false;
-
-    const interval = setInterval(() => {
+    let throttled = false;
+  
+    const check = setInterval(() => {
       const now = Date.now();
-      const delta = now - last;
+      if (!throttled && now - last > 5000) throttled = true;
       last = now;
-
-      if (!triggered && delta > 5000) {
-        triggered = true;
-
-        window.location.reload();
-      }
     }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+  
+    const onFocus = () => {
+      if (throttled) window.location.reload();
+    };
+  
+    window.addEventListener('focus', onFocus);
+  
+    return () => {
+      clearInterval(check);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, []);  
 
   useEffect(() => {
     const updateTrackedWalletsRef = () => {
@@ -6282,6 +6285,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   ? memeSelectedInterval.slice(0, -1).toUpperCase() + "S"
                   : memeSelectedInterval.slice(0, -1);
         setChartData([[], token.symbol + "MON" + resForChart, true]);
+        setTokenData({ ...token, created: Math.floor(Date.now() / 1000), mini: [{open: 0.000083878 * 1e9}] });
         setMemeTrades([]);
         setMemeHolders([]);
         setMemeTopTraders([]);

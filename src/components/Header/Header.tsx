@@ -646,7 +646,7 @@ const Header: React.FC<HeaderProps> = ({
               formatSubscript(marketHeader?.priceChangeAmount) || 'N/A'
             }
             priceChangePercent={isMemeTokenPage && memeTokenData ?
-              `${memeTokenData.change24h >= 0 ? '+' : ''}${memeTokenData.change24h.toFixed(2)}` :
+              `${memeTokenData.change24h >= 0 ? '+' : ''}${memeTokenData.change24h?.toFixed(2)}` :
               marketHeader?.priceChange || 'N/A'
             }
             activeMarket={activeMarket}

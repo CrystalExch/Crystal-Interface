@@ -1643,7 +1643,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 <span
                   className={`meme-interface-metric-value ${memeTokenData.change24h >= 0 ? 'positive' : 'negative'}`}
                 >
-                  {memeTokenData.change24h >= 0 ? '+' : ''}{memeTokenData.change24h.toFixed(2)}%
+                  {memeTokenData.change24h >= 0 ? '+' : ''}{memeTokenData.change24h?.toFixed(2)}%
                 </span>
               </div>
               {memeTokenData.status == 'graduated' ? (
