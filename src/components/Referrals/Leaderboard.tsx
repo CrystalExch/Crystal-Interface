@@ -93,82 +93,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ address, displayName, isLoadi
     <div className="leaderboard-container">
       {/* Leaderboard Table */}
       <div className="leaderboard-table-section">
-        {/* User Profile Section - Top Right */}
-        <div className="leaderboard-user-badge">
-          {isLoading ? (
-            <>
-              <div className="leaderboard-user-text">
-                <div className="referrals-skeleton leaderboard-username-skeleton"></div>
-                <div className="referrals-skeleton leaderboard-rank-skeleton"></div>
-              </div>
-              <div className="leaderboard-user-pfp-skeleton"></div>
-            </>
-          ) : (
-            <>
-              <div className="leaderboard-user-text">
-                <span className="leaderboard-username">{displayName}</span>
-                <span className="leaderboard-user-rank">Rank #{userRank}</span>
-              </div>
-              <img src={defaultPfp} className="leaderboard-user-pfp" alt="Profile" />
-            </>
-          )}
-        </div>
-
-        <h2 className="leaderboard-title">Points Leaderboard</h2>
-
-        <div className="leaderboard-table-wrapper">
-          <table className="leaderboard-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>User ID</th>
-                <th>Total Points</th>
-                <th>Trading</th>
-                <th>Referrals</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaderboardData.map((entry) => (
-                <tr key={entry.rank}>
-                  <td className="rank-cell">
-                    <span className="rank-number">#{entry.rank}</span>
-                  </td>
-                  <td className="user-id-cell">{entry.userId}</td>
-                  <td className="points-cell">{formatNumber(entry.totalPoints)}</td>
-                  <td className="trading-cell">{formatNumber(entry.trading)}</td>
-                  <td className="referrals-cell">{formatNumber(entry.referrals)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="leaderboard-pagination">
-          <button
-            className={`pagination-btn ${activePage === 1 ? 'active' : ''}`}
-            onClick={() => setActivePage(1)}
-          >
-            1
-          </button>
-          <button
-            className={`pagination-btn ${activePage === 2 ? 'active' : ''}`}
-            onClick={() => setActivePage(2)}
-          >
-            2
-          </button>
-          <button
-            className={`pagination-btn ${activePage === 3 ? 'active' : ''}`}
-            onClick={() => setActivePage(3)}
-          >
-            3
-          </button>
-          <button
-            className={`pagination-btn ${activePage === 4 ? 'active' : ''}`}
-            onClick={() => setActivePage(4)}
-          >
-            4
-          </button>
+        <div className="leaderboard-coming-soon">
+          <h2 className="leaderboard-coming-soon-title">Coming Soon...</h2>
         </div>
       </div>
     </div>

@@ -387,12 +387,12 @@
 .wtw-wallet-name-display:hover .wtw-wallet-name-edit-icon {
   opacity: 1;
   width: 12px;
+  margin-left: 4px;
 }
 
 
 .wtw-wallet-name-container {
   display: flex;
-  gap: 6px;
   min-width: 0;
   flex: 1;
   align-items: center;
@@ -427,47 +427,33 @@
   margin-left: 0;
 }
 
-.wtw-wallet-name-display:hover .wtw-wallet-name-edit-icon {
-  opacity: 1;
-  width: 12px;
-  margin-left: 4px;
-}
-
 .wtw-wallet-address {
   color: #e0e3f473;
   font-size: 0.75rem;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   font-family: inherit;
   letter-spacing: -0.2px;
   flex-shrink: 1;
   min-width: 0;
   margin-left: 5px;
   font-weight: 300;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
+
+.wtw-wallet-address:hover {
+  color: #d8dcff;
+}
+
+
+
+
 
 .wtw-copy-address {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  opacity: 1;
-  transition: opacity 0.2s;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-
-.wtw-copy-address:hover {
-  opacity: 1 !important;
-}
-
-.wtw-copy-address img {
   width: 12px;
   height: 12px;
-  filter: brightness(0) saturate(100%) invert(100%);
 }
 
 .wtw-wallet-name-input {
@@ -808,11 +794,11 @@
   margin-left: 3px;
 }
 
-.wtw-detail-trades-address.sell{
+.wtw-detail-trades-address.sell {
   color: rgb(235, 112, 112);
 }
 
-.wtw-detail-trades-address.buy{
+.wtw-detail-trades-address.buy {
   color: rgb(67, 254, 154);
 }
 
@@ -864,6 +850,7 @@
   height: 20px;
   filter: brightness(0) saturate(100%) invert(53%) sepia(10%) saturate(351%) hue-rotate(198deg) brightness(93%) contrast(87%);
 }
+
 .wtw-filter-image {
   width: 17px;
   height: 17px;
@@ -1451,7 +1438,7 @@
 
 
 .wtw-import-button,
-.wtw-export-button{
+.wtw-export-button {
   background: rgba(179, 184, 249, 0.1);
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.8rem;
@@ -1463,13 +1450,13 @@
 }
 
 
-.wtw-market-cap-value{
+.wtw-market-cap-value {
   color: #e3e4f0bd;
   font-weight: 300;
 }
 
 
-.wtw-launchpad-logo{
+.wtw-launchpad-logo {
   position: absolute;
   width: 12px;
   height: 12px;
@@ -1477,7 +1464,7 @@
   border-radius: 50%;
   border: 1px solid #aaaecf;
   padding: 1px;
-  bottom:-3px;
+  bottom: -3px;
   right: -3px;
 }
 
@@ -1528,8 +1515,13 @@
 }
 
 @keyframes wtw-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 

@@ -301,33 +301,9 @@ const Header: React.FC<HeaderProps> = ({
   scaAddress
 }) => {
   const copyToClipboard = async (text: string, label = 'Address copied') => {
-  const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  try {
-    await navigator.clipboard.writeText(text);
-    if (showLoadingPopup && updatePopup) {
-      showLoadingPopup(txId, {
-        title: label,
-        subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
-      });
-      setTimeout(() => {
-        updatePopup(txId, {
-          title: label,
-          subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
-          variant: 'success',
-          confirmed: true,
-          isLoading: false,
-        });
-      }, 100);
-    }
-  } catch {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.left = '-9999px';
-    document.body.appendChild(ta);
-    ta.select();
+    const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
-      document.execCommand('copy');
+      await navigator.clipboard.writeText(text);
       if (showLoadingPopup && updatePopup) {
         showLoadingPopup(txId, {
           title: label,
@@ -343,27 +319,51 @@ const Header: React.FC<HeaderProps> = ({
           });
         }, 100);
       }
-    } catch (fallbackErr) {
-      if (showLoadingPopup && updatePopup) {
-        showLoadingPopup(txId, {
-          title: 'Copy Failed',
-          subtitle: 'Unable to copy to clipboard',
-        });
-        setTimeout(() => {
-          updatePopup(txId, {
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        if (showLoadingPopup && updatePopup) {
+          showLoadingPopup(txId, {
+            title: label,
+            subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+          });
+          setTimeout(() => {
+            updatePopup(txId, {
+              title: label,
+              subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+              variant: 'success',
+              confirmed: true,
+              isLoading: false,
+            });
+          }, 100);
+        }
+      } catch (fallbackErr) {
+        if (showLoadingPopup && updatePopup) {
+          showLoadingPopup(txId, {
             title: 'Copy Failed',
             subtitle: 'Unable to copy to clipboard',
-            variant: 'error',
-            confirmed: true,
-            isLoading: false,
           });
-        }, 100);
+          setTimeout(() => {
+            updatePopup(txId, {
+              title: 'Copy Failed',
+              subtitle: 'Unable to copy to clipboard',
+              variant: 'error',
+              confirmed: true,
+              isLoading: false,
+            });
+          }, 100);
+        }
+      } finally {
+        document.body.removeChild(ta);
       }
-    } finally {
-      document.body.removeChild(ta);
     }
-  }
-};
+  };
   const location = useLocation();
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
   const navigate = useNavigate();
@@ -795,29 +795,29 @@ const Header: React.FC<HeaderProps> = ({
                         ) + getWalletBalance(scaAddress) * monUsdPrice, 2)}
                     </span>
                   </div>
-                        <div className="header-wallet-dropdown-address"              
-                                   onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (displayAddress) {
-                                        copyToClipboard(displayAddress, 'Wallet address copied');
-                                      }
-                                    }}
-                                    style={{ cursor: 'pointer' }}>
-                                    {displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'} 
-                                      <svg
-                                      className="wallet-dropdown-address-copy-icon"
-                                      width="11"
-                                      height="11"
-                                      viewBox="0 0 24 24"
-                                      fill="currentColor"
-                                      style={{ marginLeft: '2px' }}
-                                    >
-                                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                                    </svg>
-                                  </div>
+                  <div className="header-wallet-dropdown-address"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (displayAddress) {
+                        copyToClipboard(displayAddress, 'Wallet address copied');
+                      }
+                    }}
+                    style={{ cursor: 'pointer' }}>
+                    {displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'}
+                    <svg
+                      className="wallet-dropdown-address-copy-icon"
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      style={{ marginLeft: '2px' }}
+                    >
+                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                    </svg>
+                  </div>
                 </div>
 
-            
+
                 <div className="header-actions-container">
                   <div className="header-action-row">
                     <button className="header-action-item"
@@ -929,34 +929,34 @@ const Header: React.FC<HeaderProps> = ({
                                   />
                                 </div>
 
-   <div
+                                <div
                                   className="wallet-dropdown-info"
                                 >
                                   <div className="wallet-dropdown-name">
                                     {getWalletName(wallet.address, index)}
                                     <Tooltip content="Primary Wallet">
-                                    {isActive && (
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '6px', verticalAlign: 'middle' }}>
-                                        <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/>
-                                        <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402"/>
-                                        <path d="m20 9-3 9"/>
-                                        <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34"/>
-                                        <path d="M7 18 4 9"/>
-                                        <circle cx="12" cy="4" r="2"/>
-                                        <circle cx="20" cy="7" r="2"/>
-                                        <circle cx="4" cy="7" r="2"/>
-                                      </svg>
-                                    )}
+                                      {isActive && (
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '6px', verticalAlign: 'middle' }}>
+                                          <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                          <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                          <path d="m20 9-3 9" />
+                                          <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                          <path d="M7 18 4 9" />
+                                          <circle cx="12" cy="4" r="2" />
+                                          <circle cx="20" cy="7" r="2" />
+                                          <circle cx="4" cy="7" r="2" />
+                                        </svg>
+                                      )}
                                     </Tooltip>
                                   </div>
-                                  <div className="wallet-dropdown-address"        
-                                   onClick={(e) => {
+                                  <div className="wallet-dropdown-address"
+                                    onClick={(e) => {
                                       e.stopPropagation();
                                       copyToClipboard(wallet.address, 'Wallet address copied');
                                     }}
                                     style={{ cursor: 'pointer' }}>
                                     {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                                      <svg
+                                    <svg
                                       className="wallet-dropdown-address-copy-icon"
                                       width="11"
                                       height="11"
