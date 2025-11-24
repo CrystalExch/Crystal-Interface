@@ -4522,6 +4522,29 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             const devHoldingRaw = Number(m.developer_holding ?? 0);
             const top10HoldingRaw = Number(m.top10_holding ?? 0);
             const launchpad = m.source === 1 ? 'nadfun' : 'crystal';
+            const socialsRaw = [m.social1, m.social2, m.social3, m.social4];
+            const socials = socialsRaw.map((s) =>
+              s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
+            );
+    
+            const twitter = socials.find(
+              (s) =>
+                s?.startsWith("https://x.com") ||
+                s?.startsWith("https://twitter.com"),
+            );
+            if (twitter) socials.splice(socials.indexOf(twitter), 1);
+    
+            const telegram = socials.find((s) => s?.startsWith("https://t.me"));
+            if (telegram) socials.splice(socials.indexOf(telegram), 1);
+    
+            const discord = socials.find(
+              (s) =>
+                s?.startsWith("https://discord.gg") ||
+                s?.startsWith("https://discord.com"),
+            );
+            if (discord) socials.splice(socials.indexOf(discord), 1);
+    
+            const website = socials[0];
             const token: Token = {
               ...defaultMetrics,
               id: (m.token as string).toLowerCase(),
@@ -4551,10 +4574,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               bondingPercentage: m.graduationPercentageBps,
               source: launchpad,
               market: m.market,
-              social1: (m.social1 as string) || '',
-              social2: (m.social2 as string) || '',
-              social3: (m.social3 as string) || '',
-              social4: (m.social4 as string) || '',
+              discordHandle: discord ?? "",
+              telegramHandle: telegram ?? "",
+              twitterHandle: twitter ?? "",
+              website: website ?? "",
             };
 
             tokens.push(token);
