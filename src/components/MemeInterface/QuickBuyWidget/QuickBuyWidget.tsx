@@ -2281,16 +2281,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 </div>
 
                 <div className="quickbuy-wallets-list">
-                  {subWallets.length === 0 ? (
-                    <div className="quickbuy-wallets-empty">
-                      <div className="quickbuy-wallets-empty-text">
-                        No wallets
-                      </div>
-                      <div className="quickbuy-wallets-empty-subtitle">
-                        Create in Portfolio
-                      </div>
-                    </div>
-                  ) : (
+
                     <>
                       {walletsWithToken.map((wallet, index) => {
                         const balance = getWalletBalance(wallet.address);
@@ -2591,7 +2582,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                         );
                       })}
                     </>
-                  )}
+                  
 
                   {subWallets.length < 10 && (
                     <div
