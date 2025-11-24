@@ -162,7 +162,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
                           : usedRefLink
                           ? 1.1
                           : 1}
-                        x Point Multiplier
+                        x Crystals
                       </div>
                     </>
                   )}

@@ -2637,7 +2637,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           let isExactInput: boolean;
 
           if (sellInputMode === 'percentage') {
-            amountTokenWei = BigInt(Math.round(Number(walletTokenBalances?.[userAddr]?.[token.id]) * parseFloat(tradeAmount) / 100));
+            amountTokenWei = parseFloat(tradeAmount) >= 100 ? walletTokenBalances?.[userAddr]?.[token.id] : BigInt(Math.floor(Number(walletTokenBalances?.[userAddr]?.[token.id]) * parseFloat(tradeAmount) / 100));
             isExactInput = true;
           } else if (inputCurrency === 'TOKEN') {
             amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18 / 0.99));
