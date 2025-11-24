@@ -826,14 +826,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   });
 
   const [oneCTDepositAddress, setOneCTDepositAddress] = useState('');
-  const [oneCTSigner, setOneCTSigner] = useState(() => {
-    const saved = localStorage.getItem('crystal_active_wallet_private_key');
-    return saved ? saved : '';
-  });
-  const [oneCTSig, setOneCTSig] = useState(() => {
-    const saved = localStorage.getItem('crystal_onect_signature');
-    return saved ? saved : '';
-  });
+  const [oneCTSigner, setOneCTSigner] = useState('');
+
+  const [oneCTSig, setOneCTSig] = useState('');
+
 
   const validOneCT = !!oneCTSigner
   const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
@@ -844,12 +840,44 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : (client ? undefined : scaAddress) as `0x${string}`
   const connected = address != undefined
   const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
-  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>(
-    loadWalletsFromStorage()
-  );
-  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(() => {
+
+
+  const getStorageKey = (scaAddr: string | undefined, key: string) => {
+    if (!scaAddr) return null;
+    return `crystal_${scaAddr.toLowerCase()}_${key}`;
+  };
+
+  const loadWalletsFromStorage = (scaAddr: string | undefined) => {
+    if (!scaAddr) return [];
     try {
-      const saved = localStorage.getItem('crystal_selected_wallets');
+      const key = getStorageKey(scaAddr, 'sub_wallets');
+      if (!key) return [];
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error('Error loading wallets:', error);
+      return [];
+    }
+  };
+
+  const saveWalletsToStorage = (scaAddr: string | undefined, wallets: Array<{ address: string, privateKey: string }>) => {
+    if (!scaAddr) return;
+    try {
+      const key = getStorageKey(scaAddr, 'sub_wallets');
+      if (key) {
+        localStorage.setItem(key, JSON.stringify(wallets));
+      }
+    } catch (error) {
+      console.error('Error saving wallets:', error);
+    }
+  };
+
+  const loadSelectedWalletsFromStorage = (scaAddr: string | undefined, subWallets: Array<{ address: string, privateKey: string }>, oneCTSigner: string) => {
+    if (!scaAddr) return new Set();
+    try {
+      const key = getStorageKey(scaAddr, 'selected_wallets');
+      if (!key) return new Set();
+      const saved = localStorage.getItem(key);
       if (saved) {
         const addresses = JSON.parse(saved);
         if (Array.isArray(addresses) && addresses.length > 0) {
@@ -860,12 +888,76 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       console.error('Error loading selected wallets:', error);
     }
 
-    return (oneCTSigner ? new Set(
-      subWallets
-        .filter(w => w.privateKey == oneCTSigner)
-        .map(w => w.address)
-    ) : subWallets?.[0]?.address ? new Set([subWallets?.[0]?.address]) : new Set())
-  });
+    return oneCTSigner
+      ? new Set(subWallets.filter(w => w.privateKey === oneCTSigner).map(w => w.address))
+      : subWallets?.[0]?.address
+        ? new Set([subWallets[0].address])
+        : new Set();
+  };
+
+  const saveSelectedWalletsToStorage = (scaAddr: string | undefined, selectedWallets: Set<string>) => {
+    if (!scaAddr) return;
+    try {
+      const key = getStorageKey(scaAddr, 'selected_wallets');
+      if (key) {
+        localStorage.setItem(key, JSON.stringify(Array.from(selectedWallets)));
+      }
+    } catch (error) {
+      console.error('Error saving selected wallets:', error);
+    }
+  };
+
+  const loadOneCTSignerFromStorage = (scaAddr: string | undefined) => {
+    if (!scaAddr) return '';
+    try {
+      const key = getStorageKey(scaAddr, 'active_wallet_private_key');
+      if (!key) return '';
+      return localStorage.getItem(key) || '';
+    } catch (error) {
+      console.error('Error loading OneCT signer:', error);
+      return '';
+    }
+  };
+
+  const saveOneCTSignerToStorage = (scaAddr: string | undefined, privateKey: string) => {
+    if (!scaAddr) return;
+    try {
+      const key = getStorageKey(scaAddr, 'active_wallet_private_key');
+      if (key) {
+        localStorage.setItem(key, privateKey);
+      }
+    } catch (error) {
+      console.error('Error saving OneCT signer:', error);
+    }
+  };
+
+  const loadOneCTSigFromStorage = (scaAddr: string | undefined) => {
+    if (!scaAddr) return '';
+    try {
+      const key = getStorageKey(scaAddr, 'onect_signature');
+      if (!key) return '';
+      return localStorage.getItem(key) || '';
+    } catch (error) {
+      console.error('Error loading OneCT signature:', error);
+      return '';
+    }
+  };
+
+  const saveOneCTSigToStorage = (scaAddr: string | undefined, sig: string) => {
+    if (!scaAddr) return;
+    try {
+      const key = getStorageKey(scaAddr, 'onect_signature');
+      if (key) {
+        localStorage.setItem(key, sig);
+      }
+    } catch (error) {
+      console.error('Error saving OneCT signature:', error);
+    }
+  };
+  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>([]);
+
+  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
+
 
   useEffect(() => {
     try {
@@ -933,14 +1025,43 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     marketSearchTerm: ''
   });
 
+  useEffect(() => {
+    if (scaAddress) {
+      const wallets = loadWalletsFromStorage(scaAddress);
+      setSubWallets(wallets);
+
+      const signer = loadOneCTSignerFromStorage(scaAddress);
+      setOneCTSigner(signer);
+
+      const sig = loadOneCTSigFromStorage(scaAddress);
+      setOneCTSig(sig);
+
+      const selected = loadSelectedWalletsFromStorage(scaAddress, wallets, signer);
+      setSelectedWallets(selected);
+    } else {
+      setSubWallets([]);
+      setOneCTSigner('');
+      setOneCTSig('');
+      setSelectedWallets(new Set());
+    }
+  }, [scaAddress]);
+
+  useEffect(() => {
+    saveSelectedWalletsToStorage(scaAddress, selectedWallets);
+  }, [selectedWallets, scaAddress]);
+
   const createSubWallet = async (setMain: boolean = false) => {
     try {
-      if (subWallets.length > 9) return;
-      let tempsig
-      if (oneCTSig) {
-        tempsig = oneCTSig
+      if (!scaAddress) {
+        console.error('No SCA address connected');
+        return;
       }
-      else {
+      if (subWallets.length > 9) return;
+
+      let tempsig;
+      if (oneCTSig) {
+        tempsig = oneCTSig;
+      } else {
         tempsig = await signTypedDataAsync({
           typedData: {
             types: {
@@ -955,9 +1076,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               account: 1,
             }
           }
-        })
-        localStorage.setItem('crystal_onect_signature', tempsig)
-        setOneCTSig(tempsig)
+        });
+        saveOneCTSigToStorage(scaAddress, tempsig);
+        setOneCTSig(tempsig);
       }
 
       const privateKey = '0x' + (BigInt(keccak256('0x' + (BigInt(tempsig) + BigInt(subWallets.length + 1)).toString(16))) % BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141")).toString(16).padStart(64, "0");
@@ -974,13 +1095,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       setSelectedWallets(p => !p.size ? new Set(p).add(walletAddress) : p);
       lastNonceGroupFetch.current = 0;
       setSubWallets(updatedWallets);
-      localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
+
+      // Save with SCA-namespaced key
+      saveWalletsToStorage(scaAddress, updatedWallets);
+
       if (setMain || (!validOneCT && updatedWallets.length === 1)) {
         setOneCTSigner(privateKey);
-        localStorage.setItem('crystal_active_wallet_private_key', privateKey);
+        saveOneCTSignerToStorage(scaAddress, privateKey);
         refetch();
       }
-      return walletAddress
+      return walletAddress;
     } catch (error) {
       console.error('Error creating subwallet:', error);
     }
@@ -2184,27 +2308,27 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // reload if throttled
   useEffect(() => {
-    if (!['board','spectra','meme','launchpad','trackers'].includes(location.pathname.split('/')[1])) return;
+    if (!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])) return;
     let last = Date.now();
     let throttled = false;
-  
+
     const check = setInterval(() => {
       const now = Date.now();
       if (!throttled && now - last > 5000) throttled = true;
       last = now;
     }, 1000);
-  
+
     const onFocus = () => {
       if (throttled) window.location.reload();
     };
-  
+
     window.addEventListener('focus', onFocus);
-  
+
     return () => {
       clearInterval(check);
       window.removeEventListener('focus', onFocus);
     };
-  }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);  
+  }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
 
   useEffect(() => {
     const updateTrackedWalletsRef = () => {
@@ -6678,7 +6802,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   ? memeSelectedInterval.slice(0, -1).toUpperCase() + "S"
                   : memeSelectedInterval.slice(0, -1);
         setChartData([[], token.symbol + "MON" + resForChart, true]);
-        setTokenData({ ...token, created: Math.floor(Date.now() / 1000), mini: [{open: 0.000083878 * 1e9}] });
+        setTokenData({ ...token, created: Math.floor(Date.now() / 1000), mini: [{ open: 0.000083878 * 1e9 }] });
         setMemeTrades([]);
         setMemeHolders([]);
         setMemeTopTraders([]);

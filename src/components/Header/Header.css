@@ -522,7 +522,6 @@
   flex-direction: column;
   align-items: flex-end;
   flex-shrink: 0;
-  margin-right: 4px;
 }
 
 .wallet-dropdown-balance-amount {

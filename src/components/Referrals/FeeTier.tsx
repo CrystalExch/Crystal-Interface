@@ -242,17 +242,11 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
           <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
             {tier.cashback}
           </span>
-          <span className="fee-tier-benefit-description">
-            cashback
-          </span>
         </div>
         <div className="fee-tier-benefit-card">
           <span className="fee-tier-benefit-label">Referral Commission</span>
           <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
             {tier.referralCommission}
-          </span>
-          <span className="fee-tier-benefit-description">
-            referral commission
           </span>
         </div>
       </div>
