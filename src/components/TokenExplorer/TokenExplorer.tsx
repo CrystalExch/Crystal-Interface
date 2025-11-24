@@ -4143,7 +4143,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         loading: true,
         buttonType,
       });
-
       try {
         if (showLoadingPopup) {
           showLoadingPopup(txId, {
@@ -4186,7 +4185,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               remaining -= add;
             }
           }
-
           if (remaining > 0n) {
             if (updatePopup) {
               updatePopup(txId, {
@@ -4196,6 +4194,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 isLoading: false,
               });
             }
+            
             dispatch({
               type: 'SET_LOADING',
               id: token.id,
@@ -4312,7 +4311,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, false, false, 1, addr];
             if (wallet) wallet.nonce += 1;
             wallet?.pendingtxs.push(params);
-
             const transferPromise = sendUserOperationAsync(...params)
               .then(() => {
                 if (wallet)
@@ -5118,7 +5116,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                                           width: '14px',
                                           height: '14px',
                                         }}
-                                        alt="sPriority"
                                       />
                                       <span>
                                         {buyPresets[p]?.priority || '0'}{' '}

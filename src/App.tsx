@@ -1013,8 +1013,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           value: params.uo.value,
           data: params.uo.data,
           gasLimit: gasLimit,
-          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee) * 1e9)),
-          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee) * 1e9)),
+          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || 0) * 1e9)),
+          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || 0) * 1e9)),
           nonce: nonce,
           chainId: activechain
         }
@@ -1051,8 +1051,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           value: params.uo.value,
           data: params.uo.data,
           gasLimit: gasLimit,
-          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee) * 1e9)),
-          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee) * 1e9)),
+          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || 0) * 1e9)),
+          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || 0) * 1e9)),
           nonce: nonce,
           chainId: activechain
         }

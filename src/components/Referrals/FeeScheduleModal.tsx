@@ -101,14 +101,14 @@ const FeeScheduleModal: React.FC<FeeScheduleModalProps> = ({ isOpen, onClose }) 
 
 
           {/* Notes */}
-          <div className="fee-schedule-notes">
+          {/* <div className="fee-schedule-notes">
             <h4 className="fee-schedule-notes-title">Notes</h4>
             <ul className="fee-schedule-notes-list">
               <li>Trading volume is calculated as a trailing sum across all markets</li>
               <li>Cashbacks are paid out daily in WMON</li>
               <li>Fee tiers are updated in real-time based on your trading activity</li>
             </ul>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
