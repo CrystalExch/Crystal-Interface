@@ -96,7 +96,172 @@ interface Token {
 }
 
 type ColumnKey = 'new' | 'graduating' | 'graduated';
+const InteractiveTooltip: React.FC<{
+  content: React.ReactNode;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+  offset?: number;
+}> = ({ content, children, position = 'top', offset = 10 }) => {
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current || !tooltipRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+    let top = 0;
+    let left = 0;
+
+    switch (position) {
+      case 'top':
+        top = rect.top + scrollY - tooltipRect.height - offset - 40;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'bottom':
+        top = rect.bottom + scrollY + offset;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.left + scrollX - tooltipRect.width - offset;
+        break;
+      case 'right':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.right + scrollX + offset;
+        break;
+    }
+
+    const margin = 10;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    if (position === 'top' || position === 'bottom') {
+      left = Math.min(
+        Math.max(left, margin + tooltipRect.width / 2),
+        viewportWidth - margin - tooltipRect.width / 2,
+      );
+    } else {
+      top = Math.min(
+        Math.max(top, margin),
+        viewportHeight - margin - tooltipRect.height,
+      );
+    }
+
+    setTooltipPosition({ top, left });
+  }, [position, offset]);
+
+  const handleMouseEnter = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    setShouldRender(true);
+    timeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+    }, 10);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      setIsVisible(false);
+      setTimeout(() => {
+        setShouldRender(false);
+      }, 150);
+    }, 100);
+  }, []);
+
+  const handleTooltipMouseEnter = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    setIsVisible(true);
+  }, []);
+
+  const handleTooltipMouseLeave = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      setIsVisible(false);
+      setTimeout(() => {
+        setShouldRender(false);
+      }, 150);
+    }, 100);
+  }, []);
+
+  useEffect(() => {
+    if (shouldRender) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [shouldRender, updatePosition]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="tooltip-container"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {shouldRender &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : 'tooltip-leaving'}`}
+            style={{
+              position: 'absolute',
+              top: `${tooltipPosition.top}px`,
+              left: `${tooltipPosition.left}px`,
+              transform: `${position === 'top' || position === 'bottom'
+                ? 'translateX(-50%)'
+                : position === 'left' || position === 'right'
+                  ? 'translateY(-50%)'
+                  : 'none'
+                } scale(${isVisible ? 1 : 0})`,
+              opacity: isVisible ? 1 : 0,
+              zIndex: 9999,
+              pointerEvents: 'auto',
+              transition:
+                'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'transform, opacity',
+            }}
+            onMouseEnter={handleTooltipMouseEnter}
+            onMouseLeave={handleTooltipMouseLeave}
+          >
+            <div className="tooltip-content">{content}</div>
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+};
 const Tooltip: React.FC<{
   content: string | React.ReactNode;
   children: React.ReactNode;
@@ -128,7 +293,7 @@ const Tooltip: React.FC<{
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'bottom':
-        top = rect.bottom + scrollY + offset;
+        top = rect.top + scrollY - tooltipRect.height - offset;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'left':
@@ -2959,7 +3124,41 @@ const TokenRow = React.memo<{
           })()}
           <div className="explorer-holdings-section">
             {displaySettings.visibleRows.devHolding && (
-              <Tooltip content="Developer Holding">
+              <InteractiveTooltip
+                content={
+                  <div style={{ display: 'flex', flexDirection: 'column', padding: '2px', gap: '2px' }}>
+                    <div style={{ fontSize: '.8rem', color: '#ffffff' }}>
+                      Developer Holding
+                    </div>
+                    <Tooltip content="View Wallet on Monadscan">
+                      <div className="explorer-dev-holding-tooltip-address"
+                        onClick={() =>
+                          window.open(
+                            `${settings.chainConfig[activechain].explorer}/address/${token.dev}`,
+                            '_blank',
+                            'noopener noreferrer',
+                          )
+                        }>
+                        <div style={{ fontSize: '0.8rem', color: 'rgb(206, 208, 223)', letterSpacing: '0' }}>
+                          {token.dev.slice(0, 12)}...{token.dev.slice(-4)}
+                        </div>
+                        <svg
+                          className="wallet-address-link"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="rgb(206, 208, 223)"
+                        >
+                          <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                          <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                        </svg>
+                      </div>
+                    </Tooltip>
+
+                  </div>
+                }
+              >
                 <div className="explorer-holding-item">
                   <svg
                     className="holding-icon"
@@ -2987,7 +3186,7 @@ const TokenRow = React.memo<{
                     {(token.devHolding * 100).toFixed(2)}%
                   </span>
                 </div>
-              </Tooltip>
+              </InteractiveTooltip>
             )}
             {displaySettings.visibleRows.top10Holders && (
               <Tooltip content="Top 10 holders percentage">
@@ -3957,8 +4156,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
         const isNadFun = token.source === 'nadfun';
         const contractAddress = isNadFun
-        ? token.status == 'graduated' ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
-        : appSettings.chainConfig[activechain].router;
+          ? token.status == 'graduated' ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
+          : appSettings.chainConfig[activechain].router;
 
         let remaining = val;
         const plan: { addr: string; amount: bigint }[] = [];
@@ -4229,9 +4428,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             transferPromises.push(transferPromise.then(() => {
               return true;
             })
-            .catch(() => {
-              return false;
-            }));
+              .catch(() => {
+                return false;
+              }));
           }
         }
 

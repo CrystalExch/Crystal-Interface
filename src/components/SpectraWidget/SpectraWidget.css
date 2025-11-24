@@ -314,12 +314,13 @@
 }
 
 .spectra-market-image-container.graduated .spectra-launchpad-logo-container {
-  border-color: #ffd700;
+  border-color: #ffd700 !important;
 }
 
 .spectra-market-image-container.graduated .spectra-launchpad-logo {
-  filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-rotate(311deg) brightness(117%) contrast(86%);
+  filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-rotate(311deg) brightness(117%) contrast(86%) !important;
 }
+
 
 .spectra-contract-address {
   color: rgba(255, 255, 255, 0.3);
@@ -2362,3 +2363,41 @@
   align-items: center;
   gap: 8px;
 }
+
+
+
+
+.spectra-market-row.nadfun-token .spectra-launchpad-logo-container {
+  border-color: #AD5FFB;
+}
+
+.spectra-market-row.nadfun-token .spectra-market-image-container {
+  background: conic-gradient(from 135deg,
+    #AD5FFB 0deg,
+    #AD5FFB var(--progress-angle),
+    rgba(173, 95, 251, 0.2) var(--progress-angle),
+    rgba(173, 95, 251, 0.2) 360deg);
+}
+
+.spectra-market-row.nadfun-token .spectra-progress-line-fill {
+  background: #AD5FFB;
+}
+
+.spectra-market-row.nadfun-token .spectra-progress-line {
+  background: rgba(173, 95, 251, 0.2);
+}
+
+
+
+.spectra-market-row.nadfun-token .spectra-market-image-container.graduated {
+  background: conic-gradient(from 135deg,
+      #ffd700 0deg,
+      #ffed4e 90deg,
+      #ffc107 180deg,
+      #ff8f00 270deg,
+      #ffd700 360deg);
+}
+
+
+
+
