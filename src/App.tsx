@@ -267,8 +267,7 @@ type Action =
   | { type: 'ADD_MARKET'; token: Partial<Token> }
   | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
   | { type: 'UPDATE_MARKET_BY_ADDRESS'; tokenAddress: string; updates: Partial<Token> }  // NEW
-  | { type: 'GRADUATE_MARKET'; id: string }
-  | { type: 'GRADUATE_MARKET_BY_ADDRESS'; tokenAddress: string }  // NEW
+  | { type: 'GRADUATE_MARKET'; id: string; market?: any }
   | { type: 'HIDE_TOKEN'; id: string }
   | { type: 'SHOW_TOKEN'; id: string }
   | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' }
@@ -470,7 +469,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     CurveCreate: '0xd37e3f4f651fe74251701614dbeac478f5a0d29068e87bbe44e5026d166abca9',
     CurveBuy: '0x00a7ba871905cb955432583640b5c9fc6bdd27d36884ab2b5420839224638862',
     CurveSell: '0x0eb25df0e2137de8ce042eeaf39080d25f0c8d451372c99db69a4c0a298d0fa1',
-    CurveTokenListed: '0xaa090437ef524cee1d4e0825c0caff2203af3b38ab39624d8ff7fab67e219704',
+    CurveGraduate: '0xa1cae252e597e19f398a442722a17a17e62d17f9d4f3656786e18aabcd428908',
     CurveSync: '0xfd4bb47bd45abdbdb2ecd61052c9571773f9cde876e2a7745f488c20b30ab10a',
   };
 
@@ -4258,6 +4257,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               movedToken = {
                 ...t,
                 status: status,
+                market: action.market ? action.market : t.market,
                 progress: 100, // Set progress to 100% when graduated
               }
               return []
@@ -4626,7 +4626,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     NAD_FUN_EVENTS.CurveBuy,
                     NAD_FUN_EVENTS.CurveSell,
                     NAD_FUN_EVENTS.CurveSync,
-                    NAD_FUN_EVENTS.CurveTokenListed,
+                    NAD_FUN_EVENTS.CurveGraduate,
                   ]
                 ],
               },
@@ -5795,6 +5795,21 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 wsPendingLogsRef.current.delete(oldestKey);
               }
               wsPendingLogsRef.current.set(log.hash, log)
+            }
+            else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveGraduate) {
+              const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              const market = `0x${log.topics[2].slice(26)}`.toLowerCase();
+              dispatch({
+                type: 'GRADUATE_MARKET',
+                id: tokenAddr,
+                market: market
+              });
+              if (!memeRef.current.id || tokenAddr !== memeRef.current.id.toLowerCase()) return tempset;
+              setTokenData(p => ({
+                ...p,
+                status: 'graduated',
+                market: market
+              }));
             }
             else if (log.topics?.[0] == UNIV3_EVENTS.Swap) {
               const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
@@ -11546,7 +11561,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     }
   }, [popup, location.pathname, swapButtonDisabled, displayValuesLoading, isSigning, connected, userchain, activechain, limitButtonDisabled, sendButtonDisabled, scaleButtonDisabled]);
 
-  useEffect(() => {
+  /* useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isListeningForKey && editingKeybind) {
         event.preventDefault();
@@ -11738,7 +11753,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     handleCancelAllOrders,
     handleCancelTopOrder,
     setpopup
-  ]);
+  ]); */
 
   const renderKeybindButton = (keybindKey: string, labelText: string, descriptionText: string) => (
     <>
