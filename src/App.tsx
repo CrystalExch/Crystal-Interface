@@ -29120,7 +29120,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setChain={handleSetChain}
               />
             } />
-          <Route path="/swap" element={TradeLayout(tempswap)} />
+          <Route path="/sneakyswap" element={TradeLayout(tempswap)} />
           <Route path="/sneakymarket" element={TradeLayout(swap)} />
           <Route path="/sneakylimit" element={TradeLayout(limit)} />
           <Route path="/send" element={TradeLayout(send)} />
