@@ -1012,7 +1012,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           value: params.uo.value,
           data: params.uo.data,
           gasLimit: gasLimit,
-          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
+          maxFeePerGas: 220000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
           maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
           nonce: nonce,
           chainId: activechain
@@ -1044,7 +1044,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           value: params.uo.value,
           data: params.uo.data,
           gasLimit: gasLimit,
-          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
+          maxFeePerGas: 220000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
           maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
           nonce: nonce,
           chainId: activechain
@@ -1576,9 +1576,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   });
 
   const [quickAmounts, setQuickAmounts] = useState({
-    new: localStorage.getItem('explorer-quickbuy-new') ?? '1',
-    graduating: localStorage.getItem('explorer-quickbuy-graduating') ?? '1',
-    graduated: localStorage.getItem('explorer-quickbuy-graduated') ?? '1',
+    new: localStorage.getItem('explorer-quickbuy-new') ?? '1000',
+    graduating: localStorage.getItem('explorer-quickbuy-graduating') ?? '1000',
+    graduated: localStorage.getItem('explorer-quickbuy-graduated') ?? '1000',
   });
 
   const [activePresets, setActivePresets] = useState({
@@ -1603,10 +1603,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       if (saved) {
         return JSON.parse(saved);
       }
-      return [5, 20, 100, 500];
+      return [100, 500, 1000, 10000];
     } catch (error) {
       console.error('Error loading MON presets:', error);
-      return [5, 20, 100, 500];
+      return [100, 500, 1000, 10000];
     }
   });
 

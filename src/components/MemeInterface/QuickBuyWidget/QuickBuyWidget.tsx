@@ -332,12 +332,12 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       const saved = localStorage.getItem('crystal_quickbuy_settings');
       if (saved) {
         const settings = JSON.parse(saved);
-        return settings.buyAmounts ?? ['1', '5', '10', '50'];
+        return settings.buyAmounts ?? ['100', '500', '1000', '10000'];
       }
-      return ['1', '5', '10', '50'];
+      return ['100', '500', '1000', '10000'];
     } catch (error) {
       console.error('Error loading QuickBuy buy amounts:', error);
-      return ['1', '5', '10', '50'];
+      return ['100', '500', '1000', '10000'];
     }
   });
   const [sellPercents, setSellPercents] = useState(() => {
@@ -358,12 +358,12 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       const saved = localStorage.getItem('crystal_quickbuy_settings');
       if (saved) {
         const settings = JSON.parse(saved);
-        return settings.sellMONAmounts ?? ['1', '5', '10', '25'];
+        return settings.sellMONAmounts ?? ['100', '500', '1000', '10000'];
       }
-      return ['1', '5', '10', '25'];
+      return ['100', '500', '1000', '10000'];
     } catch (error) {
       console.error('Error loading QuickBuy sell MON amounts:', error);
-      return ['1', '5', '10', '25'];
+      return ['100', '500', '1000', '10000'];
     }
   });
   const [sellMode, setSellMode] = useState<'percent' | 'mon'>(() => {
@@ -1076,17 +1076,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       return raw > gasReserve; // Only include wallets with balance greater than gas reserve
     });
 
-    if (!token.reserveQuote) {
-      const txId = `quickbuy-error-${Date.now()}`;
-      updatePopup?.(txId, {
-        title: 'Please wait',
-        subtitle: 'Data is still loading',
-        variant: 'error',
-        isLoading: false,
-      });
-      return;
-    }
-
     if (targets.length === 0) {
       const txId = `quickbuy-error-${Date.now()}`;
       updatePopup?.(txId, {
@@ -1098,7 +1087,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       return;
     }
 
-    // Check if we have enough total balance (considering gas reserves)
     let totalAvailable = 0n;
     for (const addr of targets) {
       const maxWei = getMaxSpendableWei(addr);
@@ -1431,7 +1419,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
-            if (token?.allowance?.[addr]?.allowance < amountWei) {
+            if ((token?.allowance?.[addr]?.allowance || 0n) < amountWei) {
               const nonce = token?.allowance?.[addr]?.nonce ?? 0n
             
               const signature = await signTypedDataAsync(
@@ -1615,7 +1603,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
-            if (token?.allowance?.[addr]?.allowance < inputAmountWei) {
+            if ((token?.allowance?.[addr]?.allowance || 0n) < inputAmountWei) {
               const nonce = token?.allowance?.[addr]?.nonce ?? 0n
               
               const signature = await signTypedDataAsync(

@@ -2658,11 +2658,11 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
   const [quickAmountsSecond, setQuickAmountsSecond] = useState<
     Record<Token['status'], string>
   >(() => ({
-    new: localStorage.getItem('spectra-quickbuy-second-new') ?? '1',
+    new: localStorage.getItem('spectra-quickbuy-second-new') ?? '1000',
     graduating:
-      localStorage.getItem('spectra-quickbuy-second-graduating') ?? '1',
+      localStorage.getItem('spectra-quickbuy-second-graduating') ?? '1000',
     graduated:
-      localStorage.getItem('spectra-quickbuy-second-graduated') ?? '1',
+      localStorage.getItem('spectra-quickbuy-second-graduated') ?? '1000',
   }));
 
   const setQuickAmountSecond = useCallback((s: Token['status'], v: string) => {

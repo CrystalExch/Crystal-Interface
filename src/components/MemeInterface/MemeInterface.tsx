@@ -334,7 +334,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   monUsdPrice,
   buyPresets,
   sellPresets,
-  monPresets = [5, 20, 100, 500],
+  monPresets = [100, 500, 1000, 10000],
   setMonPresets,
   onTokenDataChange,
   nonces,
@@ -2240,7 +2240,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
                 const sellToken = token.id as `0x${string}`
                 const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
-                if (token?.allowance?.[walletAddr]?.allowance < inputAmountWei) {
+                if ((token?.allowance?.[walletAddr]?.allowance || 0n) < inputAmountWei) {
                   const nonce = token?.allowance?.[walletAddr]?.nonce ?? 0n
                   
                   const signature = await signTypedDataAsync(
@@ -2415,7 +2415,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
                 const sellToken = token.id as `0x${string}`
                 const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
-                if (token?.allowance?.[walletAddr]?.allowance < amountTokenWei) {
+                if ((token?.allowance?.[walletAddr]?.allowance || 0n) < amountTokenWei) {
                   const nonce = token?.allowance?.[walletAddr]?.nonce ?? 0n
                 
                   const signature = await signTypedDataAsync(
@@ -2621,7 +2621,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
-            if (token?.allowance?.[account.address]?.allowance < inputAmountWei) {
+            if ((token?.allowance?.[account.address]?.allowance || 0n) < inputAmountWei) {
               const nonce = token?.allowance?.[account.address]?.nonce ?? 0n
             
               const signature = await signTypedDataAsync(
@@ -2730,7 +2730,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
-            if (token?.allowance?.[account.address]?.allowance < amountTokenWei) {
+            if ((token?.allowance?.[account.address]?.allowance || 0n) < amountTokenWei) {
               const nonce = token?.allowance?.[account.address]?.nonce ?? 0n
             
               const signature = await signTypedDataAsync(
