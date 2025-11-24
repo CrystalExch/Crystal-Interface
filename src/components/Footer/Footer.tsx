@@ -713,7 +713,7 @@ const Footer: React.FC<FooterProps> = ({
             <Tooltip content="Current MON Price">
               <div className="crystal-migration-mc">
                 <img src={monadicon} className="footer-monad-logo" />
-                <span>${formatNumberWithCommas(monUsdPrice)}</span>
+                <span>${formatNumberWithCommas(monUsdPrice, 5)}</span>
               </div>
             </Tooltip>
             <Tooltip content="crystal.fun Migration Price">

@@ -755,6 +755,7 @@ export const settings: any = {
       zeroXSettler: '0x478cF28Fd1Ba92a6afd04F44b05833F6dF7f1486' as `0x${string}`,
       zeroXAllowanceHolder: '0x0000000000001fF3684f28c67538d4D072C22734' as `0x${string}`,
       feeAddress: '0x565E9c68fC827958551EDe5757461959206AB0bd' as `0x${string}`,
+      stork: '0xacC0a0cF13571d30B4b8637996F5D6D774d4fd62' as `0x${string}`,
     },
   },
 };

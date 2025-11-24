@@ -185,6 +185,7 @@ import CopyButton from './components/CopyButton/CopyButton.tsx';
 import { sMonAbi } from './abis/sMonAbi.ts';
 import { defaultMetrics } from './components/TokenExplorer/TokenData.ts';
 import { NadFunAbi } from './abis/NadFun.ts';
+import { StorkAbi } from './abis/StorkAbi.ts';
 
 type LaunchpadTrade = {
   id: string;
@@ -2049,7 +2050,33 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   //   tradesloading ||
   //   addressinfoloading);
 
-  const monUsdPrice = 0.05;
+  const { data: storkData } = useQuery({
+    queryKey: ['stork'],
+    queryFn: async () => {
+      const storkBody = JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'eth_call',
+        params: [{
+          to: settings.chainConfig[activechain].stork,
+          data: encodeFunctionData({
+            abi: StorkAbi,
+            functionName: 'getTemporalNumericValueUnsafeV1',
+            args: ['0xa4f6b07ae0c89e3f3cc03c1badcc3e9adffdf7206bafcd56d142979800887385']
+          })
+        }]
+      })
+      const [storkRes] = await Promise.all([
+        fetch(HTTP_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: storkBody }).then(r => r.json())
+      ])
+      return { price: (Number('0x' + storkRes?.result.slice(66)) / 1e18) }
+    },
+    enabled: true,
+    refetchInterval: 5000,
+    gcTime: 0
+  })
+
+  const monUsdPrice = storkData?.price || 0.05;
 
   const [walletTokenBalances, setWalletTokenBalances] = useState<any>({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
