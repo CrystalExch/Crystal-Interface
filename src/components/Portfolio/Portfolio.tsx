@@ -21,6 +21,7 @@ import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTrans
 import './Portfolio.css'
 import circle from '../../assets/circle_handle.png'
 import PortfolioBalance from './PortfolioBalance';
+import { useNavigate } from 'react-router-dom';
 
 
 const Tooltip: React.FC<{
@@ -285,6 +286,7 @@ interface PortfolioProps {
   scaAddress: any;
   nonces: any;
   setOneCTDepositAddress: any;
+  monUsdPrice: number;
 }
 
 type PortfolioTab = 'spot' | 'Perpetuals' | 'wallets' | 'trenches';
@@ -355,12 +357,71 @@ const Portfolio: React.FC<PortfolioProps> = ({
   onSellPosition,
   scaAddress,
   nonces,
-  setOneCTDepositAddress
+  setOneCTDepositAddress,
+  monUsdPrice
 }) => {
-    const copyToClipboard = async (text: string, label = 'Address copied') => {
-      const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const navigate = useNavigate();
+  
+  const fmt = (v: number, d = 2): string => {
+    if (!Number.isFinite(v)) return String(v);
+    if (v === 0) return '0';
+    if (d <= 0) return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+    const abs = Math.abs(v);
+    const threshold = Math.pow(10, -d);
+    const thresholdStr = '0.' + '0'.repeat(d - 1) + '1';
+
+    if (abs < threshold) {
+      return v > 0 ? `<${thresholdStr}` : `>-${thresholdStr}`;
+    }
+
+    if (abs >= 1e9) return (v / 1e9).toFixed(2) + 'B';
+    if (abs >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return (v / 1e3).toFixed(2) + 'K';
+    return v.toLocaleString('en-US', { maximumFractionDigits: d });
+  };
+  const formatNumberWithCommas = (num: number, decimals = 2) => {
+    if (num === 0) return "0";
+    if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;
+    if (num >= 1e6) return `${(num / 1e6).toFixed(decimals)}M`;
+    if (num >= 1e3) return `${(num / 1e3).toFixed(decimals)}K`;
+    if (num >= 1) return num.toLocaleString("en-US", { maximumFractionDigits: decimals });
+    return num.toFixed(Math.min(decimals, 8));
+  };
+  const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
+    if (mode === 'USD' && monPrice > 0) {
+      return `$${fmt(v * monPrice)}`;
+    }
+    return `${fmt(v)}`;
+  };
+  const copyToClipboard = async (text: string, label = 'Address copied') => {
+    const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, {
+          title: label,
+          subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+        });
+        setTimeout(() => {
+          updatePopup(txId, {
+            title: label,
+            subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+            variant: 'success',
+            confirmed: true,
+            isLoading: false,
+          });
+        }, 100);
+      }
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
       try {
-        await navigator.clipboard.writeText(text);
+        document.execCommand('copy');
         if (showLoadingPopup && updatePopup) {
           showLoadingPopup(txId, {
             title: label,
@@ -376,52 +437,28 @@ const Portfolio: React.FC<PortfolioProps> = ({
             });
           }, 100);
         }
-      } catch {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.select();
-        try {
-          document.execCommand('copy');
-          if (showLoadingPopup && updatePopup) {
-            showLoadingPopup(txId, {
-              title: label,
-              subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
-            });
-            setTimeout(() => {
-              updatePopup(txId, {
-                title: label,
-                subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
-                variant: 'success',
-                confirmed: true,
-                isLoading: false,
-              });
-            }, 100);
-          }
-        } catch (fallbackErr) {
-          if (showLoadingPopup && updatePopup) {
-            showLoadingPopup(txId, {
+      } catch (fallbackErr) {
+        if (showLoadingPopup && updatePopup) {
+          showLoadingPopup(txId, {
+            title: 'Copy Failed',
+            subtitle: 'Unable to copy to clipboard',
+          });
+          setTimeout(() => {
+            updatePopup(txId, {
               title: 'Copy Failed',
               subtitle: 'Unable to copy to clipboard',
+              variant: 'error',
+              confirmed: true,
+              isLoading: false,
             });
-            setTimeout(() => {
-              updatePopup(txId, {
-                title: 'Copy Failed',
-                subtitle: 'Unable to copy to clipboard',
-                variant: 'error',
-                confirmed: true,
-                isLoading: false,
-              });
-            }, 100);
-          }
-        } finally {
-          document.body.removeChild(ta);
+          }, 100);
         }
+      } finally {
+        document.body.removeChild(ta);
       }
-    };
-  const [activeTab, setActiveTab] = useState<PortfolioTab>('spot');
+    }
+  };
+  const [activeTab, setActiveTab] = useState<PortfolioTab>('trenches');
   const [activeSection, setActiveSection] = useState<
     'orders' | 'tradeHistory' | 'orderHistory'
   >('orders');
@@ -483,7 +520,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const [exportingWallet, setExportingWallet] = useState<{ address: string, privateKey: string } | null>(null);
   const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set());
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
-
+  const [tokenImageErrors, setTokenImageErrors] = useState<Record<string, boolean>>({});
+  const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
   const showDistributionSuccess = useCallback((amount: string, sourceCount: number, destCount: number) => {
     const txId = `distribution-${Date.now()}`;
     const formattedAmount = parseFloat(amount).toFixed(1);
@@ -1923,24 +1961,24 @@ const Portfolio: React.FC<PortfolioProps> = ({
             )}
           </div>
           {editingWallet != wallet.address ? (
-             <div className="wallet-dropdown-address"              
-                                   onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyToClipboard(wallet.address, 'Wallet address copied');
-                                    }}
-                                    style={{ cursor: 'pointer' }}>
-                                    {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                                      <svg
-                                      className="wallet-dropdown-address-copy-icon"
-                                      width="11"
-                                      height="11"
-                                      viewBox="0 0 24 24"
-                                      fill="currentColor"
-                                      style={{ marginLeft: '2px' }}
-                                    >
-                                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                                    </svg>
-                                  </div>
+            <div className="wallet-dropdown-address"
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard(wallet.address, 'Wallet address copied');
+              }}
+              style={{ cursor: 'pointer' }}>
+              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+              <svg
+                className="wallet-dropdown-address-copy-icon"
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                style={{ marginLeft: '2px' }}
+              >
+                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+              </svg>
+            </div>
           ) : null}
         </div>
 
@@ -2939,7 +2977,13 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   <div className="trenches-balance-item">
                     <div className="trenches-balance-label">Total Value</div>
                     <div className={`trenches-balance-value ${isBlurred ? 'blurred' : ''}`}>
-                      $0
+                      <span className="wallet-dropdown-value">
+                      ${formatNumberWithCommas(
+                        subWallets.reduce((total, wallet) =>
+                          total + (getWalletBalance(wallet.address) * monUsdPrice),
+                          0
+                        ) + getWalletBalance(scaAddress) * monUsdPrice, 2)}
+                    </span>
                     </div>
                   </div>
                   <div className="trenches-balance-item">
@@ -2993,13 +3037,19 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
                 <div className="trenches-performance-stats">
                   <div className="trenches-performance-stat-row">
-                    <span className="trenches-performance-stat-label">7d PNL</span>
+                    <span className="trenches-performance-stat-label">1d Unrealized PNL</span>
                     <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
                       $0.00
                     </span>
                   </div>
                   <div className="trenches-performance-stat-row">
-                    <span className="trenches-performance-stat-label">7d TXNS</span>
+                    <span className="trenches-performance-stat-label">1d Realized PNL</span>
+                    <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                      $0.00
+                    </span>
+                  </div>
+                  <div className="trenches-performance-stat-row">
+                    <span className="trenches-performance-stat-label">1d TXNS</span>
                     <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
                       0.0/0
                     </span>
@@ -3008,16 +3058,23 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
                 <div className="trenches-performance-ranges">
                   {[
-                    { label: '>500%', count: 0 },
-                    { label: '200% - 500%', count: 0 },
-                    { label: '0% - 200%', count: 0 },
-                    { label: '0% - 140%', count: 0 },
-                    { label: '<-50%', count: 0 }
+                    { label: '>500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
+                    { label: '200% - 500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
+                    { label: '0% - 200%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
+                    { label: '0% - 140%', count: 0, color: 'rgb(247, 127, 125, 0.25)' },
+                    { label: '<-50%', count: 0, color: 'rgb(247, 127, 125, 0.25)' }
                   ].map((range, index) => (
                     <div key={index} className="trenches-performance-range">
                       <span
                         className="trenches-performance-range-label"
                       >
+                        <span style={{
+                          display: 'inline-block',
+                          width: '9px',
+                          height: '9px',
+                          borderRadius: '50%',
+                          backgroundColor: range.color
+                        }}></span>
                         {range.label}
                       </span>
                       <span className="trenches-performance-range-count">
@@ -3026,12 +3083,15 @@ const Portfolio: React.FC<PortfolioProps> = ({
                     </div>
                   ))}
                 </div>
+                <div className="pnl-calendar-ratio-container">
+                  <div className="pnl-calendar-ratio-buy"></div>
+                  <div className="pnl-calendar-ratio-sell"></div>
+                </div>
               </div>
             </div>
 
             <div className="trenches-activity-section">
               <div className="trenches-activity-header">
-
                 <div className="trenches-activity-tabs">
                   {[
                     { key: 'positions', label: 'Active Positions' },
@@ -3054,28 +3114,201 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   />
                 </div>
               </div>
-
-              <div className="trenches-table-header">
-                <div>Spot</div>
-                <div>Remaining</div>
-                <div>Action</div>
-                <div>Type</div>
-                <div>Token</div>
-                <div>Amount</div>
-                <div>Market Cap</div>
-                <div>Age</div>
-                <div>Estimate</div>
-              </div>
-
-              <div className="trenches-table-content">
-                <div className="trenches-empty-state">
-                  <div className="trenches-empty-text">
-                    No active positions
-                    <br />
-                    <span className="trenches-empty-subtext">
-                      Start trading to see your positions here
-                    </span>
+              <div className="meme-oc-section-content" data-section="positions">
+                <div className="meme-oc-header">
+                  <div className="meme-oc-header-cell">Token</div>
+                  <div
+                    className="meme-oc-header-cell clickable"
+                    style={{
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    Bought
                   </div>
+                  <div className="meme-oc-header-cell">Sold</div>
+                  <div className="meme-oc-header-cell">Remaining</div>
+                  <div className="meme-oc-header-cell">PnL</div>
+                  <div className="meme-oc-header-cell">Actions</div>
+                </div>
+                <div className="meme-oc-items">
+                  {!positions || positions.length === 0 ? (
+                    <div className="meme-oc-empty">
+                      No active positions
+                    </div>
+                  ) : (
+                    [...(positions || [])]
+                      .sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0))
+                      .map((p) => {
+                        const tokenShort =
+                          p.symbol ||
+                          `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
+                        const tokenImageUrl = p.imageUrl || null;
+
+                        return (
+                          <div key={p.tokenId} className="meme-oc-item">
+                            <div className="meme-oc-cell">
+                              <div className="oc-meme-wallet-info">
+                                <div
+                                  className="meme-token-info"
+                                  style={{ display: 'flex', alignItems: 'center' }}
+                                >
+                                  {tokenImageUrl && !tokenImageErrors[p.tokenId] ? (
+                                    <img
+                                      src={tokenImageUrl}
+                                      alt={p.symbol}
+                                      className="meme-portfolio-token-icon"
+                                      onError={() => {
+                                        setTokenImageErrors(prev => ({ ...prev, [p.tokenId]: true }));
+                                      }}
+                                    />
+                                  ) : (
+                                    <div
+                                      className="meme-portfoliotoken-icon"
+                                      style={{
+                                        backgroundColor: 'rgba(35, 34, 41, .7)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: (p.symbol || '').length <= 3 ? '14px' : '12px',
+                                        fontWeight: '200',
+                                        color: '#ffffff',
+                                        borderRadius: '3px',
+                                        letterSpacing: (p.symbol || '').length > 3 ? '-0.5px' : '0',
+                                      }}
+                                    >
+                                      {(p.symbol || p.name || '?').slice(0, 2).toUpperCase()}
+                                    </div>
+                                  )}
+                                  <span
+                                    className="oc-meme-wallet-address meme-clickable-token"
+                                    onClick={() => {
+                                      navigate(`/meme/${p.tokenId}`)
+                                    }}
+                                  >
+                                    {tokenShort}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="meme-oc-cell">
+                              <div className="meme-trade-info">
+                                <div className="meme-ordercenter-info">
+                                  {amountMode === 'MON' && (
+                                    <img
+                                      className="meme-ordercenter-monad-icon"
+                                      src={monadicon}
+                                      alt="MONAD"
+                                    />
+                                  )}
+                                  <span className={`meme-usd-amount buy ${isBlurred ? 'blurred' : ''}`}>
+                                    {fmtAmount(
+                                      p.spentNative,
+                                      amountMode,
+                                      monUsdPrice,
+                                    )}{' '}
+                                  </span>
+                                </div>
+                                <span className="meme-token-amount">
+                                  {fmt(p.boughtTokens)} {p.symbol || ''}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="meme-oc-cell">
+                              <div className="meme-trade-info">
+                                <div className="meme-ordercenter-info">
+                                  {amountMode === 'MON' && (
+                                    <img
+                                      className="meme-ordercenter-monad-icon"
+                                      src={monadicon}
+                                      alt="MONAD"
+                                    />
+                                  )}
+                                  <span className={`meme-usd-amount sell ${isBlurred ? 'blurred' : ''}`}>
+                                    {fmtAmount(
+                                      p.receivedNative,
+                                      amountMode,
+                                      monUsdPrice,
+                                    )}
+                                  </span>
+                                </div>
+                                <span className="meme-token-amount">
+                                  {fmt(p.soldTokens)} {p.symbol || ''}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="meme-oc-cell">
+                              <div className="meme-remaining-info">
+                                <div className="meme-remaining-container">
+                                  <span className={`meme-remaining ${isBlurred ? 'blurred' : ''}`}>
+                                    <img
+                                      src={monadicon}
+                                      className="meme-ordercenter-monad-icon"
+                                    />
+                                    {fmt(p.remainingTokens * (p.lastPrice || 0))}
+                                  </span>
+                                  <span className="meme-remaining-percentage">
+                                    {p.remainingPct.toFixed(0)}%
+                                  </span>
+                                </div>
+                                <div className="meme-remaining-bar">
+                                  <div
+                                    className="meme-remaining-bar-fill"
+                                    style={{
+                                      width: `${Math.max(0, Math.min(100, p.remainingPct)).toFixed(0)}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="meme-oc-cell">
+                              <div className="meme-ordercenter-info">
+                                {amountMode === 'MON' && (
+                                  <img
+                                    className="meme-ordercenter-monad-icon"
+                                    src={monadicon}
+                                    alt="MONAD"
+                                  />
+                                )}
+                                <div className="meme-pnl-info">
+                                  <span
+                                    className={`meme-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}
+                                  >
+                                    {p.pnlNative >= 0 ? '+' : '-'}
+                                    {fmtAmount(
+                                      Math.abs(p.pnlNative),
+                                      amountMode,
+                                      monUsdPrice,
+                                    )}{' '}
+                                    (
+                                    {p.spentNative > 0
+                                      ? ((p.pnlNative / p.spentNative) * 100).toFixed(
+                                        1,
+                                      )
+                                      : '0.0'}
+                                    %)
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="meme-oc-cell">
+                              <button
+                                className="meme-action-btn"
+                                onClick={() => {
+                                  if (onSellPosition) {
+                                    onSellPosition(p, (p.remainingTokens * (p.lastPrice || 0)).toString());
+                                  }
+                                }}
+                              >
+                                Sell
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                  )}
                 </div>
               </div>
             </div>
@@ -3258,10 +3491,10 @@ const Portfolio: React.FC<PortfolioProps> = ({
         <div className="portfolio-top-row">
           <div className="portfolio-tab-selector">
             <span
-              className={`portfolio-tab-title ${activeTab === 'spot' ? 'active' : 'nonactive'}`}
-              onClick={() => setActiveTab('spot')}
+              className={`portfolio-tab-title ${activeTab === 'trenches' ? 'active' : 'nonactive'}`}
+              onClick={() => setActiveTab('trenches')}
             >
-              Spot
+              Trenches
             </span>
             <span
               className={`portfolio-tab-title ${activeTab === 'wallets' ? 'active' : 'nonactive'}`}
@@ -3273,12 +3506,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
               className="portfolio-tab-title perpetuals"
             >
               Perpetuals
-            </span>
-            <span
-              className={`portfolio-tab-title ${activeTab === 'trenches' ? 'active' : 'nonactive'}`}
-              onClick={() => setActiveTab('trenches')}
-            >
-              Trenches
             </span>
           </div>
           <div className="search-wallet-wrapper">
@@ -3295,6 +3522,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
             </div>
           </div>
         </div>
+
         <div className="portfolio-content-container">
           {renderTabContent()}
         </div>
@@ -3306,22 +3534,22 @@ const Portfolio: React.FC<PortfolioProps> = ({
         <div className="portfolio-top-row">
           <div className="portfolio-tab-selector">
             <span
+              className={`portfolio-tab-title ${activeTab === 'trenches' ? 'active' : 'nonactive'}`}
+              onClick={() => setActiveTab('trenches')}
+            >
+              Trenches
+            </span>
+            {/* <span
               className={`portfolio-tab-title ${activeTab === 'spot' ? 'active' : 'nonactive'}`}
               onClick={() => setActiveTab('spot')}
             >
               Spot
-            </span>
+            </span> */}
             <span
               className={`portfolio-tab-title ${activeTab === 'wallets' ? 'active' : 'nonactive'}`}
               onClick={() => setActiveTab('wallets')}
             >
               Wallets
-            </span>
-           <span
-              className={`portfolio-tab-title ${activeTab === 'trenches' ? 'active' : 'nonactive'}`}
-              onClick={() => setActiveTab('trenches')}
-            >
-              Trenches
             </span>
             <span
               className="portfolio-tab-title perpetuals"
