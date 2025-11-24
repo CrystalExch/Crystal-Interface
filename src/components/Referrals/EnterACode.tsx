@@ -38,21 +38,44 @@ const EnterACode: React.FC<EnterACodeProps> = ({
       setError(t('pleaseEnterCode'));
       return;
     }
-    if (inputValue.trim() === refLink.trim()) {
+
+    // Extract just the code from URL if user pasted full URL
+    let codeToUse = inputValue.trim();
+
+    // Handle full URL: https://app.crystal.exchange?ref=CODE
+    if (codeToUse.includes('?ref=')) {
+      try {
+        const urlParams = new URLSearchParams(codeToUse.split('?')[1]);
+        const extractedCode = urlParams.get('ref');
+        if (extractedCode) {
+          codeToUse = extractedCode;
+        }
+      } catch (e) {
+        // If URL parsing fails, try simple string split
+        if (codeToUse.includes('ref=')) {
+          codeToUse = codeToUse.split('ref=')[1].split('&')[0];
+        }
+      }
+    } else if (codeToUse.includes('ref=')) {
+      // Handle partial URL: ref=CODE
+      codeToUse = codeToUse.split('ref=')[1].split('&')[0];
+    }
+
+    if (codeToUse === refLink.trim()) {
       setError(t('noSelfRefer'));
       return;
     }
-    
+
     setError('');
     setIsSigning(true);
-    
+
     try {
-      const ok = await setUsedRefLink(inputValue.trim());
+      const ok = await setUsedRefLink(codeToUse);
       if (!ok) {
         setError(t('setRefFailed'));
       }
     } finally {
-      setIsSigning(false); 
+      setIsSigning(false);
     }
   };
   

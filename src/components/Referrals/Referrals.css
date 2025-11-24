@@ -198,6 +198,8 @@
 
 .link-actions {
   width: 30px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
 .link-actions,
@@ -443,7 +445,7 @@
 
 .earnings-subtitle {
   color: rgb(255 255 255 / 35%);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   margin: 0;
 }
 
@@ -748,7 +750,7 @@
   border-radius: 4px;
   padding: 1px;
   letter-spacing: -0.5px;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: #bcc0ea;
   width: 20%;
   min-width: 130px;
@@ -963,7 +965,7 @@
 
 .referral-username {
   color: #fff;
-  font-size: 1.25rem;
+  font-size: 1.61rem;
   font-weight: 500;
   margin: 0;
   letter-spacing: -0.5px;
