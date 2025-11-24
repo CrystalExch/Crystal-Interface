@@ -2282,6 +2282,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
               let sellUo;
               if (isNadFun) {
+                const actions: any = []
                 let inputAmountWei = BigInt(Number(amountTokenWei) / token.price * (1 + Number(sellSlippageValue) / 100))
                 if (inputAmountWei > walletBalance) {
                   amountTokenWei = amountTokenWei * walletBalance / inputAmountWei
@@ -2289,61 +2290,62 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 }
                 const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
                 const sellToken = token.id as `0x${string}`
-                const nonce = 0n
                 const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
-                
-                const signature = await signTypedDataAsync(
-                  {
-                    domain: {
-                      name: token.name,
-                      version: '1',
-                      chainId: activechain,
-                      verifyingContract: sellToken,
-                    },
-                    types: {
-                      Permit: [
-                        { name: 'owner', type: 'address' },
-                        { name: 'spender', type: 'address' },
-                        { name: 'value', type: 'uint256' },
-                        { name: 'nonce', type: 'uint256' },
-                        { name: 'deadline', type: 'uint256' },
+                if (token?.allowance?.[walletAddr]?.allowance < inputAmountWei) {
+                  const nonce = token?.allowance?.[walletAddr]?.nonce ?? 0n
+                  
+                  const signature = await signTypedDataAsync(
+                    {
+                      domain: {
+                        name: token.name,
+                        version: '1',
+                        chainId: activechain,
+                        verifyingContract: sellToken,
+                      },
+                      types: {
+                        Permit: [
+                          { name: 'owner', type: 'address' },
+                          { name: 'spender', type: 'address' },
+                          { name: 'value', type: 'uint256' },
+                          { name: 'nonce', type: 'uint256' },
+                          { name: 'deadline', type: 'uint256' },
+                        ],
+                      },
+                      primaryType: 'Permit',
+                      message: {
+                        owner: walletAddr,
+                        spender: settler,
+                        value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                        nonce,
+                        deadline,
+                      },
+                    }, wallet.privateKey
+                  )
+                  
+                  const sigHex = signature.slice(2)
+                  const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
+                  const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
+                  const v = Number(`0x${sigHex.slice(128, 130)}`)
+                  
+                  actions.push(encodeFunctionData({
+                    abi: zeroXActionsAbi,
+                    functionName: 'BASIC',
+                    args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
+                      abi: CrystalDataHelperAbi,
+                      functionName: 'tryPermit',
+                      args: [
+                        sellToken,
+                        walletAddr as `0x${string}`,
+                        settler,
+                        115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                        deadline,
+                        v,
+                        r,
+                        s
                       ],
-                    },
-                    primaryType: 'Permit',
-                    message: {
-                      owner: walletAddr,
-                      spender: settler,
-                      value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
-                      nonce,
-                      deadline,
-                    },
-                  }, wallet.privateKey
-                )
-                
-                const sigHex = signature.slice(2)
-                const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
-                const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
-                const v = Number(`0x${sigHex.slice(128, 130)}`)
-                
-                const actions: any = []
-                actions.push(encodeFunctionData({
-                  abi: zeroXActionsAbi,
-                  functionName: 'BASIC',
-                  args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
-                    abi: CrystalDataHelperAbi,
-                    functionName: 'tryPermit',
-                    args: [
-                      sellToken,
-                      walletAddr as `0x${string}`,
-                      settler,
-                      115792089237316195423570985008687907853269984665640564039457584007913129639935n,
-                      deadline,
-                      v,
-                      r,
-                      s
-                    ],
-                  })],
-                }))
+                    })],
+                  }))
+                }
                 actions.push(encodeFunctionData({
                   abi: zeroXActionsAbi,
                   functionName: 'BASIC',
@@ -2459,64 +2461,66 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
               let sellUo;
               if (isNadFun) {
+                const actions: any = []
                 let inputAmountWei = BigInt(Number(amountTokenWei) * token.price * (1 - Number(sellSlippageValue) / 100))
                 const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
                 const sellToken = token.id as `0x${string}`
-                const nonce = 0n
                 const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
+                if (token?.allowance?.[walletAddr]?.allowance < amountTokenWei) {
+                  const nonce = token?.allowance?.[walletAddr]?.nonce ?? 0n
                 
-                const signature = await signTypedDataAsync(
-                  {
-                    domain: {
-                      name: token.name,
-                      version: '1',
-                      chainId: activechain,
-                      verifyingContract: sellToken,
-                    },
-                    types: {
-                      Permit: [
-                        { name: 'owner', type: 'address' },
-                        { name: 'spender', type: 'address' },
-                        { name: 'value', type: 'uint256' },
-                        { name: 'nonce', type: 'uint256' },
-                        { name: 'deadline', type: 'uint256' },
+                  const signature = await signTypedDataAsync(
+                    {
+                      domain: {
+                        name: token.name,
+                        version: '1',
+                        chainId: activechain,
+                        verifyingContract: sellToken,
+                      },
+                      types: {
+                        Permit: [
+                          { name: 'owner', type: 'address' },
+                          { name: 'spender', type: 'address' },
+                          { name: 'value', type: 'uint256' },
+                          { name: 'nonce', type: 'uint256' },
+                          { name: 'deadline', type: 'uint256' },
+                        ],
+                      },
+                      primaryType: 'Permit',
+                      message: {
+                        owner: walletAddr,
+                        spender: settler,
+                        value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                        nonce,
+                        deadline,
+                      },
+                    }, wallet.privateKey
+                  )
+                  
+                  const sigHex = signature.slice(2)
+                  const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
+                  const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
+                  const v = Number(`0x${sigHex.slice(128, 130)}`)
+                  
+                  actions.push(encodeFunctionData({
+                    abi: zeroXActionsAbi,
+                    functionName: 'BASIC',
+                    args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
+                      abi: CrystalDataHelperAbi,
+                      functionName: 'tryPermit',
+                      args: [
+                        sellToken,
+                        walletAddr as `0x${string}`,
+                        settler,
+                        115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                        deadline,
+                        v,
+                        r,
+                        s
                       ],
-                    },
-                    primaryType: 'Permit',
-                    message: {
-                      owner: walletAddr,
-                      spender: settler,
-                      value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
-                      nonce,
-                      deadline,
-                    },
-                  }, wallet.privateKey
-                )
-                
-                const sigHex = signature.slice(2)
-                const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
-                const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
-                const v = Number(`0x${sigHex.slice(128, 130)}`)
-                
-                const actions: any = []
-                actions.push(encodeFunctionData({
-                  abi: zeroXActionsAbi,
-                  functionName: 'BASIC',
-                  args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
-                    abi: CrystalDataHelperAbi,
-                    functionName: 'tryPermit',
-                    args: [
-                      sellToken,
-                      walletAddr as `0x${string}`,
-                      settler,
-                      115792089237316195423570985008687907853269984665640564039457584007913129639935n,
-                      deadline,
-                      v,
-                      r,
-                      s
-                    ],
-                  })],
-                }))
+                    })],
+                  }))
+                }
                 actions.push(encodeFunctionData({
                   abi: zeroXActionsAbi,
                   functionName: 'BASIC',
@@ -2666,64 +2670,66 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           );
           let sellUo;
           if (isNadFun && sellInputMode != 'percentage') {
+            const actions: any = []
             let inputAmountWei = BigInt(Number(amountTokenWei) / token.price * (1 + Number(sellSlippageValue) / 100))
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
-            const nonce = 0n
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
+            if (token?.allowance?.[account.address]?.allowance < inputAmountWei) {
+              const nonce = token?.allowance?.[account.address]?.nonce ?? 0n
             
-            const signature = await signTypedDataAsync(
-              {
-                domain: {
-                  name: token.name,
-                  version: '1',
-                  chainId: activechain,
-                  verifyingContract: sellToken,
-                },
-                types: {
-                  Permit: [
-                    { name: 'owner', type: 'address' },
-                    { name: 'spender', type: 'address' },
-                    { name: 'value', type: 'uint256' },
-                    { name: 'nonce', type: 'uint256' },
-                    { name: 'deadline', type: 'uint256' },
+              const signature = await signTypedDataAsync(
+                {
+                  domain: {
+                    name: token.name,
+                    version: '1',
+                    chainId: activechain,
+                    verifyingContract: sellToken,
+                  },
+                  types: {
+                    Permit: [
+                      { name: 'owner', type: 'address' },
+                      { name: 'spender', type: 'address' },
+                      { name: 'value', type: 'uint256' },
+                      { name: 'nonce', type: 'uint256' },
+                      { name: 'deadline', type: 'uint256' },
+                    ],
+                  },
+                  primaryType: 'Permit',
+                  message: {
+                    owner: account.address,
+                    spender: settler,
+                    value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                    nonce,
+                    deadline,
+                  },
+                }
+              )
+              
+              const sigHex = signature.slice(2)
+              const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
+              const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
+              const v = Number(`0x${sigHex.slice(128, 130)}`)
+              
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
+                  abi: CrystalDataHelperAbi,
+                  functionName: 'tryPermit',
+                  args: [
+                    sellToken,
+                    account.address as `0x${string}`,
+                    settler,
+                    115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                    deadline,
+                    v,
+                    r,
+                    s
                   ],
-                },
-                primaryType: 'Permit',
-                message: {
-                  owner: account.address,
-                  spender: settler,
-                  value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
-                  nonce,
-                  deadline,
-                },
-              }
-            )
-            
-            const sigHex = signature.slice(2)
-            const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
-            const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
-            const v = Number(`0x${sigHex.slice(128, 130)}`)
-            
-            const actions: any = []
-            actions.push(encodeFunctionData({
-              abi: zeroXActionsAbi,
-              functionName: 'BASIC',
-              args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
-                abi: CrystalDataHelperAbi,
-                functionName: 'tryPermit',
-                args: [
-                  sellToken,
-                  account.address as `0x${string}`,
-                  settler,
-                  115792089237316195423570985008687907853269984665640564039457584007913129639935n,
-                  deadline,
-                  v,
-                  r,
-                  s
-                ],
-              })],
-            }))
+                })],
+              }))
+            }
             actions.push(encodeFunctionData({
               abi: zeroXActionsAbi,
               functionName: 'BASIC',
@@ -2773,64 +2779,66 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             };
           }
           else if (isNadFun) {
+            const actions: any = []
             let inputAmountWei = BigInt(Number(amountTokenWei) * token.price * (1 - Number(sellSlippageValue) / 100))
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
-            const nonce = 0n
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
+            if (token?.allowance?.[account.address]?.allowance < amountTokenWei) {
+              const nonce = token?.allowance?.[account.address]?.nonce ?? 0n
             
-            const signature = await signTypedDataAsync(
-              {
-                domain: {
-                  name: token.name,
-                  version: '1',
-                  chainId: activechain,
-                  verifyingContract: sellToken,
-                },
-                types: {
-                  Permit: [
-                    { name: 'owner', type: 'address' },
-                    { name: 'spender', type: 'address' },
-                    { name: 'value', type: 'uint256' },
-                    { name: 'nonce', type: 'uint256' },
-                    { name: 'deadline', type: 'uint256' },
+              const signature = await signTypedDataAsync(
+                {
+                  domain: {
+                    name: token.name,
+                    version: '1',
+                    chainId: activechain,
+                    verifyingContract: sellToken,
+                  },
+                  types: {
+                    Permit: [
+                      { name: 'owner', type: 'address' },
+                      { name: 'spender', type: 'address' },
+                      { name: 'value', type: 'uint256' },
+                      { name: 'nonce', type: 'uint256' },
+                      { name: 'deadline', type: 'uint256' },
+                    ],
+                  },
+                  primaryType: 'Permit',
+                  message: {
+                    owner: account.address,
+                    spender: settler,
+                    value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                    nonce,
+                    deadline,
+                  },
+                }
+              )
+              
+              const sigHex = signature.slice(2)
+              const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
+              const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
+              const v = Number(`0x${sigHex.slice(128, 130)}`)
+              
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
+                  abi: CrystalDataHelperAbi,
+                  functionName: 'tryPermit',
+                  args: [
+                    sellToken,
+                    account.address as `0x${string}`,
+                    settler,
+                    115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+                    deadline,
+                    v,
+                    r,
+                    s
                   ],
-                },
-                primaryType: 'Permit',
-                message: {
-                  owner: account.address,
-                  spender: settler,
-                  value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
-                  nonce,
-                  deadline,
-                },
-              }
-            )
-            
-            const sigHex = signature.slice(2)
-            const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
-            const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
-            const v = Number(`0x${sigHex.slice(128, 130)}`)
-            
-            const actions: any = []
-            actions.push(encodeFunctionData({
-              abi: zeroXActionsAbi,
-              functionName: 'BASIC',
-              args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
-                abi: CrystalDataHelperAbi,
-                functionName: 'tryPermit',
-                args: [
-                  sellToken,
-                  account.address as `0x${string}`,
-                  settler,
-                  115792089237316195423570985008687907853269984665640564039457584007913129639935n,
-                  deadline,
-                  v,
-                  r,
-                  s
-                ],
-              })],
-            }))
+                })],
+              }))
+            }
             actions.push(encodeFunctionData({
               abi: zeroXActionsAbi,
               functionName: 'BASIC',
@@ -2899,7 +2907,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
           walletPopup.updateTransactionSuccess(txId, {
             tokenAmount: Number(tradeAmount),
-            receivedAmount: Number(quoteValue ?? 0),
             tokenSymbol: token.symbol,
             currencyUnit: 'MON',
           });

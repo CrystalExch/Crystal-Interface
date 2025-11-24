@@ -1003,50 +1003,6 @@ export const CrystalDataHelperAbi = [
 				"internalType": "address",
 				"name": "token",
 				"type": "address"
-			}
-		],
-		"name": "getReserves",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "quoteReserve",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "baseReserve",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bool",
-				"name": "isGraduated",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "curve",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "pool",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "wmon",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "token",
-				"type": "address"
 			},
 			{
 				"internalType": "address",

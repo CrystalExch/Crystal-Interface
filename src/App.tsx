@@ -461,7 +461,6 @@ const Loader = () => {
 }
 
 function App({ stateloading, setstateloading, addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
-  const TRACKED_WALLETS_KEY = 'tracked_wallets_data';
   const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
   const lastProcessedTradeId = useRef<string | null>(null);
   const shownTradeIds = useRef<Set<string>>(new Set());
@@ -537,7 +536,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   useEffect(() => {
     const loadWallets = () => {
       try {
-        const stored = localStorage.getItem(TRACKED_WALLETS_KEY);
+        const stored = localStorage.getItem('tracked_wallets_data');
         if (stored) {
           const parsed = JSON.parse(stored);
           setTrackedWallets(parsed);
@@ -555,7 +554,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     };
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === TRACKED_WALLETS_KEY && e.newValue) {
+      if (e.key === 'tracked_wallets_data' && e.newValue) {
         try {
           const parsed = JSON.parse(e.newValue);
           setTrackedWallets(parsed);
@@ -4246,8 +4245,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
 
       case 'GRADUATE_MARKET': {
-        const live = action?.liveState ?? state.tokensByStatus;
-        const buckets = { ...live };
+        const buckets = { ...state.tokensByStatus };
         let movedToken: any;
         (Object.keys(buckets) as Token['status'][]).forEach((s) => {
           buckets[s] = buckets[s].flatMap((t: any) => {
@@ -7028,7 +7026,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               to: balancegetter,
               abi: CrystalDataHelperAbi,
               functionName: "getReserves",
-              args: [settings.chainConfig[activechain].nadFunBondingCurve, '0x98f7497e7790a4F39b4eD8a71b547156c34da190', weth, token.id]
+              args: [settings.chainConfig[activechain].nadFunBondingCurve, '0x98f7497e7790a4F39b4eD8a71b547156c34da190', weth, token.id, settings.chainConfig[activechain].zeroXSettler, [scaAddress].concat(subWallets.map(w => w.address))]
             }
             : {
               disabled: false,
@@ -7244,7 +7242,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
       if (groupResults?.mainGroup?.at(-1)?.result) {
         const reservesData = groupResults?.mainGroup?.at(-1)?.result;
-        setTokenData((prev: any) => ({ ...prev, migrated: token.source === "nadfun" ? reservesData[2] : prev.migrated, reserveQuote: token.source === "nadfun" ? reservesData[0] : reservesData[0], reserveBase: token.source === "nadfun" ? reservesData[1] : reservesData[1] }));
+        setTokenData((prev: any) => ({ ...prev, migrated: token.source === "nadfun" ? reservesData[2] : prev.migrated, reserveQuote: token.source === "nadfun" ? reservesData[0] : reservesData[0], reserveBase: token.source === "nadfun" ? reservesData[1] : reservesData[1], allowances: Object.fromEntries(
+          [scaAddress, ...subWallets.map(w => w.address)].map((wallet, i) => [
+            wallet.toLowerCase(),
+            {
+              allowance: reservesData[3][i] ?? 0n,
+              nonce: reservesData[4][i] ?? 0n
+            }
+          ])
+        )
+       }));
       }
       return { readContractData: groupResults, gasEstimate: gasEstimate }
     },
