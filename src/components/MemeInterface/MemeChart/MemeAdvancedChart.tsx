@@ -113,7 +113,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   const [showMarketCap, setShowMarketCap] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem('meme_chart_showMarketCap');
-      return raw ? JSON.parse(raw) === true : false;
+      return raw ? JSON.parse(raw) === true : true;
     } catch {
       return true;
     }
@@ -121,7 +121,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   const [showUSD, setShowUSD] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem('meme_chart_showUSD');
-      return raw ? JSON.parse(raw) === true : false;
+      return raw ? JSON.parse(raw) === true : true;
     } catch {
       return true;
     }
