@@ -13,7 +13,7 @@ import defaultPfp from '../../assets/leaderboard_default.png';
 const fetchTradingVolume = async (address: string): Promise<number> => {
   try {
     const url = `https://api.crystal.exchange/volume/${address}`;
-    console.log('[volumeApi] Fetching volume for address:', address);
+    // console.log('[volumeApi] Fetching volume for address:', address);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -28,13 +28,13 @@ const fetchTradingVolume = async (address: string): Promise<number> => {
     }
 
     const data = await response.json();
-    console.log('[volumeApi] API response:', data);
+    // console.log('[volumeApi] API response:', data);
 
     const volumeWei = parseFloat(data.volume_native);
-    console.log('[volumeApi] Parsed volume (wei):', volumeWei);
+    // console.log('[volumeApi] Parsed volume (wei):', volumeWei);
 
     const volume = volumeWei / 1e18;
-    console.log('[volumeApi] Converted volume (USD):', volume);
+    // console.log('[volumeApi] Converted volume (USD):', volume);
 
     return isNaN(volume) ? 0 : volume;
 
@@ -151,7 +151,9 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
                     </>
                   ) : (
                     <>
-                      <span className="referral-username">{displayName}</span>
+                      <span className="referral-username">
+                        {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : displayName}
+                      </span>
                       <div className="user-points-subtitle">
                         {client && usedRefLink
                           ? 1.375

@@ -5,6 +5,21 @@
   width: 100%;
 }
 
+.leaderboard-coming-soon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  width: 100%;
+}
+
+.leaderboard-coming-soon-title {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 2rem;
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+
 .leaderboard-user-section {
   display: flex;
   align-items: center;
@@ -54,7 +69,6 @@
 
 .leaderboard-table-section {
   background: rgb(6 6 6);
-  border-radius: 12px;
   padding: 24px;
   margin-left: 10px;
   position: relative;

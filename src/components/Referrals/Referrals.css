@@ -22,7 +22,7 @@
 .referral-nav-tabs {
   display: flex;
   gap: 5px;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   padding-left: 15px;
   padding-top: 10px;
 }
@@ -2332,7 +2332,6 @@
 .leaderboard-table-section {
   background: rgb(6 6 6);
   border: 1.5px solid #1c1c23;
-  border-radius: 12px;
   padding: 24px;
   margin-left: 10px;
 }

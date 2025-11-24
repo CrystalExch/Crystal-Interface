@@ -15,43 +15,29 @@ const FeeScheduleModal: React.FC<FeeScheduleModalProps> = ({ isOpen, onClose }) 
       name: 'Bronze',
       tier: 1,
       volume: '$0+',
-      spotTaker: '0.050%',
-      spotMaker: '0.020%',
+      cashback: '5%',
+      referralCommission: '10%',
     },
     {
       name: 'Silver',
       tier: 2,
       volume: '$100K+',
-      spotTaker: '0.040%',
-      spotMaker: '0.010%',
+      cashback: '10%',
+      referralCommission: '10%',
     },
     {
       name: 'Gold',
       tier: 3,
       volume: '$500K+',
-      spotTaker: '0.035%',
-      spotMaker: '0.005%',
+      cashback: '15%',
+      referralCommission: '10%',
     },
     {
       name: 'Diamond',
       tier: 4,
       volume: '$1M+',
-      spotTaker: '0.030%',
-      spotMaker: '0.000%',
-    },
-    {
-      name: 'Netherite',
-      tier: 5,
-      volume: '$5M+',
-      spotTaker: '0.025%',
-      spotMaker: '-0.003%',
-    },
-    {
-      name: 'Enchanted Netherite',
-      tier: 6,
-      volume: '$10M+',
-      spotTaker: '0.020%',
-      spotMaker: '-0.005%',
+      cashback: '20%',
+      referralCommission: '10%',
     },
   ];
 
@@ -90,7 +76,7 @@ const FeeScheduleModal: React.FC<FeeScheduleModalProps> = ({ isOpen, onClose }) 
           {/* Introduction */}
           <div className="fee-schedule-intro">
             <p className="fee-schedule-description">
-              Your fee tier is based on your 14-day trailing trading volume across all markets. Higher volume unlocks lower fees and maker rebates.
+              Your fee tier is based on your monthly trailing trading volume across all markets. Higher volume unlocks lower fees and higher cashbacks.
             </p>
           </div>
 
@@ -105,7 +91,7 @@ const FeeScheduleModal: React.FC<FeeScheduleModalProps> = ({ isOpen, onClose }) 
                   <div className="fee-tier-requirement-details">
                     <span className="fee-tier-requirement-volume">{tier.volume} volume</span>
                     <span className="fee-tier-requirement-benefits">
-                      Taker: {tier.spotTaker} • Maker: {tier.spotMaker}
+                      Cashback: {tier.cashback} • Referral Commission: {tier.referralCommission}
                     </span>
                   </div>
                 </div>
@@ -113,33 +99,13 @@ const FeeScheduleModal: React.FC<FeeScheduleModalProps> = ({ isOpen, onClose }) 
             </div>
           </div>
 
-          {/* Maker Rebate Tiers */}
-          <div className="fee-schedule-section">
-            <p className="fee-schedule-subsection-description">
-              Based on your share of total platform volume over 14 days
-            </p>
-            <div className="rebate-tiers-grid">
-              {makerRebateTiers.map((rebate) => (
-                <div key={rebate.tier} className="rebate-tier-card">
-                  <div className="rebate-tier-header">
-                    <span className="rebate-tier-badge">{rebate.tier}</span>
-                    <span className="rebate-tier-value">{rebate.rebate}</span>
-                  </div>
-                  <div className="rebate-tier-requirement">{rebate.volumeShare} of platform volume</div>
-                  <div className="rebate-tier-description">{rebate.description}</div>
-                </div>
-              ))}
-            </div>
-          </div>
 
           {/* Notes */}
           <div className="fee-schedule-notes">
             <h4 className="fee-schedule-notes-title">Notes</h4>
             <ul className="fee-schedule-notes-list">
-              <li>Trading volume is calculated as a 14-day trailing sum across all markets</li>
-              <li>Maker rebates are paid out daily in USDC</li>
-              <li>Negative maker fees indicate you receive a rebate for providing liquidity</li>
-              <li>Staking discounts are applied on top of volume-based tier discounts</li>
+              <li>Trading volume is calculated as a trailing sum across all markets</li>
+              <li>Cashbacks are paid out daily in WMON</li>
               <li>Fee tiers are updated in real-time based on your trading activity</li>
             </ul>
           </div>
