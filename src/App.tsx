@@ -727,11 +727,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return g;
   })();
 
-  const match =
-    matchPath('/meme/:tokenAddress', location.pathname) ||
-    matchPath('/board/:tokenAddress', location.pathname);
-  const tokenAddress = match?.params?.tokenAddress?.toLowerCase();
-
   const txReceiptResolvers = useRef(new Map<string, () => void>());
   // get market including multihop
   const getMarket = (token1: string, token2: string): any => {
@@ -843,10 +838,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const validOneCT = !!oneCTSigner
   const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
     address: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-    signTransaction: async () => ''
+    signTransaction: async () => '',
+    signTypedData: async () => ''
   };
   const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : (client ? undefined : scaAddress) as `0x${string}`
   const connected = address != undefined
+  const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
   const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>(
     loadWalletsFromStorage()
   );
@@ -872,19 +869,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   useEffect(() => {
     try {
-      if (selectedWallets.size > 0) {
-        localStorage.setItem(
-          'crystal_selected_wallets',
-          JSON.stringify(Array.from(selectedWallets))
-        );
-      }
+      localStorage.setItem(
+        'crystal_selected_wallets',
+        JSON.stringify(Array.from(selectedWallets))
+      );
     } catch (error) {
       console.error('Error saving selected wallets:', error);
     }
   }, [selectedWallets]);
-
-  const [withdrawPercentage, setWithdrawPercentage] = useState('');
-  const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
 
   useEffect(() => {
     if (connected) {
@@ -926,6 +918,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [withdrawVaultStep, setWithdrawVaultStep] = useState<'idle' | 'validating' | 'withdrawing' | 'success'>('idle');
   const [withdrawVaultError, setWithdrawVaultError] = useState<string>('');
   const [createVaultError, setCreateVaultError] = useState<string>('');
+  const [withdrawPercentage, setWithdrawPercentage] = useState('');
   const [createVaultForm, setCreateVaultForm] = useState({
     name: '',
     description: '',
@@ -993,13 +986,28 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     }
   };
 
+  const signTypedDataUnified = async (
+    typedData: any,
+    pk: string = '',
+    mainWallet: boolean = false
+  ): Promise<`0x${string}`> => {
+    if (pk) {
+      const w = new Wallet(pk)
+      return await w.signTypedData(typedData.domain, typedData.types, typedData.message) as `0x${string}`
+    }
+    if (validOneCT && !mainWallet) {
+      return await onectclient.signTypedData(typedData.domain, typedData.types, typedData.message) as `0x${string}`
+    }
+    return await signTypedDataAsync({ typedData }) as `0x${string}`
+  }
+
   const sendUserOperationAsync = useCallback(
     async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n, mainWallet: boolean = false, pk: string = '', nonce: number = 0, noReceipt: boolean = false, returnReceipt: boolean = false, retryCount: number = 0, addr: string = '') => {
       let hash: `0x${string}`;
       let receipt: any;
       let err: any;
       if (!!pk) {
-        gasLimit = gasLimit > 0n ? gasLimit : 500000n;
+        gasLimit = gasLimit > 0n ? gasLimit : 800000n;
         const tx = {
           to: params.uo.target,
           value: params.uo.value,
@@ -1035,7 +1043,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         });
       }
       else if (validOneCT && !mainWallet) {
-        gasLimit = gasLimit > 0n ? gasLimit : 500000n;
+        gasLimit = gasLimit > 0n ? gasLimit : 800000n;
         const wallet = nonces.current.get(onectclient.address);
         nonce = wallet.nonce
         const tx = {
@@ -1096,7 +1104,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         err = e
         if (retryCount > 0 && e?.message.includes("execution reverted")) {
           const wallet = nonces.current.get(addr);
-          const retryParams = [params, gasLimit * 10n, prioFee, mainWallet, pk, wallet.nonce, noReceipt, returnReceipt, retryCount - 1, addr] as [
+          const retryParams = [params, gasLimit * 5n, prioFee, mainWallet, pk, wallet.nonce, noReceipt, returnReceipt, retryCount - 1, addr] as [
             any,
             bigint,
             bigint,
@@ -2151,6 +2159,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     initialState,
   );
 
+  const tokenAddress = (matchPath('/meme/:tokenAddress', location.pathname) || matchPath('/board/:tokenAddress', location.pathname))?.params?.tokenAddress?.toLowerCase();
   const explorerWsRef = useRef<WebSocket | null>(null);
   const explorerPingIntervalRef = useRef<any>(null);
   const explorerReconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -2173,6 +2182,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // reload if throttled
   useEffect(() => {
+    if (!['board','spectra','meme','launchpad','trackers'].includes(location.pathname.split('/')[1])) return;
     let last = Date.now();
     let throttled = false;
   
@@ -2192,7 +2202,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       clearInterval(check);
       window.removeEventListener('focus', onFocus);
     };
-  }, []);  
+  }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);  
 
   useEffect(() => {
     const updateTrackedWalletsRef = () => {
@@ -28421,7 +28431,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 createSubWallet={createSubWallet}
                 setOneCTDepositAddress={setOneCTDepositAddress}
                 scaAddress={scaAddress}
-                signTypedDataAsync={signTypedDataAsync}
+                signTypedDataAsync={signTypedDataUnified}
               />
             }
           />
@@ -28739,7 +28749,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setPerpsMarketsData={setPerpsMarketsData}
                 perpsFilterOptions={perpsFilterOptions}
                 setPerpsFilterOptions={setPerpsFilterOptions}
-                signTypedDataAsync={signMessageAsync}
+                signMessageAsync={signMessageAsync}
                 leverage={perpsLeverage}
                 setLeverage={setPerpsLeverage}
                 userLeverage={userLeverage}

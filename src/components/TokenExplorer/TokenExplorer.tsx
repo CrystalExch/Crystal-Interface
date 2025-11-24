@@ -51,6 +51,8 @@ import trash from '../../assets/trash.svg';
 import tweet from '../../assets/tweet.png';
 import walleticon from '../../assets/wallet_icon.svg';
 import { TwitterHover } from '../TwitterHover/TwitterHover';
+import { zeroXActionsAbi } from '../../abis/zeroXActionsAbi.ts';
+import { zeroXAbi } from '../../abis/zeroXAbi.ts';
 
 import './TokenExplorer.css';
 
@@ -3946,7 +3948,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         if (showLoadingPopup) {
           showLoadingPopup(txId, {
             title: 'Sending batch buy...',
-            subtitle: `Buying ${amt} MON of ${token.symbol} across ${targets.length} wallet${targets.length > 1 ? 's' : ''}`,
+            subtitle: `Buying ${amt} MON of ${token.symbol} across ${targets.length == 0 ? 1 : targets.length} wallet${targets.length > 1 ? 's' : ''}`,
             amount: amt,
             amountUnit: 'MON',
             tokenImage: token.image,
@@ -3955,8 +3957,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
         const isNadFun = token.source === 'nadfun';
         const contractAddress = isNadFun
-          ? appSettings.chainConfig[activechain].nadFunRouter
-          : appSettings.chainConfig[activechain].router;
+        ? token.status == 'graduated' ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
+        : appSettings.chainConfig[activechain].router;
 
         let remaining = val;
         const plan: { addr: string; amount: bigint }[] = [];
@@ -4009,29 +4011,85 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             if (!pk) continue;
 
             let uo;
-
             if (isNadFun) {
-              // need to calculate reservequote and reservebase based on price
-              // const fee = 99000n;
-              // const iva = partWei * fee / 100000n;
-              // const vNative = token.reserveQuote + iva;
-              // const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
-              // const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buyPresets[buttonType == 'primary' ? (token.status == 'new' ? activePresets.new : token.status == 'graduating' ? activePresets.graduating : activePresets.graduated) : (token.status == 'new' ? activePresetsSecond.new : token.status == 'graduating' ? activePresetsSecond.graduating : activePresetsSecond.graduated)]?.slippage) / 100)));
+              if (token.status == 'graduated') {
+                let minOutput = BigInt(Number(partWei) / token.price * (1 - Number(buyPresets[buttonType == 'primary' ? (activePresets.graduated) : (activePresetsSecond.graduated)]?.slippage) / 100))
+                const actions: any = []
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'buy',
+                    args: [{
+                      amountOutMin: BigInt(minOutput == 0n ? 1n : minOutput),
+                      token: token.id as `0x${string}`,
+                      to: addr as `0x${string}`,
+                      deadline: 0n,
+                    }],
+                  })],
+                }))
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 10000n, '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d', 0n, '0x'],
+                }))
+                uo = {
+                  target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: zeroXAbi,
+                    functionName: 'execute',
+                    args: [{
+                      recipient: addr as `0x${string}`,
+                      buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                      minAmountOut: BigInt(0n),
+                    }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                  }),
+                  value: partWei,
+                };
+              }
+              else {
+                // const fee = 99000n;
+                // const iva = value * fee / 100000n;
+                // const vNative = token.reserveQuote + iva;
+                // const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+                // const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+                let minOutput = BigInt(Number(partWei) / token.price * (1 - Number(buyPresets[buttonType == 'primary' ? (token.status == 'new' ? activePresets.new : token.status == 'graduating' ? activePresets.graduating : activePresets.graduated) : (token.status == 'new' ? activePresetsSecond.new : token.status == 'graduating' ? activePresetsSecond.graduating : activePresetsSecond.graduated)]?.slippage) / 100))
 
-              uo = {
-                target: contractAddress as `0x${string}`,
-                data: encodeFunctionData({
-                  abi: NadFunAbi,
-                  functionName: 'buy',
-                  args: [{
-                    amountOutMin: BigInt(0),
-                    token: token.id as `0x${string}`,
-                    to: account.address as `0x${string}`,
-                    deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
-                  }],
-                }),
-                value: partWei,
-              };
+                const actions: any = []
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'buy',
+                    args: [{
+                      amountOutMin: BigInt(minOutput),
+                      token: token.id as `0x${string}`,
+                      to: addr as `0x${string}`,
+                      deadline: 0n,
+                    }],
+                  })],
+                }))
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 10000n, '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d', 0n, '0x'],
+                }))
+                uo = {
+                  target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: zeroXAbi,
+                    functionName: 'execute',
+                    args: [{
+                      recipient: addr as `0x${string}`,
+                      buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                      minAmountOut: BigInt(0n),
+                    }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                  }),
+                  value: partWei,
+                };
+              }
             } else {
               // const fee = 99000n;
               // const iva = partWei * fee / 100000n;
@@ -4077,20 +4135,84 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             let uo;
 
             if (isNadFun) {
-              uo = {
-                target: contractAddress as `0x${string}`,
-                data: encodeFunctionData({
-                  abi: NadFunAbi,
-                  functionName: 'buy',
-                  args: [{
-                    amountOutMin: 0n,
-                    token: token.id as `0x${string}`,
-                    to: account.address as `0x${string}`,
-                    deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
-                  }],
-                }),
-                value: val,
-              };
+              if (token.status == 'graduated') {
+                let minOutput = BigInt(Number(val) / token.price * (1 - Number(buyPresets[buttonType == 'primary' ? (activePresets.graduated) : (activePresetsSecond.graduated)]?.slippage) / 100))
+                const actions: any = []
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'buy',
+                    args: [{
+                      amountOutMin: BigInt(minOutput == 0n ? 1n : minOutput),
+                      token: token.id as `0x${string}`,
+                      to: account.address as `0x${string}`,
+                      deadline: 0n,
+                    }],
+                  })],
+                }))
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 10000n, '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d', 0n, '0x'],
+                }))
+                uo = {
+                  target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: zeroXAbi,
+                    functionName: 'execute',
+                    args: [{
+                      recipient: account.address as `0x${string}`,
+                      buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                      minAmountOut: BigInt(0n),
+                    }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                  }),
+                  value: val,
+                };
+              }
+              else {
+                // const fee = 99000n;
+                // const iva = value * fee / 100000n;
+                // const vNative = token.reserveQuote + iva;
+                // const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+                // const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+                let minOutput = BigInt(Number(val) / token.price * (1 - Number(buyPresets[buttonType == 'primary' ? (token.status == 'new' ? activePresets.new : token.status == 'graduating' ? activePresets.graduating : activePresets.graduated) : (token.status == 'new' ? activePresetsSecond.new : token.status == 'graduating' ? activePresetsSecond.graduating : activePresetsSecond.graduated)]?.slippage) / 100))
+
+                const actions: any = []
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'buy',
+                    args: [{
+                      amountOutMin: BigInt(minOutput),
+                      token: token.id as `0x${string}`,
+                      to: account.address as `0x${string}`,
+                      deadline: 0n,
+                    }],
+                  })],
+                }))
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 10000n, '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d', 0n, '0x'],
+                }))
+                uo = {
+                  target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: zeroXAbi,
+                    functionName: 'execute',
+                    args: [{
+                      recipient: account.address as `0x${string}`,
+                      buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                      minAmountOut: BigInt(0n),
+                    }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                  }),
+                  value: val,
+                };
+              }
             } else {
               uo = {
                 target: contractAddress as `0x${string}`,
@@ -4104,7 +4226,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             }
 
             const transferPromise = sendUserOperationAsync({ uo });
-            transferPromises.push(transferPromise);
+            transferPromises.push(transferPromise.then(() => {
+              return true;
+            })
+            .catch(() => {
+              return false;
+            }));
           }
         }
 

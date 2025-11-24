@@ -141,7 +141,7 @@ interface MemeInterfaceProps {
 const STATS_HTTP_BASE = 'https://api.crystal.exchange';
 const PAGE_SIZE = 100;
 
-const fmt = (v: number, d = 6) => {
+const formatNumberWithCommas = (v: number, d = 6) => {
   if (v === 0) return '0.00';
   if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
   if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
@@ -1048,7 +1048,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     window.open(`${explorer}/token/${addr}`, '_blank');
 
   const currentPrice = token.price || 0;
-  const formatNumberWithCommas = fmt;
 
   useEffect(() => {
     const storedWalletNames = localStorage.getItem('crystal_wallet_names');
@@ -1076,9 +1075,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       );
     };
   }, []);
-useEffect(() => {
-  localStorage.setItem('crystal_trades_panel_visible', JSON.stringify(isTradesTabVisible));
-}, [isTradesTabVisible]);
+
+  useEffect(() => {
+    localStorage.setItem('crystal_trades_panel_visible', JSON.stringify(isTradesTabVisible));
+  }, [isTradesTabVisible]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -1977,6 +1978,7 @@ useEffect(() => {
               let uo;
               if (isNadFun) {
                 if (token.migrated) {
+                  let minOutput = BigInt(Number(value) / token.price * (1 - Number(sellSlippageValue) / 100))
                   const actions: any = []
                   actions.push(encodeFunctionData({
                     abi: zeroXActionsAbi,
@@ -1985,9 +1987,9 @@ useEffect(() => {
                       abi: NadFunAbi,
                       functionName: 'buy',
                       args: [{
-                        amountOutMin: BigInt(1n),
+                        amountOutMin: BigInt(minOutput == 0n ? 1n : minOutput),
                         token: token.id as `0x${string}`,
-                        to: account.address as `0x${string}`,
+                        to: walletAddr as `0x${string}`,
                         deadline: 0n,
                       }],
                     })],
@@ -2003,7 +2005,7 @@ useEffect(() => {
                       abi: zeroXAbi,
                       functionName: 'execute',
                       args: [{
-                        recipient: account.address as `0x${string}`,
+                        recipient: walletAddr as `0x${string}`,
                         buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
                         minAmountOut: BigInt(0n),
                       }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
@@ -2028,7 +2030,7 @@ useEffect(() => {
                       args: [{
                         amountOutMin: BigInt(output),
                         token: token.id as `0x${string}`,
-                        to: account.address as `0x${string}`,
+                        to: walletAddr as `0x${string}`,
                         deadline: 0n,
                       }],
                     })],
@@ -2044,7 +2046,7 @@ useEffect(() => {
                       abi: zeroXAbi,
                       functionName: 'execute',
                       args: [{
-                        recipient: account.address as `0x${string}`,
+                        recipient: walletAddr as `0x${string}`,
                         buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
                         minAmountOut: BigInt(0n),
                       }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
@@ -2143,6 +2145,7 @@ useEffect(() => {
           let uo;
           if (isNadFun) {
             if (token.migrated) {
+              let minOutput = BigInt(Number(value) / token.price * (1 - Number(sellSlippageValue) / 100))
               const actions: any = []
               actions.push(encodeFunctionData({
                 abi: zeroXActionsAbi,
@@ -2151,7 +2154,7 @@ useEffect(() => {
                   abi: NadFunAbi,
                   functionName: 'buy',
                   args: [{
-                    amountOutMin: BigInt(1n),
+                    amountOutMin: BigInt(minOutput == 0n ? 1n : minOutput),
                     token: token.id as `0x${string}`,
                     to: account.address as `0x${string}`,
                     deadline: 0n,
@@ -2534,14 +2537,14 @@ useEffect(() => {
           );
           let sellUo;
           if (isNadFun && sellInputMode != 'percentage') {
-            let inputAmountWei = BigInt(Number(amountTokenWei) / token.price * 1.5)
+            let inputAmountWei = BigInt(Number(amountTokenWei) / token.price * (1 + Number(sellSlippageValue) / 100))
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
             const nonce = 0n
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
             
-            const signature = await signTypedDataAsync({
-              typedData: {
+            const signature = await signTypedDataAsync(
+              {
                 domain: {
                   name: token.name,
                   version: '1',
@@ -2565,8 +2568,8 @@ useEffect(() => {
                   nonce,
                   deadline,
                 },
-              },
-            })
+              }
+            )
             
             const sigHex = signature.slice(2)
             const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
@@ -2964,23 +2967,23 @@ useEffect(() => {
             <div className="stat-group-vol">
               <span className="stat-label">{selectedStatsTimeframe} Vol</span>
               <span className="stat-value">
-                ${fmt(currentStats.volume, 1)}
+                ${formatNumberWithCommas(currentStats.volume, 1)}
               </span>
             </div>
 
             <div className="stat-group buys">
               <span className="stat-label">Buys</span>
               <span className="stat-value green">
-                {fmt(currentStats.buyTransactions, 0)} / $
-                {fmt(currentStats.buyVolume, 1)}
+                {formatNumberWithCommas(currentStats.buyTransactions, 0)} / $
+                {formatNumberWithCommas(currentStats.buyVolume, 1)}
               </span>
             </div>
 
             <div className="stat-group sells">
               <span className="stat-label">Sells</span>
               <span className="stat-value red">
-                {fmt(currentStats.sellTransactions, 0)} / $
-                {fmt(currentStats.sellVolume, 1)}
+                {formatNumberWithCommas(currentStats.sellTransactions, 0)} / $
+                {formatNumberWithCommas(currentStats.sellVolume, 1)}
               </span>
             </div>
 
@@ -3001,7 +3004,7 @@ useEffect(() => {
                   ? '-'
                   : ''}
                 $
-                {fmt(
+                {formatNumberWithCommas(
                   Math.abs(
                     (currentStats.buyVolume - currentStats.sellVolume)
                   ),
@@ -4878,11 +4881,11 @@ useEffect(() => {
                       <div className="meme-similar-token-right">
                         <div className="meme-similar-token-stat">
                           <span className="label">MC</span>
-                          <span className="value">{fmt(mcap)}</span>
+                          <span className="value">{formatNumberWithCommas(mcap)}</span>
                         </div>
                         <div className="meme-similar-token-stat">
                           <span className="label">24h Vol.</span>
-                          <span className="value">{fmt(vol)}</span>
+                          <span className="value">{formatNumberWithCommas(vol)}</span>
                         </div>
                       </div>
                     </li>

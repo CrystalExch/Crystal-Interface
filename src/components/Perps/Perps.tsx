@@ -61,7 +61,7 @@ interface PerpsProps {
   setPerpsMarketsData: any;
   perpsFilterOptions: any;
   setPerpsFilterOptions: any;
-  signTypedDataAsync: any;
+  signMessageAsync: any;
   leverage: string;
   setLeverage: (value: string) => void;
   userLeverage: any;
@@ -124,7 +124,7 @@ const Perps: React.FC<PerpsProps> = ({
   setPerpsMarketsData,
   perpsFilterOptions,
   setPerpsFilterOptions,
-  signTypedDataAsync,
+  signMessageAsync,
   leverage,
   setLeverage,
   userLeverage,
@@ -2194,8 +2194,8 @@ const Perps: React.FC<PerpsProps> = ({
                 setpopup(4)
               }
               else if (Object.keys(signer).length == 0) {
-                const signature = await signTypedDataAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
-                const apiSig = await signTypedDataAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
+                const signature = await signMessageAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
+                const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
                 const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
                 const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
                 localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
@@ -2374,8 +2374,8 @@ const Perps: React.FC<PerpsProps> = ({
                 setpopup(4)
               }
               else if (Object.keys(signer).length == 0) {
-                const signature = await signTypedDataAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
-                const apiSig = await signTypedDataAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
+                const signature = await signMessageAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
+                const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
                 const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
                 const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
                 localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
@@ -2397,8 +2397,8 @@ const Perps: React.FC<PerpsProps> = ({
                 setpopup(4)
               }
               else if (Object.keys(signer).length == 0) {
-                const signature = await signTypedDataAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
-                const apiSig = await signTypedDataAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
+                const signature = await signMessageAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
+                const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
                 const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
                 const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
                 localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
