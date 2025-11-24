@@ -4231,7 +4231,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 actions.push(encodeFunctionData({
                   abi: zeroXActionsAbi,
                   functionName: 'BASIC',
-                  args: [settings.chainConfig[activechain].eth, 10000n, '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d', 0n, '0x'],
+                  args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
                 }))
                 uo = {
                   target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
@@ -4273,7 +4273,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 actions.push(encodeFunctionData({
                   abi: zeroXActionsAbi,
                   functionName: 'BASIC',
-                  args: [settings.chainConfig[activechain].eth, 10000n, '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d', 0n, '0x'],
+                  args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
                 }))
                 uo = {
                   target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
@@ -4353,7 +4353,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 actions.push(encodeFunctionData({
                   abi: zeroXActionsAbi,
                   functionName: 'BASIC',
-                  args: [settings.chainConfig[activechain].eth, 10000n, '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d', 0n, '0x'],
+                  args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
                 }))
                 uo = {
                   target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
@@ -4395,7 +4395,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 actions.push(encodeFunctionData({
                   abi: zeroXActionsAbi,
                   functionName: 'BASIC',
-                  args: [settings.chainConfig[activechain].eth, 10000n, '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d', 0n, '0x'],
+                  args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
                 }))
                 uo = {
                   target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,

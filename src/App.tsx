@@ -1137,8 +1137,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           value: params.uo.value,
           data: params.uo.data,
           gasLimit: gasLimit,
-          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || 0) * 1e9)),
-          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || 0) * 1e9)),
+          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
+          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
           nonce: nonce,
           chainId: activechain
         }
@@ -1175,8 +1175,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           value: params.uo.value,
           data: params.uo.data,
           gasLimit: gasLimit,
-          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || 0) * 1e9)),
-          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || 0) * 1e9)),
+          maxFeePerGas: 1020000000000n + (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
+          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : BigInt(parseInt(buyPriorityFee || '0') * 1e9)),
           nonce: nonce,
           chainId: activechain
         }
@@ -4717,6 +4717,21 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           // }),
           JSON.stringify({
             jsonrpc: '2.0',
+            id: 'sub_uni',
+            method: 'eth_subscribe',
+            params: [
+              'monadLogs',
+              {
+                topics: [
+                  [
+                    UNIV3_EVENTS.Swap,
+                  ]
+                ],
+              },
+            ],
+          }),
+          JSON.stringify({
+            jsonrpc: '2.0',
             id: 'sub_nadfun',
             method: 'eth_subscribe',
             params: [
@@ -5898,6 +5913,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 wsPendingLogsRef.current.delete(oldestKey);
               }
               wsPendingLogsRef.current.set(log.hash, log)
+            }
+            else if (log.topics?.[0] == UNIV3_EVENTS.Swap) {
+              console.log(log)
             }
             return tempset;
           })
@@ -10795,26 +10813,26 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       if (scaAddress && popup === 11) {
         setpopup(0);
       }
-      if (connected) {
-        if (!localStorage.getItem("firstConnect")) {
-          localStorage.setItem("firstConnect", "true");
-          if (window.location.hostname == 'test.crystal.exchange' && address != '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d') {
-            (async () => {
-              const amountInWei = BigInt(Math.round(30 * 10 ** 18));
-              await sendUserOperationAsync({
-                uo: {
-                  target: address as `0x${string}`,
-                  value: amountInWei,
-                  data: '0x'
-                }
-              }, 100000n, 0n, false, '0xb52e8ab1cddc2645f8df7e94578ee0edfce192371feb2633f47e7039f90c67cb', await getTransactionCount(config, { address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any), }))
-            })()
-          }
-          if (!oneCTSigner) {
-            setpopup(28)
-          }
-        }
-      }
+      // if (connected) {
+      //   if (!localStorage.getItem("firstConnect")) {
+      //     localStorage.setItem("firstConnect", "true");
+      //     if (window.location.hostname == 'test.crystal.exchange' && address != '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d') {
+      //       (async () => {
+      //         const amountInWei = BigInt(Math.round(30 * 10 ** 18));
+      //         await sendUserOperationAsync({
+      //           uo: {
+      //             target: address as `0x${string}`,
+      //             value: amountInWei,
+      //             data: '0x'
+      //           }
+      //         }, 100000n, 0n, false, '0xb52e8ab1cddc2645f8df7e94578ee0edfce192371feb2633f47e7039f90c67cb', await getTransactionCount(config, { address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any), }))
+      //       })()
+      //     }
+      //     if (!oneCTSigner) {
+      //       setpopup(28)
+      //     }
+      //   }
+      // }
     }
   }, [popup, connected, scaAddress, user != null, loading]);
 

@@ -14,9 +14,6 @@ import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { settings } from '../../settings.ts';
 import customRound from '../../utils/customRound';
 
-// TODO: Get activechain from context or props
-const activechain = 10143; // Monad testnet - temporary hardcoded value
-
 import './Referrals.css';
 
 interface ReferralProps {
