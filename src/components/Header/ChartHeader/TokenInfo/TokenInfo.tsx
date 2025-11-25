@@ -52,11 +52,6 @@ const createColorGradient = (base: string) => {
 };
 const crystal = '/CrystalLogo.png';
 
-const calculateBondingPercentage = (marketCap: number) => {
-  const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
-  return bondingPercentage;
-};
-
 const PerpsTokenSkeleton = () => {
   return (
     <div className="perps-interface-token-info-container">
@@ -771,7 +766,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  const bondingPercentage = memeTokenData?.bondingPercentage ? memeTokenData?.bondingPercentage / 100 : 0;
+  const bondingPercentage = memeTokenData?.bondingPercentage ? memeTokenData?.bondingPercentage * 100 : 0;
 
   const getBondingColorMeme = (percentage: number): string => {
     if (percentage < 25) return 'rgb(235, 112, 112)';
@@ -948,7 +943,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
     document.addEventListener('keydown', handleGlobalKeyDown);
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [isDropdownOpen, isAdvancedView, isPerpsToken, setpopup]);
+  }, [isDropdownOpen, isPerpsDropdownOpen, isAdvancedView, isPerpsToken, setpopup]);
 
   useEffect(() => {
     const handleFilterScroll = () => {

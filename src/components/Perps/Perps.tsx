@@ -211,6 +211,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [isDragging2, setIsDragging2] = useState(false);
   const [perpsIsLoaded, setPerpsIsLoaded] = useState(false);
   const [leverageIsLoaded, setLeverageIsLoaded] = useState(false);
+  const [wsReady, setWsReady] = useState(false);
 
   const initialMousePosRef = useRef(0);
   const initialWidthRef = useRef(0);
@@ -1065,7 +1066,7 @@ const Perps: React.FC<PerpsProps> = ({
 
     subRefs.current = subs
 
-  }, [activeMarket?.contractId, selectedInterval, wsRef.current, wsRef.current?.readyState])
+  }, [activeMarket?.contractId, selectedInterval, wsReady])
 
   useEffect(() => {
     let liveStreamCancelled = false;
@@ -1137,6 +1138,7 @@ const Perps: React.FC<PerpsProps> = ({
       wsRef.current = new WebSocket(endpoint);
 
       wsRef.current.onopen = async () => {
+        setWsReady(true);
         pingIntervalRef.current = setInterval(() => {
           if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({
@@ -1320,6 +1322,7 @@ const Perps: React.FC<PerpsProps> = ({
       }
 
       wsRef.current.onclose = () => {
+        setWsReady(false);
         subRefs.current = []
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current);

@@ -643,7 +643,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
     const updatedWallets = subWallets.filter(w => w.address !== address);
     setSubWallets(updatedWallets);
-    localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
 
     const newEnabledWallets = new Set(enabledWallets);
     newEnabledWallets.delete(address);
@@ -1166,7 +1165,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
       const updatedWallets = [...subWallets, newWallet];
       setSubWallets(updatedWallets);
-      localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
       const newWalletNames = {
         ...walletNames,
         [walletAddress]: `Wallet ${updatedWallets.length}`
@@ -1611,7 +1609,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
           const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
           reorderedWallets.splice(targetIndex, 0, movedWallet);
           setSubWallets(reorderedWallets);
-          localStorage.setItem('crystal_sub_wallets', JSON.stringify(reorderedWallets));
         } else if (containerType === 'source') {
           const reorderedWallets = [...sourceWallets];
           const maxIndex = reorderedWallets.length - 1;
@@ -1702,7 +1699,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
           const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
           reorderedWallets.splice(targetIndex, 0, movedWallet);
           setSubWallets(reorderedWallets);
-          localStorage.setItem('crystal_sub_wallets', JSON.stringify(reorderedWallets));
         } else if (containerType === 'source') {
           const reorderedWallets = [...sourceWallets];
           const maxIndex = reorderedWallets.length - 1;

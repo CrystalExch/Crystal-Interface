@@ -2636,7 +2636,6 @@ const TokenRow = React.memo<{
   const cssVariables: CSSVars = metricData?.cssVars || {};
   const [imageError, setImageError] = useState(false);
 
-
   return (
     <>
       <div
@@ -2718,12 +2717,11 @@ const TokenRow = React.memo<{
               <div
                 className={`explorer-image-wrapper ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
               >
-                {token.image && !imageError ? (
+                {token.image && token.image.startsWith("https://storage.nadapp.net/coin/") && !imageError ? (
                   <img
                     src={token.image}
                     className={`explorer-token-image ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
                     onError={() => setImageError(true)}
-                    alt={token.symbol}
                   />
                 ) : (
                   <div
@@ -3673,7 +3671,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     },
     [walletTokenBalances, activechain],
   );
-  const [currentTime, setCurrentTime] = useState(Date.now());
   const [quickAmountsSecond, setQuickAmountsSecond] = useState<
     Record<Token['status'], string>
   >(() => ({
@@ -3711,8 +3708,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       localStorage.getItem('explorer-preset-second-graduated') ?? '1',
     ),
   }));
+
   const formatTimeAgo = (createdTimestamp: number) => {
-    const now = Math.floor(currentTime / 1000);
+    const now = Math.floor(Date.now() / 1000);
     const ageSec = now - createdTimestamp;
 
     if (ageSec < 60) {
@@ -3727,6 +3725,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       return `${Math.floor(ageSec / 604800)}w`;
     }
   };
+
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(
     {},
@@ -3958,7 +3957,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTime(Date.now());
       forceUpdate();
     }, 1000);
 

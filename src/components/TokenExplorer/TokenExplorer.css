@@ -1761,7 +1761,7 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
   color: #000000;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1020px) {
   .mobile-tab-selector {
     display: flex;
   }

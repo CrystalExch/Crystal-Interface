@@ -1575,9 +1575,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         );
         return;
       }
-      setTradeAmount(amount);
       setActiveTradeType('buy');
-      handleTrade(tradeAmount);
+      handleTrade(amount);
     } else {
       const pct = BigInt(parseInt(amount.replace('%', ''), 10));
       const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
@@ -1597,9 +1596,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       const decimals = tokendict?.[token.id]?.decimals || 18;
       const tokenAmount = Number(amountTokenWei) / 10 ** Number(decimals);
 
-      setTradeAmount(tokenAmount.toString());
       setActiveTradeType('sell');
-      handleTrade(tradeAmount);
+      handleTrade(tokenAmount.toString());
     }
   };
 
