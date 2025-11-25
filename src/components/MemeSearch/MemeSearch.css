@@ -704,108 +704,289 @@
 
 .meme-search-skeleton-container {
   display: flex;
-  flex-direction: column;
-  padding: 8px 16px;
-}
-
-.meme-search-skeleton-row {
-  padding: 8px 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  position: relative;
   animation: pulse 1.5s ease-in-out infinite;
 }
 
-.meme-search-skeleton-content {
+.meme-search-skeleton-left {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-}
-
-.meme-search-skeleton-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.meme-search-skeleton-avatar {
-  width: 57px;
-  height: 57px;
-  background: rgba(189, 189, 235, 0.08);
-  border-radius: 6px;
   flex-shrink: 0;
+  margin-top: -2px;
+  position: relative;
+}
+
+.meme-search-skeleton-hide-button {
+  width: 26px;
+  height: 26px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 4px;
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  z-index: 1;
+}
+
+.meme-search-skeleton-token-image-container {
+  width: 73px;
+  height: 73px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meme-search-skeleton-progress-spacer {
+  width: 70px;
+  height: 70px;
+  background: rgb(6, 6, 6);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meme-search-skeleton-image-wrapper {
+  width: 68px;
+  height: 68px;
+  border-radius: 3px;
+  position: relative;
+}
+
+.meme-search-skeleton-token-image {
+  width: 68px;
+  height: 68px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 3px;
+  border: 1px solid rgb(6, 6, 6);
+  box-shadow: 0 0 0 1.5px rgb(6, 6, 6);
+}
+
+.meme-search-skeleton-progress-line {
+  width: 70px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.meme-search-skeleton-progress-line-fill {
+  width: 60%;
+  height: 100%;
+  background: rgba(189, 189, 235, 0.15);
+  border-radius: 2px;
 }
 
 .meme-search-skeleton-details {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  flex: 1;
+  margin-left: 0.75rem;
+  min-width: 0;
 }
 
-.meme-search-skeleton-header {
+.meme-search-skeleton-contract-address {
+  width: 70px;
+  height: 10px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+  margin-top: 4px;
+}
+
+.meme-search-skeleton-detail-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.meme-search-skeleton-token-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.25rem;
+  height: 15px;
+  margin-bottom: 8px;
 }
 
-.meme-search-skeleton-symbol {
-  width: 45px;
-  height: 16px;
+.meme-search-skeleton-token-symbol {
+  width: 50px;
+  height: 15px;
   background: rgba(189, 189, 235, 0.08);
   border-radius: 2px;
 }
 
-.meme-search-skeleton-name {
+.meme-search-skeleton-token-name {
+  width: 90px;
+  height: 15px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+}
+
+.meme-search-skeleton-second-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 18px;
+}
+
+.meme-search-skeleton-time-created {
+  width: 30px;
+  height: 14px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+  margin-right: 5px;
+}
+
+.meme-search-skeleton-social-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.meme-search-skeleton-social-btn {
+  width: 18px;
+  height: 18px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+}
+
+.meme-search-skeleton-additional-data {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.meme-search-skeleton-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.meme-search-skeleton-stat-icon {
+  width: 18px;
+  height: 18px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+}
+
+.meme-search-skeleton-stat-value {
+  width: 35px;
+  height: 12px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
+}
+
+.meme-search-skeleton-holdings-section {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  height: 32px;
+  margin-top: 15px;
+}
+
+.meme-search-skeleton-holding-item {
+  width: 60px;
+  height: 22px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 20px;
+  border: 1px solid rgba(179, 184, 249, 0.08);
+}
+
+.meme-search-skeleton-third-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  position: absolute;
+  right: 1rem;
+  top: 0.75rem;
+  z-index: 2;
+  gap: 0.5rem;
+}
+
+.meme-search-skeleton-metrics-container {
+  display: flex;
+  gap: 1rem;
+  height: 20px;
+  background-color: rgb(6, 6, 6);
+  box-shadow: 0 0 10px 4px rgb(6, 6, 6);
+  padding: 2px 0;
+}
+
+.meme-search-skeleton-volume,
+.meme-search-skeleton-market-cap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meme-search-skeleton-volume {
   width: 80px;
   height: 16px;
   background: rgba(189, 189, 235, 0.08);
   border-radius: 2px;
 }
 
-.meme-search-skeleton-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.meme-search-skeleton-market-cap {
+  width: 90px;
+  height: 16px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 2px;
 }
 
-.meme-search-skeleton-age {
-  width: 25px;
+.meme-search-skeleton-third-row-section {
+  display: flex;
+  gap: 5px;
+  height: 15px;
+  background-color: rgb(6, 6, 6);
+  box-shadow: 0 0 10px 4px rgb(6, 6, 6);
+}
+
+.meme-search-skeleton-fee-stat {
+  width: 60px;
   height: 12px;
   background: rgba(189, 189, 235, 0.08);
   border-radius: 2px;
 }
 
-.meme-search-skeleton-socials {
-  display: flex;
-  gap: 6px;
-}
-
-.meme-search-skeleton-social {
-  width: 16px;
-  height: 16px;
-  background: rgba(189, 189, 235, 0.08);
-  border-radius: 2px;
-}
-
-.meme-search-skeleton-stats {
+.meme-search-skeleton-tx-bar {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 4px;
 }
 
-.meme-search-skeleton-stat {
-  width: 45px;
-  height: 16px;
+.meme-search-skeleton-tx-header {
+  width: 50px;
+  height: 12px;
   background: rgba(189, 189, 235, 0.08);
   border-radius: 2px;
 }
 
-.meme-search-skeleton-button {
-  width: 90px;
-  height: 32px;
+.meme-search-skeleton-tx-visual {
+  width: 60px;
+  height: 3px;
   background: rgba(189, 189, 235, 0.08);
-  border-radius: 16px;
+  border-radius: 1px;
+}
+
+.meme-search-skeleton-actions-section {
+  display: flex;
+  margin-top: 0.5rem;
+  gap: 5px;
+}
+
+.meme-search-skeleton-quick-buy-btn {
+  width: 90px;
+  height: 26px;
+  background: rgba(189, 189, 235, 0.08);
+  border-radius: 8px;
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 0.6;
@@ -813,45 +994,6 @@
 
   50% {
     opacity: 1;
-  }
-}
-
-@media (max-width: 768px) {
-  .meme-search-skeleton-content {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-  }
-
-  .meme-search-skeleton-stats {
-    width: 100%;
-    justify-content: space-between;
-    gap: 16px;
-  }
-
-  .meme-search-skeleton-avatar {
-    width: 48px;
-    height: 48px;
-  }
-}
-
-@media (max-width: 480px) {
-  .meme-search-skeleton-stats {
-    gap: 12px;
-  }
-
-  .meme-search-skeleton-stat {
-    width: 35px;
-  }
-
-  .meme-search-skeleton-button {
-    width: 75px;
-    height: 28px;
-  }
-
-  .meme-search-skeleton-avatar {
-    width: 40px;
-    height: 40px;
   }
 }
 

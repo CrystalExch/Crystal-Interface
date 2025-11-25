@@ -1,8 +1,8 @@
 .fee-tier-section {
   background: rgb(6, 6, 6);
-  border-radius: 4px;
+  border-radius: 20px;
   padding: 20px 25px;
-  border: 1px solid rgba(179, 184, 249, 0.12);
+  border: 1.5px solid rgba(17, 17, 18, 0.671);
   margin: 20px 0;
 }
 
@@ -110,7 +110,7 @@
 
 .referrals-fee-tier-title {
   color: rgba(255, 255, 255, 0.9);
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 400;
   margin: 0;
   line-height: 1;
@@ -130,7 +130,9 @@
 }
 
 .fee-tier-badge-name {
-  letter-spacing: -0.3px;
+  letter-spacing: -0.5px;
+  font-size: 1rem;
+  font-weight: 400;
 }
 
 .view-schedule-button {
@@ -146,11 +148,6 @@
   padding: 0.3rem 0.9rem;
   transition: all 0.2s;
   white-space: nowrap;
-}
-
-.view-schedule-button:hover {
-  background: rgba(170, 174, 207, 0.15);
-  border-color: rgba(170, 174, 207, 0.3);
 }
 
 .fee-tier-volume-value {
@@ -231,7 +228,7 @@
 }
 
 .fee-tier-benefit-label {
-  color: rgba(255, 255, 255, 0.6);
+  color: #a8a9b9;
   font-size: 0.75rem;
 }
 
@@ -274,62 +271,6 @@
   background: rgba(170, 174, 207, 0.05);
 }
 
-.fee-tier-requirement-badge {
-  padding: 0.3rem 0.7rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #000;
-  white-space: nowrap;
-}
-
-.fee-tier-requirement-badge.tier-1 {
-  background: linear-gradient(135deg, #D4915A 0%, #8B5A1E 100%);
-}
-
-.fee-tier-requirement-badge.tier-2 {
-  background: linear-gradient(135deg, #D4D4D4 0%, #7A7A7A 100%);
-}
-
-.fee-tier-requirement-badge.tier-3 {
-  background: linear-gradient(135deg, #F5D576 0%, #CC8400 100%);
-}
-
-.fee-tier-requirement-badge.tier-4 {
-  background: linear-gradient(135deg, #aaaecf 0%, #7f82a1 100%);
-}
-
-.fee-tier-requirement-badge.tier-5 {
-  background: #4A4A4A;
-}
-
-.fee-tier-requirement-badge.tier-6 {
-  background: linear-gradient(135deg, #9D4EDD 0%, #7B2CBF 100%);
-}
-
-.tier-requirement-badge.bronze {
-  background: linear-gradient(135deg, #D4915A 0%, #8B5A1E 100%);
-}
-
-.tier-requirement-badge.silver {
-  background: linear-gradient(135deg, #D4D4D4 0%, #7A7A7A 100%);
-}
-
-.tier-requirement-badge.gold {
-  background: linear-gradient(135deg, #F5D576 0%, #CC8400 100%);
-}
-
-.tier-requirement-badge.diamond {
-  background: linear-gradient(135deg, #aaaecf 0%, #7f82a1 100%);
-}
-
-.tier-requirement-badge.netherite {
-  background: #4A4A4A;
-}
-
-.tier-requirement-badge.enchanted-netherite {
-  background: linear-gradient(135deg, #9D4EDD 0%, #7B2CBF 100%);
-}
 
 .fee-tier-requirement-details {
   display: flex;
@@ -338,36 +279,8 @@
   flex: 1;
 }
 
-.fee-tier-requirement-volume {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
 .fee-tier-requirement-benefits {
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.7rem;
   font-weight: 300;
-}
-
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
-  .fee-tier-section {
-    padding: 1rem;
-  }
-
-  .fee-tier-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .fee-tier-benefits {
-    grid-template-columns: 1fr;
-  }
-
-  .fee-tier-requirement-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
 }
