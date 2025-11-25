@@ -212,9 +212,9 @@
   align-items: center;
   background: 0 0;
   border: none;
-  color: #aaaecf;
+  color: #d8dcff;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   justify-content: center;
   padding: 0.3rem;
   transition: all 0.2s;
@@ -364,8 +364,9 @@
 }
 
 .link-text {
-  color: rgb(255 255 255 / 50%);
-  font-size: 0.7rem;
+  color: #ddddf471;
+  font-size: 0.95rem;
+  font-weight: 300;
 }
 
 .feature-item {
@@ -397,13 +398,8 @@
 }
 
 .earnings-section {
-  background: rgb(6, 6, 6);
-  border-radius: 12px;
-  padding: 0rem 0rem 0rem 2rem;
   max-width: 375px;
-  min-width: 375px;
   flex-shrink: 0;
-  align-content: center;
 }
 
 .earnings-dashboard {
@@ -412,7 +408,7 @@
 }
 
 .earnings-title {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.95);
   font-size: 1.35rem;
   font-weight: 300;
   margin: 0;
@@ -433,7 +429,7 @@
 }
 
 .referrals-stat-label {
-  color: rgba(255, 255, 255, 0.6);
+  color: #a8a9b9;
   font-size: 1.1rem;
   font-weight: 400;
 }
@@ -445,7 +441,7 @@
 }
 
 .earnings-subtitle {
-  color: rgb(255 255 255 / 35%);
+  color: rgba(217, 222, 243, 0.4);
   font-size: 0.85rem;
   margin: 0;
 }
@@ -466,9 +462,10 @@
 }
 
 .total-earnings-label {
-  color: rgb(255 255 255 / 60%);
+  color: #a8a9b9;
   font-size: 0.775rem;
   margin-bottom: -10px;
+  margin-left: -5px;
 }
 
 .earnings-status {
@@ -483,10 +480,11 @@
   background: rgba(255, 255, 255, 0.9);
   -webkit-background-clip: text;
           background-clip: text;
-  font-size: 1.4rem;
+  font-size: 1.7rem;
   font-weight: 500;
   letter-spacing: -0.5px;
   -webkit-text-fill-color: transparent;
+  transform: scaleX(1.05);
 }
 
 .token-breakdown-title {
@@ -588,8 +586,8 @@
 }
 
 .help-text {
-  color: rgb(255 255 255 / 55%);
-  font-size: 0.65rem;
+  color: #a8a9b9;
+  font-size: 0.75rem;
   font-weight: 100;
   line-height: 1.5;
   margin-bottom: 0;
@@ -598,7 +596,7 @@
 
 .referral-link-box {
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 5px;
   display: flex;
   height: 34px;
@@ -626,9 +624,10 @@
   flex-direction: column;
   justify-content: center;
   background: rgb(6, 6, 6);
-  border-radius: 8px;
+  border-radius: 4px;
   width: 50%;
-  gap: 4px;
+  padding: 15px;
+  border: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .refer-header-content{
@@ -781,7 +780,6 @@
   height: 53px;
   width: 53px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 10px rgb(170 174 207 / 50%);
  }
 .referral-bg-placeholder {
   max-height: 288px;
@@ -824,8 +822,7 @@
 
 .referral-grid {
   display: flex;
-  gap: 40px;
-  padding: 20px 30px;
+  gap: 20px;
 }
 
 @media (max-width: 1020px) {
