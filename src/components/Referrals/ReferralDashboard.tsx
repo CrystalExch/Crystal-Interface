@@ -142,7 +142,6 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
           <div className="referral-top-section">
             <div className="earnings-section">
               <div className="referred-count">
-                <img src={defaultPfp} className="referral-pfp" />
                 <div className="referral-user-right-side">
                   {isLoading ? (
                     <>
@@ -174,16 +173,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
                 <p className="earnings-subtitle">Track your referral earnings</p>
               </div>
 
-              <div className="referrals-stats-section">
-                <div className="referrals-stat-item">
-                  <span className="referrals-stat-value">{referredCount}</span>
-                  <span className="referrals-stat-label">Users Referred</span>
-                </div>
-                <div className="referrals-stat-item">
-                  <span className="referrals-stat-value">{commissionBonus}</span>
-                  <span className="referrals-stat-label">Crystals Earned</span>
-                </div>
-              </div>
+
 
               <div className="total-earnings-box">
                 <div className="total-earnings-header">
@@ -206,6 +196,16 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
             </div>
             <div className="referral-background-wrapper">
               <div className="main-title-container">
+                              <div className="referrals-stats-section">
+                <div className="referrals-stat-item">
+                  <span className="referrals-stat-value">{referredCount}</span>
+                  <span className="referrals-stat-label">Users Referred</span>
+                </div>
+                <div className="referrals-stat-item">
+                  <span className="referrals-stat-value">{commissionBonus}</span>
+                  <span className="referrals-stat-label">Crystals Earned</span>
+                </div>
+              </div>
               </div>
             </div>
           </div>

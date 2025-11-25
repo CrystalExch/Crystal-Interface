@@ -2465,7 +2465,7 @@ const TokenRow = React.memo<{
     left: 0,
   });
   type CSSVars = React.CSSProperties & Record<string, string>;
-  const bondingPercentage = token.bondingPercentage / 100;
+  const bondingPercentage = token.bondingPercentage * 100;
   const gradient = useMemo(
     () => createColorGradient(getBondingColor(bondingPercentage)),
     [bondingPercentage],

@@ -3080,9 +3080,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
                 <div className="trenches-performance-ranges">
                   {[
                     { label: '>500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
-                    { label: '200% - 500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
-                    { label: '0% - 200%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
-                    { label: '0% - 140%', count: 0, color: 'rgb(247, 127, 125, 0.25)' },
+                    { label: '200% ~ 500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
+                    { label: '0% ~ 200%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
+                    { label: '0% ~ -50%', count: 0, color: 'rgb(247, 127, 125, 0.25)' },
                     { label: '<-50%', count: 0, color: 'rgb(247, 127, 125, 0.25)' }
                   ].map((range, index) => (
                     <div key={index} className="trenches-performance-range">

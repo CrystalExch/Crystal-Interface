@@ -395,15 +395,17 @@ const Footer: React.FC<FooterProps> = ({
     const savedName = localStorage.getItem(`wallet_name_${address}`);
     return savedName || `Wallet ${index + 1}`;
   };
-
-  const totalSelectedBalance = useMemo(() => {
-    if (selectedWallets.size == 0) {
-      return getWalletBalance(address)
-    }
-    return Array.from(selectedWallets).reduce((total, w) => {
-      return total + getWalletBalance(w);
-    }, 0);
-  }, [selectedWallets, getWalletBalance]);
+const totalSelectedBalance = useMemo(() => {
+  if (subWallets.length === 0) {
+    return 0;
+  }
+  if (selectedWallets.size === 0) {
+    return 0;
+  }
+  return Array.from(selectedWallets).reduce((total, w) => {
+    return total + getWalletBalance(w);
+  }, 0);
+}, [selectedWallets, getWalletBalance, subWallets.length]);
 
   return (
     <footer className="footer">
@@ -716,12 +718,12 @@ const Footer: React.FC<FooterProps> = ({
                 <span>${formatNumberWithCommas(monUsdPrice, 5)}</span>
               </div>
             </Tooltip>
-            <Tooltip content="crystal.fun Migration Price">
+            {/* <Tooltip content="nad.fun Migration Price">
               <div className="crystal-migration-mc">
                 <img src={crystallogo} className="footer-crystal-logo" />
-                <span>${formatNumberWithCommas(monUsdPrice * 25000)}</span>
+                <span>${formatNumberWithCommas(monUsdPrice * 1296000)}</span>
               </div>
-            </Tooltip>
+            </Tooltip> */}
           </div>
         </div>
       </div>
