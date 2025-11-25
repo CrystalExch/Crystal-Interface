@@ -59,11 +59,12 @@
 }
 
 .fee-schedule-description {
-  color: rgba(255, 255, 255, 0.7);
+  color: #cdd0ddf4;
   font-size: 0.85rem;
   line-height: 1.2;
   margin: 0;
   font-weight: 300;
+  letter-spacing: -0.3px;
 }
 
 
@@ -75,12 +76,11 @@
 }
 
 .fee-schedule-subsection-description {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(217, 222, 243, 0.6);
   font-size: 0.75rem;
   margin: -0.5rem 0 1rem 0;
 }
 
-/* Fee Tiers List */
 .fee-schedule-table-wrapper {
   display: flex;
   flex-direction: column;
@@ -92,25 +92,25 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 10px;
   opacity: 0.5;
   transition: all 0.2s;
 }
 
 .fee-tier-requirement-item.achieved {
   opacity: 1;
-  border-color: rgba(170, 174, 207, 0.2);
+  border-color: rgba(179, 184, 249, 0.1);
   background-color: transparent;
 }
 
 .tier-requirement-badge {
   padding: 0.3rem 0.7rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  border-radius: 20px;
+  font-size: 0.8rem;
   color: #000;
   white-space: nowrap;
+  letter-spacing: -0.3px;
 }
 
 .tier-requirement-badge.tier-1 {
@@ -140,23 +140,22 @@
 .fee-tier-requirement-details {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
   flex: 1;
 }
 
 .fee-tier-requirement-volume {
   color: rgba(255, 255, 255, 0.9);
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 1rem;
+  letter-spacing: -0.3px;
+  line-height: 1;
 }
 
 .fee-tier-requirement-benefits {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.7rem;
-  font-weight: 300;
+  color: rgba(217, 222, 243, 0.6);
+  font-size: 0.8rem;
+  letter-spacing: -0.3px;
 }
 
-/* Rebate Tiers Grid */
 .rebate-tiers-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -194,7 +193,7 @@
 }
 
 .rebate-tier-requirement {
-  color: rgba(255, 255, 255, 0.7);
+  color: #cdd0ddf4;
   font-size: 0.75rem;
   margin-bottom: 0.3rem;
 }
@@ -236,7 +235,7 @@
 }
 
 .staking-discount-description {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(217, 222, 243, 0.6);
   font-size: 0.75rem;
   line-height: 1.5;
   margin: 0;
@@ -294,7 +293,7 @@
 }
 
 .fee-schedule-notes-list {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(217, 222, 243, 0.6);
   font-size: 0.75rem;
   line-height: 1.6;
   margin: 0;
