@@ -1419,8 +1419,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
-            if ((token?.allowance?.[addr]?.allowance || 0n) < amountWei) {
-              const nonce = token?.allowance?.[addr]?.nonce ?? 0n
+            if ((token?.allowances?.[addr.toLowerCase()]?.allowance || 0n) < amountWei) {
+              const nonce = token?.allowances?.[addr.toLowerCase()]?.nonce ?? 0n
             
               const signature = await signTypedDataAsync(
                 {
@@ -1603,8 +1603,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
-            if ((token?.allowance?.[addr]?.allowance || 0n) < inputAmountWei) {
-              const nonce = token?.allowance?.[addr]?.nonce ?? 0n
+            if ((token?.allowances?.[addr.toLowerCase()]?.allowance || 0n) < inputAmountWei) {
+              const nonce = token?.allowances?.[addr.toLowerCase()]?.nonce ?? 0n
               
               const signature = await signTypedDataAsync(
                 {
@@ -1699,7 +1699,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 functionName: 'execute',
                 args: [{
                   recipient: addr as `0x${string}`,
-                  buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                  buyToken: sellToken as `0x${string}`,
                   minAmountOut: BigInt(0n),
                 }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
               }),

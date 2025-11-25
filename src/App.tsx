@@ -1052,7 +1052,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       let receipt: any;
       let err: any;
       if (!!pk) {
-        gasLimit = gasLimit > 0n ? gasLimit : 1000000n;
+        gasLimit = gasLimit > 0n ? gasLimit : 100000n;
         const tx = {
           to: params.uo.target,
           value: params.uo.value,
@@ -1082,7 +1082,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         });
       }
       else if (validOneCT && !mainWallet) {
-        gasLimit = gasLimit > 0n ? gasLimit : 1000000n;
+        gasLimit = gasLimit > 0n ? gasLimit : 100000n;
         const wallet = nonces.current.get(onectclient.address);
         nonce = wallet.nonce
         const tx = {
@@ -7118,7 +7118,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               to: balancegetter,
               abi: CrystalDataHelperAbi,
               functionName: "getReserves",
-              args: [settings.chainConfig[activechain].nadFunBondingCurve, '0x98f7497e7790a4F39b4eD8a71b547156c34da190', weth, token.id, settings.chainConfig[activechain].zeroXSettler, [scaAddress].concat(subWallets.map(w => w.address))]
+              args: [settings.chainConfig[activechain].nadFunBondingCurve, token?.market || token.id, weth, token.id, settings.chainConfig[activechain].zeroXSettler, [scaAddress].concat(subWallets.map(w => w.address))]
             }
             : {
               disabled: false,
@@ -7378,10 +7378,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const saved = localStorage.getItem('crystal_explorer_active_tab');
     return (saved as 'new' | 'graduating' | 'graduated') || 'new';
   });
+
   const [explorerFiltersActiveSection, setExplorerFiltersActiveSection] = useState<'audit' | 'metrics' | 'socials'>(() => {
     const saved = localStorage.getItem('crystal_explorer_active_section');
     return (saved as 'audit' | 'metrics' | 'socials') || 'audit';
   });
+
   const [explorerFilters, setExplorerFilters] = useState(() => {
     const saved = localStorage.getItem('crystal_explorer_filters');
     if (saved) {
@@ -7402,6 +7404,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       graduated: initialExplorerFilters
     };
   });
+
   const [appliedExplorerFilters, setAppliedExplorerFilters] = useState(() => {
     const saved = localStorage.getItem('crystal_applied_explorer_filters');
     if (saved) {
@@ -11260,24 +11263,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return regex.test(value);
   };
 
-  const handleWelcomeTransition = () => {
-    audio.currentTime = 0;
-    audio.play();
-
-    setIsTransitioning(true);
-    setIsWelcomeExiting(true);
-
-    setTimeout(() => {
-      setIsConnectEntering(true);
-    }, 200);
-
-    setTimeout(() => {
-      setShowWelcomeScreen(false);
-      setIsTransitioning(false);
-      setIsWelcomeExiting(false);
-    }, 200);
-  };
-
   const handleSetRef = async (used: string) => {
     let lookup
     setIsRefSigning(true);
@@ -11343,34 +11328,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         return false;
       }
     }
-  };
-
-  const handleNextClick = () => {
-    audio.currentTime = 0;
-    audio.play();
-    handleCompleteChallenge();
-  };
-
-  const handleBackClick = () => {
-    if (backAudioRef.current) {
-      backAudioRef.current.currentTime = 0;
-      backAudioRef.current.play().catch(console.error);
-    }
-    if (currentStep > 0) {
-      setCurrentStep(prevStep => prevStep - 1);
-    }
-  };
-
-  const handleCompleteChallenge = () => {
-    if (currentStep < 2) { setCurrentStep(c => c + 1); return; }
-
-    setExitingChallenge(true);
-    setTimeout(() => {
-      localStorage.setItem('crystal_has_completed_onboarding', 'true');
-      setpopup(0);
-      setCurrentStep(0)
-      setExitingChallenge(false);
-    }, 250);
   };
 
   const handleEditUsername = async (_usernameInput: any) => {
@@ -11440,26 +11397,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     } finally {
       setIsUsernameSigning(false);
     }
-  };
-
-  const handleBackToUsernameWithAudio = () => {
-    if (backAudioRef.current) {
-      backAudioRef.current.currentTime = 0;
-      backAudioRef.current.play().catch(console.error);
-    }
-    setIsTransitioning(true);
-    setTransitionDirection('backward');
-    setExitingChallenge(true);
-
-    setTimeout(() => {
-      setpopup(14);
-      setCurrentStep(0);
-
-      setTimeout(() => {
-        setIsTransitioning(false);
-        setExitingChallenge(false);
-      });
-    }, 10);
   };
 
   /* useEffect(() => {
