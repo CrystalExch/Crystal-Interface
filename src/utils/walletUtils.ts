@@ -3,10 +3,18 @@ export interface SubWallet {
   privateKey: string;
 }
 
-/**
- * Deduplicates wallet array by address (case-insensitive)
- * Keeps the first occurrence of each unique address
- */
+
+const getWalletsStorageKey = (scaAddress: string | undefined): string => {
+  if (!scaAddress) return 'crystal_sub_wallets_default';
+  return `crystal_sub_wallets_${scaAddress.toLowerCase()}`;
+};
+
+
+export const getSelectedWalletsStorageKey = (scaAddress: string | undefined): string => {
+  if (!scaAddress) return 'crystal_selected_wallets_default';
+  return `crystal_selected_wallets_${scaAddress.toLowerCase()}`;
+};
+
 export const deduplicateWallets = (wallets: SubWallet[]): SubWallet[] => {
   const seen = new Set<string>();
   const deduplicated: SubWallet[] = [];
@@ -23,29 +31,24 @@ export const deduplicateWallets = (wallets: SubWallet[]): SubWallet[] => {
   return deduplicated;
 };
 
-/**
- * Safely saves wallets to localStorage with deduplication
- */
-export const saveWalletsToStorage = (wallets: SubWallet[]): SubWallet[] => {
+export const saveWalletsToStorage = (wallets: SubWallet[], scaAddress: string | undefined): SubWallet[] => {
   const deduplicated = deduplicateWallets(wallets);
-  localStorage.setItem('crystal_sub_wallets', JSON.stringify(deduplicated));
+  const storageKey = getWalletsStorageKey(scaAddress);
+  localStorage.setItem(storageKey, JSON.stringify(deduplicated));
   return deduplicated;
 };
 
-/**
- * Loads wallets from localStorage with automatic deduplication
- */
-export const loadWalletsFromStorage = (): SubWallet[] => {
-  const stored = localStorage.getItem('crystal_sub_wallets');
+export const loadWalletsFromStorage = (scaAddress: string | undefined): SubWallet[] => {
+  const storageKey = getWalletsStorageKey(scaAddress);
+  const stored = localStorage.getItem(storageKey);
   if (!stored) return [];
   
   try {
     const parsed = JSON.parse(stored);
     const deduplicated = deduplicateWallets(parsed);
     
-    // If we found duplicates, save the cleaned version
     if (deduplicated.length !== parsed.length) {
-      localStorage.setItem('crystal_sub_wallets', JSON.stringify(deduplicated));
+      localStorage.setItem(storageKey, JSON.stringify(deduplicated));
     }
     
     return deduplicated;
@@ -54,9 +57,31 @@ export const loadWalletsFromStorage = (): SubWallet[] => {
   }
 };
 
-/**
- * Adds a wallet with duplicate checking
- */
+export const loadSelectedWalletsFromStorage = (scaAddress: string | undefined): Set<string> => {
+  try {
+    const storageKey = getSelectedWalletsStorageKey(scaAddress);
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      const addresses = JSON.parse(saved);
+      if (Array.isArray(addresses) && addresses.length > 0) {
+        return new Set(addresses);
+      }
+    }
+  } catch (error) {
+    console.error('Error loading selected wallets:', error);
+  }
+  return new Set();
+};
+
+export const saveSelectedWalletsToStorage = (selectedWallets: Set<string>, scaAddress: string | undefined): void => {
+  try {
+    const storageKey = getSelectedWalletsStorageKey(scaAddress);
+    localStorage.setItem(storageKey, JSON.stringify(Array.from(selectedWallets)));
+  } catch (error) {
+    console.error('Error saving selected wallets:', error);
+  }
+};
+
 export const addWallet = (
   existingWallets: SubWallet[], 
   newWallet: SubWallet
@@ -64,7 +89,6 @@ export const addWallet = (
   const normalizedNewAddress = newWallet.address.toLowerCase();
   const normalizedNewKey = newWallet.privateKey.toLowerCase();
 
-  // Check for duplicates
   const duplicateAddress = existingWallets.find(
     w => w.address.toLowerCase() === normalizedNewAddress
   );

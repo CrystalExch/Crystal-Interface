@@ -4606,8 +4606,6 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
   padding-left: 5px;
   border-radius: 20px;
   font-size: 0.9rem;
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 

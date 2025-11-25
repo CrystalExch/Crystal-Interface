@@ -30,7 +30,13 @@ import { TransactionExecutionError, encodeFunctionData, maxUint256, decodeFuncti
 import { toUtf8Bytes, computeHmac } from 'ethers';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
-import { loadWalletsFromStorage, deduplicateWallets } from './utils/walletUtils';
+import {
+  loadWalletsFromStorage,
+  saveWalletsToStorage,
+  loadSelectedWalletsFromStorage,
+  saveSelectedWalletsToStorage,
+  deduplicateWallets
+} from './utils/walletUtils';
 import { config } from './wagmi.ts';
 import {
   useLogout,
@@ -826,13 +832,28 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const [oneCTDepositAddress, setOneCTDepositAddress] = useState('');
   const [oneCTSigner, setOneCTSigner] = useState(() => {
-    const saved = localStorage.getItem('crystal_active_wallet_private_key');
+    const signerKey = `crystal_active_wallet_private_key_${scaAddress?.toLowerCase() || 'default'}`;
+    const saved = localStorage.getItem(signerKey);
     return saved ? saved : '';
   });
+
   const [oneCTSig, setOneCTSig] = useState(() => {
-    const saved = localStorage.getItem('crystal_onect_signature');
+    const signatureKey = `crystal_onect_signature_${scaAddress?.toLowerCase() || 'default'}`;
+    const saved = localStorage.getItem(signatureKey);
     return saved ? saved : '';
   });
+
+  useEffect(() => {
+    const signerKey = `crystal_active_wallet_private_key_${scaAddress?.toLowerCase() || 'default'}`;
+    const savedSigner = localStorage.getItem(signerKey) || '';
+    setOneCTSigner(savedSigner);
+  }, [scaAddress]);
+
+  useEffect(() => {
+    const signatureKey = `crystal_onect_signature_${scaAddress?.toLowerCase() || 'default'}`;
+    const savedSig = localStorage.getItem(signatureKey) || '';
+    setOneCTSig(savedSig);
+  }, [scaAddress]);
 
   const validOneCT = !!oneCTSigner
   const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
@@ -843,39 +864,58 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : (client ? undefined : scaAddress) as `0x${string}`
   const connected = address != undefined
   const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
-  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>(
-    loadWalletsFromStorage()
+  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>(() =>
+    loadWalletsFromStorage(scaAddress)
   );
   const [selectedWallets, setSelectedWallets] = useState<Set<string>>(() => {
-    try {
-      const saved = localStorage.getItem('crystal_selected_wallets');
-      if (saved) {
-        const addresses = JSON.parse(saved);
-        if (Array.isArray(addresses) && addresses.length > 0) {
-          return new Set(addresses);
-        }
+    const loaded = loadSelectedWalletsFromStorage(scaAddress);
+
+    if (loaded.size === 0) {
+      const currentSubWallets = loadWalletsFromStorage(scaAddress);
+      if (oneCTSigner) {
+        return new Set(
+          currentSubWallets
+            .filter(w => w.privateKey == oneCTSigner)
+            .map(w => w.address)
+        );
       }
-    } catch (error) {
-      console.error('Error loading selected wallets:', error);
+      return currentSubWallets?.[0]?.address ? new Set([currentSubWallets[0].address]) : new Set();
     }
 
-    return (oneCTSigner ? new Set(
-      subWallets
-        .filter(w => w.privateKey == oneCTSigner)
-        .map(w => w.address)
-    ) : subWallets?.[0]?.address ? new Set([subWallets?.[0]?.address]) : new Set())
+    return loaded;
   });
 
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        'crystal_selected_wallets',
-        JSON.stringify(Array.from(selectedWallets))
-      );
-    } catch (error) {
-      console.error('Error saving selected wallets:', error);
+    setSelectedWallets(new Set());
+
+    const newSubWallets = loadWalletsFromStorage(scaAddress);
+    setSubWallets(newSubWallets);
+
+    const newSelectedWallets = loadSelectedWalletsFromStorage(scaAddress);
+
+    const validAddresses = new Set(newSubWallets.map(w => w.address));
+    const validSelectedWallets = new Set(
+      Array.from(newSelectedWallets).filter(addr => validAddresses.has(addr))
+    );
+
+    if (validSelectedWallets.size === 0 && newSubWallets.length > 0) {
+      if (oneCTSigner) {
+        setSelectedWallets(new Set(
+          newSubWallets
+            .filter(w => w.privateKey == oneCTSigner)
+            .map(w => w.address)
+        ));
+      } else {
+        setSelectedWallets(new Set([newSubWallets[0].address]));
+      }
+    } else {
+      setSelectedWallets(validSelectedWallets);
     }
-  }, [selectedWallets]);
+  }, [scaAddress]);
+
+  useEffect(() => {
+    saveSelectedWalletsToStorage(selectedWallets, scaAddress);
+  }, [selectedWallets, scaAddress]);
 
   useEffect(() => {
     if (connected) {
@@ -936,6 +976,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     try {
       if (subWallets.length > 9) return;
       let tempsig
+
+      const signatureKey = `crystal_onect_signature_${scaAddress?.toLowerCase() || 'default'}`;
+
       if (oneCTSig) {
         tempsig = oneCTSig
       }
@@ -955,7 +998,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             }
           }
         })
-        localStorage.setItem('crystal_onect_signature', tempsig)
+        localStorage.setItem(signatureKey, tempsig)
         setOneCTSig(tempsig)
       }
 
@@ -972,11 +1015,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       const updatedWallets = [...subWallets, newWallet];
       setSelectedWallets(p => !p.size ? new Set(p).add(walletAddress) : p);
       lastNonceGroupFetch.current = 0;
-      setSubWallets(updatedWallets);
-      localStorage.setItem('crystal_sub_wallets', JSON.stringify(updatedWallets));
+
+      const savedWallets = saveWalletsToStorage(updatedWallets, scaAddress);
+      setSubWallets(savedWallets);
+
       if (setMain || (!validOneCT && updatedWallets.length === 1)) {
         setOneCTSigner(privateKey);
-        localStorage.setItem('crystal_active_wallet_private_key', privateKey);
+        const signerKey = `crystal_active_wallet_private_key_${scaAddress?.toLowerCase() || 'default'}`;
+        localStorage.setItem(signerKey, privateKey);
         refetch();
       }
       return walletAddress
@@ -4553,24 +4599,24 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             const socials = socialsRaw.map((s) =>
               s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s,
             );
-    
+
             const twitter = socials.find(
               (s) =>
                 s?.startsWith("https://x.com") ||
                 s?.startsWith("https://twitter.com"),
             );
             if (twitter) socials.splice(socials.indexOf(twitter), 1);
-    
+
             const telegram = socials.find((s) => s?.startsWith("https://t.me"));
             if (telegram) socials.splice(socials.indexOf(telegram), 1);
-    
+
             const discord = socials.find(
               (s) =>
                 s?.startsWith("https://discord.gg") ||
                 s?.startsWith("https://discord.com"),
             );
             if (discord) socials.splice(socials.indexOf(discord), 1);
-    
+
             const website = socials[0];
             const token: Token = {
               ...defaultMetrics,
@@ -5868,13 +5914,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               function decodeSqrtPriceX96(sqrtPriceX96: bigint): number {
                 const numerator = sqrtPriceX96 * sqrtPriceX96;
                 const denominator = 1n << 192n;
-              
+
                 const scale = 1_000_000n;
-              
+
                 const scaled = (numerator * scale) / denominator;
                 return Number(scaled) / 1_000_000;
               }
-              
+
               const amount0 = toInt256(words[0]);
               const amount1 = toInt256(words[1]);
               const sqrtPriceX96 = toUint(words[2]);
@@ -7288,16 +7334,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
       if (groupResults?.mainGroup?.at(-1)?.result) {
         const reservesData = groupResults?.mainGroup?.at(-1)?.result;
-        setTokenData((prev: any) => ({ ...prev, migrated: token.source === "nadfun" ? reservesData[2] : prev.migrated, reserveQuote: token.source === "nadfun" ? reservesData[0] : reservesData[0], reserveBase: token.source === "nadfun" ? reservesData[1] : reservesData[1], allowances: Object.fromEntries(
-          [scaAddress, ...subWallets.map(w => w.address)].map((wallet, i) => [
-            wallet.toLowerCase(),
-            {
-              allowance: reservesData[3][i] ?? 0n,
-              nonce: reservesData[4][i] ?? 0n
-            }
-          ])
-        )
-       }));
+        setTokenData((prev: any) => ({
+          ...prev, migrated: token.source === "nadfun" ? reservesData[2] : prev.migrated, reserveQuote: token.source === "nadfun" ? reservesData[0] : reservesData[0], reserveBase: token.source === "nadfun" ? reservesData[1] : reservesData[1], allowances: Object.fromEntries(
+            [scaAddress, ...subWallets.map(w => w.address)].map((wallet, i) => [
+              wallet.toLowerCase(),
+              {
+                allowance: reservesData[3][i] ?? 0n,
+                nonce: reservesData[4][i] ?? 0n
+              }
+            ])
+          )
+        }));
       }
       return { readContractData: groupResults, gasEstimate: gasEstimate }
     },
@@ -18004,10 +18051,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             <div className="protocols-section">
               <span className="keyword-label">Protocols</span>
               <div className="protocols-content">
-                <div className="protocol-crystal-container">
+                {/* <div className="protocol-crystal-container">
                   <img className="protocol-crystal" src={crystal} />
                   <span className="protocol-crystal">crystal.fun</span>
-                </div>
+                </div> */}
                 <div className="protocol-nadfun-container">
                   <svg width="15" height="15" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>

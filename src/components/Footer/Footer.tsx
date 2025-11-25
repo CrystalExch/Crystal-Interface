@@ -395,15 +395,17 @@ const Footer: React.FC<FooterProps> = ({
     const savedName = localStorage.getItem(`wallet_name_${address}`);
     return savedName || `Wallet ${index + 1}`;
   };
-
-  const totalSelectedBalance = useMemo(() => {
-    if (selectedWallets.size == 0) {
-      return getWalletBalance(address)
-    }
-    return Array.from(selectedWallets).reduce((total, w) => {
-      return total + getWalletBalance(w);
-    }, 0);
-  }, [selectedWallets, getWalletBalance]);
+const totalSelectedBalance = useMemo(() => {
+  if (subWallets.length === 0) {
+    return 0;
+  }
+  if (selectedWallets.size === 0) {
+    return 0;
+  }
+  return Array.from(selectedWallets).reduce((total, w) => {
+    return total + getWalletBalance(w);
+  }, 0);
+}, [selectedWallets, getWalletBalance, subWallets.length]);
 
   return (
     <footer className="footer">
