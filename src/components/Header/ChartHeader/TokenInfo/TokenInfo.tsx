@@ -134,7 +134,7 @@ const MemeTokenSkeleton = () => {
 
           <div className="meme-interface-token-identity">
             <div className="meme-interface-token-name-row">
-              <div className="skeleton-text skeleton-symbol"></div>
+              <div className="skeleton-text meme-skeleton-symbol"></div>
               <div className="meme-interface-token-name-container">
               </div>
             </div>
@@ -1272,8 +1272,11 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     return () => clearInterval(id)
   }, [perpsTokenInfo?.nextFundingTime])
 
-  if (isMemeToken && memeTokenData) {
-    if (!memeTokenData) {
+if (isMemeToken && memeTokenData) {
+    const isLoadingMemeData = 
+      (memeTokenData.symbol === 'TKN' && memeTokenData.name === 'Token');
+    
+    if (isLoadingMemeData) {
       return <MemeTokenSkeleton />;
     }
     return (

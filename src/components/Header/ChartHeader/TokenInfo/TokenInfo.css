@@ -1093,6 +1093,14 @@
   height: 24px;
 }
 
+
+.meme-skeleton-symbol {
+  width: 80px;
+  height: 20px;
+  margin-bottom: 4px;
+  margin-top: 4px;
+}
+
 .skeleton-name {
   width: 180px;
   height: 16px;
@@ -1144,6 +1152,7 @@
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200px 100%;
   animation: skeleton-token-info-shimmer 1.5s infinite linear;
+  border-radius: 10px;
 }
 .skeleton-text, 
 .skeleton-button, 
