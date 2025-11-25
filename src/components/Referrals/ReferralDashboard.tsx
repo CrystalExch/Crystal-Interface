@@ -141,6 +141,11 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
         <div className="referral-body-section">
           <div className="referral-top-section">
             <div className="earnings-section">
+              
+              <div className="earnings-dashboard">
+                <h2 className="earnings-title">Earnings Dashboard</h2>
+                <p className="earnings-subtitle">Track your referral earnings</p>
+              </div>
               <div className="referred-count">
                 <div className="referral-user-right-side">
                   {isLoading ? (
@@ -166,11 +171,6 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
                     </>
                   )}
                 </div>
-              </div>
-
-              <div className="earnings-dashboard">
-                <h2 className="earnings-title">Earnings Dashboard</h2>
-                <p className="earnings-subtitle">Track your referral earnings</p>
               </div>
 
 
