@@ -51,6 +51,9 @@
   letter-spacing: -0.5px;
   line-height: 1;
   padding: 0.5rem 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .explorer-tokens-list {
@@ -66,8 +69,8 @@
 }
 
 .explorer-column:nth-child(2) .explorer-tokens-list {
-  border-left: none;
-  border-right: none;
+  border-left: 1px solid transparent;
+  border-right: 1px solid transparent;
 }
 
 .explorer-token-row {
@@ -1225,7 +1228,7 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 }
 
 .explorer-column:nth-child(1) .explorer-tokens-list {
-  border-left: none;
+  border-left: 1px solid transparent;
 }
 
 .explorer-tokens-list::-webkit-scrollbar {

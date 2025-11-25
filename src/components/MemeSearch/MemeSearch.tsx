@@ -825,29 +825,69 @@ const abortRef = useRef<AbortController | null>(null);
                     <div className="meme-search-results">
                         {Array.from({ length: 8 }).map((_, i) => (
                             <div key={`skeleton-${i}`} className="meme-search-skeleton-container">
-                                <div className="meme-search-skeleton-row">
-                                    <div className="meme-search-skeleton-content">
-                                        <div className="meme-search-skeleton-info">
-                                            <div className="meme-search-skeleton-avatar"></div>
-                                            <div className="meme-search-skeleton-details">
-                                                <div className="meme-search-skeleton-header">
-                                                    <div className="meme-search-skeleton-symbol"></div>
-                                                    <div className="meme-search-skeleton-name"></div>
-                                                </div>
-                                                <div className="meme-search-skeleton-meta">
-                                                    <div className="meme-search-skeleton-age"></div>
-                                                    <div className="meme-search-skeleton-socials">
-                                                        <div className="meme-search-skeleton-social"></div>
-                                                        <div className="meme-search-skeleton-social"></div>
-                                                    </div>
-                                                </div>
+                                <div className="meme-search-skeleton-left">
+                                    <div className="meme-search-skeleton-hide-button"></div>
+                                    <div className="meme-search-skeleton-token-image-container">
+                                        <div className="meme-search-skeleton-progress-spacer">
+                                            <div className="meme-search-skeleton-image-wrapper">
+                                                <div className="meme-search-skeleton-token-image"></div>
                                             </div>
                                         </div>
-                                        <div className="meme-search-skeleton-stats">
-                                            <div className="meme-search-skeleton-stat"></div>
-                                            <div className="meme-search-skeleton-stat"></div>
-                                            <div className="meme-search-skeleton-button"></div>
+                                    </div>
+                                    <div className="meme-search-skeleton-progress-line">
+                                        <div className="meme-search-skeleton-progress-line-fill"></div>
+                                    </div>
+                                    <div className="meme-search-skeleton-contract-address"></div>
+                                </div>
+                                <div className="meme-search-skeleton-details">
+                                    <div className="meme-search-skeleton-detail-section">
+                                        <div className="meme-search-skeleton-token-info">
+                                            <div className="meme-search-skeleton-token-symbol"></div>
+                                            <div className="meme-search-skeleton-token-name"></div>
                                         </div>
+                                        <div className="meme-search-skeleton-second-row">
+                                            <div className="meme-search-skeleton-time-created"></div>
+                                            <div className="meme-search-skeleton-social-buttons">
+                                                <div className="meme-search-skeleton-social-btn"></div>
+                                                <div className="meme-search-skeleton-social-btn"></div>
+                                                <div className="meme-search-skeleton-social-btn"></div>
+                                            </div>
+                                        </div>
+                                        <div className="meme-search-skeleton-additional-data">
+                                            <div className="meme-search-skeleton-stat-item">
+                                                <div className="meme-search-skeleton-stat-icon"></div>
+                                                <div className="meme-search-skeleton-stat-value"></div>
+                                            </div>
+                                            <div className="meme-search-skeleton-stat-item">
+                                                <div className="meme-search-skeleton-stat-icon"></div>
+                                                <div className="meme-search-skeleton-stat-value"></div>
+                                            </div>
+                                            <div className="meme-search-skeleton-stat-item">
+                                                <div className="meme-search-skeleton-stat-icon"></div>
+                                                <div className="meme-search-skeleton-stat-value"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="meme-search-skeleton-holdings-section">
+                                        <div className="meme-search-skeleton-holding-item"></div>
+                                        <div className="meme-search-skeleton-holding-item"></div>
+                                        <div className="meme-search-skeleton-holding-item"></div>
+                                    </div>
+                                </div>
+                                <div className="meme-search-skeleton-third-row">
+                                    <div className="meme-search-skeleton-metrics-container">
+                                        <div className="meme-search-skeleton-volume"></div>
+                                        <div className="meme-search-skeleton-market-cap"></div>
+                                    </div>
+                                    <div className="meme-search-skeleton-third-row-section">
+                                        <div className="meme-search-skeleton-fee-stat"></div>
+                                        <div className="meme-search-skeleton-tx-bar">
+                                            <div className="meme-search-skeleton-tx-header"></div>
+                                            <div className="meme-search-skeleton-tx-visual"></div>
+                                        </div>
+                                    </div>
+                                    <div className="meme-search-skeleton-actions-section">
+                                        <div className="meme-search-skeleton-quick-buy-btn"></div>
                                     </div>
                                 </div>
                             </div>
