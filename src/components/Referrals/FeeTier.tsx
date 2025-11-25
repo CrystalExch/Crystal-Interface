@@ -88,7 +88,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
     return {
       name: 'Bronze',
       tier: 1,
-      color: '#CD7F32',
+      color: 'rgb(169 133 98)',
       gradient: 'linear-gradient(135deg, #D4915A 0%, #8B5A1E 100%)',
       takerFee: '0.050%',
       makerFee: '0.020%',
@@ -186,7 +186,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
       <div className="fee-tier-section">
         <div className="fee-tier-header">
           <div className="fee-tier-header-left">
-            <h3 className="referrals-fee-tier-title">Your Fee Tier</h3>
+            <h3 className="referrals-fee-tier-title">Fee Tiers</h3>
             <div className="fee-tier-badge" style={{ color: tier.color }}>
               <span className="fee-tier-badge-name">{tier.name}</span>
             </div>
@@ -202,19 +202,24 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
             <div className="fee-tier-benefits">
               <div className="fee-tier-benefit-card">
                 <span className="fee-tier-benefit-label">Cashback</span>
-                <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
+                <span className="fee-tier-benefit-value">
                   {tier.cashback}
                 </span>
               </div>
               <div className="fee-tier-benefit-card">
                 <span className="fee-tier-benefit-label">Referral Commission</span>
-                <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
+                <span className="fee-tier-benefit-value">
                   {tier.referralCommission}
                 </span>
               </div>
             </div>
-            <span className="fee-tier-next-label">Next Tier:</span>
-            <span className={`fee-tier-next-name tier-${tier.next.name.toLowerCase().replace(' ', '-')}`}>{tier.next.name}</span>
+            <div style={{display: 'flex', alignItems: 'center', gap: '4px'}}>
+           <p className="fee-tier-progress-text" onClick={toggleDisplay}>
+              {formatDisplay(tradingVolume)} / {formatDisplay(tier.next.minVolume)}
+            </p>
+              <span className="fee-tier-next-label">Next Tier:</span>
+              <span className={`fee-tier-next-name tier-${tier.next.name.toLowerCase().replace(' ', '-')}`}>{tier.next.name}</span>
+            </div>
           </div>
         )}
 
@@ -225,13 +230,10 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
                 className="fee-tier-progress-fill"
                 style={{
                   width: `${progressPercentage}%`,
-                  background: tier.gradient,
+                  background: '#d8dcff',
                 }}
               />
             </div>
-            <p className="fee-tier-progress-text" onClick={toggleDisplay}>
-              {formatDisplay(tradingVolume)} / {formatDisplay(tier.next.minVolume)}
-            </p>
           </div>
         )}
 
