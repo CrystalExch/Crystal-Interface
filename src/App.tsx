@@ -1052,7 +1052,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       let receipt: any;
       let err: any;
       if (!!pk) {
-        gasLimit = gasLimit > 0n ? gasLimit : 100000n;
+        gasLimit = gasLimit > 0n ? gasLimit : 1000000n;
         const tx = {
           to: params.uo.target,
           value: params.uo.value,
@@ -1082,7 +1082,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         });
       }
       else if (validOneCT && !mainWallet) {
-        gasLimit = gasLimit > 0n ? gasLimit : 100000n;
+        gasLimit = gasLimit > 0n ? gasLimit : 1000000n;
         const wallet = nonces.current.get(onectclient.address);
         nonce = wallet.nonce
         const tx = {
