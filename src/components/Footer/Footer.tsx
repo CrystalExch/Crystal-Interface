@@ -716,12 +716,12 @@ const Footer: React.FC<FooterProps> = ({
                 <span>${formatNumberWithCommas(monUsdPrice, 5)}</span>
               </div>
             </Tooltip>
-            <Tooltip content="crystal.fun Migration Price">
+            {/* <Tooltip content="nad.fun Migration Price">
               <div className="crystal-migration-mc">
                 <img src={crystallogo} className="footer-crystal-logo" />
-                <span>${formatNumberWithCommas(monUsdPrice * 25000)}</span>
+                <span>${formatNumberWithCommas(monUsdPrice * 1296000)}</span>
               </div>
-            </Tooltip>
+            </Tooltip> */}
           </div>
         </div>
       </div>

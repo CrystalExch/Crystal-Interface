@@ -455,7 +455,7 @@ const Loader = () => {
 
   return (
     <>
-      {<FullScreenOverlay isVisible={(stateloading || addressinfoloading)} />}
+      {/* {<FullScreenOverlay isVisible={(stateloading || addressinfoloading)} />} */}
       {ready && <App stateloading={stateloading} setstateloading={setstateloading} addressinfoloading={addressinfoloading} setaddressinfoloading={setaddressinfoloading} />}
     </>
   );
