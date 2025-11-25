@@ -3128,18 +3128,19 @@ const TokenRow = React.memo<{
               <InteractiveTooltip
                 content={
                   <div style={{ display: 'flex', flexDirection: 'column', padding: '2px', gap: '2px' }}>
-                    <div style={{ fontSize: '.8rem', color: '#ffffff' }}>
-                      Developer Holding
+                    <div style={{ fontSize: '.8rem', color: '#ffffff' }} onClick={(e) => e.stopPropagation()}>
+                      Developer Address
                     </div>
-                    <Tooltip content="View Wallet on Monadscan">
+                    <Tooltip content="View Wallet on Explorer">
                       <div className="explorer-dev-holding-tooltip-address"
-                        onClick={() =>
+                        onClick={(e) => {
+                          e.stopPropagation();
                           window.open(
                             `${settings.chainConfig[activechain].explorer}/address/${token.dev}`,
                             '_blank',
                             'noopener noreferrer',
                           )
-                        }>
+                        }}>
                         <div style={{ fontSize: '0.8rem', color: 'rgb(206, 208, 223)', letterSpacing: '0' }}>
                           {token.dev.slice(0, 12)}...{token.dev.slice(-4)}
                         </div>

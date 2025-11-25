@@ -2130,7 +2130,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState('forward');
   const [exitingChallenge, setExitingChallenge] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
   const [animationStarted, setAnimationStarted] = useState(false);
   const [isUsernameSigning, setIsUsernameSigning] = useState(false);
   const [typedRefCode, setTypedRefCode] = useState(() => searchParams.get('ref') || '');
@@ -11427,29 +11426,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       fetchUsername();
     }
   }, [address, activechain, config]); */
-
-  useEffect(() => {
-    let animationStartTimer: ReturnType<typeof setTimeout> | undefined;
-    let animatingTimer: ReturnType<typeof setTimeout> | undefined;
-
-    if (currentStep === 0) {
-      animationStartTimer = setTimeout(() => {
-        setAnimationStarted(true);
-      }, 100);
-    } else {
-      setAnimationStarted(false);
-    }
-
-    setAnimating(true);
-    animatingTimer = setTimeout(() => {
-      setAnimating(false);
-    }, 300);
-
-    return () => {
-      if (animationStartTimer) clearTimeout(animationStartTimer);
-      if (animatingTimer) clearTimeout(animatingTimer);
-    };
-  }, [currentStep]);
 
   const formatKeyDisplay = (key: string) => {
     if (!key) return '';

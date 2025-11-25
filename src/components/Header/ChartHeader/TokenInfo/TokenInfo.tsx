@@ -929,11 +929,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     const handleGlobalKeyDown = (e: KeyboardEvent): void => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-
-        if (isAdvancedView) {
+        if (isPerpsToken) {
+          togglePerpsDropdown();
+        }
+        else if (isAdvancedView) {
           toggleDropdown();
         } else {
-          setpopup((popup: number) => { return popup == 0 ? 8 : 0 });
+          setpopup((popup: number) => { return popup == 0 ? 36 : 0 });
         }
       }
       else if (e.key == 'Escape') {
@@ -946,7 +948,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
     document.addEventListener('keydown', handleGlobalKeyDown);
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [isDropdownOpen, isAdvancedView, setpopup]);
+  }, [isDropdownOpen, isAdvancedView, isPerpsToken, setpopup]);
 
   useEffect(() => {
     const handleFilterScroll = () => {
