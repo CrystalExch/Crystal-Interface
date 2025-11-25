@@ -4,10 +4,10 @@ import monadicon from '../../assets/monadlogo.svg';
 import './FeeTier.css';
 
 interface FeeTierProps {
-  tradingVolume: number; // 14-day trading volume in USD
-  commissionBonus: number; // Crystals from referrals
+  tradingVolume: number;
+  commissionBonus: number;
   onViewFeeSchedule: () => void;
-  tokenList: any[]; // Token list to get MON price
+  tokenList: any[];
 }
 
 interface TierInfo {
@@ -112,8 +112,8 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
   const tier = testTierLevel !== null ? getTierByLevel(testTierLevel) : getTierInfo(tradingVolume);
   const progressPercentage = tier.next
     ? ((tradingVolume - tier.minVolume) /
-        (tier.next.minVolume - tier.minVolume)) *
-      100
+      (tier.next.minVolume - tier.minVolume)) *
+    100
     : 100;
 
   const handlePrevTier = () => {
@@ -187,8 +187,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         <div className="fee-tier-header">
           <div className="fee-tier-header-left">
             <h3 className="referrals-fee-tier-title">Your Fee Tier</h3>
-            <div className="fee-tier-badge" style={{ background: tier.gradient }}>
-              <TrendingDown size={16} />
+            <div className="fee-tier-badge" style={{ color: tier.color }}>
               <span className="fee-tier-badge-name">{tier.name}</span>
             </div>
           </div>
@@ -199,58 +198,59 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         </div>
         {tier.next && (
           <div className="fee-tier-next-info">
+
+            <div className="fee-tier-benefits">
+              <div className="fee-tier-benefit-card">
+                <span className="fee-tier-benefit-label">Cashback</span>
+                <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
+                  {tier.cashback}
+                </span>
+              </div>
+              <div className="fee-tier-benefit-card">
+                <span className="fee-tier-benefit-label">Referral Commission</span>
+                <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
+                  {tier.referralCommission}
+                </span>
+              </div>
+            </div>
             <span className="fee-tier-next-label">Next Tier:</span>
             <span className={`fee-tier-next-name tier-${tier.next.name.toLowerCase().replace(' ', '-')}`}>{tier.next.name}</span>
           </div>
         )}
 
-      {tier.next && (
-        <div className="fee-tier-progress">
-          <div className="fee-tier-progress-bar">
-            <div
-              className="fee-tier-progress-fill"
-              style={{
-                width: `${progressPercentage}%`,
-                background: tier.gradient,
-              }}
-            />
-          </div>
-          <p className="fee-tier-progress-text" onClick={toggleDisplay}>
-            {formatDisplay(tradingVolume)} / {formatDisplay(tier.next.minVolume)}
-          </p>
-        </div>
-      )}
-
-      {tier.next === null && (
-        <>
+        {tier.next && (
           <div className="fee-tier-progress">
+            <div className="fee-tier-progress-bar">
+              <div
+                className="fee-tier-progress-fill"
+                style={{
+                  width: `${progressPercentage}%`,
+                  background: tier.gradient,
+                }}
+              />
+            </div>
             <p className="fee-tier-progress-text" onClick={toggleDisplay}>
-              Trading Volume: {formatDisplay(tradingVolume)}
+              {formatDisplay(tradingVolume)} / {formatDisplay(tier.next.minVolume)}
             </p>
           </div>
-          <div className="fee-tier-max-message">
-            <p className="fee-tier-max-text">
-              You've reached the highest fee tier! Enjoy maximum benefits.
-            </p>
-          </div>
-        </>
-      )}
+        )}
 
-      <div className="fee-tier-benefits">
-        <div className="fee-tier-benefit-card">
-          <span className="fee-tier-benefit-label">Cashback</span>
-          <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
-            {tier.cashback}
-          </span>
-        </div>
-        <div className="fee-tier-benefit-card">
-          <span className="fee-tier-benefit-label">Referral Commission</span>
-          <span className="fee-tier-benefit-value" style={{ color: tier.color }}>
-            {tier.referralCommission}
-          </span>
-        </div>
+        {tier.next === null && (
+          <>
+            <div className="fee-tier-progress">
+              <p className="fee-tier-progress-text" onClick={toggleDisplay}>
+                Trading Volume: {formatDisplay(tradingVolume)}
+              </p>
+            </div>
+            <div className="fee-tier-max-message">
+              <p className="fee-tier-max-text">
+                You've reached the highest fee tier! Enjoy maximum benefits.
+              </p>
+            </div>
+          </>
+        )}
+
       </div>
-    </div>
     </>
   );
 };
