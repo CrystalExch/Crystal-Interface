@@ -1661,7 +1661,7 @@ if (isMemeToken && memeTokenData) {
                   <span className="meme-interface-metric-label">B. Curve</span>
                   <span
                     className="meme-interface-metric-value"
-                    style={{ color: getBondingColorMeme(bondingPercentage) }}
+                    style={{ color: '#AD5FFB', fontWeight: '500' }}
                   >
                     {bondingPercentage.toFixed(1)}%
                   </span>

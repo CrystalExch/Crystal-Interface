@@ -340,7 +340,7 @@ export default function MemeTradesComponent({
   useEffect(() => {
     const newTrades = trades.slice(0, 100);
 
-    if (hover) {
+if (hover && !isLoadingTrades && displayTrades.length > 0) {
       const previousTrades = lastProcessedTradesRef.current;
       const reallyNewTrades = newTrades.filter(
         (newTrade) =>
