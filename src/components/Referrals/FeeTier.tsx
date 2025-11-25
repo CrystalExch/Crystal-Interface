@@ -181,9 +181,27 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
     setShowUSD(!showUSD);
   };
 
+  const getTierGradient = (tierName: string): string => {
+    switch (tierName) {
+      case 'Bronze':
+        return 'linear-gradient(180deg, rgba(169, 133, 98, 0.15) 0%, rgba(0, 0, 0, 1) 100%)';
+      case 'Silver':
+        return 'linear-gradient(180deg, rgba(212, 212, 212, 0.12) 0%, rgba(0, 0, 0, 1) 100%)';
+      case 'Gold':
+        return 'linear-gradient(180deg, rgba(245, 213, 118, 0.15) 0%, rgba(0, 0, 0, 1) 100%)';
+      case 'Diamond':
+        return 'linear-gradient(180deg, rgba(170, 174, 207, 0.15) 0%, rgba(0, 0, 0, 1) 100%)';
+      default:
+        return 'rgb(6, 6, 6)';
+    }
+  };
+
   return (
     <>
-      <div className="fee-tier-section">
+      <div 
+        className="fee-tier-section"
+        style={{ background: getTierGradient(tier.name) }}
+      >
         <div className="fee-tier-header">
           <div className="fee-tier-header-left">
             <h3 className="referrals-fee-tier-title">Fee Tiers</h3>

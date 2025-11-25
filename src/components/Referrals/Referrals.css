@@ -401,7 +401,7 @@
 
 .earnings-title {
   color: rgba(255, 255, 255);
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 300;
   margin: 0;
 }
@@ -974,7 +974,7 @@
 }
 
 .referrals-skeleton {
-  background: #2d2d3b;
+  background: #202028;
   border-radius: 4px;
   height: 11px;
   margin-bottom: 4px;
@@ -1006,26 +1006,21 @@
 }
 
 .referrals-username-skeleton {
-  height: 21px;
+  height: 30px;
   width: 120px;
   margin: 0 0 2px 0;
 }
 
 .referrals-multiplier-skeleton {
-  height: 21px;
-  width: 150px;
+  height: 30px;
+  width: 50%;
   margin: 0;
 }
 
 .referrals-count-skeleton {
-  height: 28px;
   width: 60px;
   margin-bottom: -1px;
 }
-
-/* ===================================
-   REFERRAL LANDING PAGE STYLES
-   =================================== */
 
 .referral-landing-page {
   background: rgb(6 6 6);
@@ -1714,7 +1709,7 @@
 }
 
 .qr-code-title {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 300;
   color: #ffffffc8;
   margin: 0;

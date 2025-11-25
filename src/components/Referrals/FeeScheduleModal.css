@@ -1,4 +1,3 @@
-/* Fee Schedule Modal Overlay */
 .fee-schedule-overlay {
   position: fixed;
   inset: 0;
@@ -10,12 +9,11 @@
   animation: bgFadeIn 0.2s ease-out;
 }
 
-/* Fee Schedule Modal Container */
 .fee-schedule-container {
   background-color: rgb(8, 8, 8);
   border: 1px solid rgba(179, 184, 249, 0.15);
   border-radius: 6px;
-  width: 600px;
+  width: 450px;
   max-width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
@@ -24,7 +22,6 @@
   animation: fadeIn 0.2s ease-out;
 }
 
-/* Modal Header */
 .fee-schedule-header {
   display: flex;
   align-items: center;
@@ -53,7 +50,6 @@
   align-items: center;
 }
 
-/* Modal Body */
 .fee-schedule-body {
   padding: 20px;
 }
@@ -65,14 +61,11 @@
 .fee-schedule-description {
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.85rem;
-  line-height: 1.6;
+  line-height: 1.2;
   margin: 0;
+  font-weight: 300;
 }
 
-/* Section Styling */
-.fee-schedule-section {
-  margin-bottom: 2rem;
-}
 
 .fee-schedule-section-title {
   color: rgba(255, 255, 255, 0.9);
@@ -99,7 +92,6 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 6px;
   opacity: 0.5;
@@ -109,7 +101,7 @@
 .fee-tier-requirement-item.achieved {
   opacity: 1;
   border-color: rgba(170, 174, 207, 0.2);
-  background: rgba(170, 174, 207, 0.05);
+  background-color: transparent;
 }
 
 .tier-requirement-badge {
@@ -316,41 +308,6 @@
 .fee-schedule-notes-list li:last-child {
   margin-bottom: 0;
 }
-
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
-  .fee-schedule-container {
-    width: 100vw;
-    max-width: 100vw;
-    height: 100vh;
-    max-height: 100vh;
-    border-radius: 0;
-  }
-
-  .fee-schedule-header {
-    padding: 20px 15px;
-  }
-
-  .fee-schedule-body {
-    padding: 15px;
-  }
-
-  .tier-requirement-badge {
-    font-size: 0.65rem;
-    padding: 0.25rem 0.5rem;
-  }
-
-  .rebate-tiers-grid,
-  .staking-discount-tiers {
-    grid-template-columns: 1fr;
-  }
-
-  .staking-discount-header {
-    flex-direction: column;
-  }
-}
-
-/* Scrollbar Styling */
 .fee-schedule-container::-webkit-scrollbar {
   width: 8px;
 }
