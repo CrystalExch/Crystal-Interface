@@ -26,19 +26,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 1rem;
+  padding: 8px 15px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   position: sticky;
   top: 0;
   background-color: rgb(8, 8, 8);
-  z-index: 10;
 }
 
 .fee-schedule-title {
   color: #ffffff;
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 1rem;
   margin: 0;
+  letter-spacing: -0.3px;
 }
 
 .fee-schedule-close {
@@ -114,7 +113,7 @@
 }
 
 .tier-requirement-badge.tier-1 {
-  background: linear-gradient(135deg, #D4915A 0%, #8B5A1E 100%);
+  background: linear-gradient(135deg, #58483b 0%, #5b4223 100%);
 }
 
 .tier-requirement-badge.tier-2 {
