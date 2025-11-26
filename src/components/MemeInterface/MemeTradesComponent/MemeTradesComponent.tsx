@@ -175,7 +175,21 @@ export interface RawTrade {
   tokenAddress?: string;
   caller: string;
 }
-
+interface Position {
+  tokenId: string;
+  symbol?: string;
+  name?: string;
+  metadataCID?: string;
+  imageUrl?: string;
+  boughtTokens: number;
+  soldTokens: number;
+  spentNative: number;
+  receivedNative: number;
+  remainingTokens: number;
+  remainingPct: number;
+  pnlNative: number;
+  lastPrice?: number;
+}
 interface TrackedWallet {
   address: string;
   name: string;
@@ -247,6 +261,8 @@ interface Props {
   marketsData: any;
   trackedWalletsRef: any;
   onFilterSet: any;
+  positions: any[];
+  onSellPosition?: (position: Position, monAmount: string) => void;
 }
 
 
@@ -271,6 +287,8 @@ export default function MemeTradesComponent({
   marketsData,
   trackedWalletsRef,
   onFilterSet,
+  positions,
+  onSellPosition,
 }: Props) {
   const [amountMode, setAmountMode] = useState<AmountMode>('MON');
   const [mcMode, setMcMode] = useState<MCMode>('MC');
@@ -940,6 +958,9 @@ if (hover && !isLoadingTrades && displayTrades.length > 0) {
           onMarketSelect={onMarketSelect}
           setSendTokenIn={setSendTokenIn}
           setpopup={setpopup}
+          positions={positions}
+          onSellPosition={onSellPosition}
+          monUsdPrice={monUsdPrice}
         />
       )}
 

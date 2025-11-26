@@ -1,15 +1,28 @@
-import { Copy, ExternalLink, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import BalancesContent from '../../../Portfolio/BalancesContent/BalancesContent';
-import PortfolioGraph from '../../../Portfolio/PortfolioGraph/PortfolioGraph';
-
-import { useSharedContext } from '../../../../contexts/SharedContext';
+import monadicon from '../../../../assets/monadlogo.svg';
+import closebutton from '../../../../assets/close_button.png';
 import { settings } from '../../../../settings';
-import { formatCommas } from '../../../../utils/numberDisplayFormat';
-import { usePortfolioData } from '../../../Portfolio/PortfolioGraph/usePortfolioData';
 
 import './TraderPortfolioPopup.css';
+
+interface Position {
+  tokenId: string;
+  symbol?: string;
+  name?: string;
+  metadataCID?: string;
+  imageUrl?: string;
+  boughtTokens: number;
+  soldTokens: number;
+  spentNative: number;
+  receivedNative: number;
+  remainingTokens: number;
+  remainingPct: number;
+  pnlNative: number;
+  lastPrice?: number;
+}
 
 interface TraderPortfolioPopupProps {
   traderAddress: string;
@@ -19,6 +32,9 @@ interface TraderPortfolioPopupProps {
   onMarketSelect?: (market: any) => void;
   setSendTokenIn?: (token: any) => void;
   setpopup?: (value: number) => void;
+  positions?: Position[];
+  onSellPosition?: (position: Position, monAmount: string) => void;
+  monUsdPrice: number;
 }
 
 const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
@@ -29,104 +45,158 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   onMarketSelect,
   setSendTokenIn,
   setpopup,
+  positions = [],
+  onSellPosition,
+  monUsdPrice,
 }) => {
-  const [totalAccountValue, setTotalAccountValue] = useState<number | null>(
-    null,
-  );
-  const [chartDays, setChartDays] = useState(1);
-  const [isBlurred, _setIsBlurred] = useState(false);
-  const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
-  const [percentage, setPercentage] = useState(0);
-  const [sortConfig, _setSortConfig] = useState({
-    column: 'balance',
-    direction: 'desc',
-  });
 
-  const [tokenBalances, setTokenBalances] = useState<{ [key: string]: string }>(
-    {},
-  );
-  const [balancesLoading, setBalancesLoading] = useState(false);
-  const { activechain } = useSharedContext();
+  const [traderPositions, setTraderPositions] = useState<Position[]>([]);
+const [isLoadingPositions, setIsLoadingPositions] = useState(false);
 
-  const portfolioData = usePortfolioData(
-    traderAddress,
-    tokenList,
-    chartDays,
-    tokenBalances,
-    setTotalAccountValue,
-    marketsData,
-    false, // stateIsLoading
-    true, // shouldFetchGraph
-    traderAddress
-  );
+useEffect(() => {
+  if (!traderAddress) return;
 
-  useEffect(() => {
-    const fetchRealBalances = async () => {
-      if (!traderAddress || !tokenList.length) return;
+  let cancelled = false;
+  setIsLoadingPositions(true);
 
-      setBalancesLoading(true);
-
-      try {
-        // Use dynamic imports to load your existing blockchain infrastructure
-        const { readContract } = await import('@wagmi/core');
-        const { config } = await import('../../../../wagmi');
-        const { CrystalDataHelperAbi } = await import(
-          '../../../../abis/CrystalDataHelperAbi'
-        );
-        const { settings } = await import('../../../../settings');
-
-        // Fetch current token balances using the same method as your Portfolio component
-        const balancesData = await readContract(config, {
-          abi: CrystalDataHelperAbi,
-          address: settings.chainConfig[activechain].balancegetter,
-          functionName: 'batchBalanceOf',
-          args: [
-            traderAddress as `0x${string}`,
-            tokenList.map((token) => token.address as `0x${string}`),
-          ],
-        });
-
-        // Convert blockchain response to the format expected by your components
-        const balances: { [key: string]: string } = {};
-        for (const [index, balance] of balancesData.entries()) {
-          const token = tokenList[index];
-          if (token) {
-            balances[token.address] = balance.toString();
-          }
-        }
-
-        setTokenBalances(balances);
-      } catch (error) {
-        setTokenBalances({});
-      } finally {
-        setBalancesLoading(false);
-      }
-    };
-
-    fetchRealBalances();
-  }, [traderAddress, tokenList]);
-
-  const handlePercentageChange = (value: number) => {
-    setPercentage(value);
-  };
-
-  const copyToClipboard = async (text: string) => {
+  (async () => {
     try {
-      await navigator.clipboard.writeText(text);
-    } catch (error) {}
+      const response = await fetch(
+        `https://api.crystal.exchange/user/${traderAddress}`,
+        {
+          method: 'GET',
+          headers: { 'content-type': 'application/json' },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch trader positions');
+      }
+
+      const payload = await response.json();
+      const rows: any[] = payload.positions ?? [];
+
+      if (cancelled) return;
+
+      const positions = rows.map((p) => {
+        const boughtTokens = Number(p.token_bought ?? 0) / 1e18;
+        const soldTokens = Number(p.token_sold ?? 0) / 1e18;
+        const spentNative = Number(p.native_spent ?? 0) / 1e18;
+        const receivedNative = Number(p.native_received ?? 0) / 1e18;
+        const balance = Number(p.balance_token ?? 0) / 1e18;
+        const balanceNative = Number(p.balance_native ?? 0) / 1e18;
+
+        const lastPrice = balance > 0 ? balanceNative / balance : 0;
+        const realized = receivedNative - spentNative;
+        const unrealized = balance * lastPrice;
+        const pnlNative = realized + unrealized;
+        const remainingPct = boughtTokens > 0 ? (balance / boughtTokens) * 100 : 100;
+
+        return {
+          tokenId: p.token,
+          symbol: p.symbol,
+          name: p.name,
+          metadataCID: p.metadata_cid,
+          imageUrl: p.metadata_cid || '',
+          boughtTokens,
+          soldTokens,
+          spentNative,
+          receivedNative,
+          remainingTokens: balance,
+          lastPrice,
+          remainingPct,
+          pnlNative,
+        };
+      });
+
+      const sorted = positions.sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0));
+      setTraderPositions(sorted);
+    } catch (error) {
+      console.error('Failed to fetch trader positions:', error);
+      setTraderPositions([]);
+    } finally {
+      if (!cancelled) {
+        setIsLoadingPositions(false);
+      }
+    }
+  })();
+
+  return () => {
+    cancelled = true;
+  };
+}, [traderAddress]);
+  const navigate = useNavigate();
+  const [isBlurred] = useState(false);
+  const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
+  const [tokenImageErrors, setTokenImageErrors] = useState<Record<string, boolean>>({});
+  const [showPNLCalendar, setShowPNLCalendar] = useState(false);
+  const [pnlCalendarLoading, setPNLCalendarLoading] = useState(false);
+  const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
+  const [totalAccountValue, setTotalAccountValue] = useState<number | null>(null);
+  const [tokenBalances, setTokenBalances] = useState<{ [key: string]: string }>({});
+
+  const fmt = (v: number, d = 2): string => {
+    if (!Number.isFinite(v)) return String(v);
+    if (v === 0) return '0';
+    if (d <= 0) return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+    const abs = Math.abs(v);
+    const threshold = Math.pow(10, -d);
+    const thresholdStr = '0.' + '0'.repeat(d - 1) + '1';
+
+    if (abs < threshold) {
+      return v > 0 ? `<${thresholdStr}` : `>-${thresholdStr}`;
+    }
+
+    if (abs >= 1e9) return (v / 1e9).toFixed(2) + 'B';
+    if (abs >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return (v / 1e3).toFixed(2) + 'K';
+    return v.toLocaleString('en-US', { maximumFractionDigits: d });
   };
 
-  const shortenAddress = (address: string) => {
-    return address;
+  const formatNumberWithCommas = (num: number, decimals = 2) => {
+    if (num === 0) return "0";
+    if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;
+    if (num >= 1e6) return `${(num / 1e6).toFixed(decimals)}M`;
+    if (num >= 1e3) return `${(num / 1e3).toFixed(decimals)}K`;
+    if (num >= 1) return num.toLocaleString("en-US", { maximumFractionDigits: decimals });
+    return num.toFixed(Math.min(decimals, 8));
   };
 
-  const openEtherscan = () => {
-    window.open(
-      `${settings.chainConfig[activechain].explorer}/address/${traderAddress}`,
-      '_blank',
-    );
+  const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
+    if (mode === 'USD' && monPrice > 0) {
+      return `$${fmt(v * monPrice)}`;
+    }
+    return `${fmt(v)}`;
   };
 
+ useEffect(() => {
+  const fetchBalances = async () => {
+    if (!traderAddress) return;
+
+    try {
+      const { getBalance } = await import('@wagmi/core');
+      const { config } = await import('../../../../wagmi');
+      const balance = await getBalance(config, {
+        address: traderAddress as `0x${string}`,
+      });
+
+      const monAmount = Number(balance.value) / 1e18;
+      const positionsValue = traderPositions.reduce((sum, p) => {
+        return sum + (p.remainingTokens * (p.lastPrice || 0));
+      }, 0);
+      
+      const totalMonValue = monAmount + positionsValue;
+      const totalValueUsd = totalMonValue * monUsdPrice;
+      
+      setTotalAccountValue(totalValueUsd);
+    } catch (error) {
+      setTotalAccountValue(0);
+    }
+  };
+
+  fetchBalances();
+}, [traderAddress, monUsdPrice, traderPositions]);
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -144,151 +214,486 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
+const totalUnrealizedPnlNative = traderPositions?.reduce((sum, p) => sum + (p.pnlNative || 0), 0) || 0;
+  const totalUnrealizedPnlUsd = totalUnrealizedPnlNative * monUsdPrice;
+  const unrealizedClass = totalUnrealizedPnlNative >= 0 ? 'positive' : 'negative';
+  const unrealizedSign = totalUnrealizedPnlNative >= 0 ? '+' : '-';
+
   return (
     <div className="trader-popup-backdrop" onClick={handleBackdropClick}>
       <div className="trader-popup-container">
-        {/* Header */}
         <div className="trader-popup-header">
           <div className="trader-popup-title">
             <div className="trader-address-container">
               <span className="rename-track-button">Rename to track</span>
               <span className="trader-address">
-                {shortenAddress(traderAddress)}
+                {traderAddress.slice(0, 6)}...{traderAddress.slice(-4)}
               </span>
-              {/* <button
-                className="trader-action-btn"
-                onClick={() => copyToClipboard(traderAddress)}
-                title="Copy Address"
-              >
-                <Copy size={11} />
-              </button>
-              <button
-                className="trader-action-btn"
-                onClick={openEtherscan}
-                title="View on Explorer"
-              >
-                <ExternalLink size={11} />
-              </button> */}
             </div>
           </div>
           <button className="trader-popup-close" onClick={onClose}>
-            <X size={20} />
+            <img src={closebutton} className="close-button-icon" alt="Close" />
           </button>
         </div>
 
         <div className="trader-popup-content">
-          <div className="trader-account-summary-container">
-            <div
-              className={`trader-account-summary ${percentage >= 0 ? 'positive' : 'negative'}`}
-            >
-              <span className="trader-balance-title">Balance</span>
-
-              <div className="trader-total-value">
-                <div className="trader-balance-row">
-                  <span className="trader-balance-label">Total Value</span>
-                  <span
-                    className={`trader-value ${isBlurred ? 'blurred' : ''}`}
-                  >
-                    {balancesLoading ? (
-                      <div className="trader-skeleton trader-skeleton-value"></div>
-                    ) : (
-                      `$${formatCommas(typeof totalAccountValue === 'number' ? totalAccountValue.toFixed(2) : '0.00')}`
-                    )}
-                  </span>
-                </div>
-                <div>
-                  <div className="trader-balance-row">
-                    <span className="trader-balance-label">Unrealized PNL</span>
-                    <div className="trader-percentage-container">
-                      <span
-                        className={`trader-percentage ${isBlurred ? 'blurred' : ''} ${percentage >= 0 ? 'positive' : 'negative'}`}
-                      >
-                        {portfolioData.portChartLoading || balancesLoading ? (
-                          <div className="trader-skeleton trader-skeleton-percentage"></div>
-                        ) : (
-                          `${percentage >= 0 ? '+' : ''}${percentage.toFixed(2)}%`
-                        )}
-                      </span>
-                    </div>
+          <div className="trenches-top-section">
+            <div className="trenches-balance-section">
+              <h3 className="trenches-balance-title">BALANCE</h3>
+              <div>
+                <div className="trenches-balance-item">
+                  <div className="trenches-balance-label">Total Value</div>
+                  <div className={`trenches-balance-value ${isBlurred ? 'blurred' : ''}`}>
+                    <span className="wallet-dropdown-value">
+                      ${formatNumberWithCommas(totalAccountValue || 0, 2)}
+                    </span>
                   </div>
                 </div>
-                <div className="trader-balance-row">
-                  <span className="trader-balance-label">
-                    Available Balance
-                  </span>
-                  <span
-                    className={`trader-value ${isBlurred ? 'blurred' : ''}`}
-                  >
-                    {balancesLoading ? (
-                      <div className="trader-skeleton trader-skeleton-value"></div>
-                    ) : (
-                      `$${formatCommas(typeof totalAccountValue === 'number' ? totalAccountValue.toFixed(2) : '0.00')}`
-                    )}
-                  </span>
+                <div className="trenches-balance-item">
+                  <div className="trenches-balance-label">Unrealized PNL</div>
+                  <div className={`trenches-balance-value-small ${unrealizedClass} ${isBlurred ? 'blurred' : ''}`}>
+                    {unrealizedSign}${formatNumberWithCommas(Math.abs(totalUnrealizedPnlUsd), 2)}
+                  </div>
+                </div>
+                <div className="trenches-balance-item">
+                  <div className="trenches-balance-label">Realized PNL</div>
+                  <div className={`trenches-balance-value-small ${isBlurred ? 'blurred' : ''}`}>
+                    $0
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="trader-graph-container">
-              <span className="trader-graph-label">PNL</span>
-              <div className="trader-graph-wrapper">
-                <PortfolioGraph
-                  address={traderAddress}
-                  colorValue={portfolioColorValue}
-                  setColorValue={setPortfolioColorValue}
-                  isPopup={true}
-                  onPercentageChange={handlePercentageChange}
-                  chartData={portfolioData.chartData}
-                  portChartLoading={portfolioData.portChartLoading}
-                  chartDays={chartDays}
-                  setChartDays={setChartDays}
-                  isBlurred={isBlurred}
+            <div className="trenches-pnl-section">
+              <div className="trenches-pnl-header">
+                <h3 className="trenches-pnl-title">REALIZED PNL</h3>
+                <button
+                  className="trenches-pnl-calendar-button"
+                  onClick={() => {
+                    setPNLCalendarLoading(true);
+                    setTimeout(() => {
+                      setPNLCalendarLoading(false);
+                      setShowPNLCalendar(true);
+                    }, 2000);
+                  }}
+                >
+                  <svg fill="#cfcfdfff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="18" height="18">
+                    <path d="M 8 8 L 8 20 L 56 20 L 56 8 L 46 8 L 46 9 C 46 10.657 44.657 12 43 12 C 41.343 12 40 10.657 40 9 L 40 8 L 24 8 L 24 9 C 24 10.657 22.657 12 21 12 C 19.343 12 18 10.657 18 9 L 18 8 L 8 8 z M 8 22 L 8 56 L 56 56 L 56 24 L 52 23.832031 L 52 45 C 52 47 47 47 47 47 C 47 47 47 52 44 52 L 12 52 L 12 22.167969 L 8 22 z M 19 29 L 19 35 L 25 35 L 25 29 L 19 29 z M 29 29 L 29 35 L 35 35 L 35 29 L 29 29 z M 39 29 L 39 35 L 45 35 L 45 29 L 39 29 z M 19 39 L 19 45 L 25 45 L 25 39 L 19 39 z M 29 39 L 29 45 L 35 45 L 35 39 L 29 39 z M 39 39 L 39 45 L 45 45 L 45 39 L 39 39 z" />
+                  </svg>
+                </button>
+              </div>
+              <div className="trenches-pnl-chart">
+                <div className="trenches-pnl-placeholder">
+                  No trading data
+                </div>
+              </div>
+            </div>
+
+            <div className="trenches-performance-section">
+              <div className="trenches-performance-header">
+                <h3 className="trenches-performance-title">PERFORMANCE</h3>
+              </div>
+              <div className="trenches-performance-stats">
+                <div className="trenches-performance-stat-row">
+                  <span className="trenches-performance-stat-label">1d Unrealized PNL</span>
+                  <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                    $0.00
+                  </span>
+                </div>
+                <div className="trenches-performance-stat-row">
+                  <span className="trenches-performance-stat-label">1d Realized PNL</span>
+                  <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                    $0.00
+                  </span>
+                </div>
+                <div className="trenches-performance-stat-row">
+                  <span className="trenches-performance-stat-label">1d TXNS</span>
+                  <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                    0.0/0
+                  </span>
+                </div>
+              </div>
+              <div className="trenches-performance-ranges">
+                {[
+                  { label: '>500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
+                  { label: '200% ~ 500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
+                  { label: '0% ~ 200%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
+                  { label: '0% ~ -50%', count: 0, color: 'rgb(247, 127, 125, 0.25)' },
+                  { label: '<-50%', count: 0, color: 'rgb(247, 127, 125, 0.25)' }
+                ].map((range, index) => (
+                  <div key={index} className="trenches-performance-range">
+                    <span className="trenches-performance-range-label">
+                      <span style={{
+                        display: 'inline-block',
+                        width: '9px',
+                        height: '9px',
+                        borderRadius: '50%',
+                        backgroundColor: range.color
+                      }}></span>
+                      {range.label}
+                    </span>
+                    <span className="trenches-performance-range-count">
+                      {range.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="pnl-calendar-ratio-container">
+                <div className="pnl-calendar-ratio-buy"></div>
+                <div className="pnl-calendar-ratio-sell"></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="trader-trenches-activity-section">
+            <div className="trenches-activity-header">
+              <div className="trenches-activity-tabs">
+                <button className="trenches-activity-tab active">
+                  Active Positions
+                </button>
+                <button className="trenches-activity-tab">
+                  History
+                </button>
+                <button className="trenches-activity-tab">
+                  Top 100
+                </button>
+              </div>
+              <div className="trenches-activity-filters">
+                <input
+                  type="text"
+                  placeholder="Search by name or address"
+                  className="trenches-search-input"
                 />
               </div>
             </div>
+            <div className="meme-oc-section-content" data-section="positions">
+              <div className="meme-oc-header">
+                <div className="meme-oc-header-cell">Token</div>
+                <div className="meme-oc-header-cell clickable">Bought</div>
+                <div className="meme-oc-header-cell">Sold</div>
+                <div className="meme-oc-header-cell">Remaining</div>
+                <div className="meme-oc-header-cell">PnL</div>
+                <div className="meme-oc-header-cell">Actions</div>
+              </div>
+              <div className="meme-oc-items">
+{isLoadingPositions ? (
+  <div className="meme-oc-empty">
+    Loading positions...
+  </div>
+) : traderPositions.length === 0 ? (
+  <div className="meme-oc-empty">
+    No active positions
+  </div>
+) : (
+  traderPositions.map((p) => {
+                      const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
+                      const tokenImageUrl = p.imageUrl || null;
 
-            <div className="trader-performance-container">
-              <div className="trader-performance-header">
-                <h4 className="trader-graph-label">Performance</h4>
-                <div className="trader-performance-row">
-                  <span className="trader-performance-label">24h PNL</span>
-                  <span className="trader-performance-value positive">
-                    +$73.2
-                  </span>
-                </div>
-                <div className="trader-performance-row">
-                  <span className="trader-performance-label">
-                    24h Transactions
-                  </span>
-                  <span className="trader-performance-value">
-                    23
-                    <span className="trader-performance-value positive">
-                      {' '}
-                      12
-                    </span>
-                    <span> / </span>
-                    <span className="trader-performance-value negative">
-                      11
-                    </span>
-                  </span>
-                </div>
-                <div className="trader-performance-row">
-                  <span className="trader-performance-label">24h Volume</span>
-                  <span className="trader-performance-value">$32.1K</span>
-                </div>
+                      return (
+                        <div key={p.tokenId} className="meme-portfolio-oc-item">
+                          <div className="meme-oc-cell">
+                            <div className="oc-meme-wallet-info">
+                              <div className="meme-portfolio-token-info">
+                                <div className="meme-portfolio-token-icon-container">
+                                  {tokenImageUrl && !tokenImageErrors[p.tokenId] ? (
+                                    <img
+                                      src={tokenImageUrl}
+                                      alt={p.symbol}
+                                      className="meme-portfolio-token-icon"
+                                      onError={() => {
+                                        setTokenImageErrors(prev => ({ ...prev, [p.tokenId]: true }));
+                                      }}
+                                    />
+                                  ) : (
+                                    <div
+                                      className="meme-portfolio-token-icon"
+                                      style={{
+                                        backgroundColor: 'rgba(35, 34, 41, .7)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: (p.symbol || '').length <= 3 ? '14px' : '12px',
+                                        fontWeight: '200',
+                                        color: '#ffffff',
+                                        borderRadius: '1px',
+                                        letterSpacing: (p.symbol || '').length > 3 ? '-0.5px' : '0',
+                                      }}
+                                    >
+                                      {(p.symbol || p.name || '?').slice(0, 2).toUpperCase()}
+                                    </div>
+                                  )}
+                                  <div className={`portfolio-launchpad-indicator ${p.source === 'nadfun' ? 'nadfun' : ''}`}>
+                                    <svg width="10" height="10" viewBox="0 0 32 32" className="header-launchpad-logo" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                      <defs>
+                                        <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
+                                          <stop offset="0%" stopColor="#7C55FF" stopOpacity="1" />
+                                          <stop offset="100%" stopColor="#AD5FFB" stopOpacity="1" />
+                                        </linearGradient>
+                                      </defs>
+                                      <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
+                                    </svg>
+                                  </div>
+                                </div>
+                                <span
+                                  className="portfolio-meme-wallet-address portfolio-meme-clickable-token"
+                                  onClick={() => navigate(`/meme/${p.tokenId}`)}
+                                >
+                                  <span className="meme-token-symbol-portfolio">
+                                    {tokenShort}
+                                  </span>
+                                  <span className="meme-token-name-portfolio">
+                                    {p.name}
+                                  </span>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="meme-oc-cell">
+                            <div className="meme-trade-info">
+                              <div className="meme-ordercenter-info">
+                                {amountMode === 'MON' && (
+                                  <img className="meme-portfolio-monad-icon" src={monadicon} alt="MONAD" />
+                                )}
+                                <span className={`meme-usd-amount buy ${isBlurred ? 'blurred' : ''}`}>
+                                  {fmtAmount(p.spentNative, amountMode, monUsdPrice)}
+                                </span>
+                              </div>
+                              <span className="meme-token-amount">
+                                {fmt(p.boughtTokens)} {p.symbol || ''}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="meme-oc-cell">
+                            <div className="meme-trade-info">
+                              <div className="meme-ordercenter-info">
+                                {amountMode === 'MON' && (
+                                  <img className="meme-portfolio-monad-icon" src={monadicon} alt="MONAD" />
+                                )}
+                                <span className={`meme-usd-amount sell ${isBlurred ? 'blurred' : ''}`}>
+                                  {fmtAmount(p.receivedNative, amountMode, monUsdPrice)}
+                                </span>
+                              </div>
+                              <span className="meme-token-amount">
+                                {fmt(p.soldTokens)} {p.symbol || ''}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="meme-oc-cell">
+                            <div className="meme-remaining-info">
+                              <div className="meme-remaining-container">
+                                <span className={`meme-remaining ${isBlurred ? 'blurred' : ''}`}>
+                                  <img src={monadicon} className="meme-portfolio-monad-icon" />
+                                  {fmt(p.remainingTokens * (p.lastPrice || 0))}
+                                </span>
+                                <span className="meme-remaining-percentage">
+                                  {p.remainingPct.toFixed(0)}%
+                                </span>
+                              </div>
+                              <div className="meme-remaining-bar">
+                                <div
+                                  className="meme-remaining-bar-fill"
+                                  style={{
+                                    width: `${Math.max(0, Math.min(100, p.remainingPct)).toFixed(0)}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="meme-oc-cell">
+                            <div className="meme-ordercenter-info">
+                              {amountMode === 'MON' && (
+                                <img className="meme-portfolio-pnl-monad-icon" src={monadicon} alt="MONAD" />
+                              )}
+                              <div className="meme-pnl-info">
+                                <span className={`meme-portfolio-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}>
+                                  {p.pnlNative >= 0 ? '+' : '-'}
+                                  {fmtAmount(Math.abs(p.pnlNative), amountMode, monUsdPrice)} (
+                                  {p.spentNative > 0
+                                    ? ((p.pnlNative / p.spentNative) * 100).toFixed(1)
+                                    : '0.0'}
+                                  %)
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="meme-oc-cell">
+                            <button
+                              className="meme-action-btn"
+                              onClick={() => {
+                                if (onSellPosition) {
+                                  onSellPosition(p, (p.remainingTokens * (p.lastPrice || 0)).toString());
+                                }
+                              }}
+                            >
+                              Sell
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                )}
               </div>
             </div>
           </div>
 
-          <div className="trader-assets-container">
-            <div className="trader-assets-header">
-              <h4>Assets</h4>
+          {pnlCalendarLoading && (
+            <div className="pnl-calendar-backdrop">
+              <div className="pnl-calendar-container">
+                <div className="pnl-calendar-header">
+                  <div className="pnl-calendar-title-section">
+                    <div className="skeleton-loading skeleton-title"></div>
+                    <div className="pnl-calendar-nav">
+                      <div className="skeleton-loading skeleton-nav-button"></div>
+                      <div className="skeleton-loading skeleton-month"></div>
+                      <div className="skeleton-loading skeleton-nav-button"></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="pnl-calendar-gradient-bar">
+                  <div className="skeleton-loading skeleton-gradient"></div>
+                  <div className="pnl-calendar-gradient-labels">
+                    <div className="skeleton-loading skeleton-label"></div>
+                    <div className="skeleton-loading skeleton-label"></div>
+                  </div>
+                </div>
+                <div className="pnl-calendar-content">
+                  <div className="pnl-calendar-weekdays">
+                    {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+                      <div key={i} className="pnl-calendar-weekday">{day}</div>
+                    ))}
+                  </div>
+                  <div className="pnl-calendar-grid">
+                    {Array.from({ length: 31 }, (_, i) => (
+                      <div key={i + 1} className="pnl-calendar-day skeleton-day">
+                        <div className="skeleton-loading skeleton-day-number"></div>
+                        <div className="skeleton-loading skeleton-day-pnl"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="pnl-calendar-footer">
+                  <div className="pnl-calendar-stats">
+                    <div className="skeleton-loading skeleton-stat"></div>
+                    <div className="skeleton-loading skeleton-stat"></div>
+                  </div>
+                </div>
+              </div>
             </div>
+          )}
 
-            <div className="trader-assets-list">
-            
+          {showPNLCalendar && (
+            <div className="pnl-calendar-backdrop" onClick={() => setShowPNLCalendar(false)}>
+              <div className="pnl-calendar-container" onClick={(e) => e.stopPropagation()}>
+                <div className="pnl-calendar-header">
+                  <div className="pnl-calendar-title-section">
+                    <h3 className="pnl-calendar-title">PNL Calendar</h3>
+                    <div className="pnl-calendar-nav">
+                      <button
+                        className="pnl-calendar-nav-button"
+                        onClick={() => {
+                          const newDate = new Date(currentCalendarDate);
+                          newDate.setMonth(newDate.getMonth() - 1);
+                          setCurrentCalendarDate(newDate);
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="grey" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m15 18-6-6 6-6" />
+                        </svg>
+                      </button>
+                      <span className="pnl-calendar-month">
+                        {currentCalendarDate.toLocaleDateString('en-US', {
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </span>
+                      <button
+                        className="pnl-calendar-nav-button"
+                        onClick={() => {
+                          const newDate = new Date(currentCalendarDate);
+                          newDate.setMonth(newDate.getMonth() + 1);
+                          setCurrentCalendarDate(newDate);
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="grey" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m9 18 6-6-6-6" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="pnl-calendar-controls">
+                    <div className="pnl-calendar-total"></div>
+                    <button className="pnl-calendar-close" onClick={() => setShowPNLCalendar(false)}>
+                      <img src={closebutton} className="close-button-icon" alt="Close" />
+                    </button>
+                  </div>
+                </div>
+                <div className="pnl-calendar-gradient-bar">
+                  <span className="pnl-calendar-total-label">$0</span>
+                  <div className="pnl-calendar-ratio-container">
+                    <div className="pnl-calendar-ratio-buy"></div>
+                    <div className="pnl-calendar-ratio-sell"></div>
+                  </div>
+                  <div className="pnl-calendar-gradient-labels">
+                    <span><span className="pnl-buy-color">0</span> / <span className="pnl-buy-color">$0</span></span>
+                    <span><span className="pnl-sell-color">0</span> / <span className="pnl-sell-color">$0</span></span>
+                  </div>
+                </div>
+                <div className="pnl-calendar-content">
+                  <div className="pnl-calendar-weekdays">
+                    {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+                      <div key={i} className="pnl-calendar-weekday">{day}</div>
+                    ))}
+                  </div>
+                  <div className="pnl-calendar-grid">
+                    {(() => {
+                      const year = currentCalendarDate.getFullYear();
+                      const month = currentCalendarDate.getMonth();
+                      const today = new Date();
+                      const todayYear = today.getFullYear();
+                      const todayMonth = today.getMonth();
+                      const todayDay = today.getDate();
+                      const daysInMonth = new Date(year, month + 1, 0).getDate();
+                      const firstDay = new Date(year, month, 1).getDay();
+                      const startDay = firstDay === 0 ? 6 : firstDay - 1;
+                      const days = [];
+
+                      for (let i = 0; i < startDay; i++) {
+                        days.push(
+                          <div key={`empty-${i}`} className="pnl-calendar-day pnl-calendar-day-empty"></div>
+                        );
+                      }
+
+                      for (let day = 1; day <= daysInMonth; day++) {
+                        const isPastOrToday = (
+                          year < todayYear ||
+                          (year === todayYear && month < todayMonth) ||
+                          (year === todayYear && month === todayMonth && day <= todayDay)
+                        );
+
+                        days.push(
+                          <div
+                            key={`day-${day}`}
+                            className={`pnl-calendar-day ${isPastOrToday ? 'past-or-today' : ''}`}
+                          >
+                            <div className="pnl-calendar-day-number">{day}</div>
+                            <div className="pnl-calendar-day-pnl">$0</div>
+                          </div>
+                        );
+                      }
+
+                      return days;
+                    })()}
+                  </div>
+                </div>
+                <div className="pnl-calendar-footer">
+                  <div className="pnl-calendar-stats">
+                    <span>Current Positive Streak: <strong>0d</strong></span>
+                    <span>Best Positive Streak in {currentCalendarDate.toLocaleDateString('en-US', { month: 'short' })}: <strong>0d</strong></span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

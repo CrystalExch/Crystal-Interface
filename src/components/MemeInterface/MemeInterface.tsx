@@ -3078,6 +3078,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               subWallets={subWallets}
               marketsData={marketsData}
               trackedWalletsRef={trackedWalletsRef}
+              positions={positions}
+              onSellPosition={handleSellPosition}
             />
           </div>
         </div>
