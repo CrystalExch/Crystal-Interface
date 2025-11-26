@@ -29,7 +29,7 @@ interface TraderPortfolioPopupProps {
   onClose: () => void;
   tokenList: any[];
   marketsData: any[];
-  onMarketSelect?: (market: any) => void;
+  onMarketSelect?: (shareData: any) => void;
   setSendTokenIn?: (token: any) => void;
   setpopup?: (value: number) => void;
   positions?: Position[];
@@ -51,80 +51,80 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
 }) => {
 
   const [traderPositions, setTraderPositions] = useState<Position[]>([]);
-const [isLoadingPositions, setIsLoadingPositions] = useState(false);
+  const [isLoadingPositions, setIsLoadingPositions] = useState(false);
 
-useEffect(() => {
-  if (!traderAddress) return;
+  useEffect(() => {
+    if (!traderAddress) return;
 
-  let cancelled = false;
-  setIsLoadingPositions(true);
+    let cancelled = false;
+    setIsLoadingPositions(true);
 
-  (async () => {
-    try {
-      const response = await fetch(
-        `https://api.crystal.exchange/user/${traderAddress}`,
-        {
-          method: 'GET',
-          headers: { 'content-type': 'application/json' },
+    (async () => {
+      try {
+        const response = await fetch(
+          `https://api.crystal.exchange/user/${traderAddress}`,
+          {
+            method: 'GET',
+            headers: { 'content-type': 'application/json' },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch trader positions');
         }
-      );
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch trader positions');
+        const payload = await response.json();
+        const rows: any[] = payload.positions ?? [];
+
+        if (cancelled) return;
+
+        const positions = rows.map((p) => {
+          const boughtTokens = Number(p.token_bought ?? 0) / 1e18;
+          const soldTokens = Number(p.token_sold ?? 0) / 1e18;
+          const spentNative = Number(p.native_spent ?? 0) / 1e18;
+          const receivedNative = Number(p.native_received ?? 0) / 1e18;
+          const balance = Number(p.balance_token ?? 0) / 1e18;
+          const balanceNative = Number(p.balance_native ?? 0) / 1e18;
+
+          const lastPrice = balance > 0 ? balanceNative / balance : 0;
+          const realized = receivedNative - spentNative;
+          const unrealized = balance * lastPrice;
+          const pnlNative = realized + unrealized;
+          const remainingPct = boughtTokens > 0 ? (balance / boughtTokens) * 100 : 100;
+
+          return {
+            tokenId: p.token,
+            symbol: p.symbol,
+            name: p.name,
+            metadataCID: p.metadata_cid,
+            imageUrl: p.metadata_cid || '',
+            boughtTokens,
+            soldTokens,
+            spentNative,
+            receivedNative,
+            remainingTokens: balance,
+            lastPrice,
+            remainingPct,
+            pnlNative,
+          };
+        });
+
+        const sorted = positions.sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0));
+        setTraderPositions(sorted);
+      } catch (error) {
+        console.error('Failed to fetch trader positions:', error);
+        setTraderPositions([]);
+      } finally {
+        if (!cancelled) {
+          setIsLoadingPositions(false);
+        }
       }
+    })();
 
-      const payload = await response.json();
-      const rows: any[] = payload.positions ?? [];
-
-      if (cancelled) return;
-
-      const positions = rows.map((p) => {
-        const boughtTokens = Number(p.token_bought ?? 0) / 1e18;
-        const soldTokens = Number(p.token_sold ?? 0) / 1e18;
-        const spentNative = Number(p.native_spent ?? 0) / 1e18;
-        const receivedNative = Number(p.native_received ?? 0) / 1e18;
-        const balance = Number(p.balance_token ?? 0) / 1e18;
-        const balanceNative = Number(p.balance_native ?? 0) / 1e18;
-
-        const lastPrice = balance > 0 ? balanceNative / balance : 0;
-        const realized = receivedNative - spentNative;
-        const unrealized = balance * lastPrice;
-        const pnlNative = realized + unrealized;
-        const remainingPct = boughtTokens > 0 ? (balance / boughtTokens) * 100 : 100;
-
-        return {
-          tokenId: p.token,
-          symbol: p.symbol,
-          name: p.name,
-          metadataCID: p.metadata_cid,
-          imageUrl: p.metadata_cid || '',
-          boughtTokens,
-          soldTokens,
-          spentNative,
-          receivedNative,
-          remainingTokens: balance,
-          lastPrice,
-          remainingPct,
-          pnlNative,
-        };
-      });
-
-      const sorted = positions.sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0));
-      setTraderPositions(sorted);
-    } catch (error) {
-      console.error('Failed to fetch trader positions:', error);
-      setTraderPositions([]);
-    } finally {
-      if (!cancelled) {
-        setIsLoadingPositions(false);
-      }
-    }
-  })();
-
-  return () => {
-    cancelled = true;
-  };
-}, [traderAddress]);
+    return () => {
+      cancelled = true;
+    };
+  }, [traderAddress]);
   const navigate = useNavigate();
   const [isBlurred] = useState(false);
   const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
@@ -170,33 +170,33 @@ useEffect(() => {
     return `${fmt(v)}`;
   };
 
- useEffect(() => {
-  const fetchBalances = async () => {
-    if (!traderAddress) return;
+  useEffect(() => {
+    const fetchBalances = async () => {
+      if (!traderAddress) return;
 
-    try {
-      const { getBalance } = await import('@wagmi/core');
-      const { config } = await import('../../../../wagmi');
-      const balance = await getBalance(config, {
-        address: traderAddress as `0x${string}`,
-      });
+      try {
+        const { getBalance } = await import('@wagmi/core');
+        const { config } = await import('../../../../wagmi');
+        const balance = await getBalance(config, {
+          address: traderAddress as `0x${string}`,
+        });
 
-      const monAmount = Number(balance.value) / 1e18;
-      const positionsValue = traderPositions.reduce((sum, p) => {
-        return sum + (p.remainingTokens * (p.lastPrice || 0));
-      }, 0);
-      
-      const totalMonValue = monAmount + positionsValue;
-      const totalValueUsd = totalMonValue * monUsdPrice;
-      
-      setTotalAccountValue(totalValueUsd);
-    } catch (error) {
-      setTotalAccountValue(0);
-    }
-  };
+        const monAmount = Number(balance.value) / 1e18;
+        const positionsValue = traderPositions.reduce((sum, p) => {
+          return sum + (p.remainingTokens * (p.lastPrice || 0));
+        }, 0);
 
-  fetchBalances();
-}, [traderAddress, monUsdPrice, traderPositions]);
+        const totalMonValue = monAmount + positionsValue;
+        const totalValueUsd = totalMonValue * monUsdPrice;
+
+        setTotalAccountValue(totalValueUsd);
+      } catch (error) {
+        setTotalAccountValue(0);
+      }
+    };
+
+    fetchBalances();
+  }, [traderAddress, monUsdPrice, traderPositions]);
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -214,7 +214,7 @@ useEffect(() => {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
-const totalUnrealizedPnlNative = traderPositions?.reduce((sum, p) => sum + (p.pnlNative || 0), 0) || 0;
+  const totalUnrealizedPnlNative = traderPositions?.reduce((sum, p) => sum + (p.pnlNative || 0), 0) || 0;
   const totalUnrealizedPnlUsd = totalUnrealizedPnlNative * monUsdPrice;
   const unrealizedClass = totalUnrealizedPnlNative >= 0 ? 'positive' : 'negative';
   const unrealizedSign = totalUnrealizedPnlNative >= 0 ? '+' : '-';
@@ -376,161 +376,184 @@ const totalUnrealizedPnlNative = traderPositions?.reduce((sum, p) => sum + (p.pn
                 <div className="meme-oc-header-cell">Actions</div>
               </div>
               <div className="meme-oc-items">
-{isLoadingPositions ? (
-  <div className="meme-oc-empty">
-    Loading positions...
-  </div>
-) : traderPositions.length === 0 ? (
-  <div className="meme-oc-empty">
-    No active positions
-  </div>
-) : (
-  traderPositions.map((p) => {
-                      const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
-                      const tokenImageUrl = p.imageUrl || null;
+                {isLoadingPositions ? (
+                  <div className="meme-oc-empty">
+                    Loading positions...
+                  </div>
+                ) : traderPositions.length === 0 ? (
+                  <div className="meme-oc-empty">
+                    No active positions
+                  </div>
+                ) : (
+                  traderPositions.map((p) => {
+                    const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
+                    const tokenImageUrl = p.imageUrl || null;
 
-                      return (
-                        <div key={p.tokenId} className="meme-portfolio-oc-item">
-                          <div className="meme-oc-cell">
-                            <div className="oc-meme-wallet-info">
-                              <div className="meme-portfolio-token-info">
-                                <div className="meme-portfolio-token-icon-container">
-                                  {tokenImageUrl && !tokenImageErrors[p.tokenId] ? (
-                                    <img
-                                      src={tokenImageUrl}
-                                      alt={p.symbol}
-                                      className="meme-portfolio-token-icon"
-                                      onError={() => {
-                                        setTokenImageErrors(prev => ({ ...prev, [p.tokenId]: true }));
-                                      }}
-                                    />
-                                  ) : (
-                                    <div
-                                      className="meme-portfolio-token-icon"
-                                      style={{
-                                        backgroundColor: 'rgba(35, 34, 41, .7)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: (p.symbol || '').length <= 3 ? '14px' : '12px',
-                                        fontWeight: '200',
-                                        color: '#ffffff',
-                                        borderRadius: '1px',
-                                        letterSpacing: (p.symbol || '').length > 3 ? '-0.5px' : '0',
-                                      }}
-                                    >
-                                      {(p.symbol || p.name || '?').slice(0, 2).toUpperCase()}
-                                    </div>
-                                  )}
-                                  <div className={`portfolio-launchpad-indicator ${p.source === 'nadfun' ? 'nadfun' : ''}`}>
-                                    <svg width="10" height="10" viewBox="0 0 32 32" className="header-launchpad-logo" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                      <defs>
-                                        <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
-                                          <stop offset="0%" stopColor="#7C55FF" stopOpacity="1" />
-                                          <stop offset="100%" stopColor="#AD5FFB" stopOpacity="1" />
-                                        </linearGradient>
-                                      </defs>
-                                      <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
-                                    </svg>
+                    return (
+                      <div key={p.tokenId} className="meme-portfolio-oc-item">
+                        <div className="meme-oc-cell">
+                          <div className="oc-meme-wallet-info">
+                            <div className="meme-portfolio-token-info">
+                              <div className="meme-portfolio-token-icon-container">
+                                {tokenImageUrl && !tokenImageErrors[p.tokenId] ? (
+                                  <img
+                                    src={tokenImageUrl}
+                                    alt={p.symbol}
+                                    className="meme-portfolio-token-icon"
+                                    onError={() => {
+                                      setTokenImageErrors(prev => ({ ...prev, [p.tokenId]: true }));
+                                    }}
+                                  />
+                                ) : (
+                                  <div
+                                    className="meme-portfolio-token-icon"
+                                    style={{
+                                      backgroundColor: 'rgba(35, 34, 41, .7)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: (p.symbol || '').length <= 3 ? '14px' : '12px',
+                                      fontWeight: '200',
+                                      color: '#ffffff',
+                                      borderRadius: '1px',
+                                      letterSpacing: (p.symbol || '').length > 3 ? '-0.5px' : '0',
+                                    }}
+                                  >
+                                    {(p.symbol || p.name || '?').slice(0, 2).toUpperCase()}
                                   </div>
+                                )}
+                                <div className={`portfolio-launchpad-indicator ${p.source === 'nadfun' ? 'nadfun' : ''}`}>
+                                  <svg width="10" height="10" viewBox="0 0 32 32" className="header-launchpad-logo" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <defs>
+                                      <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stopColor="#7C55FF" stopOpacity="1" />
+                                        <stop offset="100%" stopColor="#AD5FFB" stopOpacity="1" />
+                                      </linearGradient>
+                                    </defs>
+                                    <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
+                                  </svg>
                                 </div>
-                                <span
-                                  className="portfolio-meme-wallet-address portfolio-meme-clickable-token"
-                                  onClick={() => navigate(`/meme/${p.tokenId}`)}
-                                >
-                                  <span className="meme-token-symbol-portfolio">
-                                    {tokenShort}
-                                  </span>
-                                  <span className="meme-token-name-portfolio">
-                                    {p.name}
-                                  </span>
-                                </span>
                               </div>
-                            </div>
-                          </div>
-                          <div className="meme-oc-cell">
-                            <div className="meme-trade-info">
-                              <div className="meme-ordercenter-info">
-                                {amountMode === 'MON' && (
-                                  <img className="meme-portfolio-monad-icon" src={monadicon} alt="MONAD" />
-                                )}
-                                <span className={`meme-usd-amount buy ${isBlurred ? 'blurred' : ''}`}>
-                                  {fmtAmount(p.spentNative, amountMode, monUsdPrice)}
+                              <span
+                                className="portfolio-meme-wallet-address portfolio-meme-clickable-token"
+                                onClick={() => navigate(`/meme/${p.tokenId}`)}
+                              >
+                                <span className="meme-token-symbol-portfolio">
+                                  {tokenShort}
                                 </span>
-                              </div>
-                              <span className="meme-token-amount">
-                                {fmt(p.boughtTokens)} {p.symbol || ''}
+                                <span className="meme-token-name-portfolio">
+                                  {p.name}
+                                </span>
                               </span>
                             </div>
-                          </div>
-                          <div className="meme-oc-cell">
-                            <div className="meme-trade-info">
-                              <div className="meme-ordercenter-info">
-                                {amountMode === 'MON' && (
-                                  <img className="meme-portfolio-monad-icon" src={monadicon} alt="MONAD" />
-                                )}
-                                <span className={`meme-usd-amount sell ${isBlurred ? 'blurred' : ''}`}>
-                                  {fmtAmount(p.receivedNative, amountMode, monUsdPrice)}
-                                </span>
-                              </div>
-                              <span className="meme-token-amount">
-                                {fmt(p.soldTokens)} {p.symbol || ''}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="meme-oc-cell">
-                            <div className="meme-remaining-info">
-                              <div className="meme-remaining-container">
-                                <span className={`meme-remaining ${isBlurred ? 'blurred' : ''}`}>
-                                  <img src={monadicon} className="meme-portfolio-monad-icon" />
-                                  {fmt(p.remainingTokens * (p.lastPrice || 0))}
-                                </span>
-                                <span className="meme-remaining-percentage">
-                                  {p.remainingPct.toFixed(0)}%
-                                </span>
-                              </div>
-                              <div className="meme-remaining-bar">
-                                <div
-                                  className="meme-remaining-bar-fill"
-                                  style={{
-                                    width: `${Math.max(0, Math.min(100, p.remainingPct)).toFixed(0)}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="meme-oc-cell">
-                            <div className="meme-ordercenter-info">
-                              {amountMode === 'MON' && (
-                                <img className="meme-portfolio-pnl-monad-icon" src={monadicon} alt="MONAD" />
-                              )}
-                              <div className="meme-pnl-info">
-                                <span className={`meme-portfolio-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}>
-                                  {p.pnlNative >= 0 ? '+' : '-'}
-                                  {fmtAmount(Math.abs(p.pnlNative), amountMode, monUsdPrice)} (
-                                  {p.spentNative > 0
-                                    ? ((p.pnlNative / p.spentNative) * 100).toFixed(1)
-                                    : '0.0'}
-                                  %)
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="meme-oc-cell">
-                            <button
-                              className="meme-action-btn"
-                              onClick={() => {
-                                if (onSellPosition) {
-                                  onSellPosition(p, (p.remainingTokens * (p.lastPrice || 0)).toString());
-                                }
-                              }}
-                            >
-                              Sell
-                            </button>
                           </div>
                         </div>
-                      );
-                    })
+                        <div className="meme-oc-cell">
+                          <div className="meme-trade-info">
+                            <div className="meme-ordercenter-info">
+                              {amountMode === 'MON' && (
+                                <img className="meme-portfolio-monad-icon" src={monadicon} alt="MONAD" />
+                              )}
+                              <span className={`meme-usd-amount buy ${isBlurred ? 'blurred' : ''}`}>
+                                {fmtAmount(p.spentNative, amountMode, monUsdPrice)}
+                              </span>
+                            </div>
+                            <span className="meme-token-amount">
+                              {fmt(p.boughtTokens)} {p.symbol || ''}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="meme-oc-cell">
+                          <div className="meme-trade-info">
+                            <div className="meme-ordercenter-info">
+                              {amountMode === 'MON' && (
+                                <img className="meme-portfolio-monad-icon" src={monadicon} alt="MONAD" />
+                              )}
+                              <span className={`meme-usd-amount sell ${isBlurred ? 'blurred' : ''}`}>
+                                {fmtAmount(p.receivedNative, amountMode, monUsdPrice)}
+                              </span>
+                            </div>
+                            <span className="meme-token-amount">
+                              {fmt(p.soldTokens)} {p.symbol || ''}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="meme-oc-cell">
+                          <div className="meme-remaining-info">
+                            <div className="meme-remaining-container">
+                              <span className={`meme-remaining ${isBlurred ? 'blurred' : ''}`}>
+                                <img src={monadicon} className="meme-portfolio-monad-icon" />
+                                {fmt(p.remainingTokens * (p.lastPrice || 0))}
+                              </span>
+                              <span className="meme-remaining-percentage">
+                                {p.remainingPct.toFixed(0)}%
+                              </span>
+                            </div>
+                            <div className="meme-remaining-bar">
+                              <div
+                                className="meme-remaining-bar-fill"
+                                style={{
+                                  width: `${Math.max(0, Math.min(100, p.remainingPct)).toFixed(0)}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="meme-oc-cell">
+                          <div className="meme-ordercenter-info">
+                            {amountMode === 'MON' && (
+                              <img className="meme-portfolio-pnl-monad-icon" src={monadicon} alt="MONAD" />
+                            )}
+                            <div className="meme-pnl-info">
+                              <span className={`meme-portfolio-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}>
+                                {p.pnlNative >= 0 ? '+' : '-'}
+                                {fmtAmount(Math.abs(p.pnlNative), amountMode, monUsdPrice)} (
+                                {p.spentNative > 0
+                                  ? ((p.pnlNative / p.spentNative) * 100).toFixed(1)
+                                  : '0.0'}
+                                %)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="meme-oc-cell">
+                          <button
+                            className="share-pnl-btn"
+                            onClick={() => {
+                              const shareData = {
+                                tokenAddress: p.tokenId,
+                                tokenSymbol: p.symbol || 'Unknown',
+                                tokenName: p.name || 'Unknown Token',
+                                userAddress: traderAddress,
+                                externalUserStats: {
+                                  balance: p.remainingTokens,
+                                  amountBought: p.boughtTokens,
+                                  amountSold: p.soldTokens,
+                                  valueBought: p.spentNative,
+                                  valueSold: p.receivedNative,
+                                  valueNet: p.pnlNative,
+                                },
+                                currentPrice: p.lastPrice || 0,
+                              };
+
+                              if (onMarketSelect) {
+                                onMarketSelect(shareData);
+                              }
+
+                              if (setpopup) {
+                                setpopup(27);
+                              }
+                            }}
+                            title="Share PNL"
+                          >
+                            <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
+                              <path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>

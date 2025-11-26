@@ -144,10 +144,10 @@ const Tooltip: React.FC<{
               top: `${tooltipPosition.top - 20}px`,
               left: `${tooltipPosition.left}px`,
               transform: `${position === 'top' || position === 'bottom'
-                  ? 'translateX(-50%)'
-                  : position === 'left' || position === 'right'
-                    ? 'translateY(-50%)'
-                    : 'none'
+                ? 'translateX(-50%)'
+                : position === 'left' || position === 'right'
+                  ? 'translateY(-50%)'
+                  : 'none'
                 } scale(${isVisible ? 1 : 0})`,
               opacity: isVisible ? 1 : 0,
               zIndex: 9999,
@@ -290,6 +290,7 @@ export default function MemeTradesComponent({
   positions,
   onSellPosition,
 }: Props) {
+  const [selectedShareData, setSelectedShareData] = useState<any>(null);
   const [amountMode, setAmountMode] = useState<AmountMode>('MON');
   const [mcMode, setMcMode] = useState<MCMode>('MC');
   const [hover, setHover] = useState(false);
@@ -358,7 +359,7 @@ export default function MemeTradesComponent({
   useEffect(() => {
     const newTrades = trades.slice(0, 100);
 
-if (hover && !isLoadingTrades && displayTrades.length > 0) {
+    if (hover && !isLoadingTrades && displayTrades.length > 0) {
       const previousTrades = lastProcessedTradesRef.current;
       const reallyNewTrades = newTrades.filter(
         (newTrade) =>
@@ -514,20 +515,20 @@ if (hover && !isLoadingTrades && displayTrades.length > 0) {
         subWalletSet.has(callerLower);
       const isTopHolder = top10HolderAddresses.has(callerLower);
       const isDev = Boolean(devAddressLower && callerLower === devAddressLower);
-      
+
       // Check if this is a tracked wallet
       const trackedWallet = trackedWalletsMap.get(callerLower);
       const isTracked = !!trackedWallet;
-      
+
       const sign = r.isBuy ? 1 : -1;
 
       let amountMON = sign * (r.nativeAmount ?? 0);
 
       const amountUSD = monUsdPrice > 0 ? amountMON * monUsdPrice : 0;
-      
+
       let short: string;
       let emoji: string | undefined;
-      
+
       if (isCurrentUser) {
         short = 'YOU';
       } else if (trackedWallet) {
@@ -536,7 +537,7 @@ if (hover && !isLoadingTrades && displayTrades.length > 0) {
       } else {
         short = r.caller.slice(2, 6);
       }
-      
+
       const tags: (
         | 'sniper'
         | 'dev'
@@ -607,7 +608,7 @@ if (hover && !isLoadingTrades && displayTrades.length > 0) {
     if (val >= 0.01) return val.toFixed(4);
     return val.toPrecision(3);
   };
-  
+
   const fmtTimeAgo = (ts: number) => {
     const now = Date.now() / 1000;
     const secondsAgo = Math.max(0, Math.floor(now - ts));
@@ -627,7 +628,7 @@ if (hover && !isLoadingTrades && displayTrades.length > 0) {
     if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(decimals)}K`;
     return `${sign}${abs.toFixed(1)}`;
   };
-  
+
   const handleApplyFilters = (filters: TransactionFilters) => {
     setTransactionFilters(filters);
   };
@@ -917,10 +918,10 @@ if (hover && !isLoadingTrades && displayTrades.length > 0) {
                     </div>
                     <span className="meme-trade-age">
                       <a
-                          href={`${settings.chainConfig[activechain].explorer}/tx/${t.id.split('-')[0]}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
+                        href={`${settings.chainConfig[activechain].explorer}/tx/${t.id.split('-')[0]}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         {fmtTimeAgo(t.timestamp)}
                       </a>
                     </span>
@@ -955,7 +956,9 @@ if (hover && !isLoadingTrades && displayTrades.length > 0) {
           onClose={() => setPopupAddr(null)}
           tokenList={tokenList}
           marketsData={marketsData}
-          onMarketSelect={onMarketSelect}
+          onMarketSelect={(shareData) => {
+            setSelectedShareData(shareData);
+          }}
           setSendTokenIn={setSendTokenIn}
           setpopup={setpopup}
           positions={positions}
