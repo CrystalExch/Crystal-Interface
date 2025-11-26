@@ -1968,7 +1968,7 @@ const DisplayDropdown: React.FC<{
                       <div className="metric-color-options">
                         {(['range1', 'range2', 'range3'] as const).map(
                           (range, idx) => (
-                            <div className="metric-color-option">
+                            <div className="metric-color-option" key={idx}>
                               <div className="metric-color-item" key={range}>
                                 <div className="display-metric-value">
                                   {metric === 'marketCap'
@@ -5028,8 +5028,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               <div
                 key={columnType}
                 className={`explorer-column ${activeMobileTab === columnType ? 'mobile-active' : ''}`}
-                onMouseEnter={() => handleColumnHover(columnType)}
-                onMouseLeave={handleColumnLeave}
               >
                 {columnType === 'new' && (
                   <>
@@ -5159,7 +5157,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                       </div>
                     </div>
 
-                    <div className="explorer-tokens-list">
+                    <div className="explorer-tokens-list"
+                      onMouseEnter={() => handleColumnHover(columnType)}
+                      onMouseLeave={handleColumnLeave}>
                       {isLoading ? (
                         Array.from({ length: 14 }).map((_, index) => (
                           <div
@@ -5386,7 +5386,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                       </div>
                     </div>
 
-                    <div className="explorer-tokens-list">
+                    <div className="explorer-tokens-list"
+                      onMouseEnter={() => handleColumnHover(columnType)}
+                      onMouseLeave={handleColumnLeave}>
                       {isLoading ? (
                         Array.from({ length: 14 }).map((_, index) => (
                           <div
@@ -5613,7 +5615,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                       </div>
                     </div>
 
-                    <div className="explorer-tokens-list">
+                    <div className="explorer-tokens-list"
+                      onMouseEnter={() => handleColumnHover(columnType)}
+                      onMouseLeave={handleColumnLeave}>
                       {isLoading ? (
                         Array.from({ length: 14 }).map((_, index) => (
                           <div

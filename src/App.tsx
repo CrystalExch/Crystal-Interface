@@ -272,8 +272,8 @@ type State = {
 type Action =
   | { type: 'INIT'; tokens: Token[] }
   | { type: 'ADD_MARKET'; token: Partial<Token> }
-  | { type: 'UPDATE_MARKET'; id: string; updates: Partial<Token> }
-  | { type: 'UPDATE_MARKET_BY_ADDRESS'; tokenAddress: string; updates: Partial<Token> }
+  | { type: 'ADD_METADATA'; id: string; updates: any }
+  | { type: 'UPDATE_MARKET'; id: string; updates: any }
   | { type: 'GRADUATE_MARKET'; id: string; market?: any }
   | { type: 'HIDE_TOKEN'; id: string }
   | { type: 'SHOW_TOKEN'; id: string }
@@ -861,18 +861,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return saved ? saved : '';
   });
 
-  useEffect(() => {
-    const signerKey = `crystal_active_wallet_private_key_${scaAddress?.toLowerCase() || 'default'}`;
-    const savedSigner = localStorage.getItem(signerKey) || '';
-    setOneCTSigner(savedSigner);
-  }, [scaAddress]);
-
-  useEffect(() => {
-    const signatureKey = `crystal_onect_signature_${scaAddress?.toLowerCase() || 'default'}`;
-    const savedSig = localStorage.getItem(signatureKey) || '';
-    setOneCTSig(savedSig);
-  }, [scaAddress]);
-
   const validOneCT = !!oneCTSigner
   const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
     address: '0x0000000000000000000000000000000000000000' as `0x${string}`,
@@ -903,12 +891,22 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     );
 
     setSelectedWallets(validSelectedWallets);
+
+    const signerKey = `crystal_active_wallet_private_key_${scaAddress?.toLowerCase() || 'default'}`;
+    const savedSigner = localStorage.getItem(signerKey) || '';
+    setOneCTSigner(savedSigner);
+
+    const signatureKey = `crystal_onect_signature_${scaAddress?.toLowerCase() || 'default'}`;
+    const savedSig = localStorage.getItem(signatureKey) || '';
+    setOneCTSig(savedSig);
   }, [scaAddress]);
 
   useEffect(() => {
     saveSelectedWalletsToStorage(selectedWallets, scaAddress);
     saveWalletsToStorage(subWallets, scaAddress);
-  }, [subWallets, selectedWallets, scaAddress]);
+    const signerKey = `crystal_active_wallet_private_key_${scaAddress?.toLowerCase() || 'default'}`;
+    localStorage.setItem(signerKey, oneCTSigner)
+  }, [subWallets, selectedWallets, oneCTSigner]);
 
   useEffect(() => {
     if (connected) {
@@ -2114,7 +2112,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     gcTime: 0
   })
 
-  const monUsdPrice = storkData?.price || 0.03;
+  const monUsdPrice = storkData?.price || 0.05;
 
   const [walletTokenBalances, setWalletTokenBalances] = useState<any>({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
@@ -4254,6 +4252,36 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         };
       }
 
+      case 'ADD_METADATA': {
+        const buckets = { ...state.tokensByStatus };
+        (Object.keys(buckets) as Token['status'][]).forEach((s) => {
+          buckets[s] = buckets[s].flatMap((t: any) => {
+            if (t.id.toLowerCase() !== action.id.toLowerCase()) return [t];
+            const {
+              twitterHandle = '',
+              discordHandle = '',
+              telegramHandle = '',
+              website = '',
+              image = '',
+              description = '',
+              ...rest
+            } = action.updates;
+
+            return [{
+              ...t,
+              twitterHandle: t.twitterHandle || twitterHandle,
+              discordHandle: t.discordHandle || twitterHandle,
+              telegramHandle: t.telegramHandle || telegramHandle,
+              website: t.website || website,
+              image: t.image || image,
+              description: t.description || description,
+            }];
+          });
+        });
+
+        return { ...state, tokensByStatus: buckets };
+      }
+
       case 'UPDATE_MARKET': {
         const buckets = { ...state.tokensByStatus };
         let movedToken: any;
@@ -4265,6 +4293,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               volumeDelta = 0,
               buyTransactions = 0,
               sellTransactions = 0,
+              otherVolumeDelta = 0,
+              trader = '',
               ...rest
             } = action.updates;
             const status = s == 'graduated'
@@ -4282,7 +4312,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 buyTransactions: t.buyTransactions + buyTransactions,
                 sellTransactions: t.sellTransactions + sellTransactions,
                 status: status,
-                bondingPercentage: bondingPercentage
+                bondingPercentage: bondingPercentage,
+                devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + ( otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - ( otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
               }
               return []
             }
@@ -4293,7 +4324,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               buyTransactions: t.buyTransactions + buyTransactions,
               sellTransactions: t.sellTransactions + sellTransactions,
               status: status,
-              bondingPercentage: bondingPercentage
+              bondingPercentage: bondingPercentage,
+              devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + ( otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - ( otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
             }];
           });
         });
@@ -4487,6 +4519,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           sellTransactions: isBuy ? 0 : 1,
           volumeDelta:
             isBuy > 0 ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
+          otherVolumeDelta: isBuy == 0n ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
         },
       });
     },
@@ -4631,6 +4664,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             if (createdTimestamp > 1e10) {
               createdTimestamp = Math.floor(createdTimestamp / 1000);
             }
+
             const volume = Number(m.native_volume / 1e18);
             const holdersRaw = Number(m.holders ?? 0);
             const devHoldingRaw = Number(m.developer_holding ?? 0);
@@ -4819,6 +4853,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   sellTransactions: isBuy ? 0 : 1,
                   volumeDelta:
                     isBuy == true ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
+                  otherVolumeDelta: isBuy == false ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
+                  trader: callerAddr,
                 },
               });
 
@@ -5519,6 +5555,23 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 market: poolAddress,
               };
 
+              fetch(metadataURI)
+              .then(r => r.json())
+              .then(metadata => {
+                dispatch({
+                  type: 'ADD_METADATA',
+                  tokenAddress,
+                  metadata: {
+                    image: metadata.image_uri || '',
+                    description: metadata.description || '',
+                    twitterHandle: metadata.twitter || '',
+                    telegramHandle: metadata.telegram || '',
+                    website: metadata.website || '',
+                  },
+                });
+              })
+              .catch(() => {});
+
               if (pausedColumnRef.current === 'new') {
                 pausedTokenQueueRef.current['new'].push(newToken);
               } else {
@@ -5562,6 +5615,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   buyTransactions: isBuy ? 1 : 0,
                   sellTransactions: isBuy ? 0 : 1,
                   volumeDelta: (isBuy ? amountIn : amountOut),
+                  otherVolumeDelta: isBuy == false ? amountIn : amountOut,
+                  trader: callerAddr,
                 },
               });
 
@@ -5963,6 +6018,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   buyTransactions: isBuy ? 1 : 0,
                   sellTransactions: isBuy ? 0 : 1,
                   volumeDelta: (isBuy ? amountIn : amountOut),
+                  otherVolumeDelta: isBuy == false ? amountIn : amountOut,
+                  trader: callerAddr,
                 },
               });
 
@@ -15110,7 +15167,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 <button
                   className="popup-disconnect-button"
                   onClick={() => {
-                    localStorage.removeItem('crystal_active_wallet_private_key');
                     setOneCTSigner('')
                     logout()
                   }}

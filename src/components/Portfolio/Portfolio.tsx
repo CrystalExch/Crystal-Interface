@@ -639,10 +639,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const deleteWallet = (address: string) => {
     const walletToDelete = subWallets.find(w => w.address === address);
 
-    if (walletToDelete && isWalletActive(walletToDelete.privateKey)) {
-      localStorage.removeItem('crystal_active_wallet_private_key');
-    }
-
     const updatedWallets = subWallets.filter(w => w.address !== address);
     setSubWallets(updatedWallets);
 
@@ -1896,12 +1892,10 @@ const Portfolio: React.FC<PortfolioProps> = ({
               onChange={(e) => {
                 e.stopPropagation();
                 if (!isWalletActive(wallet.privateKey)) {
-                  localStorage.setItem('crystal_active_wallet_private_key', wallet.privateKey);
                   setOneCTSigner(wallet.privateKey);
                   refetch();
                 }
                 else {
-                  localStorage.removeItem('crystal_active_wallet_private_key');
                   setOneCTSigner('')
                   refetch();
                 }

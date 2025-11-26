@@ -564,7 +564,6 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleSetActiveWallet = (privateKey: string) => {
     if (!isWalletActive(privateKey)) {
-      localStorage.setItem('crystal_active_wallet_private_key', privateKey);
       setOneCTSigner(privateKey);
       lastRefGroupFetch.current = 0;
       lastNonceGroupFetch.current = 0;
@@ -574,7 +573,6 @@ const Header: React.FC<HeaderProps> = ({
       }
     }
     else {
-      localStorage.removeItem('crystal_active_wallet_private_key');
       setOneCTSigner('')
       lastRefGroupFetch.current = 0;
       lastNonceGroupFetch.current = 0;
@@ -585,7 +583,6 @@ const Header: React.FC<HeaderProps> = ({
   const handleLogout = () => {
     if (setOneCTSigner) {
       setOneCTSigner('');
-      localStorage.removeItem('crystal_active_wallet_private_key');
     }
     if (logout) {
       logout();

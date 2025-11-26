@@ -1294,20 +1294,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return activeWalletPrivateKey === privateKey;
   };
 
-  const handleMobileSetActiveWallet = (privateKey: string) => {
-    if (!isMobileWalletActive(privateKey) && setOneCTSigner) {
-      localStorage.setItem('crystal_active_wallet_private_key', privateKey);
-      setOneCTSigner(privateKey);
-
-      if (refetch) {
-        setTimeout(() => refetch(), 100);
-      }
-      if (terminalRefetch) {
-        setTimeout(() => terminalRefetch(), 0);
-      }
-    }
-  };
-
   const getCurrentMobileWalletMONBalance = () => {
     if (!activeWalletPrivateKey) return 0;
 
