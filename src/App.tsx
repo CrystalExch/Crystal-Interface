@@ -637,8 +637,26 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     client,
     waitForTxn: false,
   });
-const [pnlShareData, setPnlShareData] = useState<any>(null);
-  const { signTypedDataAsync } = useSignTypedData({ client })
+  const [pnlShareData, setPnlShareData] = useState<{
+    tokenAddress: string;
+    tokenSymbol: string;
+    tokenName: string;
+    userAddress: string;
+    externalUserStats: {
+      balance: number;
+      amountBought: number;
+      amountSold: number;
+      valueBought: number;
+      valueSold: number;
+      valueNet: number;
+    };
+    currentPrice: number;
+  } | null>(null);
+
+  const handleSharePNL = useCallback((shareData: any) => {
+    setPnlShareData(shareData);
+    setpopup(27);
+  }, []); const { signTypedDataAsync } = useSignTypedData({ client })
   const { signMessageAsync } = useSignMessage({ client })
   const user = useUser();
   const { logout } = useLogout();
@@ -867,7 +885,7 @@ const [pnlShareData, setPnlShareData] = useState<any>(null);
   const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>(() =>
     loadWalletsFromStorage(scaAddress)
   );
-  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(() => 
+  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(() =>
     loadSelectedWalletsFromStorage(scaAddress)
   );
 
@@ -1520,6 +1538,7 @@ const [pnlShareData, setPnlShareData] = useState<any>(null);
     }
   };
   const [popup, setpopup] = useState(0);
+
   const [slippage, setSlippage] = useState(() => {
     const saved = localStorage.getItem('crystal_slippage');
     return saved !== null ? BigInt(saved) : BigInt(9900);
@@ -2227,7 +2246,7 @@ const [pnlShareData, setPnlShareData] = useState<any>(null);
     }, 1000);
 
     const onFocus = () => {
-        if (throttled) window.location.reload();
+      if (throttled) window.location.reload();
     };
 
     window.addEventListener('focus', onFocus);
@@ -4293,7 +4312,7 @@ const [pnlShareData, setPnlShareData] = useState<any>(null);
             (a, b) => (b.created ?? 0) - (a.created ?? 0)
           );
         }
-        
+
         return { ...state, tokensByStatus: buckets };
       }
 
@@ -4550,7 +4569,7 @@ const [pnlShareData, setPnlShareData] = useState<any>(null);
   useEffect(() => {
     if (!explorerWsRef.current) return;
     if (explorerWsRef.current.readyState !== WebSocket.OPEN) return;
-  
+
     const graduated = Object.values(tokensByStatus.graduated || []);
     const pools = graduated
       .map((t: any) => t.market?.toLowerCase())
@@ -4562,7 +4581,7 @@ const [pnlShareData, setPnlShareData] = useState<any>(null);
       method: "eth_unsubscribe",
       params: ["sub_uni_update"]
     });
-  
+
     const sub = JSON.stringify({
       jsonrpc: "2.0",
       id: "sub_uni_update",
@@ -4574,9 +4593,9 @@ const [pnlShareData, setPnlShareData] = useState<any>(null);
     });
     explorerWsRef.current.send(unsub);
     explorerWsRef.current.send(sub);
-  
+
   }, [tokensByStatus?.graduated?.[0]?.market, wsReady]);
-  
+
   useEffect(() => {
     let cancelled = false;
     let startBlockNumber = '';
@@ -8530,16 +8549,16 @@ const [pnlShareData, setPnlShareData] = useState<any>(null);
   const isLoading = false;
   const rpcQueryData = { gasEstimate: 0n };
   const tempsendPopupButton = connected && userchain == activechain
-  ? sendAmountIn === BigInt(0)
-    ? 0
-    : !/^(0x[0-9a-fA-F]{40})$/.test(recipient)
-      ? 1
-      : sendAmountIn <= walletTokenBalances[address]?.[sendTokenIn]
-        ? 2
-        : 3
-  : connected
-    ? 4
-    : 5
+    ? sendAmountIn === BigInt(0)
+      ? 0
+      : !/^(0x[0-9a-fA-F]{40})$/.test(recipient)
+        ? 1
+        : sendAmountIn <= walletTokenBalances[address]?.[sendTokenIn]
+          ? 2
+          : 3
+    : connected
+      ? 4
+      : 5
 
   // // trades processing
   // useEffect(() => {
@@ -14965,8 +14984,8 @@ const [pnlShareData, setPnlShareData] = useState<any>(null);
                 disabled={(sendAmountIn === BigInt(0) ||
                   sendAmountIn > walletTokenBalances[address]?.[sendTokenIn] ||
                   !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
-                connected &&
-                userchain == activechain || isSigning}
+                  connected &&
+                  userchain == activechain || isSigning}
               >
                 {isSigning ? (
                   <div className="button-content">
@@ -18896,21 +18915,21 @@ const [pnlShareData, setPnlShareData] = useState<any>(null);
             </ul>
           </div>
         ) : null}
-      {popup === 27 ? (
-  <div ref={popupref}>
-    <PNLComponent
-      windowWidth={window.innerWidth}
-      tokenAddress={pnlShareData?.tokenAddress || currentTokenData.address}
-      userAddress={pnlShareData?.userAddress || address}
-      tokenSymbol={pnlShareData?.tokenSymbol || currentTokenData.symbol}
-      tokenName={pnlShareData?.tokenName || currentTokenData.name}
-      monUsdPrice={monUsdPrice}
-      externalUserStats={pnlShareData?.externalUserStats || memeUserStats}
-      currentPrice={pnlShareData?.currentPrice || currentTokenData.price}
-      refLink={refLink}
-    />
-  </div>
-) : null}
+        {popup === 27 ? (
+          <div ref={popupref}>
+            <PNLComponent
+              windowWidth={window.innerWidth}
+              tokenAddress={pnlShareData?.tokenAddress || currentTokenData.address}
+              userAddress={pnlShareData?.userAddress || address}
+              tokenSymbol={pnlShareData?.tokenSymbol || currentTokenData.symbol}
+              tokenName={pnlShareData?.tokenName || currentTokenData.name}
+              monUsdPrice={monUsdPrice}
+              externalUserStats={pnlShareData?.externalUserStats || memeUserStats}
+              currentPrice={pnlShareData?.currentPrice || currentTokenData.price}
+              refLink={refLink}
+            />
+          </div>
+        ) : null}
         {popup === 28 ? (
           <div className="onect-trading-selection-bg">
             <div ref={popupref} className="onect-trading-selection-container">
@@ -28021,6 +28040,8 @@ const [pnlShareData, setPnlShareData] = useState<any>(null);
         externalUserStats={memeUserStats}
         lastNonceGroupFetch={lastNonceGroupFetch}
         scaAddress={scaAddress}
+        onSharePNL={handleSharePNL}
+        userAddress={address}
       />
       <div className="app-container" style={{
         marginLeft: (() => {
@@ -28154,12 +28175,6 @@ const [pnlShareData, setPnlShareData] = useState<any>(null);
                 setOneCTDepositAddress={setOneCTDepositAddress}
                 scaAddress={scaAddress}
                 signTypedDataAsync={signTypedDataUnified}
-                  onTokenDataChange={(data) => {
-    setCurrentTokenData(data);
-    if (data.externalUserStats) {
-      setPnlShareData(data);
-    }
-  }}
               />
             }
           />

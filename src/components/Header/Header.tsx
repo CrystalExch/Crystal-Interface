@@ -96,6 +96,8 @@ interface HeaderProps {
   };
   lastNonceGroupFetch: any;
   scaAddress: any;
+  onSharePNL?: (shareData: any) => void;
+  userAddress?: string;
 }
 
 const Tooltip: React.FC<{
@@ -298,7 +300,9 @@ const Header: React.FC<HeaderProps> = ({
   perpsFilterOptions,
   externalUserStats,
   lastNonceGroupFetch,
-  scaAddress
+  scaAddress,
+  onSharePNL,
+  userAddress
 }) => {
   const copyToClipboard = async (text: string, label = 'Address copied') => {
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -674,6 +678,8 @@ const Header: React.FC<HeaderProps> = ({
             updatePopup={updatePopup}
             setperpsActiveMarketKey={setperpsActiveMarketKey}
             externalUserStats={externalUserStats}
+            onSharePNL={onSharePNL}
+            userAddress={userAddress || account.address}
           />
         </div>
         <div className={rightHeaderClass}>

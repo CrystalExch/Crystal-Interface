@@ -10,7 +10,7 @@ import './ChartHeader.css';
 
 
 interface ChartHeaderProps {
-    externalUserStats?: {
+  externalUserStats?: {
     balance: number;
     amountBought: number;
     amountSold: number;
@@ -40,7 +40,7 @@ interface ChartHeaderProps {
   marketsData: any;
   simpleView: boolean;
   tradesByMarket: any;
-isMemeToken?: boolean;
+  isMemeToken?: boolean;
   memeTokenData?: {
     symbol: string;
     name: string;
@@ -70,6 +70,8 @@ isMemeToken?: boolean;
   showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
   setperpsActiveMarketKey: any;
+  userAddress?: string;
+  onSharePNL?: (shareData: any) => void;
 }
 const ChartHeader: React.FC<ChartHeaderProps> = ({
   in_icon,
@@ -98,7 +100,9 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   showLoadingPopup,
   updatePopup,
   setperpsActiveMarketKey,
-  externalUserStats
+  externalUserStats,
+  onSharePNL,
+  userAddress
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
@@ -138,9 +142,11 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       } else {
         setSellLiquidity('N/A');
       }
-      setIsLoading(orderdata.liquidityBuyOrders?.market != activeMarket.address)
+
+      const newIsLoading = orderdata.liquidityBuyOrders?.market != activeMarket.address;
+      setIsLoading(prev => prev !== newIsLoading ? newIsLoading : prev);
     }
-  }, [orderdata]);
+  }, [orderdata, activeMarket.address, activeMarket.quoteAsset, activeMarket.quoteDecimals, tradesByMarket]);
 
   const priceChangeAmountStr = String(priceChangeAmount || '');
   const priceChangePercentStr = String(priceChangePercent || '');
@@ -185,7 +191,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
 
   return (
     <div className={`chart-header ${!shouldShowFullHeader ? 'simplified' : ''}`}>
-        <TokenInfo
+      <TokenInfo
         in_icon={in_icon}
         out_icon={out_icon}
         price={price}
@@ -208,6 +214,8 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         updatePopup={updatePopup}
         setperpsActiveMarketKey={setperpsActiveMarketKey}
         externalUserStats={externalUserStats}
+        onSharePNL={onSharePNL}
+        userAddress={userAddress}
       />
       {shouldShowFullHeader && (
         <AdditionalMetrics
