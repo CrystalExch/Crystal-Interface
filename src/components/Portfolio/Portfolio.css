@@ -4624,13 +4624,61 @@
 .meme-portfolio-token-icon {
   border-radius: 4px;
   flex-shrink: 0;
-  height: 27px;
+  height: 34px;
   margin-right: 4px;
   -o-object-fit: cover;
   object-fit: cover;
-  width: 27px;
+  width: 34px;
+  border: 1.5px solid  rgba(173, 95, 251, 0.2);
+  padding: 2px
 }
 
+.portfolio-meme-wallet-address{
+  display: flex;
+  flex-direction: column;
+  color: rgb(221, 221, 224);
+  display: flex;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  cursor: pointer;
+  letter-spacing: -0.3px;
+}
+
+
+.meme-portfolio-pnl {
+  font-size: .9rem;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+
+.meme-pnl.positive {
+  color: rgb(67 254 154);
+}
+
+.meme-portfolio-pnl.negative {
+  color: #ef7878;
+}
+
+
+.meme-portfolio-monad-icon{
+  height: 12px;
+  margin-right: 4px;
+  width: 12px;
+}
+
+
+.meme-portfolio-pnl-monad-icon{
+  height: 14px;
+  margin-right: 4px;
+  width: 14px;
+}
+
+
+.meme-token-name-portfolio{
+  font-size: 0.85rem;
+  color: #e3e5f39c
+}
 
 .portfolio-meme-oc-item{
   display: flex;
@@ -4672,4 +4720,87 @@
 .trenches-time-button-active{
   font-size: 0.9rem;
   color: #d8dcff;
+}
+
+.meme-portfolio-oc-item{
+    align-items: center;
+  display: grid;
+  min-height: 52px;
+  max-height: 52px;
+  padding: 4px 15px;
+  transition: background-color 0.2s ease;
+  width: 100%;
+}
+
+.meme-oc-section-content[data-section="positions"] .meme-oc-header,
+.meme-oc-section-content[data-section="positions"] .meme-portfolio-oc-item {
+  gap: 15px;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr 100px;
+  min-width: 800px;
+}
+
+
+
+.meme-portfolio-token-icon-container {
+  position: relative;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.meme-portfolio-token-icon {
+  border-radius: 4px;
+  flex-shrink: 0;
+  height: 34px;
+  -o-object-fit: cover;
+  object-fit: cover;
+  width: 34px;
+}
+
+.portfolio-launchpad-indicator {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: black;
+  width: 14px;
+  height: 14px;
+  border-radius: 20px;
+  border: 1px solid #AD5FFB;
+  bottom: -3px;
+  right: -1px;
+}
+
+.portfolio-launchpad-indicator.nadfun {
+  border-color: #AD5FFB;
+}
+
+.portfolio-launchpad-indicator .header-launchpad-logo {
+  width: 8px;
+  height: 8px;
+}
+
+
+.portfolio-launchpad-logo{
+  z-index: 100;
+}
+
+.meme-portfolio-token-info {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.meme-portfolio-token-info{
+  cursor: pointer;
+}
+
+
+.meme-portfolio-token-info:hover .meme-token-symbol-portfolio{
+  text-decoration: underline;
+}
+
+.meme-portfolio-token-info:hover .meme-token-name-portfolio{
+  text-decoration: underline;
 }

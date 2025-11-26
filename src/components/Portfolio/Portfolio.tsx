@@ -192,7 +192,6 @@ interface TokenType {
 interface TradesByMarket {
   [key: string]: any[];
 }
-
 interface Position {
   tokenId: string;
   symbol?: string;
@@ -207,8 +206,10 @@ interface Position {
   remainingPct: number;
   pnlNative: number;
   lastPrice?: number;
+  source?: 'nadfun' | 'crystal' | string;
+  status?: 'new' | 'graduating' | 'graduated';
+  bondingPercentage?: number;
 }
-
 interface WalletDragItem {
   address: string;
   privateKey: string;
@@ -361,6 +362,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   monUsdPrice
 }) => {
   const navigate = useNavigate();
+  const crystal = '/CrystalLogo.png';
 
   const fmt = (v: number, d = 2): string => {
     if (!Number.isFinite(v)) return String(v);
@@ -3162,50 +3164,73 @@ const Portfolio: React.FC<PortfolioProps> = ({
                         const tokenShort =
                           p.symbol ||
                           `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
+                        console.log('Position source:', p.source);
                         const tokenImageUrl = p.imageUrl || null;
 
                         return (
-                          <div key={p.tokenId} className="meme-oc-item">
+                          <div key={p.tokenId} className="meme-portfolio-oc-item">
                             <div className="meme-oc-cell">
                               <div className="oc-meme-wallet-info">
                                 <div
-                                  className="meme-token-info"
+                                  className="meme-portfolio-token-info"
                                   style={{ display: 'flex', alignItems: 'center' }}
                                 >
-                                  {tokenImageUrl && !tokenImageErrors[p.tokenId] ? (
-                                    <img
-                                      src={tokenImageUrl}
-                                      alt={p.symbol}
-                                      className="meme-portfolio-token-icon"
-                                      onError={() => {
-                                        setTokenImageErrors(prev => ({ ...prev, [p.tokenId]: true }));
-                                      }}
-                                    />
-                                  ) : (
-                                    <div
-                                      className="meme-portfoliotoken-icon"
-                                      style={{
-                                        backgroundColor: 'rgba(35, 34, 41, .7)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: (p.symbol || '').length <= 3 ? '14px' : '12px',
-                                        fontWeight: '200',
-                                        color: '#ffffff',
-                                        borderRadius: '3px',
-                                        letterSpacing: (p.symbol || '').length > 3 ? '-0.5px' : '0',
-                                      }}
-                                    >
-                                      {(p.symbol || p.name || '?').slice(0, 2).toUpperCase()}
+                                  <div className="meme-portfolio-token-icon-container">
+                                    {tokenImageUrl && !tokenImageErrors[p.tokenId] ? (
+                                      <img
+                                        src={tokenImageUrl}
+                                        alt={p.symbol}
+                                        className="meme-portfolio-token-icon"
+                                        onError={() => {
+                                          setTokenImageErrors(prev => ({ ...prev, [p.tokenId]: true }));
+                                        }}
+                                      />
+                                    ) : (
+                                      <div
+                                        className="meme-portfolio-token-icon"
+                                        style={{
+                                          backgroundColor: 'rgba(35, 34, 41, .7)',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          fontSize: (p.symbol || '').length <= 3 ? '14px' : '12px',
+                                          fontWeight: '200',
+                                          color: '#ffffff',
+                                          borderRadius: '1px',
+                                          letterSpacing: (p.symbol || '').length > 3 ? '-0.5px' : '0',
+                                        }}
+                                      >
+                                        {(p.symbol || p.name || '?').slice(0, 2).toUpperCase()}
+                                      </div>
+                                    )}
+
+                                    <div className={`portfolio-launchpad-indicator ${p.source === 'nadfun' ? 'nadfun' : ''}`
+                                  }>
+                                  <Tooltip content="nad.fun">
+                                      <svg width="10" height="10" viewBox="0 0 32 32" className="header-launchpad-logo" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <defs>
+                                          <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stopColor="#7C55FF" stopOpacity="1" />
+                                            <stop offset="100%" stopColor="#AD5FFB" stopOpacity="1" />
+                                          </linearGradient>
+                                        </defs>
+                                        <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
+                                      </svg>
+                                  </Tooltip>
                                     </div>
-                                  )}
+                                  </div>
                                   <span
-                                    className="oc-meme-wallet-address meme-clickable-token"
+                                    className="portfolio-meme-wallet-address portfolio-meme-clickable-token"
                                     onClick={() => {
                                       navigate(`/meme/${p.tokenId}`)
                                     }}
                                   >
-                                    {tokenShort}
+                                    <span className="meme-token-symbol-portfolio">
+                                      {tokenShort}
+                                    </span>
+                                    <span className="meme-token-name-portfolio">
+                                      {p.name}
+                                    </span>
                                   </span>
                                 </div>
                               </div>
@@ -3215,7 +3240,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                 <div className="meme-ordercenter-info">
                                   {amountMode === 'MON' && (
                                     <img
-                                      className="meme-ordercenter-monad-icon"
+                                      className="meme-portfolio-monad-icon"
                                       src={monadicon}
                                       alt="MONAD"
                                     />
@@ -3238,7 +3263,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                 <div className="meme-ordercenter-info">
                                   {amountMode === 'MON' && (
                                     <img
-                                      className="meme-ordercenter-monad-icon"
+                                      className="meme-portfolio-monad-icon"
                                       src={monadicon}
                                       alt="MONAD"
                                     />
@@ -3262,7 +3287,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                   <span className={`meme-remaining ${isBlurred ? 'blurred' : ''}`}>
                                     <img
                                       src={monadicon}
-                                      className="meme-ordercenter-monad-icon"
+                                      className="meme-portfolio-monad-icon"
                                     />
                                     {fmt(p.remainingTokens * (p.lastPrice || 0))}
                                   </span>
@@ -3284,14 +3309,14 @@ const Portfolio: React.FC<PortfolioProps> = ({
                               <div className="meme-ordercenter-info">
                                 {amountMode === 'MON' && (
                                   <img
-                                    className="meme-ordercenter-monad-icon"
+                                    className="meme-portfolio-pnl-monad-icon"
                                     src={monadicon}
                                     alt="MONAD"
                                   />
                                 )}
                                 <div className="meme-pnl-info">
                                   <span
-                                    className={`meme-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}
+                                    className={`meme-portfolio-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}
                                   >
                                     {p.pnlNative >= 0 ? '+' : '-'}
                                     {fmtAmount(
