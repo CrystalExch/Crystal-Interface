@@ -422,13 +422,9 @@ const totalSelectedBalance = useMemo(() => {
               </div>
             </Tooltip>
             <div ref={dropdownRef} style={{ position: 'relative' }}>
-              <Tooltip content={"Manage Wallets"}>
                 <button
                   className="footer-transparent-button"
                   onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
-                  style={{
-                    transition: 'all 0.2s ease'
-                  }}
                 >
                   <span
                     style={{
@@ -504,12 +500,9 @@ const totalSelectedBalance = useMemo(() => {
                     </svg>
                   </span>
                 </button>
-              </Tooltip>
 
               <div className={`footer-wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
-                <div className="footer-wallet-dropdown-header" style={{
-                  transition: 'all 0.2s ease'
-                }}>
+                <div className="footer-wallet-dropdown-header">
                   <div className="footer-wallet-dropdown-actions">
                     <button
                       className="wallet-action-btn"
@@ -718,12 +711,12 @@ const totalSelectedBalance = useMemo(() => {
                 <span>${formatNumberWithCommas(monUsdPrice, 5)}</span>
               </div>
             </Tooltip>
-            {/* <Tooltip content="nad.fun Migration Price">
+            <Tooltip content="nad.fun Migration Price">
               <div className="crystal-migration-mc">
                 <img src={crystallogo} className="footer-crystal-logo" />
                 <span>${formatNumberWithCommas(monUsdPrice * 1296000)}</span>
               </div>
-            </Tooltip> */}
+            </Tooltip>
           </div>
         </div>
       </div>

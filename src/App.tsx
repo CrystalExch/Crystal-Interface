@@ -5560,8 +5560,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               .then(metadata => {
                 dispatch({
                   type: 'ADD_METADATA',
-                  tokenAddress,
-                  metadata: {
+                  id: tokenAddress,
+                  updates: {
                     image: metadata.image_uri || '',
                     description: metadata.description || '',
                     twitterHandle: metadata.twitter || '',

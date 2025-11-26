@@ -82,6 +82,10 @@
     justify-content: center;
 }
 
+.footer-transparent-button:hover {
+  background: rgba(179, 184, 249, 0.05);
+}
+
 .footer-widget-button{
   display: flex;
   align-items: center;
