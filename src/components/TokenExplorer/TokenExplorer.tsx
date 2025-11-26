@@ -1242,6 +1242,11 @@ interface DisplaySettings {
     volume: { range1: string; range2: string; range3: string };
     holders: { range1: string; range2: string; range3: string };
   };
+  metricThresholds: {
+    marketCap: { range1: number; range2: number };
+    volume: { range1: number; range2: number };
+    holders: { range1: number; range2: number };
+  };
 }
 
 interface TabFilters {
@@ -1290,6 +1295,11 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
     volume: { range1: '#ffffff', range2: '#ffffff', range3: '#ffffff' },
     holders: { range1: '#ffffff', range2: '#ffffff', range3: '#ffffff' },
   },
+  metricThresholds: {
+    marketCap: { range1: 30000, range2: 150000 },
+    volume: { range1: 1000, range2: 2000 },
+    holders: { range1: 10, range2: 50 },
+  },
 };
 const BLACKLIST_DEFAULTS: BlacklistSettings = { items: [] };
 
@@ -1303,29 +1313,28 @@ const getMetricColorClasses = (
   const classes: string[] = [];
   const cssVars: Record<string, string> = {};
 
+  const thresholds = display?.metricThresholds || DISPLAY_DEFAULTS.metricThresholds;
+
   const marketCapUsd = token.marketCap * monUsdPrice;
   if (typeof token.marketCap === 'number' && !isNaN(token.marketCap)) {
-    if (marketCapUsd < 30000) {
+    if (marketCapUsd < thresholds.marketCap.range1) {
       classes.push('market-cap-range1');
-      cssVars['--metric-market-cap-range1'] =
-        display.metricColors.marketCap.range1;
-    } else if (marketCapUsd < 150000) {
+      cssVars['--metric-market-cap-range1'] = display.metricColors.marketCap.range1;
+    } else if (marketCapUsd < thresholds.marketCap.range2) {
       classes.push('market-cap-range2');
-      cssVars['--metric-market-cap-range2'] =
-        display.metricColors.marketCap.range2;
+      cssVars['--metric-market-cap-range2'] = display.metricColors.marketCap.range2;
     } else {
       classes.push('market-cap-range3');
-      cssVars['--metric-market-cap-range3'] =
-        display.metricColors.marketCap.range3;
+      cssVars['--metric-market-cap-range3'] = display.metricColors.marketCap.range3;
     }
   }
 
   const volumeUsd = token.volume24h * monUsdPrice;
   if (typeof token.volume24h === 'number' && !isNaN(token.volume24h)) {
-    if (volumeUsd < 1000) {
+    if (volumeUsd < thresholds.volume.range1) {
       classes.push('volume-range1');
       cssVars['--metric-volume-range1'] = display.metricColors.volume.range1;
-    } else if (volumeUsd < 2000) {
+    } else if (volumeUsd < thresholds.volume.range2) {
       classes.push('volume-range2');
       cssVars['--metric-volume-range2'] = display.metricColors.volume.range2;
     } else {
@@ -1335,10 +1344,10 @@ const getMetricColorClasses = (
   }
 
   if (typeof token.holders === 'number' && !isNaN(token.holders)) {
-    if (token.holders < 10) {
+    if (token.holders < thresholds.holders.range1) {
       classes.push('holders-range1');
       cssVars['--metric-holders-range1'] = display.metricColors.holders.range1;
-    } else if (token.holders < 50) {
+    } else if (token.holders < thresholds.holders.range2) {
       classes.push('holders-range2');
       cssVars['--metric-holders-range2'] = display.metricColors.holders.range2;
     } else {
@@ -1574,6 +1583,21 @@ const DisplayDropdown: React.FC<{
       }
       setHiddenColumns(newHidden);
       onSettingsChange({ ...settings, hiddenColumns: Array.from(newHidden) });
+    };
+
+    const resetMetricThreshold = (
+      metric: 'marketCap' | 'volume' | 'holders',
+    ) => {
+      onSettingsChange({
+        ...settings,
+        metricThresholds: {
+          ...settings.metricThresholds,
+          [metric]: {
+            range1: DISPLAY_DEFAULTS.metricThresholds[metric].range1,
+            range2: DISPLAY_DEFAULTS.metricThresholds[metric].range2,
+          },
+        },
+      });
     };
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -1970,25 +1994,35 @@ const DisplayDropdown: React.FC<{
                           (range, idx) => (
                             <div className="metric-color-option">
                               <div className="metric-color-item" key={range}>
-                                <div className="display-metric-value">
-                                  {metric === 'marketCap'
-                                    ? idx === 0
-                                      ? '30000'
-                                      : idx === 1
-                                        ? '150000'
-                                        : 'Above'
-                                    : metric === 'volume'
-                                      ? idx === 0
-                                        ? '1000'
-                                        : idx === 1
-                                          ? '2000'
-                                          : 'Above'
-                                      : idx === 0
-                                        ? '10'
-                                        : idx === 1
-                                          ? '50'
-                                          : 'Above'}
-                                </div>
+                                <input
+                                  type="number"
+                                  className="display-metric-value"
+                                  value={
+                                    range === 'range3'
+                                      ? ''
+                                      : settings.metricThresholds?.[metric]?.[range] ||
+                                      DISPLAY_DEFAULTS.metricThresholds[metric][range]
+                                  }
+                                  placeholder={range === 'range3' ? 'Above' : ''}
+                                  disabled={range === 'range3'}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value) || 0;
+                                    onSettingsChange({
+                                      ...settings,
+                                      metricThresholds: {
+                                        ...settings.metricThresholds,
+                                        [metric]: {
+                                          ...settings.metricThresholds?.[metric],
+                                          [range]: value,
+                                        },
+                                      },
+                                    });
+                                  }}
+                                  style={{
+                                    background: range === 'range3' ? 'transparent' : undefined,
+                                    cursor: range === 'range3' ? 'not-allowed' : 'text',
+                                  }}
+                                />
                                 <div className="metric-color-controls">
                                   <button
                                     className="metric-color-square"
@@ -2008,7 +2042,7 @@ const DisplayDropdown: React.FC<{
                                   />
                                   <button
                                     className="metric-reset-btn"
-                                    onClick={() =>
+                                    onClick={() => {
                                       updateMetricColor(
                                         metric,
                                         range,
@@ -2019,8 +2053,12 @@ const DisplayDropdown: React.FC<{
                                               ? '#d8dcff'
                                               : '#82f9a4ff'
                                           : '#ffffff',
-                                      )
-                                    }
+                                      );
+                                      if (range === 'range1') {
+                                        resetMetricThreshold(metric);
+                                      }
+                                    }}
+                                    title={range === 'range1' ? 'Reset color and thresholds' : 'Reset color'}
                                   >
                                     <img
                                       src={reset}
@@ -2031,24 +2069,26 @@ const DisplayDropdown: React.FC<{
                                 </div>
                               </div>
                               <div className="metric-range-label">
-                                {metric === 'marketCap'
-                                  ? idx === 0
-                                    ? '0 - 30K'
-                                    : idx === 1
-                                      ? '30K - 150K'
-                                      : '150K+'
-                                  : metric === 'volume'
-                                    ? idx === 0
-                                      ? '0 - 1K'
-                                      : idx === 1
-                                        ? '1K - 2K'
-                                        : '2K+'
-                                    : idx === 0
-                                      ? '0 - 10'
-                                      : idx === 1
-                                        ? '10 - 50'
-                                        : '50+'}
-                              </div>
+  {(() => {
+    const thresholds = settings.metricThresholds?.[metric] || 
+                      DISPLAY_DEFAULTS.metricThresholds[metric];
+    
+    const formatValue = (val: number, metric: string) => {
+      if (metric === 'holders') return val.toString();
+      if (val >= 1000000) return `${(val / 1000000).toFixed(val % 1000000 === 0 ? 0 : 1)}M`;
+      if (val >= 1000) return `${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}K`;
+      return val.toString();
+    };
+    
+    if (idx === 0) {
+      return `0 - ${formatValue(thresholds.range1, metric)}`;
+    } else if (idx === 1) {
+      return `${formatValue(thresholds.range1, metric)} - ${formatValue(thresholds.range2, metric)}`;
+    } else {
+      return `${formatValue(thresholds.range2, metric)}+`;
+    }
+  })()}
+</div>
                             </div>
                           ),
                         )}
@@ -3018,8 +3058,8 @@ const TokenRow = React.memo<{
                               </linearGradient>
                             </defs>
                             <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
-                          </svg>                  
-                         </a>
+                          </svg>
+                        </a>
                       </Tooltip>
                     )}
                   </>
@@ -3654,6 +3694,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   createSubWallet,
   setOneCTDepositAddress
 }) => {
+
   const getMaxSpendableWei = useCallback(
     (addr: string): bigint => {
       const balances = walletTokenBalances[addr];
@@ -3912,6 +3953,20 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             holders: {
               ...DISPLAY_DEFAULTS.metricColors.holders,
               ...(parsed?.metricColors?.holders || {}),
+            },
+          },
+          metricThresholds: {
+            marketCap: {
+              ...DISPLAY_DEFAULTS.metricThresholds.marketCap,
+              ...(parsed?.metricThresholds?.marketCap || {}),
+            },
+            volume: {
+              ...DISPLAY_DEFAULTS.metricThresholds.volume,
+              ...(parsed?.metricThresholds?.volume || {}),
+            },
+            holders: {
+              ...DISPLAY_DEFAULTS.metricThresholds.holders,
+              ...(parsed?.metricThresholds?.holders || {}),
             },
           },
         };
@@ -4193,7 +4248,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 isLoading: false,
               });
             }
-            
+
             dispatch({
               type: 'SET_LOADING',
               id: token.id,
