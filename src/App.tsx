@@ -28452,13 +28452,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 walletTokenBalances={walletTokenBalances}
                 walletsLoading={walletsLoading}
                 terminalRefetch={terminalRefetch}
-                setOneCTSigner={setOneCTSigner}
                 isVaultDepositSigning={isVaultDepositSigning}
                 setIsVaultDepositSigning={setIsVaultDepositSigning}
                 handleSetChain={handleSetChain}
                 createSubWallet={createSubWallet}
                 Wallet={Wallet}
-                activeWalletPrivateKey={oneCTSigner}
                 setShowRefModal={undefined}
                 lastRefGroupFetch={lastRefGroupFetch}
                 scaAddress={scaAddress}
@@ -28466,6 +28464,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setOneCTDepositAddress={setOneCTDepositAddress}
                 positions={memePositions}
                 monUsdPrice={monUsdPrice}
+                selectedWallets={selectedWallets}
+                setSelectedWallets={setSelectedWallets}
               />
             } />
           <Route path="/trackers"

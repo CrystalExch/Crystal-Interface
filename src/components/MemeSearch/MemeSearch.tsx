@@ -820,88 +820,7 @@ const abortRef = useRef<AbortController | null>(null);
                             ))}
                         </div>
                     </div>
-                </div>
-                {searchTerm.trim().length >= 2 && (loading || isSearching) ? (
-                    <div className="meme-search-results">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                            <div key={`skeleton-${i}`} className="meme-search-skeleton-container">
-                                <div className="meme-search-skeleton-left">
-                                    <div className="meme-search-skeleton-hide-button"></div>
-                                    <div className="meme-search-skeleton-token-image-container">
-                                        <div className="meme-search-skeleton-progress-spacer">
-                                            <div className="meme-search-skeleton-image-wrapper">
-                                                <div className="meme-search-skeleton-token-image"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="meme-search-skeleton-progress-line">
-                                        <div className="meme-search-skeleton-progress-line-fill"></div>
-                                    </div>
-                                    <div className="meme-search-skeleton-contract-address"></div>
-                                </div>
-                                <div className="meme-search-skeleton-details">
-                                    <div className="meme-search-skeleton-detail-section">
-                                        <div className="meme-search-skeleton-token-info">
-                                            <div className="meme-search-skeleton-token-symbol"></div>
-                                            <div className="meme-search-skeleton-token-name"></div>
-                                        </div>
-                                        <div className="meme-search-skeleton-second-row">
-                                            <div className="meme-search-skeleton-time-created"></div>
-                                            <div className="meme-search-skeleton-social-buttons">
-                                                <div className="meme-search-skeleton-social-btn"></div>
-                                                <div className="meme-search-skeleton-social-btn"></div>
-                                                <div className="meme-search-skeleton-social-btn"></div>
-                                            </div>
-                                        </div>
-                                        <div className="meme-search-skeleton-additional-data">
-                                            <div className="meme-search-skeleton-stat-item">
-                                                <div className="meme-search-skeleton-stat-icon"></div>
-                                                <div className="meme-search-skeleton-stat-value"></div>
-                                            </div>
-                                            <div className="meme-search-skeleton-stat-item">
-                                                <div className="meme-search-skeleton-stat-icon"></div>
-                                                <div className="meme-search-skeleton-stat-value"></div>
-                                            </div>
-                                            <div className="meme-search-skeleton-stat-item">
-                                                <div className="meme-search-skeleton-stat-icon"></div>
-                                                <div className="meme-search-skeleton-stat-value"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="meme-search-skeleton-holdings-section">
-                                        <div className="meme-search-skeleton-holding-item"></div>
-                                        <div className="meme-search-skeleton-holding-item"></div>
-                                        <div className="meme-search-skeleton-holding-item"></div>
-                                    </div>
-                                </div>
-                                <div className="meme-search-skeleton-third-row">
-                                    <div className="meme-search-skeleton-metrics-container">
-                                        <div className="meme-search-skeleton-volume"></div>
-                                        <div className="meme-search-skeleton-market-cap"></div>
-                                    </div>
-                                    <div className="meme-search-skeleton-third-row-section">
-                                        <div className="meme-search-skeleton-fee-stat"></div>
-                                        <div className="meme-search-skeleton-tx-bar">
-                                            <div className="meme-search-skeleton-tx-header"></div>
-                                            <div className="meme-search-skeleton-tx-visual"></div>
-                                        </div>
-                                    </div>
-                                    <div className="meme-search-skeleton-actions-section">
-                                        <div className="meme-search-skeleton-quick-buy-btn"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <>
-                        {error && <div className="meme-search-error">{error}</div>}
-
-{showCombinedRecent && (
-                            <div className="meme-search-section">
-                                <div className="meme-search-section-header">
-                                    <span>History</span>
-                                    <div ref={walletDropdownRef} style={{ position: 'relative' }}>
+                    <div ref={walletDropdownRef} style={{ position: 'relative' }}>
                                         <button
                                             className="meme-search-wallet-button"
                                             onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
@@ -1049,6 +968,87 @@ const abortRef = useRef<AbortController | null>(null);
                                             </div>
                                         </div>
                                     </div>
+                </div>
+                {searchTerm.trim().length >= 2 && (loading || isSearching) ? (
+                    <div className="meme-search-results">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={`skeleton-${i}`} className="meme-search-skeleton-container">
+                                <div className="meme-search-skeleton-left">
+                                    <div className="meme-search-skeleton-hide-button"></div>
+                                    <div className="meme-search-skeleton-token-image-container">
+                                        <div className="meme-search-skeleton-progress-spacer">
+                                            <div className="meme-search-skeleton-image-wrapper">
+                                                <div className="meme-search-skeleton-token-image"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="meme-search-skeleton-progress-line">
+                                        <div className="meme-search-skeleton-progress-line-fill"></div>
+                                    </div>
+                                    <div className="meme-search-skeleton-contract-address"></div>
+                                </div>
+                                <div className="meme-search-skeleton-details">
+                                    <div className="meme-search-skeleton-detail-section">
+                                        <div className="meme-search-skeleton-token-info">
+                                            <div className="meme-search-skeleton-token-symbol"></div>
+                                            <div className="meme-search-skeleton-token-name"></div>
+                                        </div>
+                                        <div className="meme-search-skeleton-second-row">
+                                            <div className="meme-search-skeleton-time-created"></div>
+                                            <div className="meme-search-skeleton-social-buttons">
+                                                <div className="meme-search-skeleton-social-btn"></div>
+                                                <div className="meme-search-skeleton-social-btn"></div>
+                                                <div className="meme-search-skeleton-social-btn"></div>
+                                            </div>
+                                        </div>
+                                        <div className="meme-search-skeleton-additional-data">
+                                            <div className="meme-search-skeleton-stat-item">
+                                                <div className="meme-search-skeleton-stat-icon"></div>
+                                                <div className="meme-search-skeleton-stat-value"></div>
+                                            </div>
+                                            <div className="meme-search-skeleton-stat-item">
+                                                <div className="meme-search-skeleton-stat-icon"></div>
+                                                <div className="meme-search-skeleton-stat-value"></div>
+                                            </div>
+                                            <div className="meme-search-skeleton-stat-item">
+                                                <div className="meme-search-skeleton-stat-icon"></div>
+                                                <div className="meme-search-skeleton-stat-value"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="meme-search-skeleton-holdings-section">
+                                        <div className="meme-search-skeleton-holding-item"></div>
+                                        <div className="meme-search-skeleton-holding-item"></div>
+                                        <div className="meme-search-skeleton-holding-item"></div>
+                                    </div>
+                                </div>
+                                <div className="meme-search-skeleton-third-row">
+                                    <div className="meme-search-skeleton-metrics-container">
+                                        <div className="meme-search-skeleton-volume"></div>
+                                        <div className="meme-search-skeleton-market-cap"></div>
+                                    </div>
+                                    <div className="meme-search-skeleton-third-row-section">
+                                        <div className="meme-search-skeleton-fee-stat"></div>
+                                        <div className="meme-search-skeleton-tx-bar">
+                                            <div className="meme-search-skeleton-tx-header"></div>
+                                            <div className="meme-search-skeleton-tx-visual"></div>
+                                        </div>
+                                    </div>
+                                    <div className="meme-search-skeleton-actions-section">
+                                        <div className="meme-search-skeleton-quick-buy-btn"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <>
+                        {error && <div className="meme-search-error">{error}</div>}
+
+{showCombinedRecent && (
+                            <div className="meme-search-section">
+                                <div className="meme-search-section-header">
+                                    <span>History</span>
                                 </div>
                             </div>
                         )}

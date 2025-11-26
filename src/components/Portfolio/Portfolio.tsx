@@ -272,13 +272,11 @@ interface PortfolioProps {
   walletTokenBalances: { [address: string]: any };
   walletsLoading: boolean;
   terminalRefetch: any;
-  setOneCTSigner: (privateKey: string) => void;
   isVaultDepositSigning: boolean;
   setIsVaultDepositSigning: (signing: boolean) => void;
   handleSetChain: () => Promise<void>;
   createSubWallet?: any;
   Wallet?: any;
-  activeWalletPrivateKey?: string;
   lastRefGroupFetch: any;
   positions?: Position[];
   onSellPosition?: (position: Position, monAmount: string) => void;
@@ -286,6 +284,8 @@ interface PortfolioProps {
   nonces: any;
   setOneCTDepositAddress: any;
   monUsdPrice: number;
+  selectedWallets: any;
+  setSelectedWallets: any;
 }
 
 type PortfolioTab = 'spot' | 'Perpetuals' | 'wallets' | 'trenches';
@@ -343,20 +343,20 @@ const Portfolio: React.FC<PortfolioProps> = ({
   walletTokenBalances,
   walletsLoading,
   terminalRefetch,
-  setOneCTSigner,
   isVaultDepositSigning,
   setIsVaultDepositSigning,
   handleSetChain,
   createSubWallet,
   Wallet,
-  activeWalletPrivateKey,
   lastRefGroupFetch,
   positions,
   onSellPosition,
   scaAddress,
   nonces,
   setOneCTDepositAddress,
-  monUsdPrice
+  monUsdPrice,
+  selectedWallets,
+  setSelectedWallets
 }) => {
   const navigate = useNavigate();
   const crystal = '/CrystalLogo.png';
@@ -629,9 +629,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1020);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [walletToDelete, setWalletToDelete] = useState<string>('');
-  const isWalletActive = (walletPrivateKey: string) => {
-    return activeWalletPrivateKey === walletPrivateKey;
-  };
 
   const deleteWallet = (address: string) => {
     const walletToDelete = subWallets.find(w => w.address === address);
@@ -1251,7 +1248,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     draggedContainer: 'main' | 'source' | 'destination' | null;
     dragOverContainer: 'main' | 'source' | 'destination' | null;
   }
-  const [_selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
   const [activeSelectionContainer, setActiveSelectionContainer] = useState<'main' | 'source' | 'destination' | null>(null);
   const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
   const [_dragStartPoint, setDragStartPoint] = useState<{ x: number; y: number } | null>(null);
@@ -1514,7 +1510,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        setSelectedWallets(new Set());
         setIsMultiDrag(false);
         setDropPreviewLine(null);
         endSelection();
@@ -1740,6 +1735,21 @@ const Portfolio: React.FC<PortfolioProps> = ({
     }
   };
 
+  const toggleWalletSelection = useCallback(
+    (address: string) => {
+      if (!setSelectedWallets) return;
+
+      const newSelected = new Set(selectedWallets);
+      if (newSelected.has(address)) {
+        newSelected.delete(address);
+      } else {
+        newSelected.add(address);
+      }
+      setSelectedWallets(newSelected);
+    },
+    [selectedWallets, setSelectedWallets],
+  );
+
   const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 'source' | 'destination', containerKey: string) => {
     const isSelected = selectedWalletsPerContainer[containerType].has(wallet.address);
     const isPreviewSelected = previewSelection.has(wallet.address);
@@ -1879,23 +1889,14 @@ const Portfolio: React.FC<PortfolioProps> = ({
         )}
 
         <div className="wallet-active-checkbox-container">
-          <Tooltip content={isWalletActive(wallet.privateKey) ? "Active Wallet" : "Set as Active Wallet"}>
+          <Tooltip content={selectedWallets.has(wallet.address) ? "Active Wallet" : "Set as Active Wallet"}>
             <input
               type="checkbox"
               className="wallet-active-checkbox"
-              checked={isWalletActive(wallet.privateKey)}
+              checked={selectedWallets.has(wallet.address)}
               onChange={(e) => {
                 e.stopPropagation();
-                if (!isWalletActive(wallet.privateKey)) {
-                  setOneCTSigner(wallet.privateKey);
-                  refetch();
-                }
-                else {
-                  if (!client) {
-                    setOneCTSigner('')
-                    refetch();
-                  }
-                }
+                toggleWalletSelection(wallet.address)
               }}
               onClick={(e) => e.stopPropagation()}
             />
@@ -1931,9 +1932,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
             ) : (
               <div className="wallet-name-display">
                 <span
-                  className={`wallet-drag-name ${isWalletActive(wallet.privateKey) ? 'active' : ''}`}
+                  className={`wallet-drag-name ${selectedWallets.has(wallet.address) ? 'active' : ''}`}
                   style={{
-                    color: isWalletActive(wallet.privateKey) ? '#d8dcff' : '#fff'
+                    color: selectedWallets.has(wallet.address) ? '#d8dcff' : '#fff'
                   }}
                 >
                   {getWalletName(wallet.address, index)}
