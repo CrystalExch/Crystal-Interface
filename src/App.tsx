@@ -637,7 +637,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     client,
     waitForTxn: false,
   });
-
+const [pnlShareData, setPnlShareData] = useState<any>(null);
   const { signTypedDataAsync } = useSignTypedData({ client })
   const { signMessageAsync } = useSignMessage({ client })
   const user = useUser();
@@ -18896,21 +18896,21 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             </ul>
           </div>
         ) : null}
-        {popup === 27 ? ( // PNL
-          <div ref={popupref}>
-            <PNLComponent
-              windowWidth={window.innerWidth}
-              tokenAddress={currentTokenData.address}
-              userAddress={address}
-              tokenSymbol={currentTokenData.symbol}
-              tokenName={currentTokenData.name}
-              monUsdPrice={monUsdPrice}
-              externalUserStats={memeUserStats}
-              currentPrice={currentTokenData.price}
-              refLink={refLink}
-            />
-          </div>
-        ) : null}
+      {popup === 27 ? (
+  <div ref={popupref}>
+    <PNLComponent
+      windowWidth={window.innerWidth}
+      tokenAddress={pnlShareData?.tokenAddress || currentTokenData.address}
+      userAddress={pnlShareData?.userAddress || address}
+      tokenSymbol={pnlShareData?.tokenSymbol || currentTokenData.symbol}
+      tokenName={pnlShareData?.tokenName || currentTokenData.name}
+      monUsdPrice={monUsdPrice}
+      externalUserStats={pnlShareData?.externalUserStats || memeUserStats}
+      currentPrice={pnlShareData?.currentPrice || currentTokenData.price}
+      refLink={refLink}
+    />
+  </div>
+) : null}
         {popup === 28 ? (
           <div className="onect-trading-selection-bg">
             <div ref={popupref} className="onect-trading-selection-container">
@@ -28154,6 +28154,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setOneCTDepositAddress={setOneCTDepositAddress}
                 scaAddress={scaAddress}
                 signTypedDataAsync={signTypedDataUnified}
+                  onTokenDataChange={(data) => {
+    setCurrentTokenData(data);
+    if (data.externalUserStats) {
+      setPnlShareData(data);
+    }
+  }}
               />
             }
           />

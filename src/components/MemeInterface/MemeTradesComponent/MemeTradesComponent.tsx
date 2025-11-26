@@ -263,6 +263,7 @@ interface Props {
   onFilterSet: any;
   positions: any[];
   onSellPosition?: (position: Position, monAmount: string) => void;
+  onShareDataSelected?: (shareData: any) => void;
 }
 
 
@@ -289,6 +290,7 @@ export default function MemeTradesComponent({
   onFilterSet,
   positions,
   onSellPosition,
+  onShareDataSelected,
 }: Props) {
   const [selectedShareData, setSelectedShareData] = useState<any>(null);
   const [amountMode, setAmountMode] = useState<AmountMode>('MON');
@@ -950,22 +952,30 @@ export default function MemeTradesComponent({
         </div>
       </div>
 
-      {popupAddr && (
-        <TraderPortfolioPopup
-          traderAddress={popupAddr}
-          onClose={() => setPopupAddr(null)}
-          tokenList={tokenList}
-          marketsData={marketsData}
-          onMarketSelect={(shareData) => {
-            setSelectedShareData(shareData);
-          }}
-          setSendTokenIn={setSendTokenIn}
-          setpopup={setpopup}
-          positions={positions}
-          onSellPosition={onSellPosition}
-          monUsdPrice={monUsdPrice}
-        />
-      )}
+     {popupAddr && (
+  <TraderPortfolioPopup
+    traderAddress={popupAddr}
+    onClose={() => setPopupAddr(null)}
+    tokenList={tokenList}
+    marketsData={marketsData}
+    onMarketSelect={(shareData) => {
+      setSelectedShareData(shareData);
+      
+      if (setpopup) {
+        setpopup(27); 
+      }
+      
+      if (onShareDataSelected) {
+        onShareDataSelected(shareData);
+      }
+    }}
+    setSendTokenIn={setSendTokenIn}
+    setpopup={setpopup}
+    positions={positions}
+    onSellPosition={onSellPosition}
+    monUsdPrice={monUsdPrice}
+  />
+)}
 
       <TransactionFiltersPopup
         isOpen={showFiltersPopup}

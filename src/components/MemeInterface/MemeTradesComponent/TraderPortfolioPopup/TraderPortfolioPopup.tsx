@@ -422,7 +422,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                                     {(p.symbol || p.name || '?').slice(0, 2).toUpperCase()}
                                   </div>
                                 )}
-                                <div className={`portfolio-launchpad-indicator ${p.source === 'nadfun' ? 'nadfun' : ''}`}>
+                                <div className={`portfolio-launchpad-indicator`}>
                                   <svg width="10" height="10" viewBox="0 0 32 32" className="header-launchpad-logo" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <defs>
                                       <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">

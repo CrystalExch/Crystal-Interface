@@ -364,6 +364,8 @@ interface TokenInfoProps {
   showLoadingPopup?: (id: string, config: any) => void;
   updatePopup?: (id: string, config: any) => void;
   setperpsActiveMarketKey: any;
+  onSharePNL?: (shareData: any) => void;
+
 }
 
 const Tooltip: React.FC<{
@@ -542,6 +544,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   showLoadingPopup,
   updatePopup,
   setperpsActiveMarketKey,
+  onSharePNL,
 }) => {
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const [hoveredMemeImage, setHoveredMemeImage] = useState(false);
@@ -1272,10 +1275,10 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     return () => clearInterval(id)
   }, [perpsTokenInfo?.nextFundingTime])
 
-if (isMemeToken && memeTokenData) {
-    const isLoadingMemeData = 
+  if (isMemeToken && memeTokenData) {
+    const isLoadingMemeData =
       (memeTokenData.symbol === 'TKN' && memeTokenData.name === 'Token');
-    
+
     if (isLoadingMemeData) {
       return <MemeTokenSkeleton />;
     }
@@ -1474,8 +1477,8 @@ if (isMemeToken && memeTokenData) {
                           </linearGradient>
                         </defs>
                         <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
-                      </svg>   
-                       </Tooltip>
+                      </svg>
+                    </Tooltip>
                   ) : (
                     <Tooltip content="crystal.fun">
                       <img src={crystal} className="header-launchpad-logo" />
@@ -1708,10 +1711,24 @@ if (isMemeToken && memeTokenData) {
               {externalUserStats && externalUserStats.valueBought > 0 && externalUserStats.valueNet !== 0 && (
                 <div className="meme-interface-token-metric">
                   <div className="meme-interface-pnl-value-container">
-
                     <button
                       className="token-info-trenches-pnl-button"
-                      onClick={() => setpopup(27)}
+                      onClick={() => {
+                        const currentShareData = {
+                          tokenAddress: memeTokenData?.tokenAddress || '',
+                          tokenSymbol: memeTokenData?.symbol || '',
+                          tokenName: memeTokenData?.name || '',
+                          userAddress: userAddress || '',
+                          externalUserStats: externalUserStats,
+                          currentPrice: Number(price) || 0,
+                        };
+
+                        if (onSharePNL) {
+                          onSharePNL(currentShareData);
+                        }
+
+                        setpopup(27);
+                      }}
                     >
                       <svg fill="#d8dcff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
                         <path d="M31.965 2.008a2 2 0 0 0-1.375.582L20.35 12.82a2.57 2.57 0 0 0-.44.65 2 2 0 0 0 1.85 2.77H30v23.54a2 2 0 0 0 4 0V16.24h8.25a2 2 0 0 0 1.41-3.42L33.41 2.59a2 2 0 0 0-1.446-.582zM12 22a2 2 0 0 0-2 2v32a2 2 0 0 0 2 2h40a2 2 0 0 0 2-2V24a2 2 0 0 0-2-2H42a2 2 0 0 0 0 4h8v28H14V26h8a2 2 0 0 0 0-4H12z" />
