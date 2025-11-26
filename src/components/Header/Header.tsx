@@ -97,7 +97,7 @@ interface HeaderProps {
   lastNonceGroupFetch: any;
   scaAddress: any;
   onSharePNL?: (shareData: any) => void;
-  userAddress?: string;
+  client: any;
 }
 
 const Tooltip: React.FC<{
@@ -302,7 +302,7 @@ const Header: React.FC<HeaderProps> = ({
   lastNonceGroupFetch,
   scaAddress,
   onSharePNL,
-  userAddress
+  client
 }) => {
   const copyToClipboard = async (text: string, label = 'Address copied') => {
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -573,17 +573,16 @@ const Header: React.FC<HeaderProps> = ({
       }
     }
     else {
-      setOneCTSigner('')
-      lastRefGroupFetch.current = 0;
-      lastNonceGroupFetch.current = 0;
-      setTimeout(() => refetch(), 0);
+      if (!client) {
+        setOneCTSigner('')
+        lastRefGroupFetch.current = 0;
+        lastNonceGroupFetch.current = 0;
+        setTimeout(() => refetch(), 0);
+      }
     }
   };
 
   const handleLogout = () => {
-    if (setOneCTSigner) {
-      setOneCTSigner('');
-    }
     if (logout) {
       logout();
     }
@@ -676,7 +675,7 @@ const Header: React.FC<HeaderProps> = ({
             setperpsActiveMarketKey={setperpsActiveMarketKey}
             externalUserStats={externalUserStats}
             onSharePNL={onSharePNL}
-            userAddress={userAddress || account.address}
+            userAddress={account.address}
           />
         </div>
         <div className={rightHeaderClass}>

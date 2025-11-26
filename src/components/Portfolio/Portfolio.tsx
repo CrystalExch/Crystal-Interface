@@ -215,7 +215,6 @@ interface WalletDragItem {
   privateKey: string;
   name: string;
   balance: number;
-  totalValue: number;
   index: number;
   sourceZone?: 'source' | 'destination';
 }
@@ -271,7 +270,6 @@ interface PortfolioProps {
   subWallets: Array<{ address: string, privateKey: string }>;
   setSubWallets: (wallets: Array<{ address: string, privateKey: string }>) => void;
   walletTokenBalances: { [address: string]: any };
-  walletTotalValues: { [address: string]: number };
   walletsLoading: boolean;
   terminalRefetch: any;
   setOneCTSigner: (privateKey: string) => void;
@@ -343,7 +341,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
   subWallets,
   setSubWallets,
   walletTokenBalances,
-  walletTotalValues,
   walletsLoading,
   terminalRefetch,
   setOneCTSigner,
@@ -943,13 +940,13 @@ const Portfolio: React.FC<PortfolioProps> = ({
           }
         }
       } else {
-        const totalDestValue = destinationWallets.reduce((sum, w) => sum + w.totalValue, 0);
+        const totalDestValue = destinationWallets.reduce((sum, w) => sum + w.balance, 0);
 
         for (const sourceItem of sourceWalletCapacities) {
           const sourceContribution = (sourceItem.availableBalance / totalAvailable) * actualDistributionAmount;
 
           for (const destWallet of destinationWallets) {
-            const proportion = destWallet.totalValue / (totalDestValue || 1);
+            const proportion = destWallet.balance / (totalDestValue || 1);
             const transferAmount = sourceContribution * proportion;
 
             if (transferAmount > 0.000001) {
@@ -1405,7 +1402,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
           privateKey: w.privateKey,
           name: getWalletName(w.address),
           balance: getWalletBalance(w.address),
-          totalValue: getTotalWalletValue(w.address),
           index: actualIndex,
         };
       });
@@ -1779,7 +1775,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
               privateKey: wallet.privateKey,
               name: getWalletName(wallet.address, index),
               balance: getWalletBalance(wallet.address),
-              totalValue: getTotalWalletValue(wallet.address),
               index,
               type: 'single-main-drag'
             };
@@ -1896,8 +1891,10 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   refetch();
                 }
                 else {
-                  setOneCTSigner('')
-                  refetch();
+                  if (!client) {
+                    setOneCTSigner('')
+                    refetch();
+                  }
                 }
               }}
               onClick={(e) => e.stopPropagation()}
@@ -2138,10 +2135,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
         )}
       </div>
     );
-  };
-
-  const getTotalWalletValue = (address: string) => {
-    return walletTotalValues[address] || 0;
   };
 
   const handleConfirmSpectating = () => {
@@ -2656,7 +2649,21 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   <div className="destination-wallets-container">
                     <span className="drop-zone-title">Destination Wallets</span>
                     <span className="drop-zone-count">{destinationWallets.length}</span>
-
+                    {!client && (
+                      <button
+                      className="clear-zone-button"
+                      onClick={() => {
+                        setDestinationWallets(prev => {
+                          if (prev.some(w => w.address === scaAddress)) {
+                            return prev.filter(w => w.address != scaAddress)
+                          }
+                          return [...prev, { address: scaAddress, balance: Number(walletTokenBalances?.[scaAddress]?.[settings.chainConfig[activechain].eth]) / 10 ** 18, name: "Main Wallet", type: "mainWallet", privateKey: "", index: 0, sourceZone: undefined }];
+                        });
+                      }}
+                      >
+                        {!destinationWallets.some(w => w.address === scaAddress) ? 'Add Main' : 'Remove Main'}
+                      </button>
+                    )}
                   </div>
                   <div className="drop-zone-right-section">
                     {selectedWalletsPerContainer.destination.size > 0 && (
@@ -3158,7 +3165,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
                         const tokenShort =
                           p.symbol ||
                           `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
-                        console.log('Position source:', p.source);
                         const tokenImageUrl = p.imageUrl || null;
 
                         return (

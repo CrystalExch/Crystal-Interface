@@ -82,7 +82,6 @@ interface MemeInterfaceProps {
   subWallets?: Array<{ address: string; privateKey: string }>;
   walletTokenBalances?: { [address: string]: any };
   activeWalletPrivateKey?: string;
-  setOneCTSigner: (privateKey: string) => void;
   refetch?: () => void;
   isBlurred?: boolean;
   terminalRefetch: any;
@@ -327,7 +326,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   subWallets = [],
   walletTokenBalances = {},
   activeWalletPrivateKey,
-  setOneCTSigner,
   refetch,
   isBlurred = false,
   terminalRefetch,

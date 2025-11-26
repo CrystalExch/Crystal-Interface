@@ -1017,7 +1017,7 @@ const abortRef = useRef<AbortController | null>(null);
                                                                             );
                                                                         })()}
                                                                     </div>
-                                                                    <div className="wallet-drag-tokens">
+                                                                    <div className="memesearch-wallet-drag-tokens">
                                                                         <div className="wallet-token-count">
                                                                             <div className="wallet-token-structure-icons">
                                                                                 <div className="token1"></div>

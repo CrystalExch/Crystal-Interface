@@ -2115,7 +2115,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const monUsdPrice = storkData?.price || 0.05;
 
   const [walletTokenBalances, setWalletTokenBalances] = useState<any>({});
-  const [walletTotalValues, setWalletTotalValues] = useState({});
   const [walletsLoading, _setWalletsLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState('forward');
@@ -7369,11 +7368,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         setWalletTokenBalances((prev: any) => ({
           ...prev,
           [wallet.address]: balanceMap
-        }));
-
-        setWalletTotalValues(prev => ({
-          ...prev,
-          [wallet.address]: totalValue
         }));
       })
 
@@ -15167,7 +15161,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 <button
                   className="popup-disconnect-button"
                   onClick={() => {
-                    setOneCTSigner('')
                     logout()
                   }}
                 >
@@ -28097,7 +28090,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         lastNonceGroupFetch={lastNonceGroupFetch}
         scaAddress={scaAddress}
         onSharePNL={handleSharePNL}
-        userAddress={address}
+        client={client}
       />
       <div className="app-container" style={{
         marginLeft: (() => {
@@ -28188,7 +28181,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 subWallets={subWallets}
                 walletTokenBalances={walletTokenBalances}
                 activeWalletPrivateKey={oneCTSigner}
-                setOneCTSigner={setOneCTSigner}
                 refetch={refetch}
                 isBlurred={isBlurred}
                 tokendict={tokendict}
@@ -28458,7 +28450,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 subWallets={subWallets}
                 setSubWallets={saveSubWallets}
                 walletTokenBalances={walletTokenBalances}
-                walletTotalValues={walletTotalValues}
                 walletsLoading={walletsLoading}
                 terminalRefetch={terminalRefetch}
                 setOneCTSigner={setOneCTSigner}

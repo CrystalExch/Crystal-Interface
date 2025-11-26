@@ -59,11 +59,11 @@ const PortfolioContent: React.FC<PortfolioContentProps> = ({
       priceChange = (1 + Number(marketsDataDict[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`]?.priceChange)) * (1 + Number(marketsDataDict[settings.chainConfig[activechain].ethticker + 'USDC']?.priceChange)) - 1
     }
     const balance = customRound(
-      Number(tokenBalances[token.address]) / 10 ** Number(token.decimals),
+      Number(tokenBalances?.[token.address] || 0) / 10 ** Number(token.decimals),
       3,
     );
     const value =
-      (Number(tokenBalances[token.address]) / 10 ** Number(token.decimals)) *
+      (Number(tokenBalances?.[token.address] || 0) / 10 ** Number(token.decimals)) *
       price;
 
     return {
