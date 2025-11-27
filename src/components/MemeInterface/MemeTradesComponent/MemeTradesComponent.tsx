@@ -952,30 +952,62 @@ export default function MemeTradesComponent({
         </div>
       </div>
 
-     {popupAddr && (
-  <TraderPortfolioPopup
-    traderAddress={popupAddr}
-    onClose={() => setPopupAddr(null)}
-    tokenList={tokenList}
-    marketsData={marketsData}
-    onMarketSelect={(shareData) => {
-      setSelectedShareData(shareData);
-      
-      if (setpopup) {
-        setpopup(27); 
-      }
-      
-      if (onShareDataSelected) {
-        onShareDataSelected(shareData);
-      }
-    }}
-    setSendTokenIn={setSendTokenIn}
-    setpopup={setpopup}
-    positions={positions}
-    onSellPosition={onSellPosition}
-    monUsdPrice={monUsdPrice}
-  />
-)}
+      {popupAddr && (
+        <TraderPortfolioPopup
+          traderAddress={popupAddr}
+          onClose={() => setPopupAddr(null)}
+          tokenList={tokenList}
+          marketsData={marketsData}
+          onMarketSelect={(shareData) => {
+            setSelectedShareData(shareData);
+
+            if (setpopup) {
+              setpopup(27);
+            }
+
+            if (onShareDataSelected) {
+              onShareDataSelected(shareData);
+            }
+          }}
+          setSendTokenIn={setSendTokenIn}
+          setpopup={setpopup}
+          positions={positions}
+          onSellPosition={onSellPosition}
+          monUsdPrice={monUsdPrice}
+          trackedWalletsRef={trackedWalletsRef}
+        onAddTrackedWallet={(wallet) => {
+  const existing = trackedWalletsRef.current.findIndex(
+    (w: any) => w.address.toLowerCase() === wallet.address.toLowerCase()
+  );
+  
+  if (existing >= 0) {
+    // Update existing wallet
+    trackedWalletsRef.current[existing] = {
+      ...trackedWalletsRef.current[existing],
+      name: wallet.name,
+      emoji: wallet.emoji,
+    };
+  } else {
+    // Add new wallet
+    trackedWalletsRef.current.push({
+      id: `tracked-${Date.now()}`,
+      address: wallet.address,
+      name: wallet.name,
+      emoji: wallet.emoji,
+      balance: 0,
+      lastActiveAt: Date.now(),
+      createdAt: new Date().toISOString(),
+    });
+  }
+  
+  // Save to localStorage
+  localStorage.setItem('crystal_tracked_wallets', JSON.stringify(trackedWalletsRef.current));
+  
+  // Force re-render by updating displayTrades state
+  setDisplayTrades((prev) => [...prev]);
+}}
+        />
+      )}
 
       <TransactionFiltersPopup
         isOpen={showFiltersPopup}

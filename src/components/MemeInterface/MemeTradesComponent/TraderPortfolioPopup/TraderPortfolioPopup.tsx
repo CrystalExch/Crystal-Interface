@@ -1,10 +1,12 @@
 import { X } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import monadicon from '../../../../assets/monadlogo.svg';
 import closebutton from '../../../../assets/close_button.png';
 import { settings } from '../../../../settings';
+import EmojiPicker from 'emoji-picker-react';
+
 
 import './TraderPortfolioPopup.css';
 
@@ -35,7 +37,16 @@ interface TraderPortfolioPopupProps {
   positions?: Position[];
   onSellPosition?: (position: Position, monAmount: string) => void;
   monUsdPrice: number;
+  trackedWalletsRef?: React.MutableRefObject<any[]>;
+  onAddTrackedWallet?: (wallet: { address: string; name: string; emoji: string }) => void;
 }
+const EMOJI_LIST = [
+  '🎯', '🚀', '💎', '🔥', '⚡', '🌟', '💰', '🎮', '🎨', '🎭',
+  '🎪', '🎬', '🎤', '🎧', '🎼', '🎹', '🎺', '🎸', '🎻', '🎲',
+  '🎰', '🃏', '🎴', '🀄', '🎳', '🎯', '🎱', '🎖️', '🏆', '🏅',
+  '🥇', '🥈', '🥉', '⚽', '⚾', '🥎', '🏀', '🏐', '🏈', '🏉',
+  '🎾', '🥏', '🎳', '🏏', '🏑', '🏒', '🥍', '🏓', '🏸', '🥊'
+];
 
 const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   traderAddress,
@@ -48,11 +59,49 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   positions = [],
   onSellPosition,
   monUsdPrice,
+  trackedWalletsRef,
+  onAddTrackedWallet,
 }) => {
 
-  const [traderPositions, setTraderPositions] = useState<Position[]>([]);
+const [traderPositions, setTraderPositions] = useState<Position[]>([]);
   const [isLoadingPositions, setIsLoadingPositions] = useState(false);
+  const [walletName, setWalletName] = useState('');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [selectedEmoji, setSelectedEmoji] = useState('🎯');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (trackedWalletsRef?.current) {
+      const tracked = trackedWalletsRef.current.find(
+        (w: any) => w.address.toLowerCase() === traderAddress.toLowerCase()
+      );
+      if (tracked) {
+        setWalletName(tracked.name || '');
+        setSelectedEmoji(tracked.emoji || '🎯');
+      }
+    }
+  }, [traderAddress, trackedWalletsRef]);
 
+  useEffect(() => {
+    if (isEditingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [isEditingName]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    if (showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showEmojiPicker]);
   useEffect(() => {
     if (!traderAddress) return;
 
@@ -134,7 +183,53 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
   const [totalAccountValue, setTotalAccountValue] = useState<number | null>(null);
   const [tokenBalances, setTokenBalances] = useState<{ [key: string]: string }>({});
+const handleNameSubmit = () => {
+    if (walletName.trim() && onAddTrackedWallet) {
+      onAddTrackedWallet({
+        address: traderAddress,
+        name: walletName.trim(),
+        emoji: selectedEmoji,
+      });
+      setIsEditingName(false);
+    }
+  };
 
+  const handleNameBlur = () => {
+    if (walletName.trim()) {
+      handleNameSubmit();
+    } else {
+      setIsEditingName(false);
+    }
+  };
+
+  const handleNameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleNameSubmit();
+    } else if (e.key === 'Escape') {
+      setIsEditingName(false);
+      if (trackedWalletsRef?.current) {
+        const tracked = trackedWalletsRef.current.find(
+          (w: any) => w.address.toLowerCase() === traderAddress.toLowerCase()
+        );
+        if (tracked) {
+          setWalletName(tracked.name || '');
+        }
+      }
+    }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setSelectedEmoji(emoji);
+    setShowEmojiPicker(false);
+    
+    if (walletName.trim() && onAddTrackedWallet) {
+      onAddTrackedWallet({
+        address: traderAddress,
+        name: walletName.trim(),
+        emoji: emoji,
+      });
+    }
+  };
   const fmt = (v: number, d = 2): string => {
     if (!Number.isFinite(v)) return String(v);
     if (v === 0) return '0';
@@ -222,12 +317,64 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   return (
     <div className="trader-popup-backdrop" onClick={handleBackdropClick}>
       <div className="trader-popup-container">
-        <div className="trader-popup-header">
+<div className="trader-popup-header">
           <div className="trader-popup-title">
             <div className="trader-address-container">
-              <span className="rename-track-button">Rename to track</span>
+              {walletName ? (
+                <div className="trader-name-display">
+                  <button 
+                    className="trader-emoji-button"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  >
+                    {selectedEmoji}
+                  </button>
+                  {showEmojiPicker && (
+                    <div ref={emojiPickerRef} className="trader-emoji-picker">
+                      <div className="trader-emoji-grid">
+                        {EMOJI_LIST.map((emoji) => (
+                          <button
+                            key={emoji}
+                            className={`trader-emoji-option ${selectedEmoji === emoji ? 'selected' : ''}`}
+                            onClick={() => handleEmojiSelect(emoji)}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <span 
+                    className="trader-wallet-name"
+                    onClick={() => setIsEditingName(true)}
+                  >
+                    {walletName}
+                  </span>
+                </div>
+              ) : isEditingName ? (
+                <div className="trader-name-input-container">
+                  <span className="trader-emoji-preview">{selectedEmoji}</span>
+                <input
+                    ref={nameInputRef}
+                    type="text"
+                    className="trader-name-input"
+                    value={walletName}
+                    onChange={(e) => setWalletName(e.target.value)}
+                    onKeyDown={handleNameKeyDown}
+                    onBlur={handleNameBlur}
+                    placeholder="Enter wallet name..."
+                    autoFocus
+                  />
+                </div>
+              ) : (
+                <span 
+                  className="rename-track-button"
+                  onClick={() => setIsEditingName(true)}
+                >
+                  Rename to track
+                </span>
+              )}
               <span className="trader-address">
-                {traderAddress.slice(0, 6)}...{traderAddress.slice(-4)}
+                {traderAddress}
               </span>
             </div>
           </div>
@@ -376,15 +523,69 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                 <div className="meme-oc-header-cell">Actions</div>
               </div>
               <div className="meme-oc-items">
-                {isLoadingPositions ? (
-                  <div className="meme-oc-empty">
-                    Loading positions...
-                  </div>
-                ) : traderPositions.length === 0 ? (
-                  <div className="meme-oc-empty">
-                    No active positions
-                  </div>
-                ) : (
+        {isLoadingPositions ? (
+  <>
+    {Array.from({ length: 5 }).map((_, index) => (
+      <div key={`skeleton-${index}`} className="meme-portfolio-oc-item trader-portfolio-skeleton-item">
+        <div className="meme-oc-cell">
+          <div className="oc-meme-wallet-info">
+            <div className="meme-portfolio-token-info">
+              <div className="meme-portfolio-token-icon-container">
+                <div className="meme-portfolio-token-icon trader-portfolio-skeleton-icon"></div>
+              </div>
+              <span className="portfolio-meme-wallet-address">
+                <span className="meme-token-symbol-portfolio trader-portfolio-skeleton-text trader-portfolio-skeleton-text-short"></span>
+                <span className="meme-token-name-portfolio trader-portfolio-skeleton-text trader-portfolio-skeleton-text-long"></span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="meme-oc-cell">
+          <div className="meme-trade-info">
+            <div className="meme-ordercenter-info">
+              <div className="trader-portfolio-skeleton-icon-small"></div>
+              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-medium"></span>
+            </div>
+            <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-short"></span>
+          </div>
+        </div>
+        <div className="meme-oc-cell">
+          <div className="meme-trade-info">
+            <div className="meme-ordercenter-info">
+              <div className="trader-portfolio-skeleton-icon-small"></div>
+              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-medium"></span>
+            </div>
+            <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-short"></span>
+          </div>
+        </div>
+        <div className="meme-oc-cell">
+          <div className="meme-remaining-info">
+            <div className="meme-remaining-container">
+              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-medium"></span>
+              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-tiny"></span>
+            </div>
+            <div className="meme-remaining-bar">
+              <div className="trader-portfolio-skeleton-bar"></div>
+            </div>
+          </div>
+        </div>
+        <div className="meme-oc-cell">
+          <div className="meme-ordercenter-info">
+            <div className="trader-portfolio-skeleton-icon-small"></div>
+            <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-long"></span>
+          </div>
+        </div>
+        <div className="meme-oc-cell">
+          <div className="trader-portfolio-skeleton-button"></div>
+        </div>
+      </div>
+    ))}
+  </>
+) : traderPositions.length === 0 ? (
+  <div className="meme-oc-empty">
+    No active positions
+  </div>
+) : (
                   traderPositions.map((p) => {
                     const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
                     const tokenImageUrl = p.imageUrl || null;

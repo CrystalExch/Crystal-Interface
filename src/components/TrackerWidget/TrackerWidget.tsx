@@ -152,7 +152,7 @@ const parseTextWithMentions = (text: string, hasMedia = false) => {
         parts.push(
           <a
             key={`eth-${lineIndex}-${match.index}`}
-            href={`https://etherscan.io/address/${token}`}
+            href={`https://monadscan.com/address/${token}`}
             target="_blank"
             rel="noreferrer"
             className="twitter-eth-address"
