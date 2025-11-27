@@ -2217,7 +2217,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   });
   const alertSettingsRef = useRef<any>(alertSettings);
   const memeRealtimeCallbackRef = useRef<any>({});
-  const trackedWalletsRef = useRef<any>([]);
+const trackedWalletsRef = useRef<any>(
+  (() => {
+    try {
+      return JSON.parse(localStorage.getItem('tracked_wallets_data') || '[]');
+    } catch {
+      return [];
+    }
+  })()
+);
   const trackedWalletTradesRef = useRef<any>([]);
   const wsPendingLogsRef = useRef(new Map());
   const [trackedWalletTrades, setTrackedWalletTrades] = useState<any[]>([]);

@@ -332,11 +332,11 @@ export default function MemeTradesComponent({
       try {
         const wallets = JSON.parse(stored);
         trackedWalletsRef.current = wallets;
-        setTrackedWalletsVersion(prev => prev + 1); 
+        setTrackedWalletsVersion(prev => prev + 1);
       } catch (error) {
       }
     }
-  }, []); 
+  }, []);
   const devEqualsYou = dev !== '' && youSet.has(dev);
 
   let devActive = false;
@@ -1007,7 +1007,7 @@ export default function MemeTradesComponent({
                 createdAt: new Date().toISOString(),
               });
             }
-            localStorage.setItem('crystal_tracked_wallets', JSON.stringify(trackedWalletsRef.current));
+            localStorage.setItem('tracked_wallets_data', JSON.stringify(trackedWalletsRef.current));
             setTrackedWalletsVersion(prev => prev + 1);
           }}
         />

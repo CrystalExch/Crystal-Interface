@@ -7,7 +7,10 @@ import closebutton from '../../../../assets/close_button.png';
 import { settings } from '../../../../settings';
 import EmojiPicker from 'emoji-picker-react';
 
-
+import {
+  showLoadingPopup,
+  updatePopup,
+} from '../../../MemeTransactionPopup/MemeTransactionPopupManager';
 import './TraderPortfolioPopup.css';
 
 interface Position {
@@ -40,6 +43,71 @@ interface TraderPortfolioPopupProps {
   trackedWalletsRef?: React.MutableRefObject<any[]>;
   onAddTrackedWallet?: (wallet: { address: string; name: string; emoji: string }) => void;
 }
+
+  const copyToClipboard = async (text: string, label = 'Address copied') => {
+    const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, {
+          title: label,
+          subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+        });
+        setTimeout(() => {
+          updatePopup(txId, {
+            title: label,
+            subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+            variant: 'success',
+            confirmed: true,
+            isLoading: false,
+          });
+        }, 100);
+      }
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        if (showLoadingPopup && updatePopup) {
+          showLoadingPopup(txId, {
+            title: label,
+            subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+          });
+          setTimeout(() => {
+            updatePopup(txId, {
+              title: label,
+              subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+              variant: 'success',
+              confirmed: true,
+              isLoading: false,
+            });
+          }, 100);
+        }
+      } catch (fallbackErr) {
+        if (showLoadingPopup && updatePopup) {
+          showLoadingPopup(txId, {
+            title: 'Copy Failed',
+            subtitle: 'Unable to copy to clipboard',
+          });
+          setTimeout(() => {
+            updatePopup(txId, {
+              title: 'Copy Failed',
+              subtitle: 'Unable to copy to clipboard',
+              variant: 'error',
+              confirmed: true,
+              isLoading: false,
+            });
+          }, 100);
+        }
+      } finally {
+        document.body.removeChild(ta);
+      }
+    }
+  };
 const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   traderAddress,
   onClose,
