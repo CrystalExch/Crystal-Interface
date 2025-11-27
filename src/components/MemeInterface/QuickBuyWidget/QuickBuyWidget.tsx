@@ -1171,7 +1171,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         let uo;
         if (isNadFun) {
           if (token.migrated) {
-            let minOutput = BigInt(Number(partWei) / token.price * (1 - Number(buySlippageValue) / 100))
+            let minOutput = BigInt(Number(partWei) / (token.price || 1) * (1 - Number(buySlippageValue) / 100))
             const actions: any = []
             actions.push(encodeFunctionData({
               abi: zeroXActionsAbi,
@@ -1595,10 +1595,10 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           let uo;
           if (isNadFun) {
             const actions: any = []
-            let inputAmountWei = BigInt(Number(amountWei) / token.price * (1 + Number(sellSlippageValue) / 100))
+            let inputAmountWei = BigInt(Number(amountWei) / (token.price || 1) * (1 + Number(sellSlippageValue) / 100))
             if (inputAmountWei > balWei) {
               amountWei = amountWei * balWei / inputAmountWei
-              inputAmountWei = BigInt(Number(amountWei) / token.price * (1 + Number(sellSlippageValue) / 100))
+              inputAmountWei = BigInt(Number(amountWei) / (token.price || 1) * (1 + Number(sellSlippageValue) / 100))
             }
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`

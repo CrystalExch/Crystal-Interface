@@ -177,8 +177,6 @@ interface LeaderboardProps {
   orders: any[];
   address: any;
   username: any;
-  setIsTransitioning: any;
-  setTransitionDirection: any;
 }
 
 const ITEMS_FIRST_PAGE = 47;
@@ -189,8 +187,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   orders,
   address,
   username,
-  setIsTransitioning,
-  setTransitionDirection,
 }) => {
   const [overview, setOverview] = useState<OverviewResponse | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -370,18 +366,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       <div className="leaderboard-banner">
         <div className="banner-overlay">
           <img src={LeaderboardImage} className="leaderboard-image" />
-          <div className="view-rules-button" onClick={() => 
-            {
-              return;
-              setIsTransitioning(true);
-              setTransitionDirection('forward');
-              setTimeout(() => {
-                setpopup(15);
-                setTimeout(() => {
-                  setIsTransitioning(false);
-                }, 500);
-              });
-            }}>
+          <div className="view-rules-button">
             {t('viewRules')}
           </div>
           <div className="countdown-timer">

@@ -2116,10 +2116,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const [walletTokenBalances, setWalletTokenBalances] = useState<any>({});
   const [walletsLoading, _setWalletsLoading] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [transitionDirection, setTransitionDirection] = useState('forward');
-  const [exitingChallenge, setExitingChallenge] = useState(false);
-  const [animationStarted, setAnimationStarted] = useState(false);
   const [isUsernameSigning, setIsUsernameSigning] = useState(false);
   const [typedRefCode, setTypedRefCode] = useState(() => searchParams.get('ref') || '');
   const [usernameInput, setUsernameInput] = useState("");
@@ -2127,10 +2123,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [isRefSigning, setIsRefSigning] = useState(false);
   const [error, setError] = useState('');
   const [username, setUsername] = useState('');
-  const [isConnectEntering, setIsConnectEntering] = useState(false);
-  const [usernameResolved, _setUsernameResolved] = useState(false);
-  const [isWelcomeExiting, setIsWelcomeExiting] = useState(false);
-  const [animating, setAnimating] = useState(false);
   const [sendAmountIn, setSendAmountIn] = useState(BigInt(0));
   const [sendInputAmount, setSendInputAmount] = useState('');
   const [sendUsdValue, setSendUsdValue] = useState('');
@@ -2238,7 +2230,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     const check = setInterval(() => {
       const now = Date.now();
-      if (!throttled && now - last > 5000) throttled = true;
+      if (!throttled && now - last > 10000) throttled = true;
       last = now;
     }, 1000);
 
@@ -6664,9 +6656,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         };
 
         setTokenData(tempTokenData);
-
         if (Array.isArray(m.holders)) {
-          const mappedHolders: Holder[] = m.holders
+          const mappedHolders: Holder[] = m.holders.slice(0, 50)
             .filter(
               (p: any) =>
                 p.account?.id?.toLowerCase() !==
@@ -6694,7 +6685,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               };
             });
 
-          const top10Pct =
+            const top10Pct =
             (mappedHolders
               .map((h) => Math.max(0, h.balance))
               .sort((a, b) => b - a)
@@ -28563,8 +28554,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 orders={orders}
                 address={address}
                 username={username}
-                setIsTransitioning={setIsTransitioning}
-                setTransitionDirection={setTransitionDirection}
               />
             } />
           <Route path="/referrals"

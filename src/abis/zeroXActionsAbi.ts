@@ -1869,5 +1869,30 @@ export const zeroXActionsAbi = [
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
-	}
+	},
+	{
+		"inputs":[
+		  {"internalType":"address","name":"operator","type":"address"},
+		  {"internalType":"address","name":"token","type":"address"},
+		  {"internalType":"uint256","name":"amount","type":"uint256"},
+		  {"internalType":"address payable","name":"target","type":"address"},
+		  {"internalType":"bytes","name":"data","type":"bytes"}
+		],
+		"name":"exec",
+		"outputs":[{"internalType":"bytes","name":"result","type":"bytes"}],
+		"stateMutability":"payable",
+		"type":"function"
+	  },
+	  {
+		"inputs":[
+		  {"internalType":"address","name":"token","type":"address"},
+		  {"internalType":"address","name":"owner","type":"address"},
+		  {"internalType":"address","name":"recipient","type":"address"},
+		  {"internalType":"uint256","name":"amount","type":"uint256"}
+		],
+		"name":"transferFrom",
+		"outputs":[{"internalType":"bool","name":"","type":"bool"}],
+		"stateMutability":"nonpayable",
+		"type":"function"
+	  }
 ] as const;

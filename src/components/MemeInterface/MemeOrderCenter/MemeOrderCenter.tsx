@@ -822,7 +822,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     ...(isTradesTabVisible ? [{ key: 'trades', label: `Trades` }] : []),
     { key: 'positions', label: `Positions (${positions.length})` },
     // { key: 'orders', label: `Orders (${mockOrders.length})` },
-    { key: 'holders', label: `Holders (${holderRows.length})` },
+    { key: 'holders', label: `Holders (${token.holders})` },
     { key: 'topTraders', label: `Top Traders (${topTraderRows.length})` },
     { key: 'devTokens', label: `Dev Tokens (${devTokensToShow.length})` },
   ];
