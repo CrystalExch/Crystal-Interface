@@ -537,37 +537,23 @@
 .trader-name-display {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 2px;
   position: relative;
 }
 
 .trader-emoji-button {
-  background: rgba(179, 184, 249, 0.1);
-  border: 1px solid rgba(179, 184, 249, 0.2);
-  border-radius: 6px;
   cursor: pointer;
-  font-size: 20px;
-  padding: 4px 8px;
+  font-size: 16px;
   transition: all 0.2s ease;
-}
-
-.trader-emoji-button:hover {
-  background: rgba(179, 184, 249, 0.2);
-  transform: scale(1.05);
 }
 
 .trader-wallet-name {
   color: #ffffff;
   font-size: 0.9rem;
-  font-weight: 500;
   cursor: pointer;
-  padding: 4px 8px;
   border-radius: 4px;
   transition: background 0.2s ease;
-}
-
-.trader-wallet-name:hover {
-  background: rgba(179, 184, 249, 0.1);
+  letter-spacing: -0.3px;
 }
 
 .trader-name-input-container {
@@ -581,20 +567,14 @@
 }
 
 .trader-name-input {
-  background: rgba(179, 184, 249, 0.1);
-  border: 1px solid rgba(179, 184, 249, 0.3);
-  border-radius: 6px;
   color: #ffffff;
   font-size: 0.9rem;
   padding: 6px 12px;
   outline: none;
-  min-width: 200px;
   transition: all 0.2s ease;
-}
-
-.trader-name-input:focus {
-  background: rgba(179, 184, 249, 0.15);
-  border-color: rgba(179, 184, 249, 0.5);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.2);
+  background: none;
+  width: auto;
 }
 
 .trader-name-input::placeholder {

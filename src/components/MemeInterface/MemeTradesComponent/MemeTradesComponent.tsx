@@ -266,7 +266,6 @@ interface Props {
   onShareDataSelected?: (shareData: any) => void;
 }
 
-
 export default function MemeTradesComponent({
   trades,
   tokenList = [],
@@ -294,6 +293,7 @@ export default function MemeTradesComponent({
 }: Props) {
   const [selectedShareData, setSelectedShareData] = useState<any>(null);
   const [amountMode, setAmountMode] = useState<AmountMode>('MON');
+  const [trackedWalletsVersion, setTrackedWalletsVersion] = useState(0);
   const [mcMode, setMcMode] = useState<MCMode>('MC');
   const [hover, setHover] = useState(false);
   const [popupAddr, setPopupAddr] = useState<string | null>(null);
@@ -314,7 +314,7 @@ export default function MemeTradesComponent({
       map.set(wallet.address.toLowerCase(), wallet);
     });
     return map;
-  }, [trackedWalletsRef.current]);
+  }, [trackedWalletsVersion]);
 
   const norm = (s?: string) => (s || '').toLowerCase();
   const trackedSet = new Set((trackedAddresses || []).map(norm));
@@ -975,37 +975,31 @@ export default function MemeTradesComponent({
           onSellPosition={onSellPosition}
           monUsdPrice={monUsdPrice}
           trackedWalletsRef={trackedWalletsRef}
-        onAddTrackedWallet={(wallet) => {
-  const existing = trackedWalletsRef.current.findIndex(
-    (w: any) => w.address.toLowerCase() === wallet.address.toLowerCase()
-  );
-  
-  if (existing >= 0) {
-    // Update existing wallet
-    trackedWalletsRef.current[existing] = {
-      ...trackedWalletsRef.current[existing],
-      name: wallet.name,
-      emoji: wallet.emoji,
-    };
-  } else {
-    // Add new wallet
-    trackedWalletsRef.current.push({
-      id: `tracked-${Date.now()}`,
-      address: wallet.address,
-      name: wallet.name,
-      emoji: wallet.emoji,
-      balance: 0,
-      lastActiveAt: Date.now(),
-      createdAt: new Date().toISOString(),
-    });
-  }
-  
-  // Save to localStorage
-  localStorage.setItem('crystal_tracked_wallets', JSON.stringify(trackedWalletsRef.current));
-  
-  // Force re-render by updating displayTrades state
-  setDisplayTrades((prev) => [...prev]);
-}}
+          onAddTrackedWallet={(wallet) => {
+            const existing = trackedWalletsRef.current.findIndex(
+              (w: any) => w.address.toLowerCase() === wallet.address.toLowerCase()
+            );
+
+            if (existing >= 0) {
+              trackedWalletsRef.current[existing] = {
+                ...trackedWalletsRef.current[existing],
+                name: wallet.name,
+                emoji: wallet.emoji,
+              };
+            } else {
+              trackedWalletsRef.current.push({
+                id: `tracked-${Date.now()}`,
+                address: wallet.address,
+                name: wallet.name,
+                emoji: wallet.emoji,
+                balance: 0,
+                lastActiveAt: Date.now(),
+                createdAt: new Date().toISOString(),
+              });
+            }
+            localStorage.setItem('crystal_tracked_wallets', JSON.stringify(trackedWalletsRef.current));
+            setTrackedWalletsVersion(prev => prev + 1);
+          }}
         />
       )}
 

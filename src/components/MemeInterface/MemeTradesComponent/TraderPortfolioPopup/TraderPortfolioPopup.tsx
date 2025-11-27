@@ -40,14 +40,6 @@ interface TraderPortfolioPopupProps {
   trackedWalletsRef?: React.MutableRefObject<any[]>;
   onAddTrackedWallet?: (wallet: { address: string; name: string; emoji: string }) => void;
 }
-const EMOJI_LIST = [
-  '🎯', '🚀', '💎', '🔥', '⚡', '🌟', '💰', '🎮', '🎨', '🎭',
-  '🎪', '🎬', '🎤', '🎧', '🎼', '🎹', '🎺', '🎸', '🎻', '🎲',
-  '🎰', '🃏', '🎴', '🀄', '🎳', '🎯', '🎱', '🎖️', '🏆', '🏅',
-  '🥇', '🥈', '🥉', '⚽', '⚾', '🥎', '🏀', '🏐', '🏈', '🏉',
-  '🎾', '🥏', '🎳', '🏏', '🏑', '🏒', '🥍', '🏓', '🏸', '🥊'
-];
-
 const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   traderAddress,
   onClose,
@@ -68,9 +60,12 @@ const [traderPositions, setTraderPositions] = useState<Position[]>([]);
   const [walletName, setWalletName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState('🎯');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiPickerPosition, setEmojiPickerPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const emojiPickerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (trackedWalletsRef?.current) {
       const tracked = trackedWalletsRef.current.find(
@@ -90,18 +85,6 @@ const [traderPositions, setTraderPositions] = useState<Position[]>([]);
     }
   }, [isEditingName]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
-        setShowEmojiPicker(false);
-      }
-    };
-
-    if (showEmojiPicker) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [showEmojiPicker]);
   useEffect(() => {
     if (!traderAddress) return;
 
@@ -217,16 +200,16 @@ const handleNameSubmit = () => {
       }
     }
   };
-
-  const handleEmojiSelect = (emoji: string) => {
-    setSelectedEmoji(emoji);
+const handleEmojiSelect = (emojiData: any) => {
+    setSelectedEmoji(emojiData.emoji);
     setShowEmojiPicker(false);
+    setEmojiPickerPosition(null);
     
     if (walletName.trim() && onAddTrackedWallet) {
       onAddTrackedWallet({
         address: traderAddress,
         name: walletName.trim(),
-        emoji: emoji,
+        emoji: emojiData.emoji,
       });
     }
   };
@@ -320,40 +303,10 @@ const handleNameSubmit = () => {
 <div className="trader-popup-header">
           <div className="trader-popup-title">
             <div className="trader-address-container">
-              {walletName ? (
-                <div className="trader-name-display">
-                  <button 
-                    className="trader-emoji-button"
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  >
-                    {selectedEmoji}
-                  </button>
-                  {showEmojiPicker && (
-                    <div ref={emojiPickerRef} className="trader-emoji-picker">
-                      <div className="trader-emoji-grid">
-                        {EMOJI_LIST.map((emoji) => (
-                          <button
-                            key={emoji}
-                            className={`trader-emoji-option ${selectedEmoji === emoji ? 'selected' : ''}`}
-                            onClick={() => handleEmojiSelect(emoji)}
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <span 
-                    className="trader-wallet-name"
-                    onClick={() => setIsEditingName(true)}
-                  >
-                    {walletName}
-                  </span>
-                </div>
-              ) : isEditingName ? (
+              {isEditingName ? (
                 <div className="trader-name-input-container">
                   <span className="trader-emoji-preview">{selectedEmoji}</span>
-                <input
+                  <input
                     ref={nameInputRef}
                     type="text"
                     className="trader-name-input"
@@ -364,6 +317,30 @@ const handleNameSubmit = () => {
                     placeholder="Enter wallet name..."
                     autoFocus
                   />
+                </div>
+) : walletName ? (
+                <div className="trader-name-display">
+                  <button 
+                    className="trader-emoji-button"
+                    onClick={(e) => {
+                      if (!showEmojiPicker) {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setEmojiPickerPosition({
+                          top: rect.bottom + window.scrollY + 8,
+                          left: rect.left + window.scrollX + rect.width / 2,
+                        });
+                      }
+                      setShowEmojiPicker(!showEmojiPicker);
+                    }}
+                  >
+                    {selectedEmoji}
+                  </button>
+                  <span 
+                    className="trader-wallet-name"
+                    onClick={() => setIsEditingName(true)}
+                  >
+                    {walletName}
+                  </span>
                 </div>
               ) : (
                 <span 
@@ -917,9 +894,44 @@ const handleNameSubmit = () => {
                 </div>
               </div>
             </div>
-          )}
+)}
         </div>
       </div>
+
+      {showEmojiPicker && emojiPickerPosition && (
+        <div
+          className="add-wallet-emoji-picker-backdrop"
+          onClick={() => {
+            setShowEmojiPicker(false);
+            setEmojiPickerPosition(null);
+          }}
+        >
+          <div
+            className="add-wallet-emoji-picker-positioned"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              top: `${emojiPickerPosition.top}px`,
+              left: `${emojiPickerPosition.left}px`,
+              transform: 'translateX(-50%)',
+            }}
+          >
+            <EmojiPicker
+              onEmojiClick={handleEmojiSelect}
+              width={350}
+              height={400}
+              searchDisabled={false}
+              skinTonesDisabled={true}
+              previewConfig={{
+                showPreview: false,
+              }}
+              style={{
+                backgroundColor: '#000000',
+                border: '1px solid rgba(179, 184, 249, 0.2)',
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
