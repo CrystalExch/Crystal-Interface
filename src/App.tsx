@@ -7123,7 +7123,7 @@ const trackedWalletsRef = useRef<any>(
               to: balancegetter,
               abi: CrystalDataHelperAbi,
               functionName: "getReserves",
-              args: [settings.chainConfig[activechain].nadFunBondingCurve, token?.market || token.id, weth, token.id, settings.chainConfig[activechain].zeroXSettler, [scaAddress].concat(subWallets.map(w => w.address))]
+              args: [settings.chainConfig[activechain].nadFunBondingCurve, token?.market || token.id, weth, token.id, settings.chainConfig[activechain].zeroXAllowanceHolder, [scaAddress].concat(subWallets.map(w => w.address))]
             }
             : {
               disabled: false,

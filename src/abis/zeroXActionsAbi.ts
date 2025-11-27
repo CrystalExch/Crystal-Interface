@@ -1885,6 +1885,7 @@ export const zeroXActionsAbi = [
 	  },
 	  {
 		"inputs":[
+			{"internalType":"address","name":"token","type":"address"},
 		  {"internalType":"address","name":"token","type":"address"},
 		  {"internalType":"address","name":"owner","type":"address"},
 		  {"internalType":"address","name":"recipient","type":"address"},
