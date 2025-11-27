@@ -11204,10 +11204,6 @@ const trackedWalletsRef = useRef<any>(
 
   // popup
   useEffect(() => {
-    if (!localStorage.getItem("firstConnect") && typedRefCode && connected) {
-      setpopup(17)
-      localStorage.setItem("firstConnect", "true");
-    }
     if (user && !(scaAddress != undefined)) {
       setpopup(11);
     }
@@ -11218,29 +11214,34 @@ const trackedWalletsRef = useRef<any>(
       })();
     }
     else {
-      if (scaAddress && popup === 11) {
-        setpopup(0);
+      if (connected) {
+        if (!localStorage.getItem("firstConnect")) {
+          localStorage.setItem("firstConnect", "true");
+          if (typedRefCode) {
+            setpopup(17)
+          }
+          else if (!oneCTSigner) {
+            setpopup(28)
+          }
+          // if (window.location.hostname == 'test.crystal.exchange' && address != '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d') {
+          //   (async () => {
+          //     const amountInWei = BigInt(Math.round(30 * 10 ** 18));
+          //     await sendUserOperationAsync({
+          //       uo: {
+          //         target: address as `0x${string}`,
+          //         value: amountInWei,
+          //         data: '0x'
+          //       }
+          //     }, 100000n, 0n, false, '', await getTransactionCount(config, { address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any), }))
+          //   })()
+          // }
+        }
+        else {
+          if (scaAddress && popup === 11) {
+            setpopup(0);
+          }
+        }
       }
-      // if (connected) {
-      //   if (!localStorage.getItem("firstConnect")) {
-      //     localStorage.setItem("firstConnect", "true");
-      //     if (window.location.hostname == 'test.crystal.exchange' && address != '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d') {
-      //       (async () => {
-      //         const amountInWei = BigInt(Math.round(30 * 10 ** 18));
-      //         await sendUserOperationAsync({
-      //           uo: {
-      //             target: address as `0x${string}`,
-      //             value: amountInWei,
-      //             data: '0x'
-      //           }
-      //         }, 100000n, 0n, false, '0xb52e8ab1cddc2645f8df7e94578ee0edfce192371feb2633f47e7039f90c67cb', await getTransactionCount(config, { address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any), }))
-      //       })()
-      //     }
-      //     if (!oneCTSigner) {
-      //       setpopup(28)
-      //     }
-      //   }
-      // }
     }
   }, [popup, connected, scaAddress, typedRefCode, user != null, loading]);
 
@@ -16959,7 +16960,12 @@ const trackedWalletsRef = useRef<any>(
                     if (ok) {
                       audio.currentTime = 0;
                       audio.play();
-                      setpopup(0);
+                      if (subWallets.length == 0) {
+                        setpopup(28);
+                      }
+                      else {
+                        setpopup(0);
+                      }
                     }
                   }}
                 >

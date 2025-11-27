@@ -1171,7 +1171,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         let uo;
         if (isNadFun) {
           if (token.migrated) {
-            let minOutput = BigInt(Number(partWei) / (token.price || 1) * (1 - Number(buySlippageValue) / 100))
+            let minOutput = BigInt(Math.floor(Number(partWei) / (token.price || 1) * (1 - Number(buySlippageValue) / 100)))
             const actions: any = []
             actions.push(encodeFunctionData({
               abi: zeroXActionsAbi,
@@ -1415,7 +1415,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           let uo;
           if (isNadFun) {
             const actions: any = []
-            let inputAmountWei = BigInt(Number(amountWei) * token.price * (1 - Number(sellSlippageValue) / 100))
+            let inputAmountWei = BigInt(Math.floor(Number(amountWei) * token.price * (1 - Number(sellSlippageValue) / 100)))
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
@@ -1599,10 +1599,10 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           let uo;
           if (isNadFun) {
             const actions: any = []
-            let inputAmountWei = BigInt(Number(amountWei) / (token.price || 1) * (1 + Number(sellSlippageValue) / 100))
+            let inputAmountWei = BigInt(Math.floor(Number(amountWei) / (token.price || 1) * (1 + Number(sellSlippageValue) / 100)))
             if (inputAmountWei > balWei) {
               amountWei = amountWei * balWei / inputAmountWei
-              inputAmountWei = BigInt(Number(amountWei) / (token.price || 1) * (1 + Number(sellSlippageValue) / 100))
+              inputAmountWei = BigInt(Math.floor(Number(amountWei) / (token.price || 1) * (1 + Number(sellSlippageValue) / 100)))
             }
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
@@ -1630,7 +1630,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                   primaryType: 'Permit',
                   message: {
                     owner: addr,
-                    spender: settler,
+                    spender: settings.chainConfig[activechain].zeroXAllowanceHolder,
                     value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
                     nonce,
                     deadline,
@@ -1652,7 +1652,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                   args: [
                     sellToken,
                     addr as `0x${string}`,
-                    settler,
+                    settings.chainConfig[activechain].zeroXAllowanceHolder,
                     115792089237316195423570985008687907853269984665640564039457584007913129639935n,
                     deadline,
                     v,
@@ -1665,25 +1665,10 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             actions.push(encodeFunctionData({
               abi: zeroXActionsAbi,
               functionName: 'BASIC',
-              args: ['0x0000000000000000000000000000000000000000', 0n, sellToken, 0n, encodeFunctionData({
-                abi: TokenAbi,
-                functionName: 'transferFrom',
-                args: [addr as `0x${string}`, settler, inputAmountWei],
-              })],
-            }))
-            actions.push(encodeFunctionData({
-              abi: zeroXActionsAbi,
-              functionName: 'BASIC',
-              args: [token.id, 10000n, sellContractAddress, 4n, encodeFunctionData({
-                abi: NadFunAbi,
-                functionName: 'exactOutSell',
-                args: [{
-                  amountInMax: 0n,
-                  amountOut: amountWei,
-                  token: token.id as `0x${string}`,
-                  to: settler as `0x${string}`,
-                  deadline: deadline,
-                }],
+              args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'nadFunExactOutSell',
+                args: [settings.chainConfig[activechain].zeroXAllowanceHolder, addr as `0x${string}`, settings.chainConfig[activechain].nadFunLens, inputAmountWei, amountWei, sellToken, settler, deadline],
               })],
             }))
             actions.push(encodeFunctionData({
@@ -1697,15 +1682,19 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
               args: [settings.chainConfig[activechain].eth, 10000n, addr as `0x${string}`, 0n, '0x'],
             }))
             uo = {
-              target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+              target: settings.chainConfig[activechain].zeroXAllowanceHolder as `0x${string}`,
               data: encodeFunctionData({
-                abi: zeroXAbi,
-                functionName: 'execute',
-                args: [{
-                  recipient: addr as `0x${string}`,
-                  buyToken: sellToken as `0x${string}`,
-                  minAmountOut: BigInt(0n),
-                }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                abi: zeroXActionsAbi,
+                functionName: 'exec',
+                args: [settings.chainConfig[activechain].balancegetter, sellToken, 115792089237316195423570985008687907853269984665640564039457584007913129639935n, settler, encodeFunctionData({
+                  abi: zeroXAbi,
+                  functionName: 'execute',
+                  args: [{
+                    recipient: addr as `0x${string}`,
+                    buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                    minAmountOut: BigInt(0n),
+                  }, actions, '0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'],
+                })],
               }),
               value: 0n,
             };

@@ -1860,7 +1860,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               let uo;
               if (isNadFun) {
                 if (token.migrated) {
-                  let minOutput = BigInt(Number(value) / (token.price || 1) * (1 - Number(buySlippageValue) / 100))
+                  let minOutput = BigInt(Math.floor(Number(value) / (token.price || 1) * (1 - Number(buySlippageValue) / 100)))
                   const actions: any = []
                   actions.push(encodeFunctionData({
                     abi: zeroXActionsAbi,
@@ -1900,7 +1900,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   const iva = value * fee / 100000n;
                   const vNative = token.reserveQuote + iva;
                   const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
-                  const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+                  const output = Math.floor(Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100))));
     
                   const actions: any = []
                   actions.push(encodeFunctionData({
@@ -1941,7 +1941,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 const iva = value * fee / 100000n;
                 const vNative = token.reserveQuote + iva;
                 const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
-                const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+                const output = Math.floor(Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100))));
 
                 uo = {
                   target: contractAddress as `0x${string}`,
@@ -2027,7 +2027,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           let uo;
           if (isNadFun) {
             if (token.migrated) {
-              let minOutput = BigInt(Number(value) / (token.price || 1) * (1 - Number(buySlippageValue) / 100))
+              let minOutput = BigInt(Math.floor(Number(value) / (token.price || 1) * (1 - Number(buySlippageValue) / 100)))
               const actions: any = []
               actions.push(encodeFunctionData({
                 abi: zeroXActionsAbi,
@@ -2067,7 +2067,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               const iva = value * fee / 100000n;
               const vNative = token.reserveQuote + iva;
               const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
-              const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+              const output = Math.floor(Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100))));
 
               const actions: any = []
               actions.push(encodeFunctionData({
@@ -2182,11 +2182,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               let sellUo;
               if (isNadFun) {
                 const actions: any = []
-                let inputAmountWei = BigInt(Number(amountTokenWei) / (token.price || 1) * (1 + Number(sellSlippageValue) / 100))
-                if (inputAmountWei > walletBalance) {
-                  amountTokenWei = amountTokenWei * walletBalance / inputAmountWei
-                  inputAmountWei = BigInt(Math.floor(Number(amountTokenWei) / (token.price || 1) * (1 + Number(sellSlippageValue) / 100)))
-                }
+                let inputAmountWei = BigInt(Math.floor(Number(amountTokenWei) / (token.price || 1) * (1 + Number(sellSlippageValue) / 100)))
                 const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
                 const sellToken = token.id as `0x${string}`
                 const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
@@ -2213,7 +2209,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       primaryType: 'Permit',
                       message: {
                         owner: walletAddr,
-                        spender: settler,
+                        spender: settings.chainConfig[activechain].zeroXAllowanceHolder,
                         value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
                         nonce,
                         deadline,
@@ -2235,7 +2231,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       args: [
                         sellToken,
                         walletAddr as `0x${string}`,
-                        settler,
+                        settings.chainConfig[activechain].zeroXAllowanceHolder,
                         115792089237316195423570985008687907853269984665640564039457584007913129639935n,
                         deadline,
                         v,
@@ -2248,25 +2244,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 actions.push(encodeFunctionData({
                   abi: zeroXActionsAbi,
                   functionName: 'BASIC',
-                  args: ['0x0000000000000000000000000000000000000000', 0n, sellToken, 0n, encodeFunctionData({
-                    abi: TokenAbi,
-                    functionName: 'transferFrom',
-                    args: [walletAddr as `0x${string}`, settler, inputAmountWei],
-                  })],
-                }))
-                actions.push(encodeFunctionData({
-                  abi: zeroXActionsAbi,
-                  functionName: 'BASIC',
-                  args: [token.id, 10000n, sellContractAddress, 4n, encodeFunctionData({
-                    abi: NadFunAbi,
-                    functionName: 'exactOutSell',
-                    args: [{
-                      amountInMax: 0n,
-                      amountOut: amountTokenWei,
-                      token: token.id as `0x${string}`,
-                      to: settler as `0x${string}`,
-                      deadline: deadline,
-                    }],
+                  args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
+                    abi: zeroXActionsAbi,
+                    functionName: 'nadFunExactOutSell',
+                    args: [settings.chainConfig[activechain].zeroXAllowanceHolder, walletAddr as `0x${string}`, settings.chainConfig[activechain].nadFunLens, inputAmountWei, amountTokenWei, sellToken, settler, deadline],
                   })],
                 }))
                 actions.push(encodeFunctionData({
@@ -2280,15 +2261,19 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   args: [settings.chainConfig[activechain].eth, 10000n, walletAddr as `0x${string}`, 0n, '0x'],
                 }))
                 sellUo = {
-                  target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                  target: settings.chainConfig[activechain].zeroXAllowanceHolder as `0x${string}`,
                   data: encodeFunctionData({
-                    abi: zeroXAbi,
-                    functionName: 'execute',
-                    args: [{
-                      recipient: walletAddr as `0x${string}`,
-                      buyToken: sellToken as `0x${string}`,
-                      minAmountOut: BigInt(0n),
-                    }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                    abi: zeroXActionsAbi,
+                    functionName: 'exec',
+                    args: [settings.chainConfig[activechain].balancegetter, sellToken, 115792089237316195423570985008687907853269984665640564039457584007913129639935n, settler, encodeFunctionData({
+                      abi: zeroXAbi,
+                      functionName: 'execute',
+                      args: [{
+                        recipient: walletAddr as `0x${string}`,
+                        buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                        minAmountOut: BigInt(0n),
+                      }, actions, '0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'],
+                    })],
                   }),
                   value: 0n,
                 };
@@ -2354,14 +2339,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
               const walletBalance = walletTokenBalances?.[walletAddr]?.[token.id] || 0n;
 
-              let amountTokenWei = BigInt(parseFloat(tradeAmount)) >= 100n ? walletBalance : (walletBalance * pct) / 100n
+              let amountTokenWei = BigInt(pct) >= 100n ? walletBalance : (walletBalance * pct) / 100n
 
               if (amountTokenWei <= 0n) continue;
 
               let sellUo;
               if (isNadFun) {
                 const actions: any = []
-                let inputAmountWei = BigInt(Number(amountTokenWei) * token.price * (1 - Number(sellSlippageValue) / 100))
+                let inputAmountWei = BigInt(Math.floor(Number(amountTokenWei) * token.price * (1 - Number(sellSlippageValue) / 100)))
                 const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
                 const sellToken = token.id as `0x${string}`
                 const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
@@ -2571,7 +2556,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           let sellUo;
           if (isNadFun && sellInputMode != 'percentage') {
             const actions: any = []
-            let inputAmountWei = BigInt(Number(amountTokenWei) / (token.price || 1) * (1 + Number(sellSlippageValue) / 100))
+            let inputAmountWei = BigInt(Math.floor(Number(amountTokenWei) / (token.price || 1) * (1 + Number(sellSlippageValue) / 100)))
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
@@ -2598,7 +2583,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   primaryType: 'Permit',
                   message: {
                     owner: account.address,
-                    spender: settler,
+                    spender: settings.chainConfig[activechain].zeroXAllowanceHolder,
                     value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
                     nonce,
                     deadline,
@@ -2620,7 +2605,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   args: [
                     sellToken,
                     account.address as `0x${string}`,
-                    settler,
+                    settings.chainConfig[activechain].zeroXAllowanceHolder,
                     115792089237316195423570985008687907853269984665640564039457584007913129639935n,
                     deadline,
                     v,
@@ -2633,25 +2618,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             actions.push(encodeFunctionData({
               abi: zeroXActionsAbi,
               functionName: 'BASIC',
-              args: ['0x0000000000000000000000000000000000000000', 0n, sellToken, 0n, encodeFunctionData({
-                abi: TokenAbi,
-                functionName: 'transferFrom',
-                args: [account.address as `0x${string}`, settler, inputAmountWei],
-              })],
-            }))
-            actions.push(encodeFunctionData({
-              abi: zeroXActionsAbi,
-              functionName: 'BASIC',
-              args: [token.id, 10000n, sellContractAddress, 4n, encodeFunctionData({
-                abi: NadFunAbi,
-                functionName: 'exactOutSell',
-                args: [{
-                  amountInMax: 0n,
-                  amountOut: amountTokenWei,
-                  token: token.id as `0x${string}`,
-                  to: settler as `0x${string}`,
-                  deadline: deadline,
-                }],
+              args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'nadFunExactOutSell',
+                args: [settings.chainConfig[activechain].zeroXAllowanceHolder, account.address as `0x${string}`, settings.chainConfig[activechain].nadFunLens, inputAmountWei, amountTokenWei, sellToken, settler, deadline],
               })],
             }))
             actions.push(encodeFunctionData({
@@ -2665,22 +2635,26 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               args: [settings.chainConfig[activechain].eth, 10000n, account.address as `0x${string}`, 0n, '0x'],
             }))
             sellUo = {
-              target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+              target: settings.chainConfig[activechain].zeroXAllowanceHolder as `0x${string}`,
               data: encodeFunctionData({
-                abi: zeroXAbi,
-                functionName: 'execute',
-                args: [{
-                  recipient: account.address as `0x${string}`,
-                  buyToken: sellToken as `0x${string}`,
-                  minAmountOut: BigInt(0n),
-                }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                abi: zeroXActionsAbi,
+                functionName: 'exec',
+                args: [settings.chainConfig[activechain].balancegetter, sellToken, 115792089237316195423570985008687907853269984665640564039457584007913129639935n, settler, encodeFunctionData({
+                  abi: zeroXAbi,
+                  functionName: 'execute',
+                  args: [{
+                    recipient: account.address as `0x${string}`,
+                    buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                    minAmountOut: BigInt(0n),
+                  }, actions, '0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'],
+                })],
               }),
               value: 0n,
             };
           }
           else if (isNadFun) {
             const actions: any = []
-            let inputAmountWei = BigInt(Number(amountTokenWei) * token.price * (1 - Number(sellSlippageValue) / 100))
+            let inputAmountWei = BigInt(Math.floor(Number(amountTokenWei) * token.price * (1 - Number(sellSlippageValue) / 100)))
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
