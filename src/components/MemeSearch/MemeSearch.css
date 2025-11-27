@@ -1132,23 +1132,23 @@
 }
 
 
+/* Wallet Dropdown Styles - EXACT copy from Footer + QuickBuy */
 .meme-search-wallet-button {
     background: none;
     border: 1px solid rgba(179, 184, 249, 0.15);
     border-radius: 20px;
     color: #fff;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 300;
-    height: 28px;
+    height: 23px;
     overflow: hidden;
-    padding: 2px 12px 2px 14px;
+    padding: 6px 8px 6px 12px;
     transition: all 0.1s ease;
     align-items: center;
     display: flex;
     justify-content: center;
     gap: 2px;
-    margin-left: 8px;
 }
 
 .meme-search-wallet-icon {
@@ -1160,7 +1160,7 @@
 .meme-search-mon-icon {
     width: 13px;
     height: 13px;
-    margin-left: 4px;
+    margin-right: 4px;
 }
 
 .meme-search-wallet-dropdown-arrow {
@@ -1373,11 +1373,7 @@
     width: 12px;
 }
 
-<<<<<<< Updated upstream
-.memesearch-wallet-drag-tokens {
-=======
 .meme-search-wallet-drag-tokens {
->>>>>>> Stashed changes
     align-items: flex-end;
     display: flex;
     flex-direction: column;
