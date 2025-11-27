@@ -2388,7 +2388,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       primaryType: 'Permit',
                       message: {
                         owner: walletAddr,
-                        spender: settler,
+                        spender: settings.chainConfig[activechain].zeroXAllowanceHolder,
                         value: 115792089237316195423570985008687907853269984665640564039457584007913129639935n,
                         nonce,
                         deadline,
@@ -2410,7 +2410,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       args: [
                         sellToken,
                         walletAddr as `0x${string}`,
-                        settler,
+                        settings.chainConfig[activechain].zeroXAllowanceHolder,
                         115792089237316195423570985008687907853269984665640564039457584007913129639935n,
                         deadline,
                         v,
@@ -2423,10 +2423,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 actions.push(encodeFunctionData({
                   abi: zeroXActionsAbi,
                   functionName: 'BASIC',
-                  args: ['0x0000000000000000000000000000000000000000', 0n, sellToken, 0n, encodeFunctionData({
-                    abi: TokenAbi,
+                  args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
+                    abi: zeroXActionsAbi,
                     functionName: 'transferFrom',
-                    args: [walletAddr as `0x${string}`, settler, amountTokenWei],
+                    args: [settings.chainConfig[activechain].zeroXAllowanceHolder, sellToken, walletAddr as `0x${string}`, settler, amountTokenWei],
                   })],
                 }))
                 actions.push(encodeFunctionData({
@@ -2455,15 +2455,19 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   args: [settings.chainConfig[activechain].eth, 10000n, walletAddr as `0x${string}`, 0n, '0x'],
                 }))
                 sellUo = {
-                  target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                  target: settings.chainConfig[activechain].zeroXAllowanceHolder as `0x${string}`,
                   data: encodeFunctionData({
-                    abi: zeroXAbi,
-                    functionName: 'execute',
-                    args: [{
-                      recipient: walletAddr as `0x${string}`,
-                      buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-                      minAmountOut: BigInt(0n),
-                    }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                    abi: zeroXActionsAbi,
+                    functionName: 'exec',
+                    args: [settings.chainConfig[activechain].balancegetter, sellToken, 115792089237316195423570985008687907853269984665640564039457584007913129639935n, settler, encodeFunctionData({
+                      abi: zeroXAbi,
+                      functionName: 'execute',
+                      args: [{
+                        recipient: walletAddr as `0x${string}`,
+                        buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                        minAmountOut: BigInt(0n),
+                      }, actions, '0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'],
+                    })],
                   }),
                   value: 0n,
                 };
