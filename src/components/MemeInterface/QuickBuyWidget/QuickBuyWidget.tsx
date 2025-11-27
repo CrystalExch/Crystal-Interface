@@ -1600,10 +1600,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
           if (isNadFun) {
             const actions: any = []
             let inputAmountWei = BigInt(Math.floor(Number(amountWei) / (token.price || 1) * (1 + Number(sellSlippageValue) / 100)))
-            if (inputAmountWei > balWei) {
-              amountWei = amountWei * balWei / inputAmountWei
-              inputAmountWei = BigInt(Math.floor(Number(amountWei) / (token.price || 1) * (1 + Number(sellSlippageValue) / 100)))
-            }
             const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
             const sellToken = token.id as `0x${string}`
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
