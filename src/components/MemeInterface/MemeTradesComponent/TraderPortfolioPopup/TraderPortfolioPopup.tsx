@@ -55,17 +55,18 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   onAddTrackedWallet,
 }) => {
 
-const [traderPositions, setTraderPositions] = useState<Position[]>([]);
+  const [traderPositions, setTraderPositions] = useState<Position[]>([]);
   const [isLoadingPositions, setIsLoadingPositions] = useState(false);
   const [walletName, setWalletName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState('🎯');
-const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiPickerPosition, setEmojiPickerPosition] = useState<{
     top: number;
     left: number;
   } | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  
   useEffect(() => {
     if (trackedWalletsRef?.current) {
       const tracked = trackedWalletsRef.current.find(
@@ -166,7 +167,7 @@ const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
   const [totalAccountValue, setTotalAccountValue] = useState<number | null>(null);
   const [tokenBalances, setTokenBalances] = useState<{ [key: string]: string }>({});
-const handleNameSubmit = () => {
+  const handleNameSubmit = () => {
     if (walletName.trim() && onAddTrackedWallet) {
       onAddTrackedWallet({
         address: traderAddress,
@@ -200,11 +201,11 @@ const handleNameSubmit = () => {
       }
     }
   };
-const handleEmojiSelect = (emojiData: any) => {
+  const handleEmojiSelect = (emojiData: any) => {
     setSelectedEmoji(emojiData.emoji);
     setShowEmojiPicker(false);
     setEmojiPickerPosition(null);
-    
+
     if (walletName.trim() && onAddTrackedWallet) {
       onAddTrackedWallet({
         address: traderAddress,
@@ -300,7 +301,7 @@ const handleEmojiSelect = (emojiData: any) => {
   return (
     <div className="trader-popup-backdrop" onClick={handleBackdropClick}>
       <div className="trader-popup-container">
-<div className="trader-popup-header">
+        <div className="trader-popup-header">
           <div className="trader-popup-title">
             <div className="trader-address-container">
               {isEditingName ? (
@@ -318,9 +319,9 @@ const handleEmojiSelect = (emojiData: any) => {
                     autoFocus
                   />
                 </div>
-) : walletName ? (
+              ) : walletName ? (
                 <div className="trader-name-display">
-                  <button 
+                  <button
                     className="trader-emoji-button"
                     onClick={(e) => {
                       if (!showEmojiPicker) {
@@ -335,7 +336,7 @@ const handleEmojiSelect = (emojiData: any) => {
                   >
                     {selectedEmoji}
                   </button>
-                  <span 
+                  <span
                     className="trader-wallet-name"
                     onClick={() => setIsEditingName(true)}
                   >
@@ -343,7 +344,7 @@ const handleEmojiSelect = (emojiData: any) => {
                   </span>
                 </div>
               ) : (
-                <span 
+                <span
                   className="rename-track-button"
                   onClick={() => setIsEditingName(true)}
                 >
@@ -500,69 +501,69 @@ const handleEmojiSelect = (emojiData: any) => {
                 <div className="meme-oc-header-cell">Actions</div>
               </div>
               <div className="meme-oc-items">
-        {isLoadingPositions ? (
-  <>
-    {Array.from({ length: 5 }).map((_, index) => (
-      <div key={`skeleton-${index}`} className="meme-portfolio-oc-item trader-portfolio-skeleton-item">
-        <div className="meme-oc-cell">
-          <div className="oc-meme-wallet-info">
-            <div className="meme-portfolio-token-info">
-              <div className="meme-portfolio-token-icon-container">
-                <div className="meme-portfolio-token-icon trader-portfolio-skeleton-icon"></div>
-              </div>
-              <span className="portfolio-meme-wallet-address">
-                <span className="meme-token-symbol-portfolio trader-portfolio-skeleton-text trader-portfolio-skeleton-text-short"></span>
-                <span className="meme-token-name-portfolio trader-portfolio-skeleton-text trader-portfolio-skeleton-text-long"></span>
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="meme-oc-cell">
-          <div className="meme-trade-info">
-            <div className="meme-ordercenter-info">
-              <div className="trader-portfolio-skeleton-icon-small"></div>
-              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-medium"></span>
-            </div>
-            <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-short"></span>
-          </div>
-        </div>
-        <div className="meme-oc-cell">
-          <div className="meme-trade-info">
-            <div className="meme-ordercenter-info">
-              <div className="trader-portfolio-skeleton-icon-small"></div>
-              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-medium"></span>
-            </div>
-            <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-short"></span>
-          </div>
-        </div>
-        <div className="meme-oc-cell">
-          <div className="meme-remaining-info">
-            <div className="meme-remaining-container">
-              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-medium"></span>
-              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-tiny"></span>
-            </div>
-            <div className="meme-remaining-bar">
-              <div className="trader-portfolio-skeleton-bar"></div>
-            </div>
-          </div>
-        </div>
-        <div className="meme-oc-cell">
-          <div className="meme-ordercenter-info">
-            <div className="trader-portfolio-skeleton-icon-small"></div>
-            <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-long"></span>
-          </div>
-        </div>
-        <div className="meme-oc-cell">
-          <div className="trader-portfolio-skeleton-button"></div>
-        </div>
-      </div>
-    ))}
-  </>
-) : traderPositions.length === 0 ? (
-  <div className="meme-oc-empty">
-    No active positions
-  </div>
-) : (
+                {isLoadingPositions ? (
+                  <>
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <div key={`skeleton-${index}`} className="meme-portfolio-oc-item trader-portfolio-skeleton-item">
+                        <div className="meme-oc-cell">
+                          <div className="oc-meme-wallet-info">
+                            <div className="meme-portfolio-token-info">
+                              <div className="meme-portfolio-token-icon-container">
+                                <div className="meme-portfolio-token-icon trader-portfolio-skeleton-icon"></div>
+                              </div>
+                              <span className="portfolio-meme-wallet-address">
+                                <span className="meme-token-symbol-portfolio trader-portfolio-skeleton-text trader-portfolio-skeleton-text-short"></span>
+                                <span className="meme-token-name-portfolio trader-portfolio-skeleton-text trader-portfolio-skeleton-text-long"></span>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="meme-oc-cell">
+                          <div className="meme-trade-info">
+                            <div className="meme-ordercenter-info">
+                              <div className="trader-portfolio-skeleton-icon-small"></div>
+                              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-medium"></span>
+                            </div>
+                            <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-short"></span>
+                          </div>
+                        </div>
+                        <div className="meme-oc-cell">
+                          <div className="meme-trade-info">
+                            <div className="meme-ordercenter-info">
+                              <div className="trader-portfolio-skeleton-icon-small"></div>
+                              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-medium"></span>
+                            </div>
+                            <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-short"></span>
+                          </div>
+                        </div>
+                        <div className="meme-oc-cell">
+                          <div className="meme-remaining-info">
+                            <div className="meme-remaining-container">
+                              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-medium"></span>
+                              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-tiny"></span>
+                            </div>
+                            <div className="meme-remaining-bar">
+                              <div className="trader-portfolio-skeleton-bar"></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="meme-oc-cell">
+                          <div className="meme-ordercenter-info">
+                            <div className="trader-portfolio-skeleton-icon-small"></div>
+                            <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-long"></span>
+                          </div>
+                        </div>
+                        <div className="meme-oc-cell">
+                          <div className="trader-portfolio-skeleton-button"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : traderPositions.length === 0 ? (
+                  <div className="meme-oc-empty">
+                    No active positions
+                  </div>
+                ) : (
                   traderPositions.map((p) => {
                     const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
                     const tokenImageUrl = p.imageUrl || null;
@@ -894,7 +895,7 @@ const handleEmojiSelect = (emojiData: any) => {
                 </div>
               </div>
             </div>
-)}
+          )}
         </div>
       </div>
 

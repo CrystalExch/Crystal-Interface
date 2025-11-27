@@ -326,7 +326,17 @@ export default function MemeTradesComponent({
       (addr) => addr !== '',
     ),
   );
-
+  useEffect(() => {
+    const stored = localStorage.getItem('crystal_tracked_wallets');
+    if (stored) {
+      try {
+        const wallets = JSON.parse(stored);
+        trackedWalletsRef.current = wallets;
+        setTrackedWalletsVersion(prev => prev + 1); 
+      } catch (error) {
+      }
+    }
+  }, []); 
   const devEqualsYou = dev !== '' && youSet.has(dev);
 
   let devActive = false;

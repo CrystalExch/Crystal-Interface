@@ -462,8 +462,8 @@
   letter-spacing: -0.5px;
   margin-top: -2px;
   margin-left: 4px;
+  cursor: pointer;
 }
-/* Skeleton Loading Styles */
 .trader-portfolio-skeleton-item {
   pointer-events: none;
 }
