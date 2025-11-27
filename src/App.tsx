@@ -2217,15 +2217,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   });
   const alertSettingsRef = useRef<any>(alertSettings);
   const memeRealtimeCallbackRef = useRef<any>({});
-const trackedWalletsRef = useRef<any>(
-  (() => {
-    try {
-      return JSON.parse(localStorage.getItem('tracked_wallets_data') || '[]');
-    } catch {
-      return [];
-    }
-  })()
-);
+  const trackedWalletsRef = useRef<any>(
+    (() => {
+      try {
+        return JSON.parse(localStorage.getItem('tracked_wallets_data') || '[]');
+      } catch {
+        return [];
+      }
+    })()
+  );
   const trackedWalletTradesRef = useRef<any>([]);
   const wsPendingLogsRef = useRef(new Map());
   const [trackedWalletTrades, setTrackedWalletTrades] = useState<any[]>([]);
@@ -4312,7 +4312,7 @@ const trackedWalletsRef = useRef<any>(
                 sellTransactions: t.sellTransactions + sellTransactions,
                 status: status,
                 bondingPercentage: bondingPercentage,
-                devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + ( otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - ( otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
+                devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + (otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - (otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
               }
               return []
             }
@@ -4324,7 +4324,7 @@ const trackedWalletsRef = useRef<any>(
               sellTransactions: t.sellTransactions + sellTransactions,
               status: status,
               bondingPercentage: bondingPercentage,
-              devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + ( otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - ( otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
+              devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + (otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - (otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
             }];
           });
         });
@@ -5517,21 +5517,21 @@ const trackedWalletsRef = useRef<any>(
               };
 
               fetch(metadataURI)
-              .then(r => r.json())
-              .then(metadata => {
-                dispatch({
-                  type: 'ADD_METADATA',
-                  id: tokenAddress,
-                  updates: {
-                    image: metadata.image_uri || '',
-                    description: metadata.description || '',
-                    twitterHandle: metadata.twitter || '',
-                    telegramHandle: metadata.telegram || '',
-                    website: metadata.website || '',
-                  },
-                });
-              })
-              .catch(() => {});
+                .then(r => r.json())
+                .then(metadata => {
+                  dispatch({
+                    type: 'ADD_METADATA',
+                    id: tokenAddress,
+                    updates: {
+                      image: metadata.image_uri || '',
+                      description: metadata.description || '',
+                      twitterHandle: metadata.twitter || '',
+                      telegramHandle: metadata.telegram || '',
+                      website: metadata.website || '',
+                    },
+                  });
+                })
+                .catch(() => { });
 
               if (pausedColumnRef.current === 'new') {
                 pausedTokenQueueRef.current['new'].push(newToken);
@@ -6697,7 +6697,7 @@ const trackedWalletsRef = useRef<any>(
               };
             });
 
-            const top10Pct =
+          const top10Pct =
             (mappedHolders
               .map((h) => Math.max(0, h.balance))
               .sort((a, b) => b - a)
@@ -14575,7 +14575,12 @@ const trackedWalletsRef = useRef<any>(
       </ul>
     </div>
   );
-
+const [displayNotifications, setDisplayNotifications] = useState(true);
+const [transactionSounds, setTransactionSounds] = useState(true);
+const [volume, setVolume] = useState(18);
+const [toastPosition, setToastPosition] = useState('top-left');
+const [buySound, setBuySound] = useState('Kaching');
+const [sellSound, setSellSound] = useState('Kaching');
   // popup modals
   const Modals = (
     <>
@@ -20100,6 +20105,118 @@ const trackedWalletsRef = useRef<any>(
                   </label>
                 </div>
               </div>
+            </div>
+          </div>
+        ) : null}
+
+        {popup === 38 ? (
+          <div ref={popupref} className="notifications-popup-bg">
+            <div className="notifications-popup">
+              <div className="notifications-popup-header">
+                <h2>Notification Settings</h2>
+                <button className="close-btn" onClick={() => setpopup(0)}>
+                  <img src={closebutton} className="close-button-icon" />
+                </button>
+              </div>
+
+              <div className="notifications-popup-content">
+                <div className="setting-row">
+                  <div className="setting-info">
+                    <div className="setting-label">Display notifications</div>
+                    <div className="setting-description">
+                      Display wallet tracker toasts, and notification cards
+                    </div>
+                  </div>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={displayNotifications}
+                      onChange={(e) => setDisplayNotifications(e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div className="setting-section">
+                  <div className="setting-label">Toast Position</div>
+                  <div className="position-grid">
+                    {['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'].map((pos) => (
+                      <button
+                        key={pos}
+                        className={`position-option ${toastPosition === pos ? 'active' : ''}`}
+                        onClick={() => setToastPosition(pos as any)}
+                      >
+                        <div className="position-preview">
+                          <div className="toast-indicator"></div>
+                        </div>
+                        <span>{pos.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="setting-row">
+                  <div className="setting-label">Transaction Sounds</div>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={transactionSounds}
+                      onChange={(e) => setTransactionSounds(e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div className="setting-section">
+                  <div className="volume-header">
+                    <div className="setting-label">Notification Volume</div>
+                    <div className="volume-display">{volume}%</div>
+                  </div>
+                  <div className="volume-slider-container">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={volume}
+                      onChange={(e) => setVolume(Number(e.target.value))}
+                      className="volume-slider"
+                    />
+                    <div className="volume-marks">
+                      <span>0</span>
+                      <span>25</span>
+                      <span>50</span>
+                      <span>75</span>
+                      <span>100</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="sound-selector">
+                  <div className="setting-label">Buy Sound</div>
+                  <div className="sound-control">
+                    <button className="play-sound-btn">🔊</button>
+                    <span className="sound-name">{buySound}</span>
+                    <button className="sound-action-btn">▶</button>
+                    <button className="sound-action-btn">↻</button>
+                  </div>
+                </div>
+
+                <div className="sound-selector">
+                  <div className="setting-label">Sell Sound</div>
+                  <div className="sound-control">
+                    <button className="play-sound-btn">🔊</button>
+                    <span className="sound-name">{sellSound}</span>
+                    <button className="sound-action-btn">▶</button>
+                    <button className="sound-action-btn">↻</button>
+                  </div>
+                </div>
+
+                <div className="file-size-note">Maximum 5 seconds and 0.2MB file size</div>
+              </div>
+
+              <button className="done-btn" onClick={() => setpopup(0)}>
+                Done
+              </button>
             </div>
           </div>
         ) : null}
