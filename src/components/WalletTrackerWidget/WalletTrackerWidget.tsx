@@ -1073,7 +1073,16 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       onWalletsChange(localWallets);
     }
   }, [localWallets, externalWallets, onWalletsChange, hasInitiallyLoaded]);
-
+useEffect(() => {
+  if (!externalWallets && hasInitiallyLoaded) {
+    saveWalletsToStorage(localWallets);
+    window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: localWallets, source: 'widget' } }));
+    window.dispatchEvent(new CustomEvent('trackedWalletsUpdated'));
+  }
+  if (onWalletsChange) {
+    onWalletsChange(localWallets);
+  }
+}, [localWallets, externalWallets, onWalletsChange, hasInitiallyLoaded]);
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY && e.newValue) {

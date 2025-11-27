@@ -146,7 +146,7 @@
 }
  .add-wallet-emoji-picker-positioned {
      position: fixed;
-     z-index: 13;
+     z-index: 16;
      background: #000000;
      border: 1px solid rgba(179, 184, 249, 0.2);
      border-radius: 8px;
