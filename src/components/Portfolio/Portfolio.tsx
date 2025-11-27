@@ -3155,12 +3155,12 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   <div className="meme-oc-header-cell">Actions</div>
                 </div>
                 <div className="meme-oc-items">
-                  {!positions || positions.length === 0 ? (
+                  {!positions || positions.filter(p => p.remainingTokens > 0).length === 0 ? (
                     <div className="meme-oc-empty">
                       No active positions
                     </div>
                   ) : (
-                    [...(positions || [])]
+                    [...(positions || []).filter(p => p.remainingTokens > 0)]
                       .sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0))
                       .map((p) => {
                         const tokenShort =

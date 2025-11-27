@@ -4599,36 +4599,6 @@ const trackedWalletsRef = useRef<any>(
   }, [address]);
 
   useEffect(() => {
-    if (!explorerWsRef.current) return;
-    if (explorerWsRef.current.readyState !== WebSocket.OPEN) return;
-
-    const graduated = Object.values(tokensByStatus.graduated || []);
-    const pools = graduated
-      .map((t: any) => t.market?.toLowerCase())
-      .filter(Boolean);
-
-    const unsub = JSON.stringify({
-      jsonrpc: "2.0",
-      id: "unsub_uni",
-      method: "eth_unsubscribe",
-      params: ["sub_uni_update"]
-    });
-
-    const sub = JSON.stringify({
-      jsonrpc: "2.0",
-      id: "sub_uni_update",
-      method: "eth_subscribe",
-      params: [
-        "monadLogs",
-        { address: pools, topics: [[UNIV3_EVENTS.Swap]] }
-      ]
-    });
-    explorerWsRef.current.send(unsub);
-    explorerWsRef.current.send(sub);
-
-  }, [tokensByStatus?.graduated?.[0]?.market, wsReady]);
-
-  useEffect(() => {
     let cancelled = false;
     let startBlockNumber = '';
     let endBlockNumber = '';
@@ -5481,6 +5451,8 @@ const trackedWalletsRef = useRef<any>(
                 ...p,
                 status: 'graduated'
               }));
+            }
+            else if (log.topics?.[0] == CRYSTAL_EVENTS.Transfer) {
             }
             else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveCreate) {
               const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
@@ -6458,6 +6430,61 @@ const trackedWalletsRef = useRef<any>(
     return merged;
   }, [tokenAddress, tokenData]);
 
+  useEffect(() => {
+    if (!explorerWsRef.current) return;
+    if (explorerWsRef.current.readyState !== WebSocket.OPEN) return;
+
+    const graduated = Object.values(tokensByStatus.graduated || []);
+    const pools = graduated
+      .map((t: any) => t.market?.toLowerCase())
+      .filter(Boolean);
+
+    const unsub = JSON.stringify({
+      jsonrpc: "2.0",
+      id: "unsub_uni",
+      method: "eth_unsubscribe",
+      params: ["sub_uni_update"]
+    });
+
+    const sub = JSON.stringify({
+      jsonrpc: "2.0",
+      id: "sub_uni_update",
+      method: "eth_subscribe",
+      params: [
+        "monadLogs",
+        { address: pools, topics: [[UNIV3_EVENTS.Swap]] }
+      ]
+    });
+    explorerWsRef.current.send(unsub);
+    explorerWsRef.current.send(sub);
+
+  }, [tokensByStatus?.graduated?.[0]?.market, wsReady]);
+
+  useEffect(() => {
+    if (!explorerWsRef.current) return;
+    if (explorerWsRef.current.readyState !== WebSocket.OPEN) return;
+
+    const unsub = JSON.stringify({
+      jsonrpc: "2.0",
+      id: "unsub_uni",
+      method: "eth_unsubscribe",
+      params: ["sub_transfer"]
+    });
+    explorerWsRef.current.send(unsub);
+    if (token.id) {
+      const sub = JSON.stringify({
+        jsonrpc: "2.0",
+        id: "sub_transfer",
+        method: "eth_subscribe",
+        params: [
+          "monadLogs",
+          { address: token.id, topics: [[CRYSTAL_EVENTS.Transfer]] }
+        ]
+      });
+      explorerWsRef.current.send(sub);
+    }
+  }, [token.id, wsReady]);
+
   // metadata n klines
   useEffect(() => {
     if (!token.id) return;
@@ -6528,7 +6555,7 @@ const trackedWalletsRef = useRef<any>(
             const amountOut = Number(t.trade.amountOut ?? 0);
 
             return {
-              id: t.trade.id.split("-")[0],
+              id: t.trade.id,
               timestamp: Number(t.trade.block ?? 0),
               isBuy,
               price: priceWad,

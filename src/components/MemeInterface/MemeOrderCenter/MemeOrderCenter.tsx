@@ -820,7 +820,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
   const availableTabs = [
     ...(isTradesTabVisible ? [{ key: 'trades', label: `Trades` }] : []),
-    { key: 'positions', label: `Positions (${positions.length})` },
+    { key: 'positions', label: `Positions (${positions.filter(p => p.remainingTokens > 0).length})` },
     // { key: 'orders', label: `Orders (${mockOrders.length})` },
     { key: 'holders', label: `Holders (${token.holders})` },
     { key: 'topTraders', label: `Top Traders (${topTraderRows.length})` },
@@ -971,7 +971,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     }
   };
 
-
   const formatWalletDisplay = (address: string) => {
     const addressLower = address.toLowerCase();
 
@@ -1020,7 +1019,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             </div>
             <div className="meme-oc-items">
               {[...(positions?.length ? positions : [])]
-                .sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0))
+                .sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0)).filter(p => p.remainingTokens > 0)
                 .map((p, _) => {
                   const tokenShort =
                     p.symbol ||

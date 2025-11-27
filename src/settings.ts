@@ -752,7 +752,7 @@ export const settings: any = {
       nadFunDexRouter: '0x0B79d71AE99528D1dB24A4148b5f4F865cc2b137' as `0x${string}`,
       nadFunFactory: '0x6B5F564339DbAD6b780249827f2198a841FEB7F3' as `0x${string}`,
       madHouseRouter: '0x6017684Bea9Cb6e9874fC6DBA4438271eBF9F5DA' as `0x${string}`,
-      zeroXSettler: '0x478cF28Fd1Ba92a6afd04F44b05833F6dF7f1486' as `0x${string}`,
+      zeroXSettler: '0xC2D3689cF6cE2859a3ffBc8fE09ab4C8623766b8' as `0x${string}`,
       zeroXAllowanceHolder: '0x0000000000001fF3684f28c67538d4D072C22734' as `0x${string}`,
       feeAddress: '0x565E9c68fC827958551EDe5757461959206AB0bd' as `0x${string}`,
       stork: '0xacC0a0cF13571d30B4b8637996F5D6D774d4fd62' as `0x${string}`,
