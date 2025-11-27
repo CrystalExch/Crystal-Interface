@@ -417,7 +417,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   }, [data]);
 
   useEffect(() => {
-    if (token.symbol == 'UNKNOWN') return;
+    if (token.symbol == 'TKN') return;
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
     widgetRef.current = new (window as any).TradingView.widget({
       container: chartRef.current,
@@ -849,7 +849,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       setChartReady(false);
       widgetRef.current.remove();
     };
-  }, [token.symbol != 'UNKNOWN', showUSD, showMarketCap]);
+  }, [token.symbol != 'TKN', showUSD, showMarketCap]);
 
   useEffect(() => {
     try {

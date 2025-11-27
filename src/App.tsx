@@ -4975,8 +4975,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               setMemeHolders(prev => {
                 const arr = prev.slice();
-                let idx = memeHoldersMapRef.current.get?.(callerAddr);
-                if (idx == undefined) {
+                let idx = arr.findIndex(r => r.address.toLowerCase() === callerAddr);
+                if (idx == -1) {
                   const fresh: Holder = {
                     address: `0x${log.topics[2].slice(26)}`,
                     balance: 0,
@@ -4989,7 +4989,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   };
                   arr.push(fresh);
                   idx = arr.length - 1;
-                  memeHoldersMapRef.current.set(callerAddr, idx);
                 }
                 const h = { ...arr[idx] };
                 if (isBuy) {
@@ -5022,18 +5021,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               setMemeTopTraders(prev => {
                 const copy = Array.isArray(prev) ? [...prev] : [];
                 const key = callerAddr;
-                let idx = memeTopTradersMapRef.current.get(key) ?? -1;
+                let idx = copy.findIndex(r => r.address.toLowerCase() === key);
 
                 if (idx === -1) {
                   const row: Holder = {
-                    address: `0x${log.topics[2].slice(26)}`,
+                    address: callerAddr,
                     balance: 0, tokenNet: 0, valueNet: 0,
                     amountBought: 0, amountSold: 0,
                     valueBought: 0, valueSold: 0,
                   };
                   copy.push(row);
                   idx = copy.length - 1;
-                  memeTopTradersMapRef.current.set(key, idx);
                 }
 
                 const row = { ...copy[idx] };
@@ -5060,9 +5058,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 copy.sort((a, b) => b.valueNet - a.valueNet);
                 if (copy.length > 300) {
                   const removed = copy.splice(300);
-                  for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
                 }
-                copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
                 return copy;
               });
 
@@ -5073,9 +5069,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
                 ];
                 const isUserTrade = allUserAddresses.includes(callerAddr);
+                if (!isUserTrade) return prev;
+                let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddrFromMarket);
 
-                let idx = memePositionsMapRef.current.get(tokenAddrFromMarket);
-                if (idx === undefined && isUserTrade) {
+                if (idx == -1 && isUserTrade) {
                   const newPos = {
                     tokenId: memeRef.current.id?.toLowerCase(),
                     symbol: memeRef.current?.symbol || '',
@@ -5093,9 +5090,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   };
                   copy.push(newPos);
                   idx = copy.length - 1;
-                  memePositionsMapRef.current.set(tokenAddrFromMarket, idx);
                 }
-                if (idx === undefined) return prev;
 
                 const pos = { ...copy[idx] };
                 pos.lastPrice = endPrice;
@@ -5305,8 +5300,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 setMemeHolders(prev => {
                   const arr = prev.slice();
-                  let idx = memeHoldersMapRef.current.get?.(callerAddr);
-                  if (idx == undefined) {
+                  let idx = arr.findIndex(r => r.address.toLowerCase() === callerAddr);
+                  if (idx == -1) {
                     const fresh: Holder = {
                       address: `0x${log.topics[2].slice(26)}`,
                       balance: 0,
@@ -5319,7 +5314,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     };
                     arr.push(fresh);
                     idx = arr.length - 1;
-                    memeHoldersMapRef.current.set(callerAddr, idx);
                   }
                   const h = { ...arr[idx] };
                   if (isBuy) {
@@ -5347,7 +5341,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setMemeTopTraders(prev => {
                   const copy = Array.isArray(prev) ? [...prev] : [];
                   const key = callerAddr;
-                  let idx = memeTopTradersMapRef.current.get(key) ?? -1;
+                  let idx = copy.findIndex(r => r.address.toLowerCase() === key);
 
                   if (idx === -1) {
                     const row: Holder = {
@@ -5358,7 +5352,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     };
                     copy.push(row);
                     idx = copy.length - 1;
-                    memeTopTradersMapRef.current.set(key, idx);
                   }
 
                   const row = { ...copy[idx] };
@@ -5385,9 +5378,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   copy.sort((a, b) => b.valueNet - a.valueNet);
                   if (copy.length > 300) {
                     const removed = copy.splice(300);
-                    for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
                   }
-                  copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
                   return copy;
                 });
 
@@ -5398,9 +5389,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
                   ];
                   const isUserTrade = allUserAddresses.includes(callerAddr);
-                  let idx = memePositionsMapRef.current.get(tokenAddr);
+                  if (!isUserTrade) return prev;
+                  let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddr);
 
-                  if (idx === undefined && isUserTrade) {
+                  if (idx == -1 && isUserTrade) {
                     const newPos = {
                       tokenId: memeRef.current.id?.toLowerCase(),
                       symbol: memeRef.current?.symbol || '',
@@ -5418,9 +5410,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     };
                     copy.push(newPos);
                     idx = copy.length - 1;
-                    memePositionsMapRef.current.set(tokenAddr, idx);
                   }
-                  if (idx === undefined) return prev;
 
                   const pos = { ...copy[idx] };
                   pos.lastPrice = price;
@@ -5741,10 +5731,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 setMemeHolders(prev => {
                   const arr = prev.slice();
-                  let idx = memeHoldersMapRef.current.get?.(callerAddr);
-                  if (idx == undefined) {
+                  let idx = arr.findIndex(r => r.address.toLowerCase() === callerAddr);
+                  if (idx == -1) {
                     const fresh: Holder = {
-                      address: `0x${log.topics[2].slice(26)}`,
+                      address: callerAddr,
                       balance: 0,
                       amountBought: 0,
                       amountSold: 0,
@@ -5755,7 +5745,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     };
                     arr.push(fresh);
                     idx = arr.length - 1;
-                    memeHoldersMapRef.current.set(callerAddr, idx);
                   }
                   const h = { ...arr[idx] };
                   if (isBuy) {
@@ -5783,18 +5772,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setMemeTopTraders(prev => {
                   const copy = Array.isArray(prev) ? [...prev] : [];
                   const key = callerAddr;
-                  let idx = memeTopTradersMapRef.current.get(key) ?? -1;
+                  let idx = copy.findIndex(r => r.address.toLowerCase() === key);
 
                   if (idx === -1) {
                     const row: Holder = {
-                      address: `0x${log.topics[2].slice(26)}`,
+                      address: callerAddr,
                       balance: 0, tokenNet: 0, valueNet: 0,
                       amountBought: 0, amountSold: 0,
                       valueBought: 0, valueSold: 0,
                     };
                     copy.push(row);
                     idx = copy.length - 1;
-                    memeTopTradersMapRef.current.set(key, idx);
                   }
 
                   const row = { ...copy[idx] };
@@ -5821,9 +5809,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   copy.sort((a, b) => b.valueNet - a.valueNet);
                   if (copy.length > 300) {
                     const removed = copy.splice(300);
-                    for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
                   }
-                  copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
                   return copy;
                 });
 
@@ -5834,9 +5820,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
                   ];
                   const isUserTrade = allUserAddresses.includes(callerAddr);
-                  let idx = memePositionsMapRef.current.get(tokenAddr);
+                  if (!isUserTrade) return prev;
+                  let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddr);
 
-                  if (idx === undefined && isUserTrade) {
+                  if (idx == -1 && isUserTrade) {
                     const newPos = {
                       tokenId: memeRef.current.id?.toLowerCase(),
                       symbol: memeRef.current?.symbol || '',
@@ -5854,9 +5841,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     };
                     copy.push(newPos);
                     idx = copy.length - 1;
-                    memePositionsMapRef.current.set(tokenAddr, idx);
                   }
-                  if (idx === undefined) return prev;
 
                   const pos = { ...copy[idx] };
                   pos.lastPrice = price;
@@ -6139,8 +6124,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 setMemeHolders(prev => {
                   const arr = prev.slice();
-                  let idx = memeHoldersMapRef.current.get?.(callerAddr);
-                  if (idx == undefined) {
+                  let idx = arr.findIndex(r => r.address.toLowerCase() === callerAddr);
+                  if (idx == -1) {
                     const fresh: Holder = {
                       address: `0x${log.topics[2].slice(26)}`,
                       balance: 0,
@@ -6153,7 +6138,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     };
                     arr.push(fresh);
                     idx = arr.length - 1;
-                    memeHoldersMapRef.current.set(callerAddr, idx);
                   }
                   const h = { ...arr[idx] };
                   if (isBuy) {
@@ -6181,18 +6165,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setMemeTopTraders(prev => {
                   const copy = Array.isArray(prev) ? [...prev] : [];
                   const key = callerAddr;
-                  let idx = memeTopTradersMapRef.current.get(key) ?? -1;
+                  let idx = copy.findIndex(r => r.address.toLowerCase() === key);
 
                   if (idx === -1) {
                     const row: Holder = {
-                      address: `0x${log.topics[2].slice(26)}`,
+                      address: callerAddr,
                       balance: 0, tokenNet: 0, valueNet: 0,
                       amountBought: 0, amountSold: 0,
                       valueBought: 0, valueSold: 0,
                     };
                     copy.push(row);
                     idx = copy.length - 1;
-                    memeTopTradersMapRef.current.set(key, idx);
                   }
 
                   const row = { ...copy[idx] };
@@ -6219,9 +6202,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   copy.sort((a, b) => b.valueNet - a.valueNet);
                   if (copy.length > 300) {
                     const removed = copy.splice(300);
-                    for (const r of removed) memeTopTradersMapRef.current.delete((r.address || '').toLowerCase());
                   }
-                  copy.forEach((r, i) => memeTopTradersMapRef.current.set((r.address || '').toLowerCase(), i));
                   return copy;
                 });
 
@@ -6232,9 +6213,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
                   ];
                   const isUserTrade = allUserAddresses.includes(callerAddr);
-                  let idx = memePositionsMapRef.current.get(tokenAddr);
+                  if (!isUserTrade) return prev;
+                  let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddr);
 
-                  if (idx === undefined && isUserTrade) {
+                  if (idx == -1 && isUserTrade) {
                     const newPos = {
                       tokenId: memeRef.current.id?.toLowerCase(),
                       symbol: memeRef.current?.symbol || '',
@@ -6252,9 +6234,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     };
                     copy.push(newPos);
                     idx = copy.length - 1;
-                    memePositionsMapRef.current.set(tokenAddr, idx);
                   }
-                  if (idx === undefined) return prev;
 
                   const pos = { ...copy[idx] };
                   pos.lastPrice = price;
@@ -6373,9 +6353,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     price: 0,
   });
   const memeRef = useRef<any>();
-  const memeHoldersMapRef = useRef<Map<string, number>>(new Map());
-  const memePositionsMapRef = useRef<Map<string, number>>(new Map());
-  const memeTopTradersMapRef = useRef<Map<string, number>>(new Map());
   const memeDevTokenIdsRef = useRef<Set<string>>(new Set());
   const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(false);
@@ -6699,15 +6676,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const devPct = calcDevHoldingPct(mappedHolders, tempTokenData.dev);
           setTokenData((p: any) => ({ ...p, devHolding: devPct }));
           setMemeHolders(mappedHolders);
-          memeHoldersMapRef.current = new Map(
-            mappedHolders.map((h: Holder, i: number) => [
-              h.address.toLowerCase(),
-              i,
-            ]),
-          );
         } else {
           setMemeHolders([]);
-          memeHoldersMapRef.current = new Map();
         }
 
 
@@ -6745,12 +6715,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           out.sort((a, b) => b.valueNet - a.valueNet);
           const trimmed = out.slice(0, 100);
           setMemeTopTraders(trimmed);
-          memeTopTradersMapRef.current = new Map(
-            trimmed.map((t, i) => [t.address.toLowerCase(), i]),
-          );
         } else {
           setMemeTopTraders([]);
-          memeTopTradersMapRef.current = new Map();
         }
 
         if (Array.isArray(m.devTokens)) {
@@ -6956,10 +6922,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         const sorted = all.sort((a, b) => b.remainingTokens - a.remainingTokens);
         setMemePositions(sorted);
-        memePositionsMapRef.current = new Map(
-          sorted.map((p, i) => [String(p.tokenId).toLowerCase(), i]),
-        );
-
         setMemeUserStats({
           balance: totals.balance,
           amountBought: totals.amountBought,

@@ -1044,7 +1044,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const openInExplorer = (addr: string) =>
     window.open(`${explorer}/token/${addr}`, '_blank');
 
-  const currentPrice = token.price || 0;
+  const currentPrice = token.price || 1;
 
   useEffect(() => {
     const storedWalletNames = localStorage.getItem('crystal_wallet_names');
@@ -1269,38 +1269,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     } else {
       handleSellPresetSelect(preset);
     }
-  };
-
-  const getMobileWalletBalance = (address: string) => {
-    const balances = walletTokenBalances[address];
-    if (!balances) return 0;
-
-    if (balances[settings.chainConfig[activechain || '']?.eth]) {
-      return (
-        Number(balances[settings.chainConfig[activechain || '']?.eth]) /
-        10 ** Number(18)
-      );
-    }
-    return 0;
-  };
-
-  const getMobileWalletName = (address: string, index: number) => {
-    return mobileWalletNames[address] || `Wallet ${index + 1}`;
-  };
-
-  const isMobileWalletActive = (privateKey: string) => {
-    return activeWalletPrivateKey === privateKey;
-  };
-
-  const getCurrentMobileWalletMONBalance = () => {
-    if (!activeWalletPrivateKey) return 0;
-
-    const currentWallet = subWallets.find(
-      (w) => w.privateKey === activeWalletPrivateKey,
-    );
-    if (!currentWallet) return 0;
-
-    return getMobileWalletBalance(currentWallet.address);
   };
 
   const copyToClipboard = async (text: string, label = 'Address copied') => {
@@ -1549,7 +1517,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     if (tradeType === 'buy') {
       const requestedAmount = parseFloat(amount);
-      const currentMONBalance = getCurrentMobileWalletMONBalance();
+      const currentMONBalance = getTotalSelectedWalletsBalance();
 
       if (requestedAmount > currentMONBalance) {
         walletPopup.showInsufficientBalance(
@@ -5036,10 +5004,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         <div className="meme-similar-token-meta">
                           <div className="meme-similar-token-title">
                             <span className="meme-similar-token-name">
-                              {t.name || 'Unknown'}
+                              {t.name || 'Token'}
                             </span>
                             <span className="meme-similar-token-symbol">
-                              {t.symbol ? ` ${t.symbol}` : ''}
+                              {t.symbol || 'TKN'}
                             </span>
                           </div>
                           <div className="meme-similar-token-id">
@@ -5773,7 +5741,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         color: 'rgba(255, 255, 255, 0.5)',
                       }}
                     >
-                      {token?.name || 'Unknown Token'}
+                      {token?.name || 'Token'}
                     </div>
                   </div>
                 );

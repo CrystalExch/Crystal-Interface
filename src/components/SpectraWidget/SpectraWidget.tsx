@@ -1012,7 +1012,7 @@ const bondingPercentage = useMemo(
             <div className="spectra-detail-section">
               <div className="spectra-top-row">
                 <div className="spectra-market-info">
-                  <h3 className="spectra-market-symbol">{token.symbol || 'Unknown'}</h3>
+                  <h3 className="spectra-market-symbol">{token.symbol || 'TKN'}</h3>
                   <Tooltip content="Click to copy address">
                     <div className="spectra-market-name-copy-container">
                       <div className="spectra-market-name-container"
@@ -1021,7 +1021,7 @@ const bondingPercentage = useMemo(
                           onCopyToClipboard(token.tokenAddress);
                         }}
                         style={{ cursor: 'pointer' }}>
-                        <p className="spectra-market-name">{token.name || 'Unknown'}</p>
+                        <p className="spectra-market-name">{token.name || 'Token'}</p>
                       </div>
                       <button
                         className="explorer-copy-btn"
