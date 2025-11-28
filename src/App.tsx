@@ -14576,8 +14576,22 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       </ul>
     </div>
   );
+  
   const [displayNotifications, setDisplayNotifications] = useState(true);
-  const [toastPosition, setToastPosition] = useState<string>('top-right');
+const [toastPosition, setToastPosition] = useState<string>(() => {
+  try {
+    return localStorage.getItem('crystal_toast_position') || 'top-center';
+  } catch {
+    return 'top-center';
+  }
+});  useEffect(() => {
+  try {
+    localStorage.setItem('crystal_toast_position', toastPosition);
+    window.dispatchEvent(new Event('toast-position-updated'));
+  } catch (error) {
+    console.error('Error saving toast position:', error);
+  }
+}, [toastPosition]);
   const [transactionSounds, setTransactionSounds] = useState(true);
   const [volume, setVolume] = useState(75);
   const [buySound, setBuySound] = useState('Step Audio');
