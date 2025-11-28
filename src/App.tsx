@@ -132,6 +132,7 @@ import edgeX from './assets/edgeX.svg';
 import switchicon from './assets/switch.svg';
 import printr from './assets/printr.png';
 import flapsh from './assets/flapsh.png';
+import kaching from './assets/ka-ching.mp3';
 
 //audio
 import stepaudio from './assets/step_audio.mp3';
@@ -182,7 +183,7 @@ import PNLWidget from './components/PNLWidget/PNLWidget.tsx';
 import WalletTrackerWidget from './components/WalletTrackerWidget/WalletTrackerWidget.tsx';
 import Footer from './components/Footer/Footer.tsx';
 // import config
-import { ChevronDown, SearchIcon } from 'lucide-react';
+import { ChevronDown, Play, RotateCcw, SearchIcon, Volume2 } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
 import { settings } from './settings.ts';
 import { useSharedContext } from './contexts/SharedContext.tsx';
@@ -14575,12 +14576,126 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       </ul>
     </div>
   );
-const [displayNotifications, setDisplayNotifications] = useState(true);
-const [transactionSounds, setTransactionSounds] = useState(true);
-const [volume, setVolume] = useState(18);
-const [toastPosition, setToastPosition] = useState('top-left');
-const [buySound, setBuySound] = useState('Kaching');
-const [sellSound, setSellSound] = useState('Kaching');
+  const [displayNotifications, setDisplayNotifications] = useState(true);
+  const [toastPosition, setToastPosition] = useState<string>('top-right');
+  const [transactionSounds, setTransactionSounds] = useState(true);
+  const [volume, setVolume] = useState(75);
+  const [buySound, setBuySound] = useState('Step Audio');
+  const [sellSound, setSellSound] = useState('Step Audio');
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lastVolumeRef = useRef<number>(volume);
+
+  // Helper functions
+  const toggleDropdown = (key: string) => {
+    setOpenDropdowns((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const closeDropdown = (key: string) => {
+    setOpenDropdowns((prev) => ({
+      ...prev,
+      [key]: false,
+    }));
+  };
+
+  const getSoundDisplayName = (soundPath: string) => {
+    if (soundPath === stepaudio) return 'Step Audio';
+    if (soundPath === kaching) return 'Ka-ching';
+    if (soundPath.includes('blob:')) return 'Custom Audio';
+    return 'Step Audio';
+  };
+
+  const playSound = (soundType: 'buy' | 'sell') => {
+    if (!audioRef.current) return;
+
+    const soundUrl = soundType === 'buy' ? buySound : sellSound;
+
+    if (
+      soundUrl === stepaudio ||
+      soundUrl === kaching ||
+      soundUrl === 'Default'
+    ) {
+      const audio = new Audio(soundUrl === 'Default' ? stepaudio : soundUrl);
+      audio.volume = volume / 100;
+      audio.currentTime = 0;
+      audio.play().catch(console.error);
+    } else {
+      const customAudio = new Audio(soundUrl);
+      customAudio.volume = volume / 100;
+      customAudio.play().catch(console.error);
+    }
+  };
+
+  const handleFileUpload = (
+    soundType: 'buy' | 'sell',
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      if (soundType === 'buy') {
+        setBuySound(url);
+      } else {
+        setSellSound(url);
+      }
+    }
+    event.target.value = '';
+  };
+
+  const selectSound = (
+    soundType: 'buy' | 'sell',
+    soundValue: string,
+  ) => {
+    if (soundType === 'buy') {
+      setBuySound(soundValue);
+    } else {
+      setSellSound(soundValue);
+    }
+  };
+
+  const handleVolumeSliderChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newVolume = parseInt(e.target.value, 10);
+      setVolume(newVolume);
+    },
+    [],
+  );
+
+  const handleVolumeChangeEnd = useCallback(() => {
+    if (
+      audioRef.current &&
+      Math.abs(volume - lastVolumeRef.current) > 0
+    ) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(console.error);
+    }
+    lastVolumeRef.current = volume;
+    setIsDragging(false);
+  }, [volume]);
+
+  // Effects
+  useEffect(() => {
+    audioRef.current = new Audio(stepaudio);
+    audioRef.current.volume = volume / 100;
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume / 100;
+    }
+  }, [volume]);
+
   // popup modals
   const Modals = (
     <>
@@ -20110,41 +20225,41 @@ const [sellSound, setSellSound] = useState('Kaching');
         ) : null}
 
         {popup === 38 ? (
-          <div ref={popupref} className="notifications-popup-bg">
-            <div className="notifications-popup">
-              <div className="notifications-popup-header">
-                <h2>Notification Settings</h2>
-                <button className="close-btn" onClick={() => setpopup(0)}>
-                  <img src={closebutton} className="close-button-icon" />
+          <div className="alerts-popup-overlay" onClick={() => setpopup(0)}>
+            <div className="alerts-popup" ref={popupref} onClick={(e) => e.stopPropagation()}>
+              <div className="alerts-popup-header">
+                <h3 className="alerts-popup-title">Notification Settings</h3>
+                <button className="alerts-close-button" onClick={() => setpopup(0)}>
+                  <img src={closebutton} className="explorer-close-button" />
                 </button>
               </div>
 
-              <div className="notifications-popup-content">
-                <div className="setting-row">
-                  <div className="setting-info">
-                    <div className="setting-label">Display notifications</div>
-                    <div className="setting-description">
-                      Display wallet tracker toasts, and notification cards
+              <div className="alerts-content">
+                <div className="alerts-section">
+                  <div className="alerts-main-toggle">
+                    <div>
+                      <h4 className="alerts-main-label">Display notifications</h4>
+                      <p className="alerts-description">
+                        Display wallet tracker toasts, and notification cards
+                      </p>
+                    </div>
+                    <div
+                      className={`toggle-switch ${displayNotifications ? 'active' : ''}`}
+                      onClick={() => setDisplayNotifications(!displayNotifications)}
+                    >
+                      <div className="toggle-slider" />
                     </div>
                   </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={displayNotifications}
-                      onChange={(e) => setDisplayNotifications(e.target.checked)}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
                 </div>
 
-                <div className="setting-section">
-                  <div className="setting-label">Toast Position</div>
+                <div className="alerts-section">
+                  <h4 className="alerts-main-label">Toast Position</h4>
                   <div className="position-grid">
                     {['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'].map((pos) => (
                       <button
                         key={pos}
                         className={`position-option ${toastPosition === pos ? 'active' : ''}`}
-                        onClick={() => setToastPosition(pos as any)}
+                        onClick={() => setToastPosition(pos)}
                       >
                         <div className="position-preview">
                           <div className="toast-indicator"></div>
@@ -20155,68 +20270,177 @@ const [sellSound, setSellSound] = useState('Kaching');
                   </div>
                 </div>
 
-                <div className="setting-row">
-                  <div className="setting-label">Transaction Sounds</div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={transactionSounds}
-                      onChange={(e) => setTransactionSounds(e.target.checked)}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-
-                <div className="setting-section">
-                  <div className="volume-header">
-                    <div className="setting-label">Notification Volume</div>
-                    <div className="volume-display">{volume}%</div>
-                  </div>
-                  <div className="volume-slider-container">
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={volume}
-                      onChange={(e) => setVolume(Number(e.target.value))}
-                      className="volume-slider"
-                    />
-                    <div className="volume-marks">
-                      <span>0</span>
-                      <span>25</span>
-                      <span>50</span>
-                      <span>75</span>
-                      <span>100</span>
+                <div className="alerts-section">
+                  <div className="alerts-main-toggle">
+                    <div>
+                      <h4 className="alerts-main-label">Transaction Sounds</h4>
+                    </div>
+                    <div
+                      className={`toggle-switch ${transactionSounds ? 'active' : ''}`}
+                      onClick={() => setTransactionSounds(!transactionSounds)}
+                    >
+                      <div className="toggle-slider" />
                     </div>
                   </div>
                 </div>
 
-                <div className="sound-selector">
-                  <div className="setting-label">Buy Sound</div>
-                  <div className="sound-control">
-                    <button className="play-sound-btn">🔊</button>
-                    <span className="sound-name">{buySound}</span>
-                    <button className="sound-action-btn">▶</button>
-                    <button className="sound-action-btn">↻</button>
-                  </div>
-                </div>
+                {transactionSounds && (
+                  <div>
+                    <div className="alerts-volume-slider">
+                      <div className="volume-label">
+                        <span className="volume-text">Notification Volume</span>
+                        <span className="volume-value">{volume}%</span>
+                      </div>
 
-                <div className="sound-selector">
-                  <div className="setting-label">Sell Sound</div>
-                  <div className="sound-control">
-                    <button className="play-sound-btn">🔊</button>
-                    <span className="sound-name">{sellSound}</span>
-                    <button className="sound-action-btn">▶</button>
-                    <button className="sound-action-btn">↻</button>
-                  </div>
-                </div>
+                      <div
+                        className="meme-slider-container meme-slider-mode"
+                        style={{ position: 'relative' }}
+                      >
+                        <input
+                          type="range"
+                          className={`meme-balance-amount-slider ${isDragging ? 'dragging' : ''}`}
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={volume}
+                          onChange={handleVolumeSliderChange}
+                          onMouseDown={() => setIsDragging(true)}
+                          onMouseUp={handleVolumeChangeEnd}
+                          onTouchStart={() => setIsDragging(true)}
+                          onTouchEnd={handleVolumeChangeEnd}
+                          style={{
+                            background: `linear-gradient(to right, rgb(171,176,224) ${volume}%, rgb(28,28,31) ${volume}%)`,
+                          }}
+                        />
 
-                <div className="file-size-note">Maximum 5 seconds and 0.2MB file size</div>
+                        <div className="meme-volume-slider-marks">
+                          {[0, 25, 50, 75, 100].map((mark) => (
+                            <span
+                              key={mark}
+                              className="meme-volume-slider-mark"
+                              data-active={volume >= mark}
+                              data-percentage={mark}
+                              onClick={() => setVolume(mark)}
+                            >
+                              {mark}%
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="alerts-section">
+                      <div className="sound-options">
+                        {(['buy', 'sell'] as const).map((key) => (
+                          <div className="sound-option" key={key}>
+                            <span className="sound-option-label">
+                              {key === 'buy' ? 'Buy Sound' : 'Sell Sound'}
+                            </span>
+                            <div className="sound-controls">
+                              <div className="sound-selector-dropdown">
+                                <div
+                                  className="sound-selector"
+                                  onClick={() => toggleDropdown(key)}
+                                  onBlur={(e) => {
+                                    if (
+                                      !e.currentTarget.parentElement?.contains(
+                                        e.relatedTarget as Node,
+                                      )
+                                    ) {
+                                      closeDropdown(key);
+                                    }
+                                  }}
+                                >
+                                  <Volume2 size={14} />
+                                  <span>
+                                    {getSoundDisplayName(
+                                      key === 'buy' ? buySound : sellSound
+                                    )}
+                                  </span>
+                                  <div className="sound-action-button-container">
+                                    <button
+                                      className="sound-action-btn"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        playSound(key);
+                                      }}
+                                      title="Play sound"
+                                    >
+                                      <Play size={14} />
+                                    </button>
+
+                                    <button
+                                      className="sound-action-btn"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (key === 'buy') {
+                                          setBuySound(stepaudio);
+                                        } else {
+                                          setSellSound(stepaudio);
+                                        }
+                                      }}
+                                      title="Reset to default"
+                                    >
+                                      <RotateCcw size={14} />
+                                    </button>
+                                  </div>
+                                  {openDropdowns[key] && (
+                                    <div className="sound-dropdown-content">
+                                      <button
+                                        className={`sound-dropdown-item ${(key === 'buy' ? buySound : sellSound) === stepaudio
+                                            ? 'active'
+                                            : ''
+                                          }`}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => {
+                                          selectSound(key, stepaudio);
+                                        }}
+                                      >
+                                        Step Audio
+                                      </button>
+                                      <button
+                                        className={`sound-dropdown-item ${(key === 'buy' ? buySound : sellSound) === kaching
+                                            ? 'active'
+                                            : ''
+                                          }`}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => {
+                                          selectSound(key, kaching);
+                                        }}
+                                      >
+                                        Ka-ching
+                                      </button>
+                                      <label className="sound-dropdown-item">
+                                        Upload Other
+                                        <input
+                                          type="file"
+                                          accept="audio/*"
+                                          style={{ display: 'none' }}
+                                          onChange={(e) => {
+                                            handleFileUpload(key, e);
+                                          }}
+                                        />
+                                      </label>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <p className="alerts-file-info">
+                        Maximum 5 seconds and 0.2MB file size
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <button className="alerts-continue-btn" onClick={() => setpopup(0)}>
+                  Done
+                </button>
               </div>
-
-              <button className="done-btn" onClick={() => setpopup(0)}>
-                Done
-              </button>
             </div>
           </div>
         ) : null}
