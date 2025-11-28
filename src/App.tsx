@@ -4236,6 +4236,10 @@ const trackedWalletsRef = useRef<any>(
           graduated: [],
         };
         action.tokens.forEach((t) => buckets[t.status].push(t));
+        buckets.graduating = buckets.graduating
+        .slice()
+        .sort((a, b) => (b.bondingPercentage ?? 0) - (a.bondingPercentage ?? 0));
+        
         return { ...state, tokensByStatus: buckets };
       }
 
