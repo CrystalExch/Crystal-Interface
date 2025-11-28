@@ -67,6 +67,7 @@ interface ReferralDashboardProps {
   typedRefCode: string;
   setTypedRefCode: (v: string) => void;
   isSigning: boolean;
+  monUsdPrice: any;
 }
 
 const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
@@ -92,6 +93,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
   typedRefCode,
   setTypedRefCode,
   isSigning,
+  monUsdPrice
 }) => {
   const [showFeeSchedule, setShowFeeSchedule] = useState(false);
   const [activeTab, setActiveTab] = useState<'rewards' | 'leaderboard'>('rewards');
@@ -278,7 +280,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
                         className="referral-share-button"
                         onClick={() => {
                           const tweetText =
-                            "Join me on @CrystalExch, the EVM's first fully on-chain orderbook exchange, now live on @monad_xyz.\n\nUse my referral link for a 25% discount on all fees:\n\n";
+                            "Join me on @CrystalExch, the EVM's fastest trading terminal.\n\nUse my referral link for a discount on all fees:\n\n";
                           const url = `https://app.crystal.exchange?ref=${refLink}`;
                           window.open(
                             `https://twitter.com/intent/tweet?text=${encodeURIComponent(
@@ -326,6 +328,7 @@ const ReferralDashboard: React.FC<ReferralDashboardProps> = ({
             commissionBonus={commissionBonus}
             onViewFeeSchedule={() => setShowFeeSchedule(true)}
             tokenList={tokenList}
+            monUsdPrice={monUsdPrice}
           />
 
           {/* Marketing Resources */}

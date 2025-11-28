@@ -3198,7 +3198,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           <div className="meme-order-type-container">
             <span>Market</span>
             <Tooltip content="Limit orders coming soon">
-              <span style={{ color: '#e0e8fd73', cursor: 'not-allowed' }}>Limit</span>
+              <span style={{ color: '#e0e8fd73', cursor: 'not-allowed', marginTop: '0.5px' }}>Limit</span>
             </Tooltip>
           </div>
           <div className="meme-wallet-dropdown-container" ref={walletDropdownRef}>

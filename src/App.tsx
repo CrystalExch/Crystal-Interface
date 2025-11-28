@@ -4773,7 +4773,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           if (msg.method !== 'eth_subscription' || !msg.params?.result)
             return;
           const log = msg.params?.result;
-          if (!log?.topics?.length || msg?.params?.result?.commitState != "Voted") return;
+          if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
 
           setProcessedLogs(prev => {
             let tempset = new Set(prev);
@@ -28933,6 +28933,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 sendUserOperationAsync={sendUserOperationAsync}
                 waitForTxReceipt={(hash: string) => waitForTransactionReceipt(config, { hash: hash as `0x${string}` })}
                 client={client}
+                monUsdPrice={monUsdPrice}
               />
             } />
           <Route path="/sneakylaunchpad"

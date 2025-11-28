@@ -8,6 +8,7 @@ interface FeeTierProps {
   commissionBonus: number;
   onViewFeeSchedule: () => void;
   tokenList: any[];
+  monUsdPrice: any;
 }
 
 interface TierInfo {
@@ -28,10 +29,9 @@ interface TierInfo {
   } | null;
 }
 
-const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onViewFeeSchedule, tokenList }) => {
+const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onViewFeeSchedule, tokenList, monUsdPrice }) => {
   const [testTierLevel, setTestTierLevel] = useState<number | null>(null);
   const [showUSD, setShowUSD] = useState<boolean>(true);
-  const [monPrice, setMonPrice] = useState<number>(1);
   const getTierInfo = (volume: number): TierInfo => {
     if (volume >= 1000000) {
       return {
@@ -132,21 +132,14 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
     }
   };
 
-  // Set MON price (hardcoded like in App.tsx)
-  useEffect(() => {
-    // Use the same hardcoded price as App.tsx
-    const hardcodedMonPrice = 0.05;
-    setMonPrice(hardcodedMonPrice);
-  }, []);
-
   const formatMONVolume = (volUSD: number): string => {
-    const volMON = volUSD / monPrice;
+    const volMON = volUSD / monUsdPrice;
     if (volMON >= 1000000) {
-      const formatted = Math.floor(volMON / 1000000);
+      const formatted = (volMON / 1000000).toFixed(2);
       return `${formatted}M`;
     }
     if (volMON >= 1000) {
-      const formatted = Math.floor(volMON / 1000);
+      const formatted = (volMON / 1000).toFixed(2);
       return `${formatted}K`;
     }
     return `${Math.floor(volMON).toLocaleString()}`;
@@ -154,11 +147,11 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
 
   const formatUSDVolume = (volUSD: number): string => {
     if (volUSD >= 1000000) {
-      const formatted = Math.floor(volUSD / 1000000);
+      const formatted = (volUSD / 1000000).toFixed(2);
       return `$${formatted}M`;
     }
     if (volUSD >= 1000) {
-      const formatted = Math.floor(volUSD / 1000);
+      const formatted = (volUSD / 1000).toFixed(2);
       return `$${formatted}K`;
     }
     return `$${Math.floor(volUSD).toLocaleString()}`;

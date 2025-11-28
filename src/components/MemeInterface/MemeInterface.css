@@ -74,7 +74,7 @@
 
 .meme-buy-button,
 .meme-sell-button {
-  border: 1px solid transparent;
+  border: 1.5px solid transparent;
   border-radius: 4px;
   cursor: pointer;
   font-size: .85rem;
@@ -315,11 +315,6 @@
   letter-spacing: 0.5px;
 }
 
-.meme-stat-value {
-  color: #fff;
-  font-size: .85rem;
-}
-
 .stat-value {
   white-space: nowrap;
 }
@@ -331,8 +326,7 @@
 }
 
 .meme-buy-button.active {
-  border: 1px solid rgba(67, 254, 154, 0.7);
-  box-shadow: inset 0 0 6px 4px rgba(67, 254, 154, 0.2);
+  border: 1.5px solid rgba(67, 254, 154, 0.7);
   color: rgb(67 254 154);
 }
 
@@ -342,8 +336,7 @@
 }
 
 .meme-sell-button.active {
-  border: 1px solid rgb(235, 112, 112, 0.5);
-  box-shadow: inset 0 0 4px 4px rgb(235, 112, 112, 0.2);
+  border: 1.5px solid rgb(235, 112, 112, 0.5);
   color: rgb(235, 112, 112);
 }
 
@@ -596,7 +589,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   margin-top: 12px;
-  padding: 10px 0 12px;
+  padding: 8px 0 8px;
 }
 
 .meme-portfolio-stat {
@@ -611,14 +604,14 @@
 .meme-portfolio-label {
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.75rem;
-  margin-bottom: 2px;
+  font-weight: 300;
 }
 
 .meme-portfolio-value {
   align-items: center;
   display: flex;
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: 0.8rem;
+  font-weight: 400;
   justify-content: center;
 }
 
@@ -1421,9 +1414,9 @@
 }
 
 .meme-mobile-monad-icon {
-  height: 14px;
+  height: 13px;
   margin-right: 4px;
-  width: 14px;
+  width: 13px;
 }
 
 .meme-currency-monad-icon {
@@ -2148,8 +2141,7 @@
 .meme-trading-stats-enhanced {
   background: rgb(6, 6, 6);
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-  padding: 10px;
-  padding-top: 5px;
+  padding: 8px;
   position: relative;
   transition: all 0.3s ease;
 }
@@ -2157,7 +2149,7 @@
 .top-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  padding: 4px;
+  padding: 0px 4px 4px 4px;
   position: relative;
   z-index: 1;
 }
@@ -2170,6 +2162,19 @@
   position: relative;
 }
 
+.stat-label {
+  color: #e0e8fd90;
+  font-size: .8rem;
+  letter-spacing: -.3px;
+  margin-bottom: .1rem
+}
+
+.stat-value {
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 300;
+}
+
 .stat-group-vol {
   display: flex;
   flex-direction: column;
@@ -2178,7 +2183,7 @@
 
 .stat-group-vol .stat-value {
   color: #ffffff;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .stat-group-vol .stat-label {
@@ -2197,7 +2202,7 @@
 
 .stat-group-net-vol .stat-value {
   color: #ffffff;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .stat-group-net-vol .stat-label {
@@ -2225,7 +2230,7 @@
 
 .stat-group .stat-value {
   color: #ffffff;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .stat-group .stat-value.green {
@@ -2313,7 +2318,6 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 2px;
   height: 100%;
   justify-content: center;
   width: 100%;
@@ -2330,7 +2334,7 @@
 
 .tf-percentage {
   color: #f77f7d;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .age-dropdown-wrapper {
@@ -3071,17 +3075,16 @@
 .meme-order-type-container{
   display: flex;
   align-items: center;
-  gap: 7px;
-  color: #ffffffdf;
+  gap: 8px;
+  color: #ffffffcf;
+  font-weight: 350;
+  letter-spacing: -0.1px;
 }
 
 .meme-trade-inputs-row{
   display: flex;
   align-items: center;
-  padding-right: 10px;
-  padding-left: 15px;
-  margin-top: 8px;
-  margin-bottom: 8px;
+  padding: 6px 10px 6px 15px
 }
 
 .cs-container {

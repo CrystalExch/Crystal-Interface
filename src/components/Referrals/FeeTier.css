@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   flex-wrap: wrap;
   gap: 1rem;
 }
@@ -157,12 +157,12 @@
 }
 
 .fee-tier-progress {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .fee-tier-progress-bar {
   flex: 1;
-  height: 8px;
+  height: 10px;
   background: rgba(179, 184, 249, 0.1);
   border-radius: 4px;
   overflow: hidden;
@@ -216,7 +216,7 @@
 
 .fee-tier-benefits {
   display: flex;
-  gap: .5rem;
+  gap: 1rem;
 }
 
 .fee-tier-benefit-card {
@@ -224,16 +224,16 @@
   align-items: center;
   background: rgba(0, 0, 0, 0.3);
   text-align: center;
-  gap: 3px;
+  gap: 4px;
 }
 
 .fee-tier-benefit-label {
   color: #a8a9b9;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
 }
 
 .fee-tier-benefit-value {
-  font-size: .8rem;
+  font-size: .85rem;
 }
 
 .fee-tier-requirements {

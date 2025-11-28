@@ -254,11 +254,6 @@
   justify-content: space-between
 }
 
-.stat-label {
-  color: rgb(255 255 255/50%);
-  font-size: .7rem
-}
-
 .account-stat-value {
   color: rgb(255 255 255/90%);
   font-size: .8rem;
