@@ -1002,7 +1002,13 @@ const abortRef = useRef<AbortController | null>(null);
     }, [tokens, recentlyViewed, recentlyViewedMarkets, searchTerm]);
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchTerm(e.target.value);
+        const value = e.target.value;
+        setSearchTerm(value);
+
+        // Clear error when search is cleared
+        if (value.trim() === '') {
+            setError(null);
+        }
     };
 
     const showMarkets = searchTerm.trim().length >= 1 && filteredMarkets.length > 0;
