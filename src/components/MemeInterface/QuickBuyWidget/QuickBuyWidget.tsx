@@ -76,6 +76,10 @@ interface QuickBuyWidgetProps {
   createSubWallet: any;
   setOneCTDepositAddress: any;
   signTypedDataAsync: any;
+    transactionSounds: boolean;
+  buySound: string;
+  sellSound: string;
+  volume: number;
 }
 
 const Tooltip: React.FC<{
@@ -268,8 +272,26 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   isTerminalDataFetching,
   createSubWallet,
   setOneCTDepositAddress,
-  signTypedDataAsync
+  signTypedDataAsync,
+    transactionSounds,
+  buySound,
+  sellSound,
+  volume,
 }) => {
+  const playTradeSound = useCallback((isBuy: boolean) => {
+    if (!transactionSounds) return;
+    
+    try {
+      const soundToPlay = isBuy ? buySound : sellSound;
+      const audio = new Audio(soundToPlay);
+      audio.volume = volume / 100;
+      audio.play().catch(err => {
+        console.log('Failed to play trade sound:', err);
+      });
+    } catch (err) {
+      console.log('Error playing trade sound:', err);
+    }
+  }, [transactionSounds, buySound, sellSound, volume]);
   if (window.innerWidth < 1020) return (<></>)
   const [position, setPosition] = useState(() => {
     try {
@@ -1309,6 +1331,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         variant: 'success',
         isLoading: false,
       });
+       playTradeSound(true);
     } catch (error: any) {
       updatePopup?.(txId, {
         title: 'Batch buy failed',
@@ -1740,6 +1763,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         variant: 'success',
         isLoading: false,
       });
+        playTradeSound(false);
     } catch (error: any) {
       updatePopup?.(txId, {
         title: 'Batch sell failed',

@@ -4289,6 +4289,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       case 'UPDATE_MARKET': {
         const buckets = { ...state.tokensByStatus };
         let movedToken: any;
+        let status: string = '';
         (Object.keys(buckets) as Token['status'][]).forEach((s) => {
           buckets[s] = buckets[s].flatMap((t: any) => {
             if (t.id.toLowerCase() !== action.id.toLowerCase()) return [t];
@@ -4301,7 +4302,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               trader = '',
               ...rest
             } = action.updates;
-            const status = s == 'graduated'
+            status = s == 'graduated'
               ? 'graduated'
               : (rest?.price ?? t?.price) * TOTAL_SUPPLY > (t.source == 'crystal' ? 12500 : 1290000)
                 ? 'graduating'
@@ -4333,20 +4334,22 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             }];
           });
         });
+
         if (movedToken?.status) {
           buckets[movedToken?.status as Token['status']].unshift(movedToken);
+          if (buckets.new) {
+            buckets.new = [...buckets.new].sort(
+              (a, b) => (b.created ?? 0) - (a.created ?? 0)
+            );
+          }
         }
 
-        if (buckets.graduating) {
-          buckets.graduating = [...buckets.graduating].sort(
-            (a, b) => (b.bondingPercentage ?? 0) - (a.bondingPercentage ?? 0)
-          );
-        }
-
-        if (buckets.new) {
-          buckets.new = [...buckets.new].sort(
-            (a, b) => (b.created ?? 0) - (a.created ?? 0)
-          );
+        if (status == 'graduating') {
+          if (buckets.graduating) {
+            buckets.graduating = [...buckets.graduating].sort(
+              (a, b) => (b.bondingPercentage ?? 0) - (a.bondingPercentage ?? 0)
+            );
+          }
         }
 
         return { ...state, tokensByStatus: buckets };
@@ -14580,8 +14583,22 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       </ul>
     </div>
   );
+  
   const [displayNotifications, setDisplayNotifications] = useState(true);
-  const [toastPosition, setToastPosition] = useState<string>('top-right');
+const [toastPosition, setToastPosition] = useState<string>(() => {
+  try {
+    return localStorage.getItem('crystal_toast_position') || 'top-center';
+  } catch {
+    return 'top-center';
+  }
+});  useEffect(() => {
+  try {
+    localStorage.setItem('crystal_toast_position', toastPosition);
+    window.dispatchEvent(new Event('toast-position-updated'));
+  } catch (error) {
+    console.error('Error saving toast position:', error);
+  }
+}, [toastPosition]);
   const [transactionSounds, setTransactionSounds] = useState(true);
   const [volume, setVolume] = useState(75);
   const [buySound, setBuySound] = useState('Step Audio');
@@ -20392,8 +20409,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                     <div className="sound-dropdown-content">
                                       <button
                                         className={`sound-dropdown-item ${(key === 'buy' ? buySound : sellSound) === stepaudio
-                                            ? 'active'
-                                            : ''
+                                          ? 'active'
+                                          : ''
                                           }`}
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => {
@@ -20404,8 +20421,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                       </button>
                                       <button
                                         className={`sound-dropdown-item ${(key === 'buy' ? buySound : sellSound) === kaching
-                                            ? 'active'
-                                            : ''
+                                          ? 'active'
+                                          : ''
                                           }`}
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => {
@@ -28562,6 +28579,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setOneCTDepositAddress={setOneCTDepositAddress}
                 scaAddress={scaAddress}
                 signTypedDataAsync={signTypedDataUnified}
+                transactionSounds={transactionSounds}
+                buySound={buySound}
+                sellSound={sellSound}
+                volume={volume}
               />
             }
           />

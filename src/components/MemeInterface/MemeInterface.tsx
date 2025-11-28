@@ -135,6 +135,10 @@ interface MemeInterfaceProps {
   setOneCTDepositAddress: any;
   scaAddress: any;
   signTypedDataAsync: any;
+  transactionSounds: boolean;
+  buySound: string;
+  sellSound: string;
+  volume: number;
 }
 
 const STATS_HTTP_BASE = 'https://api.crystal.exchange';
@@ -366,8 +370,26 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   createSubWallet,
   setOneCTDepositAddress,
   scaAddress,
-  signTypedDataAsync
+  signTypedDataAsync,
+  transactionSounds,
+  buySound,
+  sellSound,
+  volume,
 }) => {
+  const playTradeSound = useCallback((isBuy: boolean) => {
+    if (!transactionSounds) return;
+
+    try {
+      const soundToPlay = isBuy ? buySound : sellSound;
+      const audio = new Audio(soundToPlay);
+      audio.volume = volume / 100;
+      audio.play().catch(err => {
+        console.log('Failed to play trade sound:', err);
+      });
+    } catch (err) {
+      console.log('Error playing trade sound:', err);
+    }
+  }, [transactionSounds, buySound, sellSound, volume]);
   const getSliderPosition = (
     activeView: 'chart' | 'trades' | 'ordercenter',
   ) => {
@@ -382,7 +404,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         return 0;
     }
   };
-  
+
   const isWalletActive = (privateKey: string) => {
     return activeWalletPrivateKey === privateKey;
   };
@@ -888,7 +910,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
       const mouseDelta = e.clientY - initialMousePosRef.current;
       const newHeight = Math.max(
-        150, 
+        150,
         Math.min(
           window.innerHeight - 400,
           initialHeightRef.current - mouseDelta
@@ -1901,7 +1923,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   const vNative = token.reserveQuote + iva;
                   const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
                   const output = Math.floor(Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100))));
-    
+
                   const actions: any = []
                   actions.push(encodeFunctionData({
                     abi: zeroXActionsAbi,
@@ -2000,6 +2022,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             });
 
             terminalRefetch();
+            playTradeSound(true);
           } catch (error: any) {
             updatePopup?.(txId, {
               title: 'Buy Failed',
@@ -2136,6 +2159,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           });
 
           terminalRefetch();
+          playTradeSound(true);
         }
       } else {
         if (selectedWallets.size > 0) {
@@ -2188,7 +2212,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
                 if ((token?.allowances?.[walletAddr.toLowerCase()]?.allowance || 0n) < inputAmountWei) {
                   const nonce = token?.allowances?.[walletAddr.toLowerCase()]?.nonce ?? 0n
-                  
+
                   const signature = await signTypedDataAsync(
                     {
                       domain: {
@@ -2216,12 +2240,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       },
                     }, wallet.privateKey
                   )
-                  
+
                   const sigHex = signature.slice(2)
                   const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
                   const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
                   const v = Number(`0x${sigHex.slice(128, 130)}`)
-                  
+
                   actions.push(encodeFunctionData({
                     abi: zeroXActionsAbi,
                     functionName: 'BASIC',
@@ -2352,7 +2376,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
                 if ((token?.allowances?.[walletAddr.toLowerCase()]?.allowance || 0n) < amountTokenWei) {
                   const nonce = token?.allowances?.[walletAddr.toLowerCase()]?.nonce ?? 0n
-                
+
                   const signature = await signTypedDataAsync(
                     {
                       domain: {
@@ -2380,12 +2404,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       },
                     }, wallet.privateKey
                   )
-                  
+
                   const sigHex = signature.slice(2)
                   const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
                   const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
                   const v = Number(`0x${sigHex.slice(128, 130)}`)
-                  
+
                   actions.push(encodeFunctionData({
                     abi: zeroXActionsAbi,
                     functionName: 'BASIC',
@@ -2517,6 +2541,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             isLoading: false,
           });
           terminalRefetch();
+          playTradeSound(false);
         } else {
           txId = walletPopup.showSellTransaction(
             tradeAmount,
@@ -2546,7 +2571,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const sellContractAddress = isNadFun
             ? token.migrated ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
             : routerAddress;
-            
+
           walletPopup.updateTransactionConfirming(
             txId,
             tradeAmount,
@@ -2562,7 +2587,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
             if ((token?.allowances?.[account.address.toLowerCase()]?.allowance || 0n) < inputAmountWei) {
               const nonce = token?.allowances?.[account.address.toLowerCase()]?.nonce ?? 0n
-            
+
               const signature = await signTypedDataAsync(
                 {
                   domain: {
@@ -2590,12 +2615,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   },
                 }
               )
-              
+
               const sigHex = signature.slice(2)
               const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
               const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
               const v = Number(`0x${sigHex.slice(128, 130)}`)
-              
+
               actions.push(encodeFunctionData({
                 abi: zeroXActionsAbi,
                 functionName: 'BASIC',
@@ -2660,7 +2685,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
             if ((token?.allowances?.[account.address.toLowerCase()]?.allowance || 0n) < amountTokenWei) {
               const nonce = token?.allowances?.[account.address.toLowerCase()]?.nonce ?? 0n
-            
+
               const signature = await signTypedDataAsync(
                 {
                   domain: {
@@ -2688,12 +2713,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   },
                 }
               )
-              
+
               const sigHex = signature.slice(2)
               const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
               const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
               const v = Number(`0x${sigHex.slice(128, 130)}`)
-              
+
               actions.push(encodeFunctionData({
                 abi: zeroXActionsAbi,
                 functionName: 'BASIC',
@@ -2790,6 +2815,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           });
 
           terminalRefetch();
+          playTradeSound(false);
         }
       }
 
@@ -3202,41 +3228,41 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             </Tooltip>
           </div>
           <div className="meme-wallet-dropdown-container" ref={walletDropdownRef}>
-              <button
-                className={`meme-wallet-dropdown-trigger ${isWalletDropdownOpen ? 'active' : ''}`}
-                onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
-              >
-                <img src={walleticon} className="meme-wallet-icon" alt="Wallets" />
-                {selectedWallets.size == 0 ? <Tooltip content="Primary Wallet">
-                  {(
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d8dcff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px', verticalAlign: 'middle' }}>
-                      <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-                      <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
-                      <path d="m20 9-3 9" />
-                      <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
-                      <path d="M7 18 4 9" />
-                      <circle cx="12" cy="4" r="2" />
-                      <circle cx="20" cy="7" r="2" />
-                      <circle cx="4" cy="7" r="2" />
-                    </svg>
-                  )}
-                </Tooltip> : 
+            <button
+              className={`meme-wallet-dropdown-trigger ${isWalletDropdownOpen ? 'active' : ''}`}
+              onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
+            >
+              <img src={walleticon} className="meme-wallet-icon" alt="Wallets" />
+              {selectedWallets.size == 0 ? <Tooltip content="Primary Wallet">
+                {(
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d8dcff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px', verticalAlign: 'middle' }}>
+                    <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                    <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                    <path d="m20 9-3 9" />
+                    <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                    <path d="M7 18 4 9" />
+                    <circle cx="12" cy="4" r="2" />
+                    <circle cx="20" cy="7" r="2" />
+                    <circle cx="4" cy="7" r="2" />
+                  </svg>
+                )}
+              </Tooltip> :
                 <span className="meme-wallet-count">{selectedWallets.size}</span>}
-                {activeTradeType == 'buy' ? <div className="meme-wallet-total-balance">
-                  <img src={monadicon} className="meme-wallet-mon-small-icon" alt="MON" />
-                  <span>{formatNumberWithCommas(getTotalSelectedWalletsBalance(), 2)}</span>
-                </div> : 
-                <><div className="meme-wallet-total-balance" style={{marginRight: '8px'}}>
+              {activeTradeType == 'buy' ? <div className="meme-wallet-total-balance">
+                <img src={monadicon} className="meme-wallet-mon-small-icon" alt="MON" />
+                <span>{formatNumberWithCommas(getTotalSelectedWalletsBalance(), 2)}</span>
+              </div> :
+                <><div className="meme-wallet-total-balance" style={{ marginRight: '8px' }}>
                   <img src={token.image} className="meme-wallet-mon-small-icon" alt="MON" />
                   <span>{formatNumberWithCommas(getTotalSelectedWalletsTokenBalance(), 2)}</span>
                 </div>
-                <div className="meme-wallet-total-balance">
-                  <img src={monadicon} className="meme-wallet-mon-small-icon" alt="MON" />
-                  <span>{formatNumberWithCommas(getTotalSelectedWalletsTokenBalance() * token.price, 2)}</span>
-                </div>
+                  <div className="meme-wallet-total-balance">
+                    <img src={monadicon} className="meme-wallet-mon-small-icon" alt="MON" />
+                    <span>{formatNumberWithCommas(getTotalSelectedWalletsTokenBalance() * token.price, 2)}</span>
+                  </div>
                 </>}
-              </button>
-            </div>
+            </button>
+          </div>
         </div>
         {isWalletDropdownOpen && account.connected && (
           <div className="meme-wallet-dropdown-panel" ref={walletDropdownPanelRef}>
@@ -3539,7 +3565,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                                   wallet.address,
                                   index + walletsWithToken.length,
                                 )}
-                                                                  <Tooltip content="Primary Wallet">
+                                <Tooltip content="Primary Wallet">
                                   {isActive && (
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
                                       <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
@@ -3669,8 +3695,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 }
                 else if (activeTradeType == 'buy') {
                   const currentBalance = getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18) > 0
-                  ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
-                  : 0;
+                    ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
+                    : 0;
                   const currentAmount = parseFloat(value) || 0;
                   const percentage = currentBalance > 0 ? (currentAmount / currentBalance) * 100 : 0;
                   setSliderPercent(percentage);
@@ -3792,8 +3818,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     setSliderPercent(newPercent);
                     if (activeTradeType === 'buy') {
                       const currentBalance = getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18) > 0
-                      ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
-                      : 0;
+                        ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
+                        : 0;
                       const newAmount = (currentBalance * newPercent) / 100;
                       setTradeAmount(newAmount.toString());
                     } else {
@@ -3825,8 +3851,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     setSliderPercent(newPercent);
                     if (activeTradeType === 'buy') {
                       const currentBalance = getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18) > 0
-                      ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
-                      : 0;;
+                        ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
+                        : 0;;
                       const newAmount = (currentBalance * newPercent) / 100;
                       setTradeAmount(newAmount.toString());
                     } else {
@@ -3865,8 +3891,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     }
                     if (activeTradeType === 'buy') {
                       const currentBalance = getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18) > 0
-                      ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
-                      : 0;;
+                        ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
+                        : 0;;
                       const newAmount = (currentBalance * percent) / 100;
                       setTradeAmount(formatTradeAmount(newAmount));
                     } else {
@@ -3906,8 +3932,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         setSliderPercent(markPercent);
                         if (activeTradeType === 'buy') {
                           const currentBalance = getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18) > 0
-                          ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
-                          : 0;;
+                            ? getTotalSelectedWalletsBalance() - (Number(settings.chainConfig[activechain].gasamount) / 1e18)
+                            : 0;;
                           const newAmount =
                             (currentBalance * markPercent) / 100;
                           setTradeAmount(formatTradeAmount(newAmount));
@@ -5501,7 +5527,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                                   wallet.address,
                                   index + walletsWithToken.length,
                                 )}
-                                                                  <Tooltip content="Primary Wallet">
+                                <Tooltip content="Primary Wallet">
                                   {isActive && (
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
                                       <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
@@ -5654,6 +5680,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         createSubWallet={createSubWallet}
         setOneCTDepositAddress={setOneCTDepositAddress}
         signTypedDataAsync={signTypedDataAsync}
+        transactionSounds={transactionSounds}
+        buySound={buySound}
+        sellSound={sellSound}
+        volume={volume}
       />
 
       {hoveredSimilarTokenImage &&
