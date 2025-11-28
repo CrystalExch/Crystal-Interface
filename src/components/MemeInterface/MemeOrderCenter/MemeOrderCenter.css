@@ -82,7 +82,7 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  height: calc(100% - 35px);
+  height: calc(100% - 38px);
   left: 0;
   max-width: 100vw;
   min-height: 0;
@@ -170,15 +170,15 @@
   flex-direction: column;
   min-height: 0;
   overflow-y: auto;
-  max-height: calc(100% - 33px);
+  max-height: calc(100% - 31px);
   flex: 1 1 0%;
 }
 
 .meme-oc-item {
   align-items: center;
   display: grid;
-  min-height: 42.2px;
-  max-height: 42.2px;
+  min-height: 42.9px;
+  max-height: 42.9px;
   padding: 4px 15px;
   transition: background-color 0.2s ease;
   width: 100%;
@@ -1616,7 +1616,7 @@
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 9;
   pointer-events: none;
-  backdrop-filter: blur(20px);
+  background-color: rgb(6, 6, 6);
 }
 
 .meme-oc-pause-indicator.visible {

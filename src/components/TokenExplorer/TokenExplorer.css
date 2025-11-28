@@ -1874,6 +1874,12 @@ filter: brightness(0) saturate(100%) invert(98%) sepia(29%) saturate(4263%) hue-
 .explorer-header-left {
   align-items: center;
   display: flex;
+  gap: 14px;
+}
+
+.explorer-app-title.inactive {
+  color: rgba(255, 255, 255, 0.5);
+  cursor: not-allowed;
 }
 
 .explorer-app-title {
