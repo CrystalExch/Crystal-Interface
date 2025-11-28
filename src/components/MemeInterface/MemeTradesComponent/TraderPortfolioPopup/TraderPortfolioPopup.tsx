@@ -410,6 +410,39 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   const realizedClass = totalRealizedPnlNative >= 0 ? 'positive' : 'negative';
   const realizedSign = totalRealizedPnlNative >= 0 ? '+' : '-';
 
+  // Calculate PNL ranges based on all positions
+  const pnlRanges = traderPositions?.reduce((ranges, p) => {
+    if (p.spentNative === 0) return ranges;
+    
+    const pnlPercentage = (p.pnlNative / p.spentNative) * 100;
+    
+    if (pnlPercentage > 500) {
+      ranges.over500++;
+    } else if (pnlPercentage >= 200) {
+      ranges.range200to500++;
+    } else if (pnlPercentage >= 0) {
+      ranges.range0to200++;
+    } else if (pnlPercentage >= -50) {
+      ranges.range0toNeg50++;
+    } else {
+      ranges.underNeg50++;
+    }
+    
+    return ranges;
+  }, {
+    over500: 0,
+    range200to500: 0,
+    range0to200: 0,
+    range0toNeg50: 0,
+    underNeg50: 0
+  }) || {
+    over500: 0,
+    range200to500: 0,
+    range0to200: 0,
+    range0toNeg50: 0,
+    underNeg50: 0
+  };
+
   return (
     <div className="trader-popup-backdrop" onClick={handleBackdropClick}>
       <div className="trader-popup-container">
@@ -571,11 +604,11 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
               </div>
               <div className="trenches-performance-ranges">
                 {[
-                  { label: '>500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
-                  { label: '200% ~ 500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
-                  { label: '0% ~ 200%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
-                  { label: '0% ~ -50%', count: 0, color: 'rgb(247, 127, 125, 0.25)' },
-                  { label: '<-50%', count: 0, color: 'rgb(247, 127, 125, 0.25)' }
+                  { label: '>500%', count: pnlRanges.over500, color: 'rgb(67, 254, 154)' },
+                  { label: '200% ~ 500%', count: pnlRanges.range200to500, color: 'rgb(67, 254, 154)' },
+                  { label: '0% ~ 200%', count: pnlRanges.range0to200, color: 'rgb(67, 254, 154)' },
+                  { label: '0% ~ -50%', count: pnlRanges.range0toNeg50, color: 'rgb(247, 127, 125)' },
+                  { label: '<-50%', count: pnlRanges.underNeg50, color: 'rgb(247, 127, 125)' }
                 ].map((range, index) => (
                   <div key={index} className="trenches-performance-range">
                     <span className="trenches-performance-range-label">
@@ -584,7 +617,8 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                         width: '9px',
                         height: '9px',
                         borderRadius: '50%',
-                        backgroundColor: range.color
+                        backgroundColor: range.color,
+                        opacity: range.count > 0 ? 1 : 0.25
                       }}></span>
                       {range.label}
                     </span>
