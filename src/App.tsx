@@ -20226,7 +20226,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         {popup === 38 ? (
           <div className="alerts-popup-overlay" onClick={() => setpopup(0)}>
-            <div className="alerts-popup" ref={popupref} onClick={(e) => e.stopPropagation()}>
+            <div className="notification-manager-popup" ref={popupref} onClick={(e) => e.stopPropagation()}>
               <div className="alerts-popup-header">
                 <h3 className="alerts-popup-title">Notification Settings</h3>
                 <button className="alerts-close-button" onClick={() => setpopup(0)}>
@@ -20234,7 +20234,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 </button>
               </div>
 
-              <div className="alerts-content">
+              <div className="notification-manager-content">
                 <div className="alerts-section">
                   <div className="alerts-main-toggle">
                     <div>
