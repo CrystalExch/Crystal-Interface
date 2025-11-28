@@ -135,6 +135,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   } | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'history' | 'top100'>('active');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (trackedWalletsRef?.current) {
@@ -238,11 +239,23 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   const [tokenBalances, setTokenBalances] = useState<{ [key: string]: string }>({});
 
   // Filter positions based on active tab
-  const displayedPositions = activeTab === 'active' 
+  const tabFilteredPositions = activeTab === 'active' 
     ? traderPositions.filter(p => p.remainingTokens > 0)
     : activeTab === 'history'
     ? traderPositions.filter(p => p.remainingTokens === 0)
     : [];
+
+  // Apply search filter on top of tab filter
+  const displayedPositions = tabFilteredPositions.filter(p => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const matchesSymbol = p.symbol?.toLowerCase().includes(query);
+    const matchesName = p.name?.toLowerCase().includes(query);
+    const matchesAddress = p.tokenId.toLowerCase().includes(query);
+    
+    return matchesSymbol || matchesName || matchesAddress;
+  });
 
   const handleNameSubmit = () => {
     if (walletName.trim() && onAddTrackedWallet) {
@@ -385,6 +398,18 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   const unrealizedClass = totalUnrealizedPnlNative >= 0 ? 'positive' : 'negative';
   const unrealizedSign = totalUnrealizedPnlNative >= 0 ? '+' : '-';
 
+  // Calculate realized PNL from closed positions (remainingTokens === 0)
+  const totalRealizedPnlNative = traderPositions?.reduce((sum, p) => {
+    if (p.remainingTokens === 0) {
+      // For fully closed positions, realized PNL = received - spent
+      return sum + (p.receivedNative - p.spentNative);
+    }
+    return sum;
+  }, 0) || 0;
+  const totalRealizedPnlUsd = totalRealizedPnlNative * monUsdPrice;
+  const realizedClass = totalRealizedPnlNative >= 0 ? 'positive' : 'negative';
+  const realizedSign = totalRealizedPnlNative >= 0 ? '+' : '-';
+
   return (
     <div className="trader-popup-backdrop" onClick={handleBackdropClick}>
       <div className="trader-popup-container">
@@ -488,8 +513,8 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                 </div>
                 <div className="trenches-balance-item">
                   <div className="trenches-balance-label">Realized PNL</div>
-                  <div className={`trenches-balance-value-small ${isBlurred ? 'blurred' : ''}`}>
-                    $0
+                  <div className={`trenches-balance-value-small ${realizedClass} ${isBlurred ? 'blurred' : ''}`}>
+                    {realizedSign}${formatNumberWithCommas(Math.abs(totalRealizedPnlUsd), 2)}
                   </div>
                 </div>
               </div>
@@ -603,6 +628,8 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                   type="text"
                   placeholder="Search by name or address"
                   className="trenches-search-input"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             </div>
@@ -665,7 +692,14 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                   </>
                 ) : displayedPositions.length === 0 ? (
                   <div className="meme-oc-empty">
-                    {activeTab === 'active' ? 'No active positions' : activeTab === 'history' ? 'No trading history' : 'Coming soon'}
+                    {searchQuery.trim() 
+                      ? 'No positions match your search' 
+                      : activeTab === 'active' 
+                        ? 'No active positions' 
+                        : activeTab === 'history' 
+                          ? 'No trading history' 
+                          : 'Coming soon'
+                    }
                   </div>
                 ) : (
                   displayedPositions.map((p) => {
