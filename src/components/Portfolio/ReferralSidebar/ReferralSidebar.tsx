@@ -350,14 +350,14 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
 
       <div className="claimable-section">
         <div className="referrals-side-stat-item">
-          <div className="referrals-side-stat-content">
-            <div className={`referrals-side-stat-value ${isBlurred ? 'blurred' : ''}`}>
+          <div className="stat-content">
+            <div className={`stat-value ${isBlurred ? 'blurred' : ''}`}>
               {claimableFees == undefined ? (
                 <div className="skeleton skeleton-claimable"></div>
               ) : (
                 `${totalClaimableFees ? '$' + formatSubscript(customRound(totalClaimableFees, 2)) : '$0.00'}`
               )}            </div>
-            <div className="referrals-side-stat-label">Claimable</div>
+            <div className="ref-stat-label">Claimable</div>
           </div>
         </div>
 

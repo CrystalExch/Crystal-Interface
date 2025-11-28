@@ -1050,6 +1050,154 @@ const abortRef = useRef<AbortController | null>(null);
                             ))}
                         </div>
                     </div>
+                    <div ref={walletDropdownRef} style={{ position: 'relative' }}>
+                        <button
+                            className="meme-search-wallet-button"
+                            onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
+                        >
+                            <img src={walleticon} className="meme-search-wallet-icon" alt="Wallet" />
+                            <span>{selectedWallets.size}</span>
+                            {totalSelectedBalance > 0 ? (
+                                <>
+                                    <img src={monadicon} className="meme-search-mon-icon" alt="MON" />
+                                    <span>{formatNumberWithCommas(totalSelectedBalance, 2)}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <img src={monadicon} className="meme-search-mon-icon" alt="MON" />
+                                    <span>0</span>
+                                </>
+                            )}
+                            <svg
+                                className={`meme-search-wallet-dropdown-arrow ${isWalletDropdownOpen ? 'meme-search-open' : ''}`}
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                            >
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+
+                        <div className={`meme-search-wallet-dropdown-panel ${isWalletDropdownOpen ? 'meme-search-visible' : ''}`}>
+                            <div className="meme-search-wallet-dropdown-header">
+                                <div className="meme-search-wallet-dropdown-actions">
+                                    <button
+                                        className="meme-search-wallet-action-btn"
+                                        onClick={
+                                            selectedWallets.size === subWallets.length
+                                                ? unselectAllWallets
+                                                : selectAllWallets
+                                        }
+                                    >
+                                        {selectedWallets.size === subWallets.length ? 'Unselect All' : 'Select All'}
+                                    </button>
+                                    <button className="meme-search-wallet-action-btn" onClick={selectAllWithBalance}>
+                                        Select All with Balance
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="meme-search-wallet-dropdown-list">
+                                <div>
+                                    {subWallets.map((wallet, index) => {
+                                        const balance = getWalletBalance(wallet.address);
+                                        const isSelected = selectedWallets.has(wallet.address);
+                                        const isActive = isWalletActive(wallet.privateKey);
+                                        return (
+                                            <React.Fragment key={wallet.address}>
+                                                <div
+                                                    className={`meme-search-wallet-item ${isActive ? 'meme-search-active' : ''} ${isSelected ? 'meme-search-selected' : ''}`}
+                                                    onClick={() => toggleWalletSelection(wallet.address)}
+                                                >
+                                                    <div className="meme-search-meme-search-quickbuy-wallet-checkbox-container">
+                                                        <input
+                                                            type="checkbox"
+                                                            className="meme-search-quickbuy-wallet-checkbox selection"
+                                                            checked={isSelected}
+                                                            readOnly
+                                                        />
+                                                    </div>
+                                                    <div className="meme-search-wallet-dropdown-info">
+                                                        <div className="meme-search-quickbuy-wallet-name">
+                                                            {getWalletName(wallet.address, index)}
+                                                            {isActive && (
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                                                    <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                                                    <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                                                    <path d="m20 9-3 9" />
+                                                                    <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                                                    <path d="M7 18 4 9" />
+                                                                    <circle cx="12" cy="4" r="2" />
+                                                                    <circle cx="20" cy="7" r="2" />
+                                                                    <circle cx="4" cy="7" r="2" />
+                                                                </svg>
+                                                            )}
+                                                        </div>
+                                                        <div
+                                                            className="meme-search-wallet-dropdown-address"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                copyToClipboard(wallet.address);
+                                                            }}
+                                                            style={{ cursor: 'pointer' }}
+                                                        >
+                                                            {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                                                            <svg className="meme-search-meme-search-wallet-dropdown-address-copy-icon" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: '2px' }}>
+                                                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                    <div className="meme-search-wallet-dropdown-balance">
+                                                        {(() => {
+                                                            const gasReserve = BigInt(appSettings.chainConfig[activechain].gasamount ?? 0);
+                                                            const balanceWei = walletTokenBalances[wallet.address]?.[appSettings.chainConfig[activechain]?.eth] || 0n;
+                                                            const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+
+                                                            return (
+                                                                <Tooltip content={hasInsufficientGas ? 'Not enough for gas, transactions will revert' : 'MON Balance'}>
+                                                                    <div className={`meme-search-meme-search-wallet-dropdown-balance-amount ${hasInsufficientGas ? 'meme-search-insufficient-gas' : ''}`}>
+                                                                        <img src={monadicon} className="meme-search-wallet-dropdown-mon-icon" alt="MON" />
+                                                                        {formatNumberWithCommas(balance, 2)}
+                                                                    </div>
+                                                                </Tooltip>
+                                                            );
+                                                        })()}
+                                                    </div>
+                                                    <div className="meme-search-wallet-drag-tokens">
+                                                        <div className="meme-search-wallet-token-count">
+                                                            <div className="meme-search-wallet-token-structure-icons">
+                                                                <div className="meme-search-token1"></div>
+                                                                <div className="meme-search-token2"></div>
+                                                                <div className="meme-search-token3"></div>
+                                                            </div>
+                                                            <span className="meme-search-wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                    {subWallets.length < 10 && (
+                                        <div
+                                            className="meme-search-quickbuy-add-wallet-button"
+                                            onClick={() => {
+                                                createSubWallet?.();
+                                            }}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                            </svg>
+                                            <span>Add Wallet</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 {searchTerm.trim().length >= 2 && (loading || isSearching) ? (
                     <div className="meme-search-results">
@@ -1131,154 +1279,6 @@ const abortRef = useRef<AbortController | null>(null);
                             <div className="meme-search-section">
                                 <div className="meme-search-section-header">
                                     <span>History</span>
-                                    <div ref={walletDropdownRef} style={{ position: 'relative' }}>
-                                        <button
-                                            className="meme-search-wallet-button"
-                                            onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
-                                        >
-                                            <img src={walleticon} className="meme-search-wallet-icon" alt="Wallet" />
-                                            <span>{selectedWallets.size}</span>
-                                            {totalSelectedBalance > 0 ? (
-                                                <>
-                                                    <img src={monadicon} className="meme-search-mon-icon" alt="MON" />
-                                                    <span>{formatNumberWithCommas(totalSelectedBalance, 2)}</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <img src={monadicon} className="meme-search-mon-icon" alt="MON" />
-                                                    <span>0</span>
-                                                </>
-                                            )}
-                                            <svg
-                                                className={`meme-search-wallet-dropdown-arrow ${isWalletDropdownOpen ? 'meme-search-open' : ''}`}
-                                                width="16"
-                                                height="16"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="2"
-                                            >
-                                                <polyline points="6 9 12 15 18 9"></polyline>
-                                            </svg>
-                                        </button>
-
-                                        <div className={`meme-search-wallet-dropdown-panel ${isWalletDropdownOpen ? 'meme-search-visible' : ''}`}>
-                                            <div className="meme-search-wallet-dropdown-header">
-                                                <div className="meme-search-wallet-dropdown-actions">
-                                                    <button
-                                                        className="meme-search-wallet-action-btn"
-                                                        onClick={
-                                                            selectedWallets.size === subWallets.length
-                                                                ? unselectAllWallets
-                                                                : selectAllWallets
-                                                        }
-                                                    >
-                                                        {selectedWallets.size === subWallets.length ? 'Unselect All' : 'Select All'}
-                                                    </button>
-                                                    <button className="meme-search-wallet-action-btn" onClick={selectAllWithBalance}>
-                                                        Select All with Balance
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <div className="meme-search-wallet-dropdown-list">
-                                                <div>
-                                                    {subWallets.map((wallet, index) => {
-                                                        const balance = getWalletBalance(wallet.address);
-                                                        const isSelected = selectedWallets.has(wallet.address);
-                                                        const isActive = isWalletActive(wallet.privateKey);
-                                                        return (
-                                                            <React.Fragment key={wallet.address}>
-                                                                <div
-                                                                    className={`meme-search-wallet-item ${isActive ? 'meme-search-active' : ''} ${isSelected ? 'meme-search-selected' : ''}`}
-                                                                    onClick={() => toggleWalletSelection(wallet.address)}
-                                                                >
-                                                                    <div className="meme-search-meme-search-quickbuy-wallet-checkbox-container">
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            className="meme-search-quickbuy-wallet-checkbox selection"
-                                                                            checked={isSelected}
-                                                                            readOnly
-                                                                        />
-                                                                    </div>
-                                                                    <div className="meme-search-wallet-dropdown-info">
-                                                                        <div className="meme-search-quickbuy-wallet-name">
-                                                                            {getWalletName(wallet.address, index)}
-                                                                            {isActive && (
-                                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
-                                                                                    <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-                                                                                    <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
-                                                                                    <path d="m20 9-3 9" />
-                                                                                    <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
-                                                                                    <path d="M7 18 4 9" />
-                                                                                    <circle cx="12" cy="4" r="2" />
-                                                                                    <circle cx="20" cy="7" r="2" />
-                                                                                    <circle cx="4" cy="7" r="2" />
-                                                                                </svg>
-                                                                            )}
-                                                                        </div>
-                                                                        <div
-                                                                            className="meme-search-wallet-dropdown-address"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                copyToClipboard(wallet.address);
-                                                                            }}
-                                                                            style={{ cursor: 'pointer' }}
-                                                                        >
-                                                                            {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                                                                            <svg className="meme-search-meme-search-wallet-dropdown-address-copy-icon" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: '2px' }}>
-                                                                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                                                                            </svg>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="meme-search-wallet-dropdown-balance">
-                                                                        {(() => {
-                                                                            const gasReserve = BigInt(appSettings.chainConfig[activechain].gasamount ?? 0);
-                                                                            const balanceWei = walletTokenBalances[wallet.address]?.[appSettings.chainConfig[activechain]?.eth] || 0n;
-                                                                            const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
-
-                                                                            return (
-                                                                                <Tooltip content={hasInsufficientGas ? 'Not enough for gas, transactions will revert' : 'MON Balance'}>
-                                                                                    <div className={`meme-search-meme-search-wallet-dropdown-balance-amount ${hasInsufficientGas ? 'meme-search-insufficient-gas' : ''}`}>
-                                                                                        <img src={monadicon} className="meme-search-wallet-dropdown-mon-icon" alt="MON" />
-                                                                                        {formatNumberWithCommas(balance, 2)}
-                                                                                    </div>
-                                                                                </Tooltip>
-                                                                            );
-                                                                        })()}
-                                                                    </div>
-                                                                    <div className="meme-search-wallet-drag-tokens">
-                                                                        <div className="meme-search-wallet-token-count">
-                                                                            <div className="meme-search-wallet-token-structure-icons">
-                                                                                <div className="meme-search-token1"></div>
-                                                                                <div className="meme-search-token2"></div>
-                                                                                <div className="meme-search-token3"></div>
-                                                                            </div>
-                                                                            <span className="meme-search-wallet-total-tokens">{getWalletTokenCount(wallet.address)}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </React.Fragment>
-                                                        );
-                                                    })}
-                                                    {subWallets.length < 10 && (
-                                                        <div
-                                                            className="meme-search-quickbuy-add-wallet-button"
-                                                            onClick={() => {
-                                                                createSubWallet?.();
-                                                            }}
-                                                        >
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                                                            </svg>
-                                                            <span>Add Wallet</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         )}
@@ -1691,79 +1691,73 @@ const abortRef = useRef<AbortController | null>(null);
                                                                     </div>
 
                                                                     <div className="meme-search-explorer-additional-data">
-                                                                        {token.holders !== undefined && (
-                                                                            <Tooltip content="Holders">
-                                                                                <div className="meme-search-explorer-stat-item">
-                                                                                    <svg
-                                                                                        className="meme-search-traders-icon"
-                                                                                        width="20"
-                                                                                        height="20"
-                                                                                        viewBox="0 0 24 24"
-                                                                                        fill="currentColor"
-                                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                                    >
-                                                                                        <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
-                                                                                    </svg>{' '}
-                                                                                    <span className="meme-search-explorer-stat-value">
-                                                                                        {token.holders.toLocaleString()}
+                                                                        <Tooltip content="Holders">
+                                                                            <div className="meme-search-explorer-stat-item">
+                                                                                <svg
+                                                                                    className="meme-search-traders-icon"
+                                                                                    width="20"
+                                                                                    height="20"
+                                                                                    viewBox="0 0 24 24"
+                                                                                    fill="currentColor"
+                                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                                >
+                                                                                    <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
+                                                                                </svg>{' '}
+                                                                                <span className="meme-search-explorer-stat-value">
+                                                                                    {(token.holders || 0).toLocaleString()}
+                                                                                </span>
+                                                                            </div>
+                                                                        </Tooltip>
+
+                                                                        <Tooltip content="Pro Traders">
+                                                                            <div className="meme-search-explorer-stat-item">
+                                                                                <svg
+                                                                                    className="meme-search-traders-icon"
+                                                                                    width="20"
+                                                                                    height="20"
+                                                                                    viewBox="0 0 24 24"
+                                                                                    fill="currentColor"
+                                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                                >
+                                                                                    <path d="M 12 2 L 12 4 L 11 4 C 10.4 4 10 4.4 10 5 L 10 10 C 10 10.6 10.4 11 11 11 L 12 11 L 12 13 L 14 13 L 14 11 L 15 11 C 15.6 11 16 10.6 16 10 L 16 5 C 16 4.4 15.6 4 15 4 L 14 4 L 14 2 L 12 2 z M 4 9 L 4 11 L 3 11 C 2.4 11 2 11.4 2 12 L 2 17 C 2 17.6 2.4 18 3 18 L 4 18 L 4 20 L 6 20 L 6 18 L 7 18 C 7.6 18 8 17.6 8 17 L 8 12 C 8 11.4 7.6 11 7 11 L 6 11 L 6 9 L 4 9 z M 18 11 L 18 13 L 17 13 C 16.4 13 16 13.4 16 14 L 16 19 C 16 19.6 16.4 20 17 20 L 18 20 L 18 22 L 20 22 L 20 20 L 21 20 C 21.6 20 22 19.6 22 19 L 22 14 C 22 13.4 21.6 13 21 13 L 20 13 L 20 11 L 18 11 z M 4 13 L 6 13 L 6 16 L 4 16 L 4 13 z" />
+                                                                                </svg>{' '}
+                                                                                <span className="meme-search-pro-explorer-stat-value">
+                                                                                    {(token.proTraders || 0).toLocaleString()}
+                                                                                </span>
+                                                                            </div>
+                                                                        </Tooltip>
+
+                                                                        <Tooltip content="Dev Migrations ">
+                                                                            <div className="meme-search-explorer-stat-item">
+                                                                                <svg
+                                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                                    viewBox="0 0 24 24"
+                                                                                    fill="none"
+                                                                                    stroke="currentColor"
+                                                                                    strokeWidth="2"
+                                                                                    strokeLinecap="round"
+                                                                                    strokeLinejoin="round"
+                                                                                    className="meme-search-graduated-icon"
+                                                                                    style={
+                                                                                        (token.graduatedTokens || 0) > 0
+                                                                                            ? { color: 'rgba(255, 251, 0, 1)' }
+                                                                                            : undefined
+                                                                                    }
+                                                                                >
+                                                                                    <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
+                                                                                    <path d="M5 21h14" />
+                                                                                </svg>
+                                                                                <div className="meme-search-dev-migrations-container">
+                                                                                    <span className="meme-search-explorer-dev-migrations">
+                                                                                        {(token.graduatedTokens || 0).toLocaleString()}
+                                                                                    </span>{' '}
+                                                                                    <span className="meme-search-dev-migrations-slash">/</span>
+                                                                                    <span className="meme-search-explorer-dev-migrations">
+                                                                                        {(token.launchedTokens || 0).toLocaleString()}
                                                                                     </span>
                                                                                 </div>
-                                                                            </Tooltip>
-                                                                        )}
-
-                                                                        {token.proTraders !== undefined && (
-                                                                            <Tooltip content="Pro Traders">
-                                                                                <div className="meme-search-explorer-stat-item">
-                                                                                    <svg
-                                                                                        className="meme-search-traders-icon"
-                                                                                        width="20"
-                                                                                        height="20"
-                                                                                        viewBox="0 0 24 24"
-                                                                                        fill="currentColor"
-                                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                                    >
-                                                                                        <path d="M 12 2 L 12 4 L 11 4 C 10.4 4 10 4.4 10 5 L 10 10 C 10 10.6 10.4 11 11 11 L 12 11 L 12 13 L 14 13 L 14 11 L 15 11 C 15.6 11 16 10.6 16 10 L 16 5 C 16 4.4 15.6 4 15 4 L 14 4 L 14 2 L 12 2 z M 4 9 L 4 11 L 3 11 C 2.4 11 2 11.4 2 12 L 2 17 C 2 17.6 2.4 18 3 18 L 4 18 L 4 20 L 6 20 L 6 18 L 7 18 C 7.6 18 8 17.6 8 17 L 8 12 C 8 11.4 7.6 11 7 11 L 6 11 L 6 9 L 4 9 z M 18 11 L 18 13 L 17 13 C 16.4 13 16 13.4 16 14 L 16 19 C 16 19.6 16.4 20 17 20 L 18 20 L 18 22 L 20 22 L 20 20 L 21 20 C 21.6 20 22 19.6 22 19 L 22 14 C 22 13.4 21.6 13 21 13 L 20 13 L 20 11 L 18 11 z M 4 13 L 6 13 L 6 16 L 4 16 L 4 13 z" />
-                                                                                    </svg>{' '}
-                                                                                    <span className="meme-search-pro-explorer-stat-value">
-                                                                                        {token.proTraders.toLocaleString()}
-                                                                                    </span>
                                                                                 </div>
                                                                             </Tooltip>
-                                                                        )}
-
-                                                                        {(token.graduatedTokens !== undefined || token.launchedTokens !== undefined) && (
-                                                                            <Tooltip content="Dev Migrations ">
-                                                                                <div className="meme-search-explorer-stat-item">
-                                                                                    <svg
-                                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                                        viewBox="0 0 24 24"
-                                                                                        fill="none"
-                                                                                        stroke="currentColor"
-                                                                                        strokeWidth="2"
-                                                                                        strokeLinecap="round"
-                                                                                        strokeLinejoin="round"
-                                                                                        className="meme-search-graduated-icon"
-                                                                                        style={
-                                                                                            (token.graduatedTokens || 0) > 0
-                                                                                                ? { color: 'rgba(255, 251, 0, 1)' }
-                                                                                                : undefined
-                                                                                        }
-                                                                                    >
-                                                                                        <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
-                                                                                        <path d="M5 21h14" />
-                                                                                    </svg>
-                                                                                    <div className="meme-search-dev-migrations-container">
-                                                                                        <span className="meme-search-explorer-dev-migrations">
-                                                                                            {(token.graduatedTokens || 0).toLocaleString()}
-                                                                                        </span>{' '}
-                                                                                        <span className="meme-search-dev-migrations-slash">/</span>
-                                                                                        <span className="meme-search-explorer-dev-migrations">
-                                                                                            {(token.launchedTokens || 0).toLocaleString()}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </Tooltip>
-                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1857,37 +1851,35 @@ const abortRef = useRef<AbortController | null>(null);
                                                                         </div>
                                                                     </Tooltip>
 
-                                                                {token.sniperHolding !== undefined && (
-                                                                    <Tooltip content="Sniper Holding">
-                                                                        <div className="meme-search-explorer-holding-item">
-                                                                            <svg
-                                                                                className="meme-search-sniper-icon"
-                                                                                width="16"
-                                                                                height="16"
-                                                                                viewBox="0 0 24 24"
-                                                                                fill={
-                                                                                    token.sniperHolding > 20
+                                                                <Tooltip content="Sniper Holding">
+                                                                    <div className="meme-search-explorer-holding-item">
+                                                                        <svg
+                                                                            className="meme-search-sniper-icon"
+                                                                            width="16"
+                                                                            height="16"
+                                                                            viewBox="0 0 24 24"
+                                                                            fill={
+                                                                                (token.sniperHolding || 0) > 20
+                                                                                    ? '#eb7070ff'
+                                                                                    : 'rgb(67, 254, 154)'
+                                                                            }
+                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                        >
+                                                                            <path d="M 11.244141 2.0019531 L 11.244141 2.7519531 L 11.244141 3.1542969 C 6.9115518 3.5321749 3.524065 6.919829 3.1445312 11.251953 L 2.7421875 11.251953 L 1.9921875 11.251953 L 1.9921875 12.751953 L 2.7421875 12.751953 L 3.1445312 12.751953 C 3.5225907 17.085781 6.9110367 20.473593 11.244141 20.851562 L 11.244141 21.253906 L 11.244141 22.003906 L 12.744141 22.003906 L 12.744141 21.253906 L 12.744141 20.851562 C 17.076343 20.47195 20.463928 17.083895 20.841797 12.751953 L 21.244141 12.751953 L 21.994141 12.751953 L 21.994141 11.251953 L 21.244141 11.251953 L 20.841797 11.251953 C 20.462285 6.9209126 17.074458 3.5337191 12.744141 3.1542969 L 12.744141 2.7519531 L 12.744141 2.0019531 L 11.244141 2.0019531 z M 11.244141 4.6523438 L 11.244141 8.0742188 C 9.6430468 8.3817751 8.3759724 9.6507475 8.0683594 11.251953 L 4.6425781 11.251953 C 5.0091295 7.7343248 7.7260437 5.0173387 11.244141 4.6523438 z M 12.744141 4.6523438 C 16.25959 5.0189905 18.975147 7.7358303 19.341797 11.251953 L 15.917969 11.251953 C 15.610766 9.6510551 14.344012 8.3831177 12.744141 8.0742188 L 12.744141 4.6523438 z M 11.992188 9.4980469 C 13.371637 9.4980469 14.481489 10.6041 14.492188 11.982422 L 14.492188 12.021484 C 14.481501 13.40006 13.372858 14.503906 11.992188 14.503906 C 10.606048 14.503906 9.4921875 13.389599 9.4921875 12.001953 C 9.4921875 10.614029 10.60482 9.4980469 11.992188 9.4980469 z M 4.6425781 12.751953 L 8.0683594 12.751953 C 8.3760866 14.352973 9.6433875 15.620527 11.244141 15.927734 L 11.244141 19.353516 C 7.7258668 18.988181 5.0077831 16.270941 4.6425781 12.751953 z M 15.917969 12.751953 L 19.34375 12.751953 C 18.97855 16.26893 16.261295 18.986659 12.744141 19.353516 L 12.744141 15.927734 C 14.344596 15.619809 15.610176 14.35218 15.917969 12.751953 z" />
+                                                                        </svg>{' '}
+                                                                        <span
+                                                                            className="meme-search-explorer-holding-value"
+                                                                            style={{
+                                                                                color:
+                                                                                    (token.sniperHolding || 0) > 20
                                                                                         ? '#eb7070ff'
-                                                                                        : 'rgb(67, 254, 154)'
-                                                                                }
-                                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                            >
-                                                                                <path d="M 11.244141 2.0019531 L 11.244141 2.7519531 L 11.244141 3.1542969 C 6.9115518 3.5321749 3.524065 6.919829 3.1445312 11.251953 L 2.7421875 11.251953 L 1.9921875 11.251953 L 1.9921875 12.751953 L 2.7421875 12.751953 L 3.1445312 12.751953 C 3.5225907 17.085781 6.9110367 20.473593 11.244141 20.851562 L 11.244141 21.253906 L 11.244141 22.003906 L 12.744141 22.003906 L 12.744141 21.253906 L 12.744141 20.851562 C 17.076343 20.47195 20.463928 17.083895 20.841797 12.751953 L 21.244141 12.751953 L 21.994141 12.751953 L 21.994141 11.251953 L 21.244141 11.251953 L 20.841797 11.251953 C 20.462285 6.9209126 17.074458 3.5337191 12.744141 3.1542969 L 12.744141 2.7519531 L 12.744141 2.0019531 L 11.244141 2.0019531 z M 11.244141 4.6523438 L 11.244141 8.0742188 C 9.6430468 8.3817751 8.3759724 9.6507475 8.0683594 11.251953 L 4.6425781 11.251953 C 5.0091295 7.7343248 7.7260437 5.0173387 11.244141 4.6523438 z M 12.744141 4.6523438 C 16.25959 5.0189905 18.975147 7.7358303 19.341797 11.251953 L 15.917969 11.251953 C 15.610766 9.6510551 14.344012 8.3831177 12.744141 8.0742188 L 12.744141 4.6523438 z M 11.992188 9.4980469 C 13.371637 9.4980469 14.481489 10.6041 14.492188 11.982422 L 14.492188 12.021484 C 14.481501 13.40006 13.372858 14.503906 11.992188 14.503906 C 10.606048 14.503906 9.4921875 13.389599 9.4921875 12.001953 C 9.4921875 10.614029 10.60482 9.4980469 11.992188 9.4980469 z M 4.6425781 12.751953 L 8.0683594 12.751953 C 8.3760866 14.352973 9.6433875 15.620527 11.244141 15.927734 L 11.244141 19.353516 C 7.7258668 18.988181 5.0077831 16.270941 4.6425781 12.751953 z M 15.917969 12.751953 L 19.34375 12.751953 C 18.97855 16.26893 16.261295 18.986659 12.744141 19.353516 L 12.744141 15.927734 C 14.344596 15.619809 15.610176 14.35218 15.917969 12.751953 z" />
-                                                                            </svg>{' '}
-                                                                            <span
-                                                                                className="meme-search-explorer-holding-value"
-                                                                                style={{
-                                                                                    color:
-                                                                                        token.sniperHolding > 20
-                                                                                            ? '#eb7070ff'
-                                                                                            : 'rgb(67, 254, 154)',
-                                                                                }}
-                                                                            >
-                                                                                {token.sniperHolding.toFixed(1)}%
-                                                                            </span>
-                                                                        </div>
-                                                                    </Tooltip>
-                                                                )}
+                                                                                        : 'rgb(67, 254, 154)',
+                                                                            }}
+                                                                        >
+                                                                            {(token.sniperHolding || 0).toFixed(1)}%
+                                                                        </span>
+                                                                    </div>
+                                                                </Tooltip>
                                                             </div>
                                                         </div>
 
