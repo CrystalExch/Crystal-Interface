@@ -8447,7 +8447,7 @@ input::-webkit-inner-spin-button {
   position: absolute;
   width: 40%;
   height: 8px;
-  background: #667eea;
+  background: #d8dcff;
   border-radius: 2px;
 }
 
@@ -8505,6 +8505,8 @@ input::-webkit-inner-spin-button {
 }
 
 .notification-manager-content{
-    overflow-y: auto;
-    padding: 20px;
+  overflow-y: auto;
+  padding: 20px;
+    max-height: 85vh;
+
 }

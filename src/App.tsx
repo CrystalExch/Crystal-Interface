@@ -20388,8 +20388,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                     <div className="sound-dropdown-content">
                                       <button
                                         className={`sound-dropdown-item ${(key === 'buy' ? buySound : sellSound) === stepaudio
-                                            ? 'active'
-                                            : ''
+                                          ? 'active'
+                                          : ''
                                           }`}
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => {
@@ -20400,8 +20400,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                       </button>
                                       <button
                                         className={`sound-dropdown-item ${(key === 'buy' ? buySound : sellSound) === kaching
-                                            ? 'active'
-                                            : ''
+                                          ? 'active'
+                                          : ''
                                           }`}
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => {
@@ -28558,6 +28558,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setOneCTDepositAddress={setOneCTDepositAddress}
                 scaAddress={scaAddress}
                 signTypedDataAsync={signTypedDataUnified}
+                transactionSounds={transactionSounds}
+                buySound={buySound}
+                sellSound={sellSound}
+                volume={volume}
               />
             }
           />
