@@ -8412,12 +8412,9 @@ input::-webkit-inner-spin-button {
 .position-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
 }
 
 .position-option {
-  background: #0a0a0a;
-  border: 1.5px solid #333;
   border-radius: 12px;
   padding: 12px;
   cursor: pointer;
@@ -8429,7 +8426,7 @@ input::-webkit-inner-spin-button {
 }
 
 
-.position-option.active {
+.position-option.active .position-preview {
   background: rgb(170 174 207 / 8%);
   border-color: #aaaecf;
 }
@@ -8438,9 +8435,9 @@ input::-webkit-inner-spin-button {
   width: 100%;
   height: 60px;
   background: #1a1a1a;
-  border-radius: 4px;
+  border-radius: 8px;
   position: relative;
-  border: 1px solid #2a2a2a;
+  border: 1.5px solid #2a2a2a;
 }
 
 .toast-indicator {
@@ -8484,8 +8481,9 @@ input::-webkit-inner-spin-button {
 }
 
 .position-option span {
-  font-size: 13px;
-  color: #999;
+  font-size: 0.8rem;
+  letter-spacing: -0.3px;
+  color: #e0e3f473;
   text-align: center;
 }
 
