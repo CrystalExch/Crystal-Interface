@@ -3843,6 +3843,7 @@
   font-weight: 400;
   transition: all 0.2s;
   letter-spacing: -0.5px;
+  border-bottom: 2px solid transparent;
 }
 
 .trenches-activity-tab.active {
@@ -4795,3 +4796,4 @@
 .meme-portfolio-token-info:hover .meme-token-name-portfolio{
   text-decoration: underline;
 }
+

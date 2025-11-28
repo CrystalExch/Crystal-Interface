@@ -678,3 +678,10 @@
     transform: translateY(0);
   }
 }
+
+.meme-oc-header-5-col,
+.meme-portfolio-oc-item-5-col {
+  gap: 15px;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr 100px !important;
+  min-width: 700px;
+}

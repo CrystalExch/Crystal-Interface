@@ -134,6 +134,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
     left: number;
   } | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState<'active' | 'history' | 'top100'>('active');
 
   useEffect(() => {
     if (trackedWalletsRef?.current) {
@@ -235,6 +236,14 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
   const [totalAccountValue, setTotalAccountValue] = useState<number | null>(null);
   const [tokenBalances, setTokenBalances] = useState<{ [key: string]: string }>({});
+
+  // Filter positions based on active tab
+  const displayedPositions = activeTab === 'active' 
+    ? traderPositions.filter(p => p.remainingTokens > 0)
+    : activeTab === 'history'
+    ? traderPositions.filter(p => p.remainingTokens === 0)
+    : [];
+
   const handleNameSubmit = () => {
     if (walletName.trim() && onAddTrackedWallet) {
       onAddTrackedWallet({
@@ -361,7 +370,17 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
-  const totalUnrealizedPnlNative = traderPositions?.reduce((sum, p) => sum + (p.pnlNative || 0), 0) || 0;
+  // Calculate unrealized PNL only from active positions (remainingTokens > 0)
+  const totalUnrealizedPnlNative = traderPositions?.reduce((sum, p) => {
+    if (p.remainingTokens > 0) {
+      // Only count the unrealized portion: remainingTokens * lastPrice
+      const unrealizedValue = p.remainingTokens * (p.lastPrice || 0);
+      const spentOnRemaining = (p.remainingTokens / p.boughtTokens) * p.spentNative;
+      const unrealizedPnl = unrealizedValue - spentOnRemaining;
+      return sum + unrealizedPnl;
+    }
+    return sum;
+  }, 0) || 0;
   const totalUnrealizedPnlUsd = totalUnrealizedPnlNative * monUsdPrice;
   const unrealizedClass = totalUnrealizedPnlNative >= 0 ? 'positive' : 'negative';
   const unrealizedSign = totalUnrealizedPnlNative >= 0 ? '+' : '-';
@@ -560,13 +579,22 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
           <div className="trader-trenches-activity-section">
             <div className="trenches-activity-header">
               <div className="trenches-activity-tabs">
-                <button className="trenches-activity-tab active">
+                <button 
+                  className={`trenches-activity-tab ${activeTab === 'active' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('active')}
+                >
                   Active Positions
                 </button>
-                <button className="trenches-activity-tab">
+                <button 
+                  className={`trenches-activity-tab ${activeTab === 'history' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('history')}
+                >
                   History
                 </button>
-                <button className="trenches-activity-tab">
+                <button 
+                  className={`trenches-activity-tab ${activeTab === 'top100' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('top100')}
+                >
                   Top 100
                 </button>
               </div>
@@ -579,11 +607,11 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
               </div>
             </div>
             <div className="meme-oc-section-content" data-section="positions">
-              <div className="meme-oc-header">
+              <div className={`meme-oc-header ${activeTab === 'active' ? '' : 'meme-oc-header-5-col'}`}>
                 <div className="meme-oc-header-cell">Token</div>
                 <div className="meme-oc-header-cell clickable">Bought</div>
                 <div className="meme-oc-header-cell">Sold</div>
-                <div className="meme-oc-header-cell">Remaining</div>
+                {activeTab === 'active' && <div className="meme-oc-header-cell">Remaining</div>}
                 <div className="meme-oc-header-cell">PnL</div>
                 <div className="meme-oc-header-cell">Actions</div>
               </div>
@@ -624,17 +652,6 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                           </div>
                         </div>
                         <div className="meme-oc-cell">
-                          <div className="meme-remaining-info">
-                            <div className="meme-remaining-container">
-                              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-medium"></span>
-                              <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-tiny"></span>
-                            </div>
-                            <div className="meme-remaining-bar">
-                              <div className="trader-portfolio-skeleton-bar"></div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="meme-oc-cell">
                           <div className="meme-ordercenter-info">
                             <div className="trader-portfolio-skeleton-icon-small"></div>
                             <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-long"></span>
@@ -646,17 +663,17 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                       </div>
                     ))}
                   </>
-                ) : traderPositions.length === 0 ? (
+                ) : displayedPositions.length === 0 ? (
                   <div className="meme-oc-empty">
-                    No active positions
+                    {activeTab === 'active' ? 'No active positions' : activeTab === 'history' ? 'No trading history' : 'Coming soon'}
                   </div>
                 ) : (
-                  traderPositions.map((p) => {
+                  displayedPositions.map((p) => {
                     const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
                     const tokenImageUrl = p.imageUrl || null;
 
                     return (
-                      <div key={p.tokenId} className="meme-portfolio-oc-item">
+                      <div key={p.tokenId} className={`meme-portfolio-oc-item ${activeTab === 'active' ? '' : 'meme-portfolio-oc-item-5-col'}`}>
                         <div className="meme-oc-cell">
                           <div className="oc-meme-wallet-info">
                             <div className="meme-portfolio-token-info">
@@ -744,27 +761,29 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                             </span>
                           </div>
                         </div>
-                        <div className="meme-oc-cell">
-                          <div className="meme-remaining-info">
-                            <div className="meme-remaining-container">
-                              <span className={`meme-remaining ${isBlurred ? 'blurred' : ''}`}>
-                                <img src={monadicon} className="meme-portfolio-monad-icon" />
-                                {fmt(p.remainingTokens * (p.lastPrice || 0))}
-                              </span>
-                              <span className="meme-remaining-percentage">
-                                {p.remainingPct.toFixed(0)}%
-                              </span>
-                            </div>
-                            <div className="meme-remaining-bar">
-                              <div
-                                className="meme-remaining-bar-fill"
-                                style={{
-                                  width: `${Math.max(0, Math.min(100, p.remainingPct)).toFixed(0)}%`,
-                                }}
-                              />
+                        {activeTab === 'active' && (
+                          <div className="meme-oc-cell">
+                            <div className="meme-remaining-info">
+                              <div className="meme-remaining-container">
+                                <span className={`meme-remaining ${isBlurred ? 'blurred' : ''}`}>
+                                  <img src={monadicon} className="meme-portfolio-monad-icon" />
+                                  {fmt(p.remainingTokens * (p.lastPrice || 0))}
+                                </span>
+                                <span className="meme-remaining-percentage">
+                                  {p.remainingPct.toFixed(0)}%
+                                </span>
+                              </div>
+                              <div className="meme-remaining-bar">
+                                <div
+                                  className="meme-remaining-bar-fill"
+                                  style={{
+                                    width: `${Math.max(0, Math.min(100, p.remainingPct)).toFixed(0)}%`,
+                                  }}
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        )}
                         <div className="meme-oc-cell">
                           <div className="meme-ordercenter-info">
                             {amountMode === 'MON' && (
