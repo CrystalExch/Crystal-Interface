@@ -99,9 +99,8 @@
   border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 5px;
   color: rgba(255, 255, 255, 0.7);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   height: 100%;
-  letter-spacing: -0.3px;
   padding: 0 0.5rem;
   transition: all 0.2s;
   width: 100%;
@@ -110,11 +109,9 @@
 }
 .code-input::-moz-placeholder{
   color: #ededf571;
-  font-weight: 300  ;
 }
 .code-input::placeholder{
   color: #ededf571;
-  font-weight: 300  ;
 }
 .code-input:focus {
   outline: none;

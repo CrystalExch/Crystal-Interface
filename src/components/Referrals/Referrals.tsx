@@ -38,6 +38,7 @@ interface ReferralProps {
   sendUserOperationAsync: any;
   waitForTxReceipt: any;
   client: any;
+  monUsdPrice: any;
 }
 
 const Referrals: React.FC<ReferralProps> = ({
@@ -62,6 +63,7 @@ const Referrals: React.FC<ReferralProps> = ({
   sendUserOperationAsync,
   waitForTxReceipt,
   client,
+  monUsdPrice
 }) => {
   // const { t } = useLanguage(); // TODO: Uncomment when translations are needed
   const [bgLoaded, setBgLoaded] = useState(false);
@@ -419,6 +421,7 @@ const displayName = username && username.trim() !== ''
         typedRefCode={typedRefCode}
         setTypedRefCode={setTypedRefCode}
         isSigning={isSigning}
+        monUsdPrice={monUsdPrice}
       />
 
       {/* Modal rendered for both landing page and dashboard */}

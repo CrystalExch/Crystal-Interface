@@ -4237,6 +4237,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           graduated: [],
         };
         action.tokens.forEach((t) => buckets[t.status].push(t));
+        buckets.graduating = buckets.graduating
+        .slice()
+        .sort((a, b) => (b.bondingPercentage ?? 0) - (a.bondingPercentage ?? 0));
+        
         return { ...state, tokensByStatus: buckets };
       }
 
@@ -4769,7 +4773,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           if (msg.method !== 'eth_subscription' || !msg.params?.result)
             return;
           const log = msg.params?.result;
-          if (!log?.topics?.length || msg?.params?.result?.commitState != "Voted") return;
+          if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
 
           setProcessedLogs(prev => {
             let tempset = new Set(prev);
@@ -28947,6 +28951,7 @@ const [toastPosition, setToastPosition] = useState<string>(() => {
                 sendUserOperationAsync={sendUserOperationAsync}
                 waitForTxReceipt={(hash: string) => waitForTransactionReceipt(config, { hash: hash as `0x${string}` })}
                 client={client}
+                monUsdPrice={monUsdPrice}
               />
             } />
           <Route path="/sneakylaunchpad"
