@@ -1,5 +1,5 @@
 import { X, Edit2 } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import monadicon from '../../../../assets/monadlogo.svg';
@@ -12,6 +12,7 @@ import {
   updatePopup,
 } from '../../../MemeTransactionPopup/MemeTransactionPopupManager';
 import './TraderPortfolioPopup.css';
+import { createPortal } from 'react-dom';
 
 interface Position {
   tokenId: string;
@@ -43,7 +44,156 @@ interface TraderPortfolioPopupProps {
   trackedWalletsRef?: React.MutableRefObject<any[]>;
   onAddTrackedWallet?: (wallet: { address: string; name: string; emoji: string }) => void;
 }
+const Tooltip: React.FC<{
+  content: string;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+}> = ({ content, children, position = 'top' }) => {
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current || !tooltipRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+    let top = 0;
+    let left = 0;
+
+    switch (position) {
+      case 'top':
+        top = rect.top + scrollY - tooltipRect.height - 25;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'bottom':
+        top = rect.bottom + scrollY + 10;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.left + scrollX - tooltipRect.width - 10;
+        break;
+      case 'right':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.right + scrollX + 10;
+        break;
+    }
+
+    const Perpetuals = 10;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    if (position === 'top' || position === 'bottom') {
+      left = Math.min(
+        Math.max(left, Perpetuals + tooltipRect.width / 2),
+        viewportWidth - Perpetuals - tooltipRect.width / 2,
+      );
+    } else {
+      top = Math.min(
+        Math.max(top, Perpetuals),
+        viewportHeight - Perpetuals - tooltipRect.height,
+      );
+    }
+
+    setTooltipPosition({ top, left });
+  }, [position]);
+
+  const handleMouseEnter = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(false);
+    setShouldRender(true);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+      fadeTimeoutRef.current = null;
+    }, 10);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    setIsLeaving(true);
+    setIsVisible(false);
+
+    fadeTimeoutRef.current = setTimeout(() => {
+      setShouldRender(false);
+      setIsLeaving(false);
+      fadeTimeoutRef.current = null;
+    }, 150);
+  }, []);
+
+  useEffect(() => {
+    if (shouldRender && !isLeaving) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [shouldRender, updatePosition, isLeaving]);
+
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="tooltip-container"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {shouldRender && createPortal(
+        <div
+          ref={tooltipRef}
+          className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+          style={{
+            position: 'absolute',
+            top: `${tooltipPosition.top}px`,
+            left: `${tooltipPosition.left}px`,
+            transform: `${position === 'top' || position === 'bottom'
+              ? 'translateX(-50%)'
+              : position === 'left' || position === 'right'
+                ? 'translateY(-50%)'
+                : 'none'} scale(${isVisible ? 1 : 0})`,
+            opacity: isVisible ? 1 : 0,
+            zIndex: 9999,
+            pointerEvents: 'none',
+            transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'transform, opacity'
+          }}
+        >
+          <div className="tooltip-content">
+            {content}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
 const copyToClipboard = async (text: string, label = 'Address copied') => {
   const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   try {
@@ -239,21 +389,21 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   const [tokenBalances, setTokenBalances] = useState<{ [key: string]: string }>({});
 
   // Filter positions based on active tab
-  const tabFilteredPositions = activeTab === 'active' 
+  const tabFilteredPositions = activeTab === 'active'
     ? traderPositions.filter(p => p.remainingTokens > 0)
     : activeTab === 'history'
-    ? traderPositions.filter(p => p.remainingTokens === 0)
-    : [];
+      ? traderPositions.filter(p => p.remainingTokens === 0)
+      : [];
 
   // Apply search filter on top of tab filter
   const displayedPositions = tabFilteredPositions.filter(p => {
     if (!searchQuery.trim()) return true;
-    
+
     const query = searchQuery.toLowerCase();
     const matchesSymbol = p.symbol?.toLowerCase().includes(query);
     const matchesName = p.name?.toLowerCase().includes(query);
     const matchesAddress = p.tokenId.toLowerCase().includes(query);
-    
+
     return matchesSymbol || matchesName || matchesAddress;
   });
 
@@ -413,9 +563,9 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   // Calculate PNL ranges based on all positions
   const pnlRanges = traderPositions?.reduce((ranges, p) => {
     if (p.spentNative === 0) return ranges;
-    
+
     const pnlPercentage = (p.pnlNative / p.spentNative) * 100;
-    
+
     if (pnlPercentage > 500) {
       ranges.over500++;
     } else if (pnlPercentage >= 200) {
@@ -427,7 +577,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
     } else {
       ranges.underNeg50++;
     }
-    
+
     return ranges;
   }, {
     over500: 0,
@@ -638,19 +788,19 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
           <div className="trader-trenches-activity-section">
             <div className="trenches-activity-header">
               <div className="trenches-activity-tabs">
-                <button 
+                <button
                   className={`trenches-activity-tab ${activeTab === 'active' ? 'active' : ''}`}
                   onClick={() => setActiveTab('active')}
                 >
                   Active Positions
                 </button>
-                <button 
+                <button
                   className={`trenches-activity-tab ${activeTab === 'history' ? 'active' : ''}`}
                   onClick={() => setActiveTab('history')}
                 >
                   History
                 </button>
-                <button 
+                <button
                   className={`trenches-activity-tab ${activeTab === 'top100' ? 'active' : ''}`}
                   onClick={() => setActiveTab('top100')}
                 >
@@ -726,12 +876,12 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                   </>
                 ) : displayedPositions.length === 0 ? (
                   <div className="meme-oc-empty">
-                    {searchQuery.trim() 
-                      ? 'No positions match your search' 
-                      : activeTab === 'active' 
-                        ? 'No active positions' 
-                        : activeTab === 'history' 
-                          ? 'No trading history' 
+                    {searchQuery.trim()
+                      ? 'No positions match your search'
+                      : activeTab === 'active'
+                        ? 'No active positions'
+                        : activeTab === 'history'
+                          ? 'No trading history'
                           : 'Coming soon'
                     }
                   </div>
@@ -897,11 +1047,21 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                                 setpopup(27);
                               }
                             }}
-                            title="Share PNL"
                           >
-                            <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
-                              <path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" />
-                            </svg>
+                            <Tooltip content="Share PnL">
+
+                              <svg
+                                className="wallet-address-link"
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="rgb(206, 208, 223)"
+                              >
+                                <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                                <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                              </svg>
+                            </Tooltip>
                           </button>
                         </div>
                       </div>
