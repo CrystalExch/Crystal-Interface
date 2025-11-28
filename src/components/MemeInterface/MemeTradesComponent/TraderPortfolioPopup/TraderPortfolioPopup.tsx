@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X, Edit2 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -44,10 +44,34 @@ interface TraderPortfolioPopupProps {
   onAddTrackedWallet?: (wallet: { address: string; name: string; emoji: string }) => void;
 }
 
-  const copyToClipboard = async (text: string, label = 'Address copied') => {
-    const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+const copyToClipboard = async (text: string, label = 'Address copied') => {
+  const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  try {
+    await navigator.clipboard.writeText(text);
+    if (showLoadingPopup && updatePopup) {
+      showLoadingPopup(txId, {
+        title: label,
+        subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+      });
+      setTimeout(() => {
+        updatePopup(txId, {
+          title: label,
+          subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
+          variant: 'success',
+          confirmed: true,
+          isLoading: false,
+        });
+      }, 100);
+    }
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
     try {
-      await navigator.clipboard.writeText(text);
+      document.execCommand('copy');
       if (showLoadingPopup && updatePopup) {
         showLoadingPopup(txId, {
           title: label,
@@ -63,51 +87,27 @@ interface TraderPortfolioPopupProps {
           });
         }, 100);
       }
-    } catch {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      try {
-        document.execCommand('copy');
-        if (showLoadingPopup && updatePopup) {
-          showLoadingPopup(txId, {
-            title: label,
-            subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
-          });
-          setTimeout(() => {
-            updatePopup(txId, {
-              title: label,
-              subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`,
-              variant: 'success',
-              confirmed: true,
-              isLoading: false,
-            });
-          }, 100);
-        }
-      } catch (fallbackErr) {
-        if (showLoadingPopup && updatePopup) {
-          showLoadingPopup(txId, {
+    } catch (fallbackErr) {
+      if (showLoadingPopup && updatePopup) {
+        showLoadingPopup(txId, {
+          title: 'Copy Failed',
+          subtitle: 'Unable to copy to clipboard',
+        });
+        setTimeout(() => {
+          updatePopup(txId, {
             title: 'Copy Failed',
             subtitle: 'Unable to copy to clipboard',
+            variant: 'error',
+            confirmed: true,
+            isLoading: false,
           });
-          setTimeout(() => {
-            updatePopup(txId, {
-              title: 'Copy Failed',
-              subtitle: 'Unable to copy to clipboard',
-              variant: 'error',
-              confirmed: true,
-              isLoading: false,
-            });
-          }, 100);
-        }
-      } finally {
-        document.body.removeChild(ta);
+        }, 100);
       }
+    } finally {
+      document.body.removeChild(ta);
     }
-  };
+  }
+};
 const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   traderAddress,
   onClose,
@@ -134,7 +134,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
     left: number;
   } | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
-  
+
   useEffect(() => {
     if (trackedWalletsRef?.current) {
       const tracked = trackedWalletsRef.current.find(
@@ -383,7 +383,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                     onChange={(e) => setWalletName(e.target.value)}
                     onKeyDown={handleNameKeyDown}
                     onBlur={handleNameBlur}
-                    placeholder="Enter wallet name..."
+                    placeholder=""
                     autoFocus
                   />
                 </div>
@@ -412,15 +412,34 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                   </span>
                 </div>
               ) : (
-                <span
+                <div
                   className="rename-track-button"
                   onClick={() => setIsEditingName(true)}
                 >
-                  Rename to track
-                </span>
+                  <span>Rename to track</span>
+                  <Edit2
+                    size={12}
+                    className="rename-track-edit-icon"
+                  />
+                </div>
               )}
-              <span className="trader-address">
+              <span className="trader-address"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  copyToClipboard(traderAddress, 'Wallet address copied');
+                }}
+                style={{ cursor: 'pointer' }}>
                 {traderAddress}
+                <svg
+                  className="wallet-dropdown-address-copy-icon"
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  style={{ marginLeft: '2px' }}
+                >
+                  <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                </svg>
               </span>
             </div>
           </div>

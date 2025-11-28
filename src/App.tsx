@@ -132,6 +132,7 @@ import edgeX from './assets/edgeX.svg';
 import switchicon from './assets/switch.svg';
 import printr from './assets/printr.png';
 import flapsh from './assets/flapsh.png';
+import kaching from './assets/ka-ching.mp3';
 
 //audio
 import stepaudio from './assets/step_audio.mp3';
@@ -182,7 +183,7 @@ import PNLWidget from './components/PNLWidget/PNLWidget.tsx';
 import WalletTrackerWidget from './components/WalletTrackerWidget/WalletTrackerWidget.tsx';
 import Footer from './components/Footer/Footer.tsx';
 // import config
-import { ChevronDown, SearchIcon } from 'lucide-react';
+import { ChevronDown, Play, RotateCcw, SearchIcon, Volume2 } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
 import { settings } from './settings.ts';
 import { useSharedContext } from './contexts/SharedContext.tsx';
@@ -2217,15 +2218,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   });
   const alertSettingsRef = useRef<any>(alertSettings);
   const memeRealtimeCallbackRef = useRef<any>({});
-const trackedWalletsRef = useRef<any>(
-  (() => {
-    try {
-      return JSON.parse(localStorage.getItem('tracked_wallets_data') || '[]');
-    } catch {
-      return [];
-    }
-  })()
-);
+  const trackedWalletsRef = useRef<any>(
+    (() => {
+      try {
+        return JSON.parse(localStorage.getItem('tracked_wallets_data') || '[]');
+      } catch {
+        return [];
+      }
+    })()
+  );
   const trackedWalletTradesRef = useRef<any>([]);
   const wsPendingLogsRef = useRef(new Map());
   const [trackedWalletTrades, setTrackedWalletTrades] = useState<any[]>([]);
@@ -4316,7 +4317,7 @@ const trackedWalletsRef = useRef<any>(
                 sellTransactions: t.sellTransactions + sellTransactions,
                 status: status,
                 bondingPercentage: bondingPercentage,
-                devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + ( otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - ( otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
+                devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + (otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - (otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
               }
               return []
             }
@@ -4328,7 +4329,7 @@ const trackedWalletsRef = useRef<any>(
               sellTransactions: t.sellTransactions + sellTransactions,
               status: status,
               bondingPercentage: bondingPercentage,
-              devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + ( otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - ( otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
+              devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + (otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - (otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
             }];
           });
         });
@@ -5521,21 +5522,21 @@ const trackedWalletsRef = useRef<any>(
               };
 
               fetch(metadataURI)
-              .then(r => r.json())
-              .then(metadata => {
-                dispatch({
-                  type: 'ADD_METADATA',
-                  id: tokenAddress,
-                  updates: {
-                    image: metadata.image_uri || '',
-                    description: metadata.description || '',
-                    twitterHandle: metadata.twitter || '',
-                    telegramHandle: metadata.telegram || '',
-                    website: metadata.website || '',
-                  },
-                });
-              })
-              .catch(() => {});
+                .then(r => r.json())
+                .then(metadata => {
+                  dispatch({
+                    type: 'ADD_METADATA',
+                    id: tokenAddress,
+                    updates: {
+                      image: metadata.image_uri || '',
+                      description: metadata.description || '',
+                      twitterHandle: metadata.twitter || '',
+                      telegramHandle: metadata.telegram || '',
+                      website: metadata.website || '',
+                    },
+                  });
+                })
+                .catch(() => { });
 
               if (pausedColumnRef.current === 'new') {
                 pausedTokenQueueRef.current['new'].push(newToken);
@@ -6701,7 +6702,7 @@ const trackedWalletsRef = useRef<any>(
               };
             });
 
-            const top10Pct =
+          const top10Pct =
             (mappedHolders
               .map((h) => Math.max(0, h.balance))
               .sort((a, b) => b - a)
@@ -14579,6 +14580,125 @@ const trackedWalletsRef = useRef<any>(
       </ul>
     </div>
   );
+  const [displayNotifications, setDisplayNotifications] = useState(true);
+  const [toastPosition, setToastPosition] = useState<string>('top-right');
+  const [transactionSounds, setTransactionSounds] = useState(true);
+  const [volume, setVolume] = useState(75);
+  const [buySound, setBuySound] = useState('Step Audio');
+  const [sellSound, setSellSound] = useState('Step Audio');
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lastVolumeRef = useRef<number>(volume);
+
+  // Helper functions
+  const toggleDropdown = (key: string) => {
+    setOpenDropdowns((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const closeDropdown = (key: string) => {
+    setOpenDropdowns((prev) => ({
+      ...prev,
+      [key]: false,
+    }));
+  };
+
+  const getSoundDisplayName = (soundPath: string) => {
+    if (soundPath === stepaudio) return 'Step Audio';
+    if (soundPath === kaching) return 'Ka-ching';
+    if (soundPath.includes('blob:')) return 'Custom Audio';
+    return 'Step Audio';
+  };
+
+  const playSound = (soundType: 'buy' | 'sell') => {
+    if (!audioRef.current) return;
+
+    const soundUrl = soundType === 'buy' ? buySound : sellSound;
+
+    if (
+      soundUrl === stepaudio ||
+      soundUrl === kaching ||
+      soundUrl === 'Default'
+    ) {
+      const audio = new Audio(soundUrl === 'Default' ? stepaudio : soundUrl);
+      audio.volume = volume / 100;
+      audio.currentTime = 0;
+      audio.play().catch(console.error);
+    } else {
+      const customAudio = new Audio(soundUrl);
+      customAudio.volume = volume / 100;
+      customAudio.play().catch(console.error);
+    }
+  };
+
+  const handleFileUpload = (
+    soundType: 'buy' | 'sell',
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      if (soundType === 'buy') {
+        setBuySound(url);
+      } else {
+        setSellSound(url);
+      }
+    }
+    event.target.value = '';
+  };
+
+  const selectSound = (
+    soundType: 'buy' | 'sell',
+    soundValue: string,
+  ) => {
+    if (soundType === 'buy') {
+      setBuySound(soundValue);
+    } else {
+      setSellSound(soundValue);
+    }
+  };
+
+  const handleVolumeSliderChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newVolume = parseInt(e.target.value, 10);
+      setVolume(newVolume);
+    },
+    [],
+  );
+
+  const handleVolumeChangeEnd = useCallback(() => {
+    if (
+      audioRef.current &&
+      Math.abs(volume - lastVolumeRef.current) > 0
+    ) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(console.error);
+    }
+    lastVolumeRef.current = volume;
+    setIsDragging(false);
+  }, [volume]);
+
+  // Effects
+  useEffect(() => {
+    audioRef.current = new Audio(stepaudio);
+    audioRef.current.volume = volume / 100;
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume / 100;
+    }
+  }, [volume]);
 
   // popup modals
   const Modals = (
@@ -20103,6 +20223,227 @@ const trackedWalletsRef = useRef<any>(
                     PRIORITY
                   </label>
                 </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {popup === 38 ? (
+          <div className="alerts-popup-overlay" onClick={() => setpopup(0)}>
+            <div className="notification-manager-popup" ref={popupref} onClick={(e) => e.stopPropagation()}>
+              <div className="alerts-popup-header">
+                <h3 className="alerts-popup-title">Notification Settings</h3>
+                <button className="alerts-close-button" onClick={() => setpopup(0)}>
+                  <img src={closebutton} className="explorer-close-button" />
+                </button>
+              </div>
+
+              <div className="notification-manager-content">
+                <div className="alerts-section">
+                  <div className="alerts-main-toggle">
+                    <div>
+                      <h4 className="alerts-main-label">Display notifications</h4>
+                      <p className="alerts-description">
+                        Display wallet tracker toasts, and notification cards
+                      </p>
+                    </div>
+                    <div
+                      className={`toggle-switch ${displayNotifications ? 'active' : ''}`}
+                      onClick={() => setDisplayNotifications(!displayNotifications)}
+                    >
+                      <div className="toggle-slider" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="alerts-section">
+                  <h4 className="alerts-main-label">Toast Position</h4>
+                  <div className="position-grid">
+                    {['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'].map((pos) => (
+                      <button
+                        key={pos}
+                        className={`position-option ${toastPosition === pos ? 'active' : ''}`}
+                        onClick={() => setToastPosition(pos)}
+                      >
+                        <div className="position-preview">
+                          <div className="toast-indicator"></div>
+                        </div>
+                        <span>{pos.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="alerts-section">
+                  <div className="alerts-main-toggle">
+                    <div>
+                      <h4 className="alerts-main-label">Transaction Sounds</h4>
+                    </div>
+                    <div
+                      className={`toggle-switch ${transactionSounds ? 'active' : ''}`}
+                      onClick={() => setTransactionSounds(!transactionSounds)}
+                    >
+                      <div className="toggle-slider" />
+                    </div>
+                  </div>
+                </div>
+
+                {transactionSounds && (
+                  <div>
+                    <div className="alerts-volume-slider">
+                      <div className="volume-label">
+                        <span className="volume-text">Notification Volume</span>
+                        <span className="volume-value">{volume}%</span>
+                      </div>
+
+                      <div
+                        className="meme-slider-container meme-slider-mode"
+                        style={{ position: 'relative' }}
+                      >
+                        <input
+                          type="range"
+                          className={`meme-balance-amount-slider ${isDragging ? 'dragging' : ''}`}
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={volume}
+                          onChange={handleVolumeSliderChange}
+                          onMouseDown={() => setIsDragging(true)}
+                          onMouseUp={handleVolumeChangeEnd}
+                          onTouchStart={() => setIsDragging(true)}
+                          onTouchEnd={handleVolumeChangeEnd}
+                          style={{
+                            background: `linear-gradient(to right, rgb(171,176,224) ${volume}%, rgb(28,28,31) ${volume}%)`,
+                          }}
+                        />
+
+                        <div className="meme-volume-slider-marks">
+                          {[0, 25, 50, 75, 100].map((mark) => (
+                            <span
+                              key={mark}
+                              className="meme-volume-slider-mark"
+                              data-active={volume >= mark}
+                              data-percentage={mark}
+                              onClick={() => setVolume(mark)}
+                            >
+                              {mark}%
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="alerts-section">
+                      <div className="sound-options">
+                        {(['buy', 'sell'] as const).map((key) => (
+                          <div className="sound-option" key={key}>
+                            <span className="sound-option-label">
+                              {key === 'buy' ? 'Buy Sound' : 'Sell Sound'}
+                            </span>
+                            <div className="sound-controls">
+                              <div className="sound-selector-dropdown">
+                                <div
+                                  className="sound-selector"
+                                  onClick={() => toggleDropdown(key)}
+                                  onBlur={(e) => {
+                                    if (
+                                      !e.currentTarget.parentElement?.contains(
+                                        e.relatedTarget as Node,
+                                      )
+                                    ) {
+                                      closeDropdown(key);
+                                    }
+                                  }}
+                                >
+                                  <Volume2 size={14} />
+                                  <span>
+                                    {getSoundDisplayName(
+                                      key === 'buy' ? buySound : sellSound
+                                    )}
+                                  </span>
+                                  <div className="sound-action-button-container">
+                                    <button
+                                      className="sound-action-btn"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        playSound(key);
+                                      }}
+                                      title="Play sound"
+                                    >
+                                      <Play size={14} />
+                                    </button>
+
+                                    <button
+                                      className="sound-action-btn"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (key === 'buy') {
+                                          setBuySound(stepaudio);
+                                        } else {
+                                          setSellSound(stepaudio);
+                                        }
+                                      }}
+                                      title="Reset to default"
+                                    >
+                                      <RotateCcw size={14} />
+                                    </button>
+                                  </div>
+                                  {openDropdowns[key] && (
+                                    <div className="sound-dropdown-content">
+                                      <button
+                                        className={`sound-dropdown-item ${(key === 'buy' ? buySound : sellSound) === stepaudio
+                                            ? 'active'
+                                            : ''
+                                          }`}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => {
+                                          selectSound(key, stepaudio);
+                                        }}
+                                      >
+                                        Step Audio
+                                      </button>
+                                      <button
+                                        className={`sound-dropdown-item ${(key === 'buy' ? buySound : sellSound) === kaching
+                                            ? 'active'
+                                            : ''
+                                          }`}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => {
+                                          selectSound(key, kaching);
+                                        }}
+                                      >
+                                        Ka-ching
+                                      </button>
+                                      <label className="sound-dropdown-item">
+                                        Upload Other
+                                        <input
+                                          type="file"
+                                          accept="audio/*"
+                                          style={{ display: 'none' }}
+                                          onChange={(e) => {
+                                            handleFileUpload(key, e);
+                                          }}
+                                        />
+                                      </label>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <p className="alerts-file-info">
+                        Maximum 5 seconds and 0.2MB file size
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <button className="alerts-continue-btn" onClick={() => setpopup(0)}>
+                  Done
+                </button>
               </div>
             </div>
           </div>

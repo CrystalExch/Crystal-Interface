@@ -589,6 +589,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
   const [showImportPopup, setShowImportPopup] = useState(false);
   const [showAddWalletModal, setShowAddWalletModal] = useState(false);
+  const [walletBalances, setWalletBalances] = useState<{ [address: string]: number }>({});
 
   const chainCfg = chainCfgOf(activechain, settings);
 
@@ -872,6 +873,51 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       onSnapChange(isSnapped, size.width);
     }
   }, [isSnapped, size.width, onSnapChange]);
+
+
+  useEffect(() => {
+    const fetchAllBalances = async () => {
+      if (!localWallets || localWallets.length === 0) return;
+
+      try {
+        const { getBalance } = await import('@wagmi/core');
+        const { config } = await import('../../wagmi');
+
+        const balancePromises = localWallets.map(async (wallet) => {
+          try {
+            const balance = await getBalance(config, {
+              address: wallet.address as `0x${string}`,
+            });
+            return {
+              address: wallet.address.toLowerCase(),
+              balance: Number(balance.value) / 1e18,
+            };
+          } catch (error) {
+            console.error(`Failed to fetch balance for ${wallet.address}:`, error);
+            return {
+              address: wallet.address.toLowerCase(),
+              balance: 0,
+            };
+          }
+        });
+
+        const results = await Promise.all(balancePromises);
+        const balancesMap: { [address: string]: number } = {};
+        results.forEach(({ address, balance }) => {
+          balancesMap[address] = balance;
+        });
+
+        setWalletBalances(balancesMap);
+      } catch (error) {
+        console.error('Failed to fetch wallet balances:', error);
+      }
+    };
+
+    fetchAllBalances();
+    const interval = setInterval(fetchAllBalances, 30000);
+
+    return () => clearInterval(interval);
+  }, [localWallets]);
   useEffect(() => {
     if (hasInitiallyLoaded) {
       saveWidgetState({ position, size, isSnapped, activeTab, isOpen });
@@ -1073,7 +1119,16 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       onWalletsChange(localWallets);
     }
   }, [localWallets, externalWallets, onWalletsChange, hasInitiallyLoaded]);
-
+  useEffect(() => {
+    if (!externalWallets && hasInitiallyLoaded) {
+      saveWalletsToStorage(localWallets);
+      window.dispatchEvent(new CustomEvent('wallets-updated', { detail: { wallets: localWallets, source: 'widget' } }));
+      window.dispatchEvent(new CustomEvent('trackedWalletsUpdated'));
+    }
+    if (onWalletsChange) {
+      onWalletsChange(localWallets);
+    }
+  }, [localWallets, externalWallets, onWalletsChange, hasInitiallyLoaded]);
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY && e.newValue) {
@@ -1838,20 +1893,8 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                       <div className="wtw-wallet-balance">
                         <img src={monadicon} className="wtw-balance-icon" alt="MON" />
                         <span className="wtw-balance-value">
-                          {(() => {
-                            const b = walletTokenBalances[wallet.address] || walletTokenBalances[wallet.address.toLowerCase()];
-                            const ethToken = chainCfg?.eth;
-
-                            let balanceInMON;
-                            if (b && ethToken) {
-                              balanceInMON = Number(b[ethToken] || b[ethToken?.toLowerCase()] || b[ethToken?.toUpperCase()] || 0) / 1e18;
-                            } else {
-                              balanceInMON = wallet.balance || 0;
-                            }
-                            return balanceInMON.toFixed(2);
-                          })()}
+                          {(walletBalances[wallet.address.toLowerCase()] || 0).toFixed(2)}
                         </span>
-
                       </div>
 
                       <div className="wtw-wallet-last-active">

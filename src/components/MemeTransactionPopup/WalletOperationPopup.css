@@ -301,7 +301,7 @@
   margin-left: -5px;
   background-color: black;
   border-radius: 20px;
-  border: 1px solid #aaaecf;
+  border: 1px solid #AD5FFB;
   height: 12px;
   letter-spacing: -0.5px;
   padding: 0 4px;
@@ -419,7 +419,7 @@
   height: 8px;
 }
 
-.crystal-launchpad-tracker-noti{
+.nadfun-launchpad-tracker-noti{
   position: absolute;
   bottom: -1px;
   left: 20px;
@@ -429,7 +429,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  border: 1px solid #aaaecf;
+  border: 1px solid #AD5FFB;
   background-color: black;
 }
 

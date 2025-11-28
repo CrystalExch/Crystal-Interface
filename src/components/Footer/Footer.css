@@ -218,8 +218,10 @@
 
 .footer-right{
   display: flex;
-  gap: 8px;
+  gap: 12px;
   padding-right: 12px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(179, 184, 249, 0.15);
 }
 
 .footer-icon{
@@ -228,6 +230,7 @@
   cursor: pointer;
   filter: brightness(0) saturate(100%) invert(79%) sepia(1%) saturate(1829%) hue-rotate(192deg) brightness(96%) contrast(86%);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 

@@ -74,11 +74,17 @@
 }
 
 .trader-address {
+  display: flex;
+  align-items: center;
   color: #e0e8fd73;
   font-size: 0.8rem;
   font-weight: 300;
 }
 
+
+.trader-address:hover {
+  color: #d8dcff
+}
 .trader-action-btn {
   align-items: center;
   border-radius: 6px;
@@ -458,11 +464,31 @@
   letter-spacing: -0.3px;
 }
 
-.rename-track-button{
+.rename-track-button {
+  display: flex;
+  align-items: center;
+  gap: 0;
   letter-spacing: -0.5px;
   margin-top: -2px;
   margin-left: 4px;
   cursor: pointer;
+  overflow: visible;
+}
+
+.rename-track-edit-icon {
+  color: rgba(255, 255, 255, 0.9);
+  opacity: 0;
+  width: 0;
+  transition: opacity 0.2s ease, width 0.2s ease;
+  flex-shrink: 0;
+  overflow: hidden;
+  margin-left: 0;
+}
+
+.rename-track-button:hover .rename-track-edit-icon {
+  opacity: 1;
+  width: 12px;
+  margin-left: 6px;
 }
 .trader-portfolio-skeleton-item {
   pointer-events: none;
@@ -563,18 +589,18 @@
 }
 
 .trader-emoji-preview {
-  font-size: 20px;
+  font-size: 16px;
 }
 
 .trader-name-input {
   color: #ffffff;
-  font-size: 0.9rem;
-  padding: 6px 12px;
+  font-size: 0.8rem;
   outline: none;
   transition: all 0.2s ease;
   border-bottom: 1px solid rgba(179, 184, 249, 0.2);
   background: none;
   width: auto;
+  letter-spacing: -0.3px;
 }
 
 .trader-name-input::placeholder {

@@ -3014,7 +3014,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               trackedWalletsRef={trackedWalletsRef}
               positions={positions}
               onSellPosition={handleSellPosition}
-                onShareDataSelected={onTokenDataChange}
+              onShareDataSelected={onTokenDataChange}
             />
           </div>
         </div>

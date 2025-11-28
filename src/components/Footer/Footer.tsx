@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { Wallet } from 'lucide-react';
+import { Wallet, Bell } from 'lucide-react';
 import './Footer.css';
 import OnlineStatus from './OnlineStatus/OnlineStatus';
 import SocialLinks from './SocialLinks/SocialLinks';
@@ -721,16 +721,19 @@ const totalSelectedBalance = useMemo(() => {
         </div>
       </div>
       <div className="footer-content-right">
+        <Tooltip content="Notification Settings">
+        <Bell className="footer-icon" size={18} style={{marginRight: '10px', cursor: 'pointer'}} onClick={() => setpopup(38)} />
+        </Tooltip>
         <div className="footer-right">
-          <Tooltip content="Discord">
+          <Tooltip content="Join our Discord">
             <img className="footer-icon" src={discord} />
           </Tooltip>
-          <Tooltip content="Twitter">
+          <Tooltip content="Follow us on X">
             <img className="footer-icon" src={twitter} />
           </Tooltip>
           <Tooltip content="Docs">
             <div className="footer-docs-icon">
-              <img className="footer-icon" src={docs} />
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="footer-docs-icon"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/></svg>
               Docs
             </div>
           </Tooltip>
