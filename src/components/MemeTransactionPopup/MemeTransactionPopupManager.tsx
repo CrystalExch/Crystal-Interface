@@ -279,10 +279,17 @@ const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = 
   const [transactionPopups, setTransactionPopups] = useState<PopupData[]>([]);
   const [newPopupIds, setNewPopupIds] = useState<Set<string>>(new Set());
   const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
- const [notificationPrefs, setNotificationPrefs] = useState<Record<string, boolean>>(() => 
+  const [notificationPrefs, setNotificationPrefs] = useState<Record<string, boolean>>(() => 
     getWalletNotificationPreferences()
   );
-
+  
+  const [toastPosition, setToastPosition] = useState<string>(() => {
+    try {
+      return localStorage.getItem('crystal_toast_position') || 'top-center';
+    } catch {
+      return 'top-center';
+    }
+  });
   useEffect(() => {
     const handleUpdate = (e: Event) => {
       const customEvent = e as CustomEvent;
@@ -389,19 +396,103 @@ const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = 
   }, []);
 
   const visiblePopups = transactionPopups.slice(0, 7);
+  useEffect(() => {
+    const handlePositionUpdate = () => {
+      try {
+        const newPosition = localStorage.getItem('crystal_toast_position') || 'top-center';
+        setToastPosition(newPosition);
+      } catch (error) {
+        console.error('Error loading toast position:', error);
+      }
+    };
+
+    window.addEventListener('storage', handlePositionUpdate);
+    
+    window.addEventListener('toast-position-updated', handlePositionUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handlePositionUpdate);
+      window.removeEventListener('toast-position-updated', handlePositionUpdate);
+    };
+  }, []);
+  const getPositionStyles = (position: string) => {
+    const styles: React.CSSProperties = {
+      position: 'fixed',
+      zIndex: 999999,
+      pointerEvents: 'none',
+    };
+
+    switch (position) {
+      case 'top-left':
+        styles.top = '20px';
+        styles.left = '0px';
+        styles.transform = 'none';
+        break;
+      case 'top-center':
+        styles.top = '20px';
+        styles.left = '50%';
+        styles.transform = 'translateX(-50%)';
+        break;
+      case 'top-right':
+        styles.top = '20px';
+        styles.right = '350px';
+        styles.left = 'auto';
+        styles.transform = 'none';
+        break;
+      case 'bottom-left':
+        styles.bottom = '100px';
+        styles.left = '0px';
+        styles.top = 'auto';
+        styles.transform = 'none';
+        break;
+      case 'bottom-center':
+        styles.bottom = '100px';
+        styles.left = '50%';
+        styles.top = 'auto';
+        styles.transform = 'translateX(-50%)';
+        break;
+      case 'bottom-right':
+        styles.bottom = '100px';
+        styles.right = '350px';
+        styles.left = 'auto';
+        styles.top = 'auto';
+        styles.transform = 'none';
+        break;
+      default:
+        styles.top = '20px';
+        styles.left = '50%';
+        styles.transform = 'translateX(-50%)';
+    }
+
+    return styles;
+  };
+
+  const getWrapperTransform = (position: string, index: number) => {
+    const y = index * 60;
+    const isBottom = position.startsWith('bottom-');
+    
+    const yOffset = isBottom ? -y : y;
+    
+    if (position.includes('center')) {
+      return `translateX(-50%) translateY(${yOffset}px)`;
+    }
+    return `translateY(${yOffset}px)`;
+  };
 
   return (
-    <div className="meme-transaction-popup-manager">
+    <div 
+      className="meme-transaction-popup-manager"
+      style={getPositionStyles(toastPosition)}
+    >
       {visiblePopups.map((popup, index) => {
         const isNew = newPopupIds.has(popup.id);
-        const y = index * 60;
 
         return (
           <div
             key={popup.id}
             className="meme-transaction-popup-wrapper"
             style={{
-              transform: `translateX(-50%) translateY(${y}px)`,
+              transform: getWrapperTransform(toastPosition, index),
               zIndex: 999999 - index,
             }}
           >

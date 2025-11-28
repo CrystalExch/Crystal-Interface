@@ -1,11 +1,7 @@
 .meme-transaction-popup-manager {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 999999;
   pointer-events: none;
-  width: 100%;
+  width: auto;
+  max-width: 400px;
 }
 
 .meme-transaction-popup-wrapper {
