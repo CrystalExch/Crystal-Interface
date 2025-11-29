@@ -3400,7 +3400,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                           return filteredPositions.map((p) => {
                             const tokenShort =
                               p.symbol ||
-                              `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
+                              (p.tokenId ? `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}` : 'Unknown');
                             const tokenImageUrl = p.imageUrl || null;
                             return (
                               <div key={p.tokenId} className="meme-portfolio-oc-item">
@@ -3635,7 +3635,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                           return filteredHistory.map((p) => {
                             const tokenShort =
                               p.symbol ||
-                              `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
+                              (p.tokenId ? `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}` : 'Unknown');
                             const tokenImageUrl = p.imageUrl || null;
                             return (
                               <div key={p.tokenId} className="meme-portfolio-oc-item meme-portfolio-oc-item-5-col">
