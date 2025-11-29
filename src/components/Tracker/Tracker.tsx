@@ -1458,7 +1458,9 @@ const Tracker: React.FC<TrackerProps> = ({
                             </div>
                           )}
                           <div className="wtw-wallet-address">
+                            <span className="address">
                             {formatAddress(wallet.address)}
+                            </span>
                             <button
                               className="wtw-copy-address"
                               onClick={() => handleCopyAddress(wallet.address)}
