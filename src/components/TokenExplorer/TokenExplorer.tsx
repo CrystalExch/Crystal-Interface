@@ -2069,26 +2069,26 @@ const DisplayDropdown: React.FC<{
                                 </div>
                               </div>
                               <div className="metric-range-label">
-  {(() => {
-    const thresholds = settings.metricThresholds?.[metric] || 
-                      DISPLAY_DEFAULTS.metricThresholds[metric];
-    
-    const formatValue = (val: number, metric: string) => {
-      if (metric === 'holders') return val.toString();
-      if (val >= 1000000) return `${(val / 1000000).toFixed(val % 1000000 === 0 ? 0 : 1)}M`;
-      if (val >= 1000) return `${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}K`;
-      return val.toString();
-    };
-    
-    if (idx === 0) {
-      return `0 - ${formatValue(thresholds.range1, metric)}`;
-    } else if (idx === 1) {
-      return `${formatValue(thresholds.range1, metric)} - ${formatValue(thresholds.range2, metric)}`;
-    } else {
-      return `${formatValue(thresholds.range2, metric)}+`;
-    }
-  })()}
-</div>
+                                {(() => {
+                                  const thresholds = settings.metricThresholds?.[metric] ||
+                                    DISPLAY_DEFAULTS.metricThresholds[metric];
+
+                                  const formatValue = (val: number, metric: string) => {
+                                    if (metric === 'holders') return val.toString();
+                                    if (val >= 1000000) return `${(val / 1000000).toFixed(val % 1000000 === 0 ? 0 : 1)}M`;
+                                    if (val >= 1000) return `${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}K`;
+                                    return val.toString();
+                                  };
+
+                                  if (idx === 0) {
+                                    return `0 - ${formatValue(thresholds.range1, metric)}`;
+                                  } else if (idx === 1) {
+                                    return `${formatValue(thresholds.range1, metric)} - ${formatValue(thresholds.range2, metric)}`;
+                                  } else {
+                                    return `${formatValue(thresholds.range2, metric)}+`;
+                                  }
+                                })()}
+                              </div>
                             </div>
                           ),
                         )}
@@ -2499,6 +2499,7 @@ const TokenRow = React.memo<{
     formatTimeAgo,
   } = props;
   const imageContainerRef = useRef<HTMLDivElement>(null);
+
   const tokenRowRef = useRef<HTMLDivElement>(null);
   const [bondingPopupPosition, setBondingPopupPosition] = useState({
     top: 0,
@@ -3696,6 +3697,16 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   setOneCTDepositAddress
 }) => {
 
+  const pausedTokenSnapshotRef = useRef<{
+    new: Set<string>;
+    graduating: Set<string>;
+    graduated: Set<string>;
+  }>({
+    new: new Set(),
+    graduating: new Set(),
+    graduated: new Set()
+  });
+
   const getMaxSpendableWei = useCallback(
     (addr: string): bigint => {
       const balances = walletTokenBalances[addr];
@@ -4087,24 +4098,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     [],
   );
 
-  const handleColumnHover = useCallback((columnType: Token['status']) => {
-    pausedColumnRef.current = columnType;
-    setPausedColumn(columnType);
-    pausedTokenQueueRef.current[columnType] = [];
-  }, []);
-
-  const handleColumnLeave = useCallback(() => {
-    const wasPaused = pausedColumnRef.current;
-    pausedColumnRef.current = null;
-    setPausedColumn(null);
-
-    if (wasPaused) {
-      const status = wasPaused as Token['status'];
-      if (pausedTokenQueueRef.current[status].length > 0) {
-        pausedTokenQueueRef.current[status] = [];
-      }
-    }
-  }, [dispatch]);
 
   const copyToClipboard = useCallback(
     async (
@@ -4788,6 +4781,41 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const newTokens = visibleTokens.new;
   const graduatingTokens = visibleTokens.graduating;
   const graduatedTokens = visibleTokens.graduated;
+  const handleColumnHover = useCallback((columnType: Token['status']) => {
+    pausedColumnRef.current = columnType;
+    setPausedColumn(columnType);
+
+    const currentTokens = columnType === 'new' ? newTokens
+      : columnType === 'graduating' ? graduatingTokens
+        : graduatedTokens;
+
+    pausedTokenSnapshotRef.current[columnType] = new Set(
+      currentTokens.map(t => t.id)
+    );
+  }, [newTokens, graduatingTokens, graduatedTokens]);
+
+  const handleColumnLeave = useCallback(() => {
+    const wasPaused = pausedColumnRef.current;
+    pausedColumnRef.current = null;
+    setPausedColumn(null);
+
+    if (wasPaused) {
+      pausedTokenSnapshotRef.current[wasPaused as Token['status']].clear();
+    }
+  }, []);
+  const displayTokens = useMemo(() => {
+    return {
+      new: pausedColumn === 'new'
+        ? newTokens.filter(t => pausedTokenSnapshotRef.current.new.has(t.id))
+        : newTokens,
+      graduating: pausedColumn === 'graduating'
+        ? graduatingTokens.filter(t => pausedTokenSnapshotRef.current.graduating.has(t.id))
+        : graduatingTokens,
+      graduated: pausedColumn === 'graduated'
+        ? graduatedTokens.filter(t => pausedTokenSnapshotRef.current.graduated.has(t.id))
+        : graduatedTokens
+    };
+  }, [pausedColumn, newTokens, graduatingTokens, graduatedTokens]);
 
   const tokenCounts = useMemo(
     () => ({
@@ -5266,8 +5294,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                             </div>
                           </div>
                         ))
-                      ) : newTokens.length ? (
-                        newTokens.map((t) => (
+                      ) : displayTokens.new.length ? (
+                        displayTokens.new.map((t) => (
                           <TokenRow
                             key={t.id}
                             token={t}
@@ -5496,8 +5524,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                             </div>
                           </div>
                         ))
-                      ) : graduatingTokens.length ? (
-                        graduatingTokens.map((t) => (
+                      ) : displayTokens.graduating.length ? (
+                        displayTokens.graduating.map((t) => (
                           <TokenRow
                             key={t.id}
                             token={t}
@@ -5725,8 +5753,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                             </div>
                           </div>
                         ))
-                      ) : graduatedTokens.length ? (
-                        graduatedTokens.map((t) => (
+                      ) : displayTokens.graduated.length ? (
+                        displayTokens.graduated.map((t) => (
                           <TokenRow
                             key={t.id}
                             token={t}
