@@ -2227,8 +2227,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     })()
   );
   const trackedWalletTradesRef = useRef<any>([]);
-  const wsPendingLogsRef = useRef(new Map());
   const [trackedWalletTrades, setTrackedWalletTrades] = useState<any[]>([]);
+  const wsPendingLogsRef = useRef(new Map());
+  const transferPendingLogsRef = useRef(new Map());
 
   // reload if throttled
   useEffect(() => {
@@ -4892,7 +4893,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   price: endPrice,
                   nativeAmount: isBuy ? amountIn : amountOut,
                   tokenAmount: isBuy ? amountOut : amountIn,
-                  caller: `0x${log.topics[2].slice(26)}`,
+                  caller: callerAddr,
                 },
                 ...prev.slice(0, 99),
               ]);
@@ -4948,7 +4949,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 let idx = arr.findIndex(r => r.address.toLowerCase() === callerAddr);
                 if (idx == -1) {
                   const fresh: Holder = {
-                    address: `0x${log.topics[2].slice(26)}`,
+                    address: callerAddr,
                     balance: 0,
                     amountBought: 0,
                     amountSold: 0,
@@ -5215,7 +5216,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     price: price,
                     nativeAmount: isBuy ? amountIn : amountOut,
                     tokenAmount: isBuy ? amountOut : amountIn,
-                    caller: `0x${log.topics[2].slice(26)}`,
+                    caller: callerAddr,
                   },
                   ...prev.slice(0, 99),
                 ]);
@@ -5273,7 +5274,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   let idx = arr.findIndex(r => r.address.toLowerCase() === callerAddr);
                   if (idx == -1) {
                     const fresh: Holder = {
-                      address: `0x${log.topics[2].slice(26)}`,
+                      address: callerAddr,
                       balance: 0,
                       amountBought: 0,
                       amountSold: 0,
@@ -5315,7 +5316,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                   if (idx === -1) {
                     const row: Holder = {
-                      address: `0x${log.topics[2].slice(26)}`,
+                      address: callerAddr,
                       balance: 0, tokenNet: 0, valueNet: 0,
                       amountBought: 0, amountSold: 0,
                       valueBought: 0, valueSold: 0,
@@ -5445,6 +5446,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               }));
             }
             else if (log.topics?.[0] == CRYSTAL_EVENTS.Transfer) {
+              while (transferPendingLogsRef.current.size > 3000) {
+                const oldestKey = transferPendingLogsRef.current.keys().next().value;
+                if (!oldestKey) break;
+                transferPendingLogsRef.current.delete(oldestKey);
+              }
+              let entry = transferPendingLogsRef.current.get(log.transactionHash);
+              if (!entry) {
+                entry = { swap: undefined, transfers: [] };
+                transferPendingLogsRef.current.set(log.transactionHash, entry);
+              }
+              entry.transfers.push(log);
             }
             else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveCreate) {
               const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
@@ -5531,9 +5543,33 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               dispatch({ type: 'ADD_MARKET', token: newToken });
             }
             else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveBuy || log.topics?.[0] == NAD_FUN_EVENTS.CurveSell) {
-              const syncEvent = wsPendingLogsRef.current.get(log.hash);
+              const isBuy = log.topics?.[0] == NAD_FUN_EVENTS.CurveBuy;
+              const callerAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              const tokenAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
+              let transferEvents;
+              if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
+                if (isBuy) {
+                  while (transferPendingLogsRef.current.size > 3000) {
+                    const oldestKey = transferPendingLogsRef.current.keys().next().value;
+                    if (!oldestKey) break;
+                    transferPendingLogsRef.current.delete(oldestKey);
+                  }
+                  let entry = transferPendingLogsRef.current.get(log.transactionHash);
+                  if (!entry) {
+                    entry = { swap: undefined, transfers: [] };
+                    transferPendingLogsRef.current.set(log.transactionHash, entry);
+                  }
+                  entry.swap = log;
+                }
+                else {
+                  transferEvents = transferPendingLogsRef.current.get(log.transactionHash);
+                  if (!transferEvents) return tempset;
+                  transferPendingLogsRef.current.delete(log.transactionHash);
+                }
+              }
+              const syncEvent = wsPendingLogsRef.current.get(log.transactionHash);
               if (!syncEvent) return tempset;
-              wsPendingLogsRef.current.delete(log.hash);
+              wsPendingLogsRef.current.delete(log.transactionHash);
 
               const synchex = syncEvent.data.replace(/^0x/, '');
               const syncwords: string[] = [];
@@ -5545,10 +5581,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 reserveBase == 0n
                   ? 0
                   : Number(reserveQuote) / Number(reserveBase);
-
-              const isBuy = log.topics?.[0] == NAD_FUN_EVENTS.CurveBuy;
-              const callerAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
-              const tokenAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
 
               const hex = log.data.replace(/^0x/, '');
               const words: string[] = [];
@@ -5648,7 +5680,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     price: price,
                     nativeAmount: isBuy ? amountIn : amountOut,
                     tokenAmount: isBuy ? amountOut : amountIn,
-                    caller: `0x${log.topics[1].slice(26)}`,
+                    caller: callerAddr,
                   },
                   ...prev.slice(0, 99),
                 ]);
@@ -5869,7 +5901,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 if (!oldestKey) break;
                 wsPendingLogsRef.current.delete(oldestKey);
               }
-              wsPendingLogsRef.current.set(log.hash, log)
+              wsPendingLogsRef.current.set(log.transactionHash, log)
             }
             else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveGraduate) {
               const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
@@ -6041,7 +6073,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     price: price,
                     nativeAmount: isBuy ? amountIn : amountOut,
                     tokenAmount: isBuy ? amountOut : amountIn,
-                    caller: `0x${log.topics[1].slice(26)}`,
+                    caller: callerAddr,
                   },
                   ...prev.slice(0, 99),
                 ]);
@@ -6098,7 +6130,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   let idx = arr.findIndex(r => r.address.toLowerCase() === callerAddr);
                   if (idx == -1) {
                     const fresh: Holder = {
-                      address: `0x${log.topics[2].slice(26)}`,
+                      address: callerAddr,
                       balance: 0,
                       amountBought: 0,
                       amountSold: 0,
