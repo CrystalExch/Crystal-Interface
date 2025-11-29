@@ -5614,6 +5614,21 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               if (pausedColumnRef.current === 'new') {
                 pausedTokenQueueRef.current['new'].push(tokenAddress);
               }
+
+              if (memeRef.current.dev && creatorAddress == memeRef.current.dev.toLowerCase() && memeDevTokenIdsRef.current.has(tokenAddress)) {
+                const newDev = {
+                  id: tokenAddress, symbol, name, imageUrl: '',
+                  price: 0.000083878, marketCap: 0.000083878 * TOTAL_SUPPLY, timestamp: Math.floor(Date.now() / 1000), migrated: false,
+                };
+
+                setMemeDevTokens(prev => {
+                  if (prev.some(t => String(t.id).toLowerCase() === tokenAddress)) return prev;
+                  const updated = [newDev, ...prev];
+                  memeDevTokenIdsRef.current = new Set(updated.map(t => String(t.id || '').toLowerCase()));
+                  return updated;
+                });
+              }
+              
               dispatch({ type: 'ADD_MARKET', token: newToken });
             }
             else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveBuy || log.topics?.[0] == NAD_FUN_EVENTS.CurveSell) {
@@ -6434,45 +6449,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
   const [isLoadingTrades, setIsLoadingTrades] = useState(false);
 
-  const calcDevHoldingPct = (list: Holder[], dev?: string) => {
-    if (!dev) return 0;
-    const row = list.find(
-      (h) => (h.address || '').toLowerCase() === dev.toLowerCase(),
-    );
-    return row ? (Math.max(0, row.balance) / 1e9) * 100 : 0;
-  };
-
-  const addDevTokenFromEvent = useCallback(async (log: any, currentTokenDev?: string) => {
-    try {
-      const decoded: any = decodeEventLog({ abi: CrystalRouterAbi, data: log.data, topics: log.topics });
-      const tokenId = String(decoded.args?.token || '').toLowerCase();
-      const creator = String(decoded.args?.creator || '').toLowerCase();
-
-      if (!currentTokenDev || creator !== String(currentTokenDev).toLowerCase()) return;
-      if (memeDevTokenIdsRef.current.has(tokenId)) return;
-
-      let imageUrl = decoded.args?.metadataCID || '';
-
-      const symbol = String(decoded.args?.symbol || '').toUpperCase();
-      const name = String(decoded.args?.name || symbol || tokenId.slice(0, 6));
-      const price = 0;
-
-      const newDev = {
-        id: tokenId, symbol, name, imageUrl,
-        price, marketCap: price * TOTAL_SUPPLY, timestamp: Math.floor(Date.now() / 1000), migrated: false,
-      };
-
-      setMemeDevTokens(prev => {
-        if (prev.some(t => String(t.id).toLowerCase() === tokenId)) return prev;
-        const updated = [newDev, ...prev];
-        memeDevTokenIdsRef.current = new Set(updated.map(t => String(t.id || '').toLowerCase()));
-        return updated;
-      });
-    } catch (e) {
-      console.error('failed to decode CRYSTAL_EVENTS.MarketCreated', e);
-    }
-  }, []);
-
   const token: Token = useMemo(() => {
     const baseDefaults: Token = {
       id: tokenAddress || "",
@@ -6804,9 +6780,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             100;
 
           setMemeTop10HoldingPct(top10Pct);
-
-          const devPct = calcDevHoldingPct(mappedHolders, tempTokenData.dev);
-          setTokenData((p: any) => ({ ...p, devHolding: devPct }));
           setMemeHolders(mappedHolders);
         } else {
           setMemeHolders([]);
@@ -11374,7 +11347,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (tempQueryData?.aggregatorRes != null) {
           setStateIsLoading(false);
           setstateloading(false);
-          console.log(tempQueryData?.aggregatorRes?.amountOut / 1e6)
           setSwapButtonDisabled(false)
           setamountOutSwap(BigInt(tempQueryData?.aggregatorRes?.amountOut || 0))
           setoutputString((Number(tempQueryData?.aggregatorRes?.amountOut || 0) / (10 ** Number(tokendict[tokenOut].decimals))).toString())
@@ -11383,6 +11355,174 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     } else {
     }
   }, [tempQueryData, activechain, isQuoteFetching, quoteUpdatedAt, location.pathname.slice(1)]);
+
+  // update display values when loading is finished
+  useLayoutEffect(() => {
+    if (!isLoading && !stateIsLoading && tempQueryData?.aggregatorRes) {
+      setDisplayValuesLoading(false);
+      if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
+        let estPrice = 0;
+        setAveragePrice(
+          multihop
+            ? `${customRound(estPrice, 2)}`
+            : `${formatSubscript(formatSig(estPrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket?.marketType != 0))}`,
+        );
+        setPriceImpact(() => {
+          let temppriceimpact;
+          if (multihop) {
+            let price = 1;
+            let mid;
+            for (let i = 0; i < activeMarket.path.length - 1; i++) {
+              let market = getMarket(
+                activeMarket.path[i],
+                activeMarket.path[i + 1],
+              );
+              mid = Number(mids[(market.baseAsset + market.quoteAsset).replace(
+                new RegExp(
+                  `^${wethticker}|${wethticker}$`,
+                  'g'
+                ),
+                ethticker
+              )][0]);
+              if (activeMarket.path[i] == market.quoteAddress) {
+                price *= mid / Number(market.priceFactor);
+              } else {
+                price /= mid / Number(market.priceFactor);
+              }
+            }
+            temppriceimpact = `${customRound(
+              0.001 > Math.abs(((estPrice - price) / price) * 100)
+                ? 0
+                : Math.abs(((estPrice - price) / price) * 100),
+              3,
+            )}%`;
+          } else {
+            temppriceimpact = `${customRound(
+              0.001 >
+                Math.abs(
+                  ((estPrice -
+                    (tokenIn == activeMarket.quoteAddress
+                      ? Number(lowestAsk) / Number(activeMarket.priceFactor)
+                      : Number(highestBid) / Number(activeMarket.priceFactor))) /
+                    (tokenIn == activeMarket.quoteAddress
+                      ? Number(lowestAsk) / Number(activeMarket.priceFactor)
+                      : Number(highestBid) / Number(activeMarket.priceFactor))) *
+                  100,
+                )
+                ? 0
+                : Math.abs(
+                  ((estPrice -
+                    (tokenIn == activeMarket.quoteAddress
+                      ? Number(lowestAsk) / Number(activeMarket.priceFactor)
+                      : Number(highestBid) /
+                      Number(activeMarket.priceFactor))) /
+                    (tokenIn == activeMarket.quoteAddress
+                      ? Number(lowestAsk) / Number(activeMarket.priceFactor)
+                      : Number(highestBid) /
+                      Number(activeMarket.priceFactor))) *
+                  100,
+                ),
+              3,
+            )}%`;
+          }
+          setSwapButtonDisabled(
+            (amountIn === BigInt(0) ||
+              amountIn > walletTokenBalances[address]?.[tokenIn] ||
+              ((orderType == 1 || multihop) &&
+                !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
+                tempQueryData?.aggregatorRes == undefined)) &&
+            connected &&
+            userchain == activechain,
+          );
+          setSwapButton(
+            connected && userchain == activechain
+              ? (switched &&
+                amountOutSwap != BigInt(0) &&
+                amountIn == BigInt(0)) ||
+                ((orderType == 1 || multihop) &&
+                  !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
+                  tempQueryData?.aggregatorRes == undefined)
+                ? 0
+                : amountIn === BigInt(0)
+                  ? 1
+                  : amountIn <= walletTokenBalances[address]?.[tokenIn]
+                    ? allowance < amountIn && tokenIn != eth && !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake)
+                      ? 6
+                      : 2
+                    : 3
+              : connected
+                ? 4
+                : 5,
+          );
+          setwarning(
+            !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
+              ((amountIn == BigInt(0) && amountOutSwap != BigInt(0)) ||
+                ((orderType == 1 || multihop) &&
+                  tempQueryData?.aggregatorRes == undefined))
+              ? multihop
+                ? 3
+                : 2
+              : parseFloat(temppriceimpact.slice(0, -1)) > 5 &&
+                !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
+                (orderType != 0 || (slippage < BigInt(9500))) &&
+                !isLoading &&
+                !stateIsLoading
+                ? 1
+                : 0,
+          );
+          return temppriceimpact == 'NaN%' ? '0%' : temppriceimpact;
+        });
+        setTradeFee(
+          `${(Number(amountIn) * (100000 - Number(activeMarket.fee))) /
+            100000 /
+            10 ** Number(tokendict[tokenIn].decimals) >
+            0.0001
+            ? customRound(
+              (Number(amountIn) * (100000 - Number(activeMarket.fee))) /
+              100000 /
+              10 ** Number(tokendict[tokenIn].decimals),
+              2,
+            )
+            : (Number(amountIn) * (100000 - Number(activeMarket.fee))) /
+              100000 /
+              10 ** Number(tokendict[tokenIn].decimals) ==
+              0
+              ? '0'
+              : '<0.0001'
+          } ${tokendict[tokenIn].ticker}`,
+        );
+      }
+    } else if (stateIsLoading && !isWrap) {
+      setDisplayValuesLoading(true);
+    }
+  }, [
+    isLoading,
+    stateIsLoading,
+    amountIn,
+    amountOutSwap,
+    tokenIn,
+    tokenOut,
+    activechain,
+    isWrap,
+    addliquidityonly,
+    limitPrice,
+    highestBid,
+    lowestAsk,
+    activeMarket.quoteAddress,
+    activeMarket.baseAddress,
+    orderType,
+    slippage,
+    connected,
+    userchain,
+    walletTokenBalances[address],
+    multihop,
+    recipient,
+    mids,
+    scaleStart,
+    scaleEnd,
+    scaleOrders,
+    scaleSkew,
+  ]);
 
   // changed to quoteRefetch
   const handleRefreshQuote = useCallback(async (e: any) => {
@@ -11393,11 +11533,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     await quoteRefetch()
     setIsRefreshing(false);
   }, [isRefreshing, quoteRefetch]);
-
-  const isValidInput = (value: string) => {
-    const regex = /^[a-zA-Z0-9-]{0,20}$/;
-    return regex.test(value);
-  };
 
   const handleSetRef = async (used: string) => {
     let lookup
@@ -11463,75 +11598,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         setIsRefSigning(false);
         return false;
       }
-    }
-  };
-
-  const handleEditUsername = async (_usernameInput: any) => {
-    setUsernameError("");
-
-    if (_usernameInput.length < 3) {
-      setUsernameError(t("minUsernameLength"));
-      return;
-    }
-
-    if (_usernameInput.length > 20) {
-      setUsernameError(t("maxUsernameLength"));
-      return;
-    }
-
-    if (!/^[a-zA-Z0-9_]+$/.test(_usernameInput)) {
-      setUsernameError("Username can only contain letters, numbers, and underscores");
-      return;
-    }
-
-    setIsUsernameSigning(true);
-
-    try {
-      /* const read = (await readContracts(config, {
-        contracts: [
-          {
-            abi: CrystalReferralAbi,
-            address: settings.chainConfig[activechain].referralManager,
-            functionName: 'usernameToAddress',
-            args: [_usernameInput],
-          },
-        ]
-      })) as any[];
-
-      if (read[0].result !== '0x0000000000000000000000000000000000000000') {
-        setUsernameError(t("usernameAlreadyTaken"));
-        setIsUsernameSigning(false);
-        return;
-      }
-
-      const hash = await sendUserOperationAsync({
-        uo: {
-          target: settings.chainConfig[activechain].referralManager,
-          data: encodeFunctionData({
-            abi: CrystalReferralAbi,
-            functionName: 'setUsername',
-            args: [
-              _usernameInput
-            ],
-          }),
-          value: 0n,
-        },
-      }); */
-
-      setUsername(_usernameInput);
-      audio.currentTime = 0;
-      audio.play();
-      if (popup == 16) {
-        setpopup(0)
-      }
-      else {
-        setpopup(17);
-      }
-      return true;
-    } catch (error) {
-      return false;
-    } finally {
-      setIsUsernameSigning(false);
     }
   };
 
@@ -14680,24 +14746,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     } catch {
       return 'top-center';
     }
-  }); useEffect(() => {
-    try {
-      localStorage.setItem('crystal_toast_position', toastPosition);
-      window.dispatchEvent(new Event('toast-position-updated'));
-    } catch (error) {
-      console.error('Error saving toast position:', error);
-    }
-  }, [toastPosition]);
+  });
   const [transactionSounds, setTransactionSounds] = useState(true);
   const [volume, setVolume] = useState(75);
   const [buySound, setBuySound] = useState('Step Audio');
   const [sellSound, setSellSound] = useState('Step Audio');
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(new Audio(stepaudio));
   const lastVolumeRef = useRef<number>(volume);
 
-  // Helper functions
   const toggleDropdown = (key: string) => {
     setOpenDropdowns((prev) => ({
       ...prev,
@@ -14786,19 +14843,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     lastVolumeRef.current = volume;
     setIsDragging(false);
   }, [volume]);
-
-  // Effects
-  useEffect(() => {
-    audioRef.current = new Audio(stepaudio);
-    audioRef.current.volume = volume / 100;
-
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -17173,7 +17217,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   value={typedRefCode}
                   onChange={e => {
                     const value = e.target.value.trim();
-                    if (isValidInput(value) || value === "") {
+                    if (new RegExp(/^[a-zA-Z0-9-]{0,20}$/).test(value) || value === "") {
                       setTypedRefCode(value);
                       setError('')
                     }
@@ -17217,65 +17261,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 >
                   Skip
                 </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
-        {popup === 16 ? (
-          <div className="edit-username-bg">
-            <div ref={popupref} className="edit-username-container">
-              <div className="onboarding-split-container">
-                <div className="onboarding-content">
-                  <div className="onboarding-header">
-                    <h2 className="onboarding-title">{t("editUsername")}</h2>
-                    <p className="onboarding-subtitle">{t("editUsernameSubtitle")}</p>
-                  </div>
-
-                  <div className="onboarding-form">
-                    <div className="form-group">
-                      <label className="form-label">{t("yourWalletAddress")}</label>
-                      <div className="wallet-address">{address || "0x1234...5678"}</div>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="username" className="form-label">{t('username')}</label>
-                      <input
-                        type="text"
-                        id="username"
-                        className="username-input"
-                        placeholder="Enter a username"
-                        value={usernameInput || ""}
-                        onChange={e => {
-                          const value = e.target.value.trim();
-                          if (isValidInput(value) || value === "") {
-                            setUsernameInput(value);
-                          }
-                        }}
-                      />
-                      {usernameError && (
-                        <p className="username-error">{usernameError}</p>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    className={`create-username-button ${isUsernameSigning ? 'signing' : ''} ${!usernameInput.trim() ? 'disabled' : ''}`}
-                    onClick={async () => {
-                      if (!usernameInput.trim() || isUsernameSigning) return;
-                      await handleEditUsername(usernameInput);
-                    }}
-                    disabled={!usernameInput.trim() || isUsernameSigning}
-                  >
-                    {isUsernameSigning ? (
-                      <div className="button-content">
-                        <div className="loading-spinner" />
-                        {t('signTransaction')}
-                      </div>
-                    ) : (
-                      t("editUsername")
-                    )}
-                  </button>
-                </div>
-
               </div>
             </div>
           </div>
@@ -20369,7 +20354,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       <button
                         key={pos}
                         className={`position-option ${toastPosition === pos ? 'active' : ''}`}
-                        onClick={() => setToastPosition(pos)}
+                        onClick={() => {
+                          setToastPosition(pos);
+                          localStorage.setItem('crystal_toast_position', pos);
+                          window.dispatchEvent(new Event('toast-position-updated'));
+                        }}
                       >
                         <div className="position-preview">
                           <div className="toast-indicator"></div>
@@ -20430,7 +20419,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                               className="meme-volume-slider-mark"
                               data-active={volume >= mark}
                               data-percentage={mark}
-                              onClick={() => setVolume(mark)}
+                              onClick={() => {
+                                setVolume(mark)
+                              }}
                             >
                               {mark}%
                             </span>
@@ -20898,64 +20889,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             setTokenOut(tokenIn);
             if (amountIn != BigInt(0) || amountOutSwap != BigInt(0)) {
               if (!isWrap) {
-                if (switched == false) {
-                  setswitched(true);
-                  setStateIsLoading(true);
-                  setInputString('');
-                  setamountIn(BigInt(0));
-                  setamountOutSwap(amountIn);
-                  setoutputString(
-                    amountIn == BigInt(0)
-                      ? ''
-                      : String(
-                        customRound(
-                          Number(amountIn) /
-                          10 ** Number(tokendict[tokenIn].decimals),
-                          3,
-                        ),
-                      ),
-                  );
-                } else {
-                  setswitched(false);
-                  setStateIsLoading(true);
-                  setoutputString('');
-                  setamountOutSwap(BigInt(0));
-                  setamountIn(amountOutSwap);
-                  setInputString(
-                    amountOutSwap == BigInt(0)
-                      ? ''
-                      : String(
-                        customRound(
-                          Number(amountOutSwap) /
-                          10 ** Number(tokendict[tokenOut].decimals),
-                          3,
-                        ),
-                      ),
-                  );
-                  const percentage = !walletTokenBalances[address]?.[tokenOut]
-                    ? 0
-                    : Math.min(
-                      100,
-                      Math.floor(
-                        Number(
-                          (amountOutSwap * BigInt(100)) /
-                          walletTokenBalances[address]?.[tokenOut],
-                        ),
-                      ),
-                    );
-                  setSliderPercent(percentage);
-                  const slider = document.querySelector(
-                    '.balance-amount-slider',
-                  );
-                  const popup = document.querySelector(
-                    '.slider-percentage-popup',
-                  );
-                  if (slider && popup) {
-                    const rect = slider.getBoundingClientRect();
-                    (popup as HTMLElement).style.left =
-                      `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
-                  }
-                }
+                setStateIsLoading(true);
+                setInputString(outputString);
+                setamountIn(amountOutSwap);
+                setamountOutSwap(BigInt(0));
+                setoutputString('');
               }
             }
           }}
@@ -29095,7 +29033,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setChain={handleSetChain}
               />
             } />
-          <Route path="/sneakyswap" element={TradeLayout(tempswap)} />
+          <Route path="/swap" element={TradeLayout(tempswap)} />
           <Route path="/sneakymarket" element={TradeLayout(swap)} />
           <Route path="/sneakylimit" element={TradeLayout(limit)} />
           <Route path="/send" element={TradeLayout(send)} />
