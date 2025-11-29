@@ -3814,7 +3814,10 @@
 }
 
 .trenches-activity-header {
-  padding-left: 20px;
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  padding-left: 10px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   display: flex;
   justify-content: space-between;
@@ -4726,6 +4729,15 @@
 
 .meme-oc-section-content[data-section="positions"] .meme-oc-header,
 .meme-oc-section-content[data-section="positions"] .meme-portfolio-oc-item {
+  gap: 15px;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr 100px;
+  min-width: 800px;
+}
+
+
+
+.meme-oc-section-content[data-section="history"] .meme-oc-header,
+.meme-oc-section-content[data-section="history"] .meme-portfolio-oc-item {
   gap: 15px;
   grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr 100px;
   min-width: 800px;
