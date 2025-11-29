@@ -546,17 +546,21 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   const unrealizedClass = totalUnrealizedPnlNative >= 0 ? 'positive' : 'negative';
   const unrealizedSign = totalUnrealizedPnlNative >= 0 ? '+' : '-';
 
-  const totalRealizedPnlNative = traderPositions?.reduce((sum, p) => {
-    if (p.remainingTokens === 0) {
-      return sum + (p.receivedNative - p.spentNative);
-    }
-    return sum;
-  }, 0) || 0;
+const totalRealizedPnlNative = traderPositions?.reduce((sum, p) => {
+  if (p.remainingTokens > 0 && p.boughtTokens > 0) {
+    const soldPortion = p.soldTokens / p.boughtTokens;
+    const realizedPnl = p.receivedNative - (p.spentNative * soldPortion);
+    return sum + realizedPnl;
+  }
+  if (p.remainingTokens === 0) {
+    return sum + (p.receivedNative - p.spentNative);
+  }
+  return sum;
+}, 0) || 0;
   const totalRealizedPnlUsd = totalRealizedPnlNative * monUsdPrice;
   const realizedClass = totalRealizedPnlNative >= 0 ? 'positive' : 'negative';
   const realizedSign = totalRealizedPnlNative >= 0 ? '+' : '-';
 
-  // Calculate PNL ranges based on all positions
   const pnlRanges = traderPositions?.reduce((ranges, p) => {
     if (p.spentNative === 0) return ranges;
 

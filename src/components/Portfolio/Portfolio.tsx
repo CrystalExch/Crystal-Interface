@@ -2338,6 +2338,21 @@ const Portfolio: React.FC<PortfolioProps> = ({
     return { buyCount, sellCount, buyValue, sellValue, buyPercent, sellPercent };
   };
 
+  const totalRealizedPnlNative = positions?.reduce((sum, p) => {
+    if (p.remainingTokens > 0 && p.boughtTokens > 0) {
+      const soldPortion = p.soldTokens / p.boughtTokens;
+      const realizedPnl = p.receivedNative - (p.spentNative * soldPortion);
+      return sum + realizedPnl;
+    }
+    if (p.remainingTokens === 0) {
+      return sum + (p.receivedNative - p.spentNative);
+    }
+    return sum;
+  }, 0) || 0;
+
+  const totalRealizedPnlUsd = totalRealizedPnlNative * monUsdPrice;
+  const realizedClass = totalRealizedPnlNative >= 0 ? 'positive' : 'negative';
+  const realizedSign = totalRealizedPnlNative >= 0 ? '+' : '-';
   const renderTabContent = () => {
     switch (activeTab) {
       case 'spot':
@@ -3088,8 +3103,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
                   <div className="trenches-balance-item">
                     <div className="trenches-balance-label">Realized PNL</div>
-                    <div className={`trenches-balance-value-small ${isBlurred ? 'blurred' : ''}`}>
-                      $0
+                    <div className={`trenches-balance-value-small ${realizedClass} ${isBlurred ? 'blurred' : ''}`}>
+                      {realizedSign}${formatNumberWithCommas(Math.abs(totalRealizedPnlUsd), 2)}
                     </div>
                   </div>
                 </div>
@@ -3195,32 +3210,32 @@ const Portfolio: React.FC<PortfolioProps> = ({
             </div>
             <div className="trenches-main-content">
               <div className="trenches-activity-section">
-                  <div className="trenches-activity-header">
-                    <div className="trenches-activity-tabs">
-                      {[
-                        { key: 'positions', label: 'Active Positions' },
-                        { key: 'history', label: 'History' },
-                        { key: 'top100', label: 'Top 100' }
-                      ].map(tab => (
-                        <button
-                          key={tab.key}
-                          className={`trenches-activity-tab ${activeHistoryTab === tab.key ? 'active' : ''}`}
-                          onClick={() => setActiveHistoryTab(tab.key as 'positions' | 'history' | 'top100')}
-                        >
-                          {tab.label}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="trenches-activity-filters">
-                      <input
-                        type="text"
-                        placeholder="Search by name or address"
-                        className="trenches-search-input"
-                        value={trenchesSearchQuery}
-                        onChange={(e) => setTrenchesSearchQuery(e.target.value)}
-                      />
-                    </div>
+                <div className="trenches-activity-header">
+                  <div className="trenches-activity-tabs">
+                    {[
+                      { key: 'positions', label: 'Active Positions' },
+                      { key: 'history', label: 'History' },
+                      { key: 'top100', label: 'Top 100' }
+                    ].map(tab => (
+                      <button
+                        key={tab.key}
+                        className={`trenches-activity-tab ${activeHistoryTab === tab.key ? 'active' : ''}`}
+                        onClick={() => setActiveHistoryTab(tab.key as 'positions' | 'history' | 'top100')}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
                   </div>
+                  <div className="trenches-activity-filters">
+                    <input
+                      type="text"
+                      placeholder="Search by name or address"
+                      className="trenches-search-input"
+                      value={trenchesSearchQuery}
+                      onChange={(e) => setTrenchesSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
                 {activeHistoryTab === 'positions' && (
 
                   <div className="meme-oc-section-content" data-section="positions">
