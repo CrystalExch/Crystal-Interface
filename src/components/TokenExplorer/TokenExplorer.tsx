@@ -4841,14 +4841,16 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         </div>
 
         <div className="explorer-header-right">
-          <DisplayDropdown
-            settings={displaySettings}
-            onSettingsChange={setDisplaySettings}
-            quickAmountsSecond={quickAmountsSecond}
-            setQuickAmountSecond={setQuickAmountSecond}
-            activePresetsSecond={activePresetsSecond}
-            setActivePresetSecond={setActivePresetSecond}
-          />
+          <div className="explorer-display-settings-dropdown">
+            <DisplayDropdown
+              settings={displaySettings}
+              onSettingsChange={setDisplaySettings}
+              quickAmountsSecond={quickAmountsSecond}
+              setQuickAmountSecond={setQuickAmountSecond}
+              activePresetsSecond={activePresetsSecond}
+              setActivePresetSecond={setActivePresetSecond}
+            />
+          </div>
           <Tooltip content="Alerts">
             <button
               className="alerts-popup-trigger"
@@ -5113,6 +5115,16 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                     <div className="explorer-column-header">
                       <div className="explorer-column-title-section">
                         <h2 className="explorer-column-title">New Pairs</h2>
+                        <div className="explorer-mobile-display-settings-dropdown">
+                          <DisplayDropdown
+                            settings={displaySettings}
+                            onSettingsChange={setDisplaySettings}
+                            quickAmountsSecond={quickAmountsSecond}
+                            setQuickAmountSecond={setQuickAmountSecond}
+                            activePresetsSecond={activePresetsSecond}
+                            setActivePresetSecond={setActivePresetSecond}
+                          />
+                        </div>
                       </div>
                       <div className="explorer-column-title-right">
                         <div
@@ -5338,6 +5350,16 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                     <div className="explorer-column-header">
                       <div className="explorer-column-title-section">
                         <h2 className="explorer-column-title">Final Stretch</h2>
+                        <div className="explorer-mobile-display-settings-dropdown">
+                          <DisplayDropdown
+                            settings={displaySettings}
+                            onSettingsChange={setDisplaySettings}
+                            quickAmountsSecond={quickAmountsSecond}
+                            setQuickAmountSecond={setQuickAmountSecond}
+                            activePresetsSecond={activePresetsSecond}
+                            setActivePresetSecond={setActivePresetSecond}
+                          />
+                        </div>
                       </div>
                       <div className="explorer-column-title-right">
                         <div
@@ -5568,6 +5590,16 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                     <div className="explorer-column-header">
                       <div className="explorer-column-title-section">
                         <h2 className="explorer-column-title">Graduated</h2>
+                        <div className="explorer-mobile-display-settings-dropdown">
+                          <DisplayDropdown
+                            settings={displaySettings}
+                            onSettingsChange={setDisplaySettings}
+                            quickAmountsSecond={quickAmountsSecond}
+                            setQuickAmountSecond={setQuickAmountSecond}
+                            activePresetsSecond={activePresetsSecond}
+                            setActivePresetSecond={setActivePresetSecond}
+                          />
+                        </div>
                       </div>
                       <div className="explorer-column-title-right">
                         <div

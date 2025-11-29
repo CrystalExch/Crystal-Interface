@@ -2430,7 +2430,7 @@
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1020px) {
   .tracker-wallets-container {
     -webkit-overflow-scrolling: touch;
   }
@@ -2442,6 +2442,10 @@
   
   .tracker-detail-trades-body {
     -webkit-overflow-scrolling: touch;
+  }
+
+  .address{
+    display: none;
   }
   
   .tracker-live-trades .tracker-detail-trades-row,
@@ -4440,3 +4444,4 @@
   outline: none;
   border-color: #aaaecf;
 }
+

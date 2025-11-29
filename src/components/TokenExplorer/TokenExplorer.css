@@ -1212,12 +1212,39 @@
 
 @media(max-width:1020px) {
   .explorer-main {
-    height: calc(100vh - 70px)
+    height: calc(100vh - 115px)
   }
 
   .explorer-twitter-username {
     margin-bottom: -28px !important;
   }
+
+  .explorer-display-settings-dropdown {
+    display: none;
+  }
+
+  .explorer-column-title {
+    display: none;
+  }
+}
+
+
+.explorer-display-settings-dropdown {
+  border: 1px solid rgba(179, 184, 249, .15);
+  border-radius: 20px;
+  padding: 0.2rem 0;
+}
+
+@media(min-width:1021px) {
+  .explorer-mobile-display-settings-dropdown {
+    display: none;
+  }
+}
+
+.explorer-mobile-display-settings-dropdown {
+  border: 1px solid rgba(179, 184, 249, .15);
+  border-radius: 20px;
+  margin-left: 10px;
 }
 
 .explorer-container {
@@ -1228,11 +1255,6 @@
   width: 100%;
 }
 
-@media(max-width:1020px) {
-  .explorer-container {
-    height: calc(100vh - 131px) !important
-  }
-}
 
 .explorer-column:nth-child(1) .explorer-tokens-list {
   border-left: 1px solid transparent;
@@ -1642,6 +1664,11 @@
     display: flex !important;
   }
 
+  .display-dropdown-content {
+    left: 0;
+    right: auto;
+  }
+
   .explorer-columns {
     display: block;
     height: calc(100% - 60px);
@@ -1657,7 +1684,7 @@
   }
 
   .explorer-token-row {
-    height: 125px;
+    height: 130px !important;
   }
 }
 
@@ -1666,6 +1693,25 @@
     height: 140px;
   }
 
+  .explorer-holdings-section {
+    position: absolute;
+    bottom: 5px;
+    left: 10px;
+  }
+
+  .explorer-quick-buy-btn.size-small {
+    margin-top: 30px !important;
+
+  }
+
+  .explorer-quick-buy-btn.size-large {
+    margin-top: 40px !important;
+
+  }
+
+  .explorer-quick-buy-btn.size-mega {
+    margin-top: 30px !important;
+  }
 
 }
 
@@ -1678,26 +1724,35 @@
 
   }
 
-  .explorer-token-row {
-    height: 130px;
-  }
-
   .explorer-actions-section {
     margin-top: 15px;
+  }
+    .explorer-quick-buy-btn.size-small {
+    margin-top: 5px !important;
+
+  }
+
+  .explorer-quick-buy-btn.size-large {
+    margin-top: 20px !important;
+
+  }
+
+  .explorer-quick-buy-btn.size-mega {
+    margin-top: 5px !important;
   }
 }
 
 @media(max-width:450px) {
   .explorer-token-row {
-    height: 140px;
+    height: 140px !important;
   }
 
   .explorer-holdings-section {
     position: absolute;
-    bottom: 10px;
+    bottom: 5px;
     left: 10px;
-    margin-top: 5px;
   }
+
 }
 
 @media(max-width:360px) {
@@ -2484,29 +2539,15 @@
 .display-dropdown-trigger {
   align-items: center;
   background: transparent;
-  border: 1px solid rgba(179, 184, 249, .15);
-  border-radius: 20px;
   color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   display: inline-flex;
   font-size: 0.85rem;
   gap: 6px;
   letter-spacing: -0.3px;
-  padding: 0.4rem 0.75rem;
+  padding: 0.2rem 0.75rem;
   padding-left: 1rem;
   transition: all 0.2s ease;
-}
-
-.display-dropdown-trigger:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(179, 184, 249, 0.25);
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.display-dropdown-trigger.active {
-  background: rgba(170, 174, 207, 0.1);
-  border-color: #aaaecf;
-  color: #d8dbf5;
 }
 
 .display-dropdown-content {
@@ -4651,4 +4692,200 @@
   background: none;
   outline: none;
   width: 100%;
+}
+
+
+@media (max-width: 1020px) {
+
+  .explorer-quick-buy-btn,
+  .explorer-preset-pill,
+  .explorer-preset-pill-second,
+  .display-dropdown-trigger,
+  .alerts-popup-trigger,
+  .column-filter-icon,
+  .mobile-tab,
+  .display-tab,
+  .section-tab,
+  .status-tab,
+  .toggle-switch,
+  .row-toggle,
+  .style-toggle-btn,
+  .quickbuy-option,
+  .behavior-option,
+  .small-size-option,
+  .large-size-option,
+  .blacklist-tab,
+  .blacklist-add-btn,
+  .blacklist-remove-btn,
+  .blacklist-delete-all-btn,
+  .blacklist-import-btn,
+  .blacklist-export-btn,
+  .alerts-continue-btn,
+  .apply-button,
+  .wallet-action-btn,
+  .explorer-transparent-button,
+  .blacklist-category-option,
+  .sound-dropdown-item,
+  .sound-action-btn,
+  .metric-reset-btn,
+  .refresh-button,
+  .explorer-hide-button,
+  .explorer-blacklist-button,
+  .explorer-avatar-btn,
+  .explorer-website-btn,
+  .explorer-telegram-btn,
+  .explorer-discord-btn,
+  .explorer-copy-btn {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .explorer-quick-buy-btn:active,
+  .explorer-preset-pill:active,
+  .explorer-preset-pill-second:active,
+  .display-dropdown-trigger:active,
+  .alerts-popup-trigger:active,
+  .column-filter-icon:active,
+  .mobile-tab:active,
+  .display-tab:active,
+  .section-tab:active,
+  .status-tab:active,
+  .toggle-switch:active,
+  .row-toggle:active,
+  .style-toggle-btn:active,
+  .quickbuy-option:active,
+  .behavior-option:active,
+  .small-size-option:active,
+  .large-size-option:active,
+  .blacklist-tab:active,
+  .blacklist-add-btn:active,
+  .blacklist-remove-btn:active,
+  .blacklist-delete-all-btn:active,
+  .blacklist-import-btn:active,
+  .blacklist-export-btn:active,
+  .alerts-continue-btn:active,
+  .apply-button:active,
+  .wallet-action-btn:active,
+  .explorer-transparent-button:active,
+  .blacklist-category-option:active:not(:disabled),
+  .sound-dropdown-item:active,
+  .sound-action-btn:active,
+  .metric-reset-btn:active,
+  .refresh-button:active,
+  .explorer-hide-button:active,
+  .explorer-blacklist-button:active,
+  .explorer-avatar-btn:active,
+  .explorer-website-btn:active,
+  .explorer-telegram-btn:active,
+  .explorer-discord-btn:active,
+  .explorer-copy-btn:active {
+    transform: scale(0.95);
+  }
+
+  .explorer-quick-buy-btn.size-large:active,
+  .explorer-quick-buy-btn.size-mega:active,
+  .alerts-continue-btn:active,
+  .apply-button:active,
+  .blacklist-add-btn:active {
+    transform: scale(0.93);
+  }
+
+  .explorer-third-row.ultra-quickbuy-mode {
+    transition: all 0.3s ease, transform 0.1s ease;
+  }
+
+  .explorer-third-row.ultra-quickbuy-mode:active {
+    transform: scale(0.98);
+  }
+
+  .explorer-second-ultra-container {
+    transition: all 0.3s ease, transform 0.1s ease;
+  }
+
+  .explorer-second-ultra-container:active {
+    transform: scale(0.98);
+  }
+
+  .color-preview:active,
+  .metric-color-square:active,
+  .preset-color:active {
+    transform: scale(0.9) !important;
+  }
+
+  .filter-checkbox:active,
+  .quickbuy-wallet-checkbox:active {
+    transform: scale(0.9);
+  }
+
+  .explorer-quickbuy-input:active,
+  .explorer-quickbuy-input-second:active,
+  .blacklist-input:active,
+  .filter-input:active,
+  .keyword-input:active,
+  .quickbuy-hex-input:active {
+    transform: scale(0.99);
+  }
+
+  .alerts-close-button:active,
+  .blacklist-close-button:active,
+  .filters-close-button:active {
+    transform: scale(0.85);
+  }
+
+  .explorer-token-image-container:active {
+    transform: scale(0.97);
+  }
+
+  .column-drag-item:active {
+    transform: scale(0.98);
+    cursor: grabbing;
+  }
+
+  .explorer-quick-buy-btn:disabled:active,
+  .wallet-action-btn:disabled:active,
+  .blacklist-category-option:disabled:active {
+    transform: none;
+  }
+
+  .explorer-token-row.loading:active {
+    transform: none;
+  }
+
+  .quickbuy-wallet-item {
+    transition: all 0.2s ease, transform 0.1s ease;
+  }
+
+  .quickbuy-wallet-item:active {
+    transform: scale(0.98);
+  }
+
+  .protocol-crystal-container:active,
+  .protocol-nadfun-container:active {
+    transform: scale(0.95);
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  @keyframes scaleBack {
+    0% {
+      transform: scale(0.95);
+    }
+
+    50% {
+      transform: scale(1.02);
+    }
+
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .explorer-quick-buy-btn,
+  .alerts-continue-btn,
+  .apply-button,
+  .blacklist-add-btn {
+    animation-duration: 0.3s;
+    animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
 }

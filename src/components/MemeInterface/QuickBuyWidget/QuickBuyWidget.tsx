@@ -76,7 +76,7 @@ interface QuickBuyWidgetProps {
   createSubWallet: any;
   setOneCTDepositAddress: any;
   signTypedDataAsync: any;
-    transactionSounds: boolean;
+  transactionSounds: boolean;
   buySound: string;
   sellSound: string;
   volume: number;
@@ -273,14 +273,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   createSubWallet,
   setOneCTDepositAddress,
   signTypedDataAsync,
-    transactionSounds,
+  transactionSounds,
   buySound,
   sellSound,
   volume,
 }) => {
   const playTradeSound = useCallback((isBuy: boolean) => {
     if (!transactionSounds) return;
-    
+
     try {
       const soundToPlay = isBuy ? buySound : sellSound;
       const audio = new Audio(soundToPlay);
@@ -1187,8 +1187,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         if (!pk) continue;
         const isNadFun = token.source === 'nadfun';
         const contractAddress = isNadFun
-        ? token.migrated ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
-        : routerAddress;
+          ? token.migrated ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
+          : routerAddress;
 
         let uo;
         if (isNadFun) {
@@ -1331,7 +1331,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         variant: 'success',
         isLoading: false,
       });
-       playTradeSound(true);
+      playTradeSound(true);
     } catch (error: any) {
       updatePopup?.(txId, {
         title: 'Batch buy failed',
@@ -1410,8 +1410,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       tokenImage: token.image,
     });
     const sellContractAddress = isNadFun
-    ? token.migrated ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
-    : routerAddress;
+      ? token.migrated ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
+      : routerAddress;
 
     try {
       let skippedZero = 0;
@@ -1444,7 +1444,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
             if ((token?.allowances?.[addr.toLowerCase()]?.allowance || 0n) < amountWei) {
               const nonce = token?.allowances?.[addr.toLowerCase()]?.nonce ?? 0n
-            
+
               const signature = await signTypedDataAsync(
                 {
                   domain: {
@@ -1472,12 +1472,12 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                   },
                 }, wally?.privateKey
               )
-              
+
               const sigHex = signature.slice(2)
               const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
               const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
               const v = Number(`0x${sigHex.slice(128, 130)}`)
-              
+
               actions.push(encodeFunctionData({
                 abi: zeroXActionsAbi,
                 functionName: 'BASIC',
@@ -1628,7 +1628,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
             if ((token?.allowances?.[addr.toLowerCase()]?.allowance || 0n) < inputAmountWei) {
               const nonce = token?.allowances?.[addr.toLowerCase()]?.nonce ?? 0n
-              
+
               const signature = await signTypedDataAsync(
                 {
                   domain: {
@@ -1656,12 +1656,12 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                   },
                 }, wally?.privateKey
               )
-              
+
               const sigHex = signature.slice(2)
               const r = (`0x${sigHex.slice(0, 64)}`) as `0x${string}`
               const s = (`0x${sigHex.slice(64, 128)}`) as `0x${string}`
               const v = Number(`0x${sigHex.slice(128, 130)}`)
-              
+
               actions.push(encodeFunctionData({
                 abi: zeroXActionsAbi,
                 functionName: 'BASIC',
@@ -1763,7 +1763,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         variant: 'success',
         isLoading: false,
       });
-        playTradeSound(false);
+      playTradeSound(false);
     } catch (error: any) {
       updatePopup?.(txId, {
         title: 'Batch sell failed',
@@ -2226,16 +2226,17 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 <span className="quickbuy-percent">
                   {sellMode === 'percent' ? '%' : 'MON'}
                 </span>
-                <button
-                  className="sell-mode-toggle"
-                  onClick={handleSellModeToggle}
-                  title={`Switch to ${sellMode === 'percent' ? 'MON' : '%'} mode`}
-                >
-                  <img
-                    className="quickbuy-switch-icon"
-                    src={switchicon}
-                  />
-                </button>
+                <Tooltip content={`Switch to ${sellMode === 'percent' ? 'MON' : '%'} mode`}>
+                  <button
+                    className="sell-mode-toggle"
+                    onClick={handleSellModeToggle}
+                  >
+                    <img
+                      className="quickbuy-switch-icon"
+                      src={switchicon}
+                    />
+                  </button>
+                </Tooltip>
               </div>
               <div className="quickbuy-order-indicator">
                 <div className="quickbuy-token-balance">
@@ -2287,25 +2288,26 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                         className="edit-input"
                       />
                     ) : (
-                      <button
-                        className={`percent-btn ${isEditMode ? 'edit-mode' : ''} ${selectedSellPercent === value ? 'active' : ''} ${isDisabled ? 'insufficient' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
-                        onClick={() => handleSellButtonClick(value, index)}
-                        disabled={
-                          !account?.connected || (!isEditMode && isDisabled)
-                        }
-                        title={
-                          isDisabled && !isEditMode
-                            ? `Insufficient balance for ${value}`
-                            : ''
-                        }
-                      >
-                        <span className="button-amount">{value}</span>
-                        {keybindsEnabled && (
-                          <span className="keybind-indicator">
-                            {['a', 's', 'd', 'f'][index]}
-                          </span>
-                        )}
-                      </button>
+                      <Tooltip content={
+                        isDisabled && !isEditMode
+                          ? `Insufficient balance for ${value}`
+                          : ''
+                      }>
+                        <button
+                          className={`percent-btn ${isEditMode ? 'edit-mode' : ''} ${selectedSellPercent === value ? 'active' : ''} ${isDisabled ? 'insufficient' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
+                          onClick={() => handleSellButtonClick(value, index)}
+                          disabled={
+                            !account?.connected || (!isEditMode && isDisabled)
+                          }
+                        >
+                          <span className="button-amount">{value}</span>
+                          {keybindsEnabled && (
+                            <span className="keybind-indicator">
+                              {['a', 's', 'd', 'f'][index]}
+                            </span>
+                          )}
+                        </button>
+                      </Tooltip>
                     )}
                   </div>
                 );
@@ -2570,307 +2572,307 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
                 <div className="quickbuy-wallets-list">
 
-                    <>
-                      {walletsWithToken.map((wallet, index) => {
-                        const balance = getWalletBalance(wallet.address);
-                        const isActive = isWalletActive(wallet.privateKey);
-                        const isSelected = selectedWallets.has(wallet.address);
+                  <>
+                    {walletsWithToken.map((wallet, index) => {
+                      const balance = getWalletBalance(wallet.address);
+                      const isActive = isWalletActive(wallet.privateKey);
+                      const isSelected = selectedWallets.has(wallet.address);
 
-                        return (
+                      return (
+                        <div
+                          key={wallet.address}
+                          className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                          onClick={() =>
+                            toggleWalletSelection(wallet.address)
+                          }
+                        >
+                          <div className="quickbuy-wallet-checkbox-container">
+                            <input
+                              type="checkbox"
+                              className="quickbuy-wallet-checkbox selection"
+                              checked={isSelected}
+                              readOnly
+                            />
+                          </div>
+
                           <div
-                            key={wallet.address}
-                            className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-                            onClick={() =>
-                              toggleWalletSelection(wallet.address)
-                            }
+                            className="quickbuy-wallet-info"
                           >
-                            <div className="quickbuy-wallet-checkbox-container">
-                              <input
-                                type="checkbox"
-                                className="quickbuy-wallet-checkbox selection"
-                                checked={isSelected}
-                                readOnly
-                              />
+                            <div className="quickbuy-wallet-name">
+                              {getWalletName(wallet.address, index)}
+                              <Tooltip content="Primary Wallet">
+                                {isActive && (
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                    <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                    <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                    <path d="m20 9-3 9" />
+                                    <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                    <path d="M7 18 4 9" />
+                                    <circle cx="12" cy="4" r="2" />
+                                    <circle cx="20" cy="7" r="2" />
+                                    <circle cx="4" cy="7" r="2" />
+                                  </svg>
+                                )}
+                              </Tooltip>
                             </div>
-
                             <div
-                              className="quickbuy-wallet-info"
+                              className="quickbuy-wallet-address"
+                              onClick={(e) =>
+                                handleCopyAddress(wallet.address, e)
+                              }
+                              style={{ cursor: 'pointer' }}
                             >
-                              <div className="quickbuy-wallet-name">
-                                {getWalletName(wallet.address, index)}
-                                <Tooltip content="Primary Wallet">
-                                  {isActive && (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
-                                      <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-                                      <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
-                                      <path d="m20 9-3 9" />
-                                      <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
-                                      <path d="M7 18 4 9" />
-                                      <circle cx="12" cy="4" r="2" />
-                                      <circle cx="20" cy="7" r="2" />
-                                      <circle cx="4" cy="7" r="2" />
-                                    </svg>
-                                  )}
-                                </Tooltip>
-                              </div>
-                              <div
-                                className="quickbuy-wallet-address"
-                                onClick={(e) =>
-                                  handleCopyAddress(wallet.address, e)
-                                }
-                                style={{ cursor: 'pointer' }}
+                              {wallet.address.slice(0, 4)}...
+                              {wallet.address.slice(-4)}
+                              <svg
+                                className="quickbuy-wallet-address-copy-icon"
+                                width="11"
+                                height="11"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
                               >
-                                {wallet.address.slice(0, 4)}...
-                                {wallet.address.slice(-4)}
-                                <svg
-                                  className="quickbuy-wallet-address-copy-icon"
-                                  width="11"
-                                  height="11"
-                                  viewBox="0 0 24 24"
-                                  fill="currentColor"
-                                >
-                                  <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                                </svg>
-                              </div>
+                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                              </svg>
                             </div>
-                            <div className="quickbuy-wallet-balance">
-                              {(() => {
-                                const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-                                const balanceWei = walletTokenBalances[wallet.address]?.[
-                                  tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth)?.address || ''
-                                ] || 0n;
-                                const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+                          </div>
+                          <div className="quickbuy-wallet-balance">
+                            {(() => {
+                              const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                              const balanceWei = walletTokenBalances[wallet.address]?.[
+                                tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth)?.address || ''
+                              ] || 0n;
+                              const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
 
+                              return (
+                                <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                  <div
+                                    className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                  >
+                                    <img
+                                      src={monadicon}
+                                      className="quickbuy-wallet-mon-icon"
+                                    />
+                                    {formatNumberWithCommas(balance, 2)}
+                                  </div>
+                                </Tooltip>
+                              );
+                            })()}
+                          </div>
+                          <div className="quickbuy-wallet-tokens">
+                            {(() => {
+                              const tokenBalance = getWalletTokenBalance(
+                                wallet.address,
+                              );
+                              if (tokenBalance > 0) {
                                 return (
-                                  <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                  <Tooltip content="Tokens">
                                     <div
-                                      className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                      className={`quickbuy-wallet-token-amount ${isBlurred ? 'blurred' : ''}`}
                                     >
-                                      <img
-                                        src={monadicon}
-                                        className="quickbuy-wallet-mon-icon"
-                                      />
-                                      {formatNumberWithCommas(balance, 2)}
-                                    </div>
-                                  </Tooltip>
-                                );
-                              })()}
-                            </div>
-                            <div className="quickbuy-wallet-tokens">
-                              {(() => {
-                                const tokenBalance = getWalletTokenBalance(
-                                  wallet.address,
-                                );
-                                if (tokenBalance > 0) {
-                                  return (
-                                    <Tooltip content="Tokens">
-                                      <div
-                                        className={`quickbuy-wallet-token-amount ${isBlurred ? 'blurred' : ''}`}
-                                      >
-                                        {token.image && (
-                                          <img
-                                            src={token.image}
-                                            className="quickbuy-wallet-token-icon"
-                                            onError={(e) => {
-                                              e.currentTarget.style.display =
-                                                'none';
-                                            }}
-                                          />
+                                      {token.image && (
+                                        <img
+                                          src={token.image}
+                                          className="quickbuy-wallet-token-icon"
+                                          onError={(e) => {
+                                            e.currentTarget.style.display =
+                                              'none';
+                                          }}
+                                        />
+                                      )}
+                                      <span className="quickbuy-wallet-token-balance">
+                                        {formatNumberWithCommas(
+                                          tokenBalance,
+                                          2,
                                         )}
-                                        <span className="quickbuy-wallet-token-balance">
-                                          {formatNumberWithCommas(
-                                            tokenBalance,
-                                            2,
-                                          )}
-                                        </span>
-                                      </div>
-                                    </Tooltip>
-                                  );
-                                }
-                              })()}
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {hasTokenHolders && walletsWithoutToken.length > 0 && (
-                        <div className="quickbuy-wallets-section-label">
-                          <Tooltip
-                            content={
-                              allWithoutSelected
-                                ? 'Unselect wallets without tokens'
-                                : 'Select wallets without tokens'
-                            }
-                          >
-                            <button
-                              className="quickbuy-wallet-action-btn select-all"
-                              onClick={() => {
-                                if (allWithoutSelected) {
-                                  setSelectedWallets((prev) => {
-                                    const next = new Set(prev);
-                                    walletsWithoutTokenAddrs.forEach((a) =>
-                                      next.delete(a),
-                                    );
-                                    return next;
-                                  });
-                                } else {
-                                  setSelectedWallets((prev) => {
-                                    const next = new Set(prev);
-                                    walletsWithoutTokenAddrs.forEach((a) =>
-                                      next.add(a),
-                                    );
-                                    return next;
-                                  });
-                                }
-                              }}
-                            >
-                              {allWithoutSelected
-                                ? 'Unselect All'
-                                : 'Select All'}
-                            </button>
-                          </Tooltip>
-
-                          <Tooltip content="Select wallets with MON balance (no tokens)">
-                            <button
-                              className="quickbuy-wallet-action-btn select-all"
-                              onClick={selectAllWithBalanceWithoutToken}
-                            >
-                              Select All With Balance
-                            </button>
-                          </Tooltip>
-                        </div>
-                      )}
-
-                      {walletsWithoutToken.map((wallet, index) => {
-                        const balance = getWalletBalance(wallet.address);
-                        const isActive = isWalletActive(wallet.privateKey);
-                        const isSelected = selectedWallets.has(wallet.address);
-
-                        return (
-                          <div
-                            key={wallet.address}
-                            className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-                            onClick={() =>
-                              toggleWalletSelection(wallet.address)
-                            }
-                          >
-                            <div className="quickbuy-wallet-checkbox-container">
-                              <input
-                                type="checkbox"
-                                className="quickbuy-wallet-checkbox selection"
-                                checked={isSelected}
-                                readOnly
-                              />
-                            </div>
-
-                            <div
-                              className="quickbuy-wallet-info"
-                            >
-                              <div className="quickbuy-wallet-name">
-                                {getWalletName(wallet.address, index + walletsWithToken.length)}
-                                <Tooltip content="Primary Wallet">
-                                  {isActive && (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
-                                      <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-                                      <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
-                                      <path d="m20 9-3 9" />
-                                      <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
-                                      <path d="M7 18 4 9" />
-                                      <circle cx="12" cy="4" r="2" />
-                                      <circle cx="20" cy="7" r="2" />
-                                      <circle cx="4" cy="7" r="2" />
-                                    </svg>
-                                  )}
-                                </Tooltip>
-                              </div>
-                              <div
-                                className="quickbuy-wallet-address"
-                                onClick={(e) =>
-                                  handleCopyAddress(wallet.address, e)
-                                }
-                                style={{ cursor: 'pointer' }}
-                              >
-                                {wallet.address.slice(0, 4)}...
-                                {wallet.address.slice(-4)}
-                                <svg
-                                  className="quickbuy-wallet-address-copy-icon"
-                                  width="11"
-                                  height="11"
-                                  viewBox="0 0 24 24"
-                                  fill="currentColor"
-                                >
-                                  <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                                </svg>
-                              </div>
-                            </div>
-
-                            <div className="quickbuy-wallet-balance">
-                              {(() => {
-                                const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-                                const balanceWei = walletTokenBalances[wallet.address]?.[
-                                  tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth)?.address || ''
-                                ] || 0n;
-                                const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
-
-                                return (
-                                  <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
-                                    <div
-                                      className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
-                                    >
-                                      <img
-                                        src={monadicon}
-                                        className="quickbuy-wallet-mon-icon"
-                                        alt="MON"
-                                      />
-                                      {formatNumberWithCommas(balance, 2)}
+                                      </span>
                                     </div>
                                   </Tooltip>
                                 );
-                              })()}
+                              }
+                            })()}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {hasTokenHolders && walletsWithoutToken.length > 0 && (
+                      <div className="quickbuy-wallets-section-label">
+                        <Tooltip
+                          content={
+                            allWithoutSelected
+                              ? 'Unselect wallets without tokens'
+                              : 'Select wallets without tokens'
+                          }
+                        >
+                          <button
+                            className="quickbuy-wallet-action-btn select-all"
+                            onClick={() => {
+                              if (allWithoutSelected) {
+                                setSelectedWallets((prev) => {
+                                  const next = new Set(prev);
+                                  walletsWithoutTokenAddrs.forEach((a) =>
+                                    next.delete(a),
+                                  );
+                                  return next;
+                                });
+                              } else {
+                                setSelectedWallets((prev) => {
+                                  const next = new Set(prev);
+                                  walletsWithoutTokenAddrs.forEach((a) =>
+                                    next.add(a),
+                                  );
+                                  return next;
+                                });
+                              }
+                            }}
+                          >
+                            {allWithoutSelected
+                              ? 'Unselect All'
+                              : 'Select All'}
+                          </button>
+                        </Tooltip>
+
+                        <Tooltip content="Select wallets with MON balance (no tokens)">
+                          <button
+                            className="quickbuy-wallet-action-btn select-all"
+                            onClick={selectAllWithBalanceWithoutToken}
+                          >
+                            Select All With Balance
+                          </button>
+                        </Tooltip>
+                      </div>
+                    )}
+
+                    {walletsWithoutToken.map((wallet, index) => {
+                      const balance = getWalletBalance(wallet.address);
+                      const isActive = isWalletActive(wallet.privateKey);
+                      const isSelected = selectedWallets.has(wallet.address);
+
+                      return (
+                        <div
+                          key={wallet.address}
+                          className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
+                          onClick={() =>
+                            toggleWalletSelection(wallet.address)
+                          }
+                        >
+                          <div className="quickbuy-wallet-checkbox-container">
+                            <input
+                              type="checkbox"
+                              className="quickbuy-wallet-checkbox selection"
+                              checked={isSelected}
+                              readOnly
+                            />
+                          </div>
+
+                          <div
+                            className="quickbuy-wallet-info"
+                          >
+                            <div className="quickbuy-wallet-name">
+                              {getWalletName(wallet.address, index + walletsWithToken.length)}
+                              <Tooltip content="Primary Wallet">
+                                {isActive && (
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px', verticalAlign: 'middle' }}>
+                                    <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                                    <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                                    <path d="m20 9-3 9" />
+                                    <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                                    <path d="M7 18 4 9" />
+                                    <circle cx="12" cy="4" r="2" />
+                                    <circle cx="20" cy="7" r="2" />
+                                    <circle cx="4" cy="7" r="2" />
+                                  </svg>
+                                )}
+                              </Tooltip>
                             </div>
-                            <div className="quickbuy-wallet-tokens">
-                              {(() => {
-                                const tokenCount = getWalletTokenCount(
-                                  wallet.address,
-                                );
-                                if (tokenCount > 0) {
-                                  return (
-                                    <Tooltip content="Tokens">
-                                      <div className="quickbuy-wallet-token-count">
-                                        <div className="quickbuy-wallet-token-structure-icons">
-                                          <div className="token1"></div>
-                                          <div className="token2"></div>
-                                          <div className="token3"></div>
-                                        </div>
-                                        <span className="quickbuy-wallet-total-tokens">
-                                          {tokenCount}
-                                        </span>
-                                      </div>
-                                    </Tooltip>
-                                  );
-                                } else {
-                                  return (
-                                    <Tooltip content="Tokens">
-                                      <div className="quickbuy-wallet-token-count">
-                                        <div className="quickbuy-wallet-token-structure-icons">
-                                          <div className="token1"></div>
-                                          <div className="token2"></div>
-                                          <div className="token3"></div>
-                                        </div>
-                                        <span className="quickbuy-wallet-total-tokens">
-                                          0
-                                        </span>
-                                      </div>
-                                    </Tooltip>
-                                  );
-                                }
-                              })()}
+                            <div
+                              className="quickbuy-wallet-address"
+                              onClick={(e) =>
+                                handleCopyAddress(wallet.address, e)
+                              }
+                              style={{ cursor: 'pointer' }}
+                            >
+                              {wallet.address.slice(0, 4)}...
+                              {wallet.address.slice(-4)}
+                              <svg
+                                className="quickbuy-wallet-address-copy-icon"
+                                width="11"
+                                height="11"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                              >
+                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                              </svg>
                             </div>
                           </div>
-                        );
-                      })}
-                    </>
-                  
+
+                          <div className="quickbuy-wallet-balance">
+                            {(() => {
+                              const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                              const balanceWei = walletTokenBalances[wallet.address]?.[
+                                tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth)?.address || ''
+                              ] || 0n;
+                              const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+
+                              return (
+                                <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                  <div
+                                    className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                  >
+                                    <img
+                                      src={monadicon}
+                                      className="quickbuy-wallet-mon-icon"
+                                      alt="MON"
+                                    />
+                                    {formatNumberWithCommas(balance, 2)}
+                                  </div>
+                                </Tooltip>
+                              );
+                            })()}
+                          </div>
+                          <div className="quickbuy-wallet-tokens">
+                            {(() => {
+                              const tokenCount = getWalletTokenCount(
+                                wallet.address,
+                              );
+                              if (tokenCount > 0) {
+                                return (
+                                  <Tooltip content="Tokens">
+                                    <div className="quickbuy-wallet-token-count">
+                                      <div className="quickbuy-wallet-token-structure-icons">
+                                        <div className="token1"></div>
+                                        <div className="token2"></div>
+                                        <div className="token3"></div>
+                                      </div>
+                                      <span className="quickbuy-wallet-total-tokens">
+                                        {tokenCount}
+                                      </span>
+                                    </div>
+                                  </Tooltip>
+                                );
+                              } else {
+                                return (
+                                  <Tooltip content="Tokens">
+                                    <div className="quickbuy-wallet-token-count">
+                                      <div className="quickbuy-wallet-token-structure-icons">
+                                        <div className="token1"></div>
+                                        <div className="token2"></div>
+                                        <div className="token3"></div>
+                                      </div>
+                                      <span className="quickbuy-wallet-total-tokens">
+                                        0
+                                      </span>
+                                    </div>
+                                  </Tooltip>
+                                );
+                              }
+                            })()}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+
 
                   {subWallets.length < 10 && (
                     <div
