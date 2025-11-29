@@ -1666,18 +1666,13 @@
     height: 140px;
   }
 
-  .explorer-holdings-section {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    margin-top: 0 !important;
-  }
+
 }
 
 @media(max-width:1020px) {
   .explorer-holdings-section {
     position: relative;
-    bottom: -25px;
+    bottom: -15px;
     left: 0;
     margin-top: 0;
 
@@ -1692,7 +1687,7 @@
   }
 }
 
-/* @media(max-width:450px) {
+@media(max-width:450px) {
   .explorer-token-row {
     height: 140px;
   }
@@ -1703,7 +1698,7 @@
     left: 10px;
     margin-top: 5px;
   }
-} */
+}
 
 @media(max-width:360px) {
   .explorer-token-row {
