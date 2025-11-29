@@ -1262,59 +1262,68 @@ const Tracker: React.FC<TrackerProps> = ({
             Trades
           </button>
         </div>
-        {activeTab === 'wallets' && (
-          <div className="wtw-master-notification-toggle">
-            <Tooltip content={masterNotificationsEnabled ? "Disable all notifications" : "Enable all notifications"}>
-              <button
-                className="wtw-master-notification-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleToggleAllNotifications();
-                }}
-              >
-                {masterNotificationsEnabled ? (
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="rgb(235, 112, 112)" stroke="rgb(235, 112, 112)" strokeWidth="1.5">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255, 255, 255, 0.5)" strokeWidth="1.5">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                  </svg>
-                )}
-              </button>
-            </Tooltip>
-          </div>
-        )}
+          {activeTab === 'wallets' && (
+            <div className="wtw-master-notification-toggle">
+              <Tooltip content={masterNotificationsEnabled ? "Disable all notifications" : "Enable all notifications"}>
+                        <div className="import-main">
+
+                <button
+                  className="wtw-master-notification-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleAllNotifications();
+                  }}
+                >
+                  {masterNotificationsEnabled ? (
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="rgb(235, 112, 112)" stroke="rgb(235, 112, 112)" strokeWidth="1.5">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="rgba(255, 255, 255, 0.5)" strokeWidth="1.5">
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                  )}
+                </button>
+                </div>
+              </Tooltip>
+            </div>
+          )}
         <div className="wtw-widget-header-right">
           {activeTab === 'wallets' && (
-            <div className="wtw-header">
+            <div className="wallet-tracker-header">
               <div className="wtw-header-actions">
                 <div className="wtw-search-bar">
-                  <div className="wtw-search">
-                    <Search size={14} className="wtw-search-icon" />
-                    <input
-                      type="text"
-                      className="wtw-search-input"
-                      placeholder="Search by name or addr..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
+                  <div className="import-main">
+                    <div className="wtw-search">
+                      <Search size={14} className="wtw-search-icon" />
+                      <input
+                        type="text"
+                        className="wtw-search-input"
+                        placeholder="Search by name or addr..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
-                <button
-                  className="wtw-import-button"
-                  onClick={() => setShowImportPopup(true)}
-                >
-                  Import
-                </button>
-                <button
-                  className="wtw-export-button"
-                  onClick={handleExport}
-                >
-                  Export
-                </button>
+                <div className="import-main">
+                  <button
+                    className="wtw-import-button"
+                    onClick={() => setShowImportPopup(true)}
+                  >
+                    Import
+                  </button>
+                </div>
+                <div className="import-main">
+                  <button
+                    className="wtw-export-button"
+                    onClick={handleExport}
+                  >
+                    Export
+                  </button>
+                </div>
                 <button
                   className="wtw-add-button"
                   onClick={() => setShowAddWalletModal(true)}
@@ -1357,6 +1366,34 @@ const Tracker: React.FC<TrackerProps> = ({
             </div>
           )}
         </div>
+      </div>
+      <div className="trackers-mobile-row">
+              <div className="wtw-header-actions">
+                <div className="wtw-search-bar">
+                    <div className="wtw-search">
+                      <Search size={14} className="wtw-search-icon" />
+                      <input
+                        type="text"
+                        className="wtw-search-input"
+                        placeholder="Search by name or addr..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                </div>
+                  <button
+                    className="wtw-import-button"
+                    onClick={() => setShowImportPopup(true)}
+                  >
+                    Import
+                  </button>
+                  <button
+                    className="wtw-export-button"
+                    onClick={handleExport}
+                  >
+                    Export
+                  </button>
+              </div>
       </div>
 
 
@@ -1459,7 +1496,7 @@ const Tracker: React.FC<TrackerProps> = ({
                           )}
                           <div className="wtw-wallet-address">
                             <span className="address">
-                            {formatAddress(wallet.address)}
+                              {formatAddress(wallet.address)}
                             </span>
                             <button
                               className="wtw-copy-address"

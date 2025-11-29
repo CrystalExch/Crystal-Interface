@@ -83,7 +83,7 @@ body.sidebar-hover-overlay::before {
     justify-content: space-around;
     bottom: 0;
     margin: 0 !important;
-    padding-top: 4px !important;
+    padding-bottom: 4px !important;
     margin-left: 93px !important;
   }
 
