@@ -4716,12 +4716,12 @@
   height: 50px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
 }
 
 .trenches-time-controls{
   display: flex;
-  gap: 25px;
+  gap: 35px;
 }
 
 .trenches-time-button{
@@ -4858,4 +4858,25 @@
     border-right: none;
     border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   }
+}
+
+
+.trenches-balance-display {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #b1b1b7;
+  letter-spacing: -0.4px;
+}
+
+.trenches-wallet-token-count{
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  transform: scale(1.2);
+}
+
+.trenches-wallet-total-tokens{
+  font-size: .85rem;
+  color: white;
 }

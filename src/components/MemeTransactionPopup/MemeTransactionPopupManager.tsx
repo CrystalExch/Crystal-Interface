@@ -473,6 +473,8 @@ const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = 
     
     const yOffset = isBottom ? -y : y;
     
+    // For center positions, maintain the translateX(-50%)
+    // For left/right positions, only apply Y transform
     if (position.includes('center')) {
       return `translateX(-50%) translateY(${yOffset}px)`;
     }
@@ -482,6 +484,7 @@ const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = 
   return (
     <div 
       className="meme-transaction-popup-manager"
+      data-position={toastPosition}
       style={getPositionStyles(toastPosition)}
     >
       {visiblePopups.map((popup, index) => {

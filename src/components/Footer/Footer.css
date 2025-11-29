@@ -333,3 +333,18 @@
 .footer-wallet-item.active .quickbuy-wallet-name {
   color: #d8dcff;
 }
+
+
+.trenches-dropdown .footer-wallet-dropdown-panel {
+  bottom: auto;
+  top: 100%;
+  margin-top: 4px;
+  margin-bottom: 0;
+  transform: translateY(10px);
+}
+
+.trenches-dropdown .footer-wallet-dropdown-panel.visible {
+  transform: translateY(0);
+  margin-top: 4px;
+  margin-bottom: 0;
+}
