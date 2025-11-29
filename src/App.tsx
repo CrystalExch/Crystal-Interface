@@ -4594,8 +4594,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   useEffect(() => {
     let cancelled = false;
-    let startBlockNumber = '';
-    let endBlockNumber = '';
 
     (async () => {
       try {
@@ -4684,6 +4682,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               telegramHandle: telegram ?? "",
               twitterHandle: twitter ?? "",
               website: website ?? "",
+              sniperHolding: Number(m.snipers?.holdingShare / 1e16),
             };
 
             tokens.push(token);

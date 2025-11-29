@@ -3286,7 +3286,7 @@ const TokenRow = React.memo<{
                           : 'rgb(67, 254, 154)',
                     }}
                   >
-                    {token.sniperHolding.toFixed(1)}%
+                    {token.sniperHolding.toFixed(2)}%
                   </span>
                 </div>
               </Tooltip>

@@ -3814,6 +3814,9 @@
 }
 
 .trenches-activity-header {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
   padding-left: 20px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   display: flex;
@@ -4605,10 +4608,27 @@
   letter-spacing: -0.3px;
 }
 
+.trenches-main-content {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
 .trenches-activity-section {
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 50%;
+  background-color: rgb(6, 6, 6);
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
+  border-right: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.trenches-activity-feed {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 50%;
   background-color: rgb(6, 6, 6);
   border-top: 1px solid rgba(179, 184, 249, 0.1);
 }
@@ -4733,6 +4753,15 @@
 
 
 
+.meme-oc-section-content[data-section="history"] .meme-oc-header,
+.meme-oc-section-content[data-section="history"] .meme-portfolio-oc-item {
+  gap: 15px;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr 100px;
+  min-width: 800px;
+}
+
+
+
 .meme-portfolio-token-icon-container {
   position: relative;
   flex-shrink: 0;
@@ -4797,3 +4826,36 @@
   text-decoration: underline;
 }
 
+
+
+.trenches-activity-feed .meme-oc-section-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.trenches-activity-feed .meme-oc-header,
+.trenches-activity-feed .meme-portfolio-oc-item {
+  gap: 15px;
+  grid-template-columns: 0.8fr 1.2fr 1fr 1fr 0.8fr 100px;
+  min-width: 600px;
+}
+
+.trenches-activity-feed .meme-oc-items {
+  flex: 1;
+  overflow-y: auto;
+}
+
+@media (max-width: 1020px) {
+  .trenches-main-content {
+    flex-direction: column;
+  }
+
+  .trenches-activity-section,
+  .trenches-activity-feed {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  }
+}

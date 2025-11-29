@@ -360,7 +360,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
 }) => {
   const navigate = useNavigate();
   const crystal = '/CrystalLogo.png';
-
+  const [trenchesSearchQuery, setTrenchesSearchQuery] = useState<string>('');
   const fmt = (v: number, d = 2): string => {
     if (!Number.isFinite(v)) return String(v);
     if (v === 0) return '0';
@@ -603,7 +603,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Handle URL tab parameter (e.g., ?tab=wallets)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
@@ -1252,7 +1251,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
   const [_dragStartPoint, setDragStartPoint] = useState<{ x: number; y: number } | null>(null);
   const [isMultiDrag, setIsMultiDrag] = useState(false);
-
+  const [activeHistoryTab, setActiveHistoryTab] = useState<'positions' | 'history' | 'top100'>('positions');
   const [dragReorderState, setDragReorderState] = useState<DragReorderState>({
     draggedIndex: -1,
     dragOverIndex: -1,
@@ -2265,6 +2264,80 @@ const Portfolio: React.FC<PortfolioProps> = ({
     totalUnrealizedPnlNative >= 0 ? '+' : '-'
 
 
+  const calculatePerformanceRanges = () => {
+    if (!positions || positions.length === 0) {
+      return [
+        { label: '>500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
+        { label: '200% ~ 500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
+        { label: '0% ~ 200%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
+        { label: '0% ~ -50%', count: 0, color: 'rgb(247, 127, 125, 0.25)' },
+        { label: '<-50%', count: 0, color: 'rgb(247, 127, 125, 0.25)' }
+      ];
+    }
+
+    const ranges = {
+      above500: 0,
+      range200to500: 0,
+      range0to200: 0,
+      range0toNeg50: 0,
+      belowNeg50: 0
+    };
+
+    positions.forEach(p => {
+      if (p.spentNative === 0) return;
+
+      const pnlPercent = (p.pnlNative / p.spentNative) * 100;
+
+      if (pnlPercent > 500) {
+        ranges.above500++;
+      } else if (pnlPercent >= 200) {
+        ranges.range200to500++;
+      } else if (pnlPercent >= 0) {
+        ranges.range0to200++;
+      } else if (pnlPercent >= -50) {
+        ranges.range0toNeg50++;
+      } else {
+        ranges.belowNeg50++;
+      }
+    });
+
+    return [
+      { label: '>500%', count: ranges.above500, color: 'rgb(67, 254, 154, 0.25)' },
+      { label: '200% ~ 500%', count: ranges.range200to500, color: 'rgb(67, 254, 154, 0.25)' },
+      { label: '0% ~ 200%', count: ranges.range0to200, color: 'rgb(67, 254, 154, 0.25)' },
+      { label: '0% ~ -50%', count: ranges.range0toNeg50, color: 'rgb(247, 127, 125, 0.25)' },
+      { label: '<-50%', count: ranges.belowNeg50, color: 'rgb(247, 127, 125, 0.25)' }
+    ];
+  };
+
+  const calculateBuySellRatio = () => {
+    if (!positions || positions.length === 0) {
+      return { buyCount: 0, sellCount: 0, buyValue: 0, sellValue: 0, buyPercent: 50, sellPercent: 50 };
+    }
+
+    let buyCount = 0;
+    let sellCount = 0;
+    let buyValue = 0;
+    let sellValue = 0;
+
+    positions.forEach(p => {
+      if (p.boughtTokens > 0) {
+        buyCount++;
+        buyValue += p.spentNative;
+      }
+      if (p.soldTokens > 0) {
+        sellCount++;
+        sellValue += p.receivedNative;
+      }
+    });
+
+    const totalValue = buyValue + sellValue;
+    const buyPercent = totalValue > 0 ? (buyValue / totalValue) * 100 : 50;
+    const sellPercent = totalValue > 0 ? (sellValue / totalValue) * 100 : 50;
+
+    return { buyCount, sellCount, buyValue, sellValue, buyPercent, sellPercent };
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'spot':
@@ -2652,15 +2725,15 @@ const Portfolio: React.FC<PortfolioProps> = ({
                     <span className="drop-zone-count">{destinationWallets.length}</span>
                     {!client && (
                       <button
-                      className="clear-zone-button"
-                      onClick={() => {
-                        setDestinationWallets(prev => {
-                          if (prev.some(w => w.address === scaAddress)) {
-                            return prev.filter(w => w.address != scaAddress)
-                          }
-                          return [...prev, { address: scaAddress, balance: Number(walletTokenBalances?.[scaAddress]?.[settings.chainConfig[activechain].eth]) / 10 ** 18, name: "Main Wallet", type: "mainWallet", privateKey: "", index: 0, sourceZone: undefined }];
-                        });
-                      }}
+                        className="clear-zone-button"
+                        onClick={() => {
+                          setDestinationWallets(prev => {
+                            if (prev.some(w => w.address === scaAddress)) {
+                              return prev.filter(w => w.address != scaAddress)
+                            }
+                            return [...prev, { address: scaAddress, balance: Number(walletTokenBalances?.[scaAddress]?.[settings.chainConfig[activechain].eth]) / 10 ** 18, name: "Main Wallet", type: "mainWallet", privateKey: "", index: 0, sourceZone: undefined }];
+                          });
+                        }}
                       >
                         {!destinationWallets.some(w => w.address === scaAddress) ? 'Add Main' : 'Remove Main'}
                       </button>
@@ -3055,40 +3128,39 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   >
                     <svg fill="#cfcfdfff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16"><path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" /></svg>                  </button>
                 </div>
+                {(() => {
+                  const oneDayAgo = Date.now() / 1000 - 24 * 60 * 60;
+                  const totalPositions = positions?.length || 0;
+                  const activePositions = positions?.filter(p => p.remainingTokens > 0).length || 0;
 
-                <div className="trenches-performance-stats">
-                  <div className="trenches-performance-stat-row">
-                    <span className="trenches-performance-stat-label">1d Unrealized PNL</span>
-                    <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
-                      $0.00
-                    </span>
-                  </div>
-                  <div className="trenches-performance-stat-row">
-                    <span className="trenches-performance-stat-label">1d Realized PNL</span>
-                    <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
-                      $0.00
-                    </span>
-                  </div>
-                  <div className="trenches-performance-stat-row">
-                    <span className="trenches-performance-stat-label">1d TXNS</span>
-                    <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
-                      0.0/0
-                    </span>
-                  </div>
-                </div>
+                  return (
+                    <div className="trenches-performance-stats">
+                      <div className="trenches-performance-stat-row">
+                        <span className="trenches-performance-stat-label">Total Unrealized PNL</span>
+                        <span className={`trenches-performance-stat-value ${unrealizedClass} ${isBlurred ? 'blurred' : ''}`}>
+                          {unrealizedSign}${formatNumberWithCommas(Math.abs(totalUnrealizedPnlUsd), 2)}
+                        </span>
+                      </div>
+                      <div className="trenches-performance-stat-row">
+                        <span className="trenches-performance-stat-label">Total Realized PNL</span>
+                        <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                          $0.00
+                        </span>
+                      </div>
+                      <div className="trenches-performance-stat-row">
+                        <span className="trenches-performance-stat-label">Positions</span>
+                        <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                          {activePositions}/{totalPositions}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 <div className="trenches-performance-ranges">
-                  {[
-                    { label: '>500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
-                    { label: '200% ~ 500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
-                    { label: '0% ~ 200%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
-                    { label: '0% ~ -50%', count: 0, color: 'rgb(247, 127, 125, 0.25)' },
-                    { label: '<-50%', count: 0, color: 'rgb(247, 127, 125, 0.25)' }
-                  ].map((range, index) => (
+                  {calculatePerformanceRanges().map((range, index) => (
                     <div key={index} className="trenches-performance-range">
-                      <span
-                        className="trenches-performance-range-label"
-                      >
+                      <span className="trenches-performance-range-label">
                         <span style={{
                           display: 'inline-block',
                           width: '9px',
@@ -3104,258 +3176,549 @@ const Portfolio: React.FC<PortfolioProps> = ({
                     </div>
                   ))}
                 </div>
-                <div className="pnl-calendar-ratio-container">
-                  <div className="pnl-calendar-ratio-buy"></div>
-                  <div className="pnl-calendar-ratio-sell"></div>
-                </div>
+                {(() => {
+                  const { buyPercent, sellPercent } = calculateBuySellRatio();
+                  return (
+                    <div className="pnl-calendar-ratio-container">
+                      <div
+                        className="pnl-calendar-ratio-buy"
+                        style={{ width: `${buyPercent}%` }}
+                      ></div>
+                      <div
+                        className="pnl-calendar-ratio-sell"
+                        style={{ width: `${sellPercent}%` }}
+                      ></div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
-
-            <div className="trenches-activity-section">
-              <div className="trenches-activity-header">
-                <div className="trenches-activity-tabs">
-                  {[
-                    { key: 'positions', label: 'Active Positions' },
-                    { key: 'history', label: 'History' },
-                    { key: 'top100', label: 'Top 100' }
-                  ].map(tab => (
-                    <button
-                      key={tab.key}
-                      className={`trenches-activity-tab ${tab.key === 'positions' ? 'active' : ''}`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="trenches-activity-filters">
-                  <input
-                    type="text"
-                    placeholder="Search by name or address"
-                    className="trenches-search-input"
-                  />
-                </div>
-              </div>
-              <div className="meme-oc-section-content" data-section="positions">
-                <div className="meme-oc-header">
-                  <div className="meme-oc-header-cell">Token</div>
-                  <div
-                    className="meme-oc-header-cell clickable"
-                    style={{
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}
-                  >
-                    Bought
-                  </div>
-                  <div className="meme-oc-header-cell">Sold</div>
-                  <div className="meme-oc-header-cell">Remaining</div>
-                  <div className="meme-oc-header-cell">PnL</div>
-                  <div className="meme-oc-header-cell">Actions</div>
-                </div>
-                <div className="meme-oc-items">
-                  {!positions || positions.filter(p => p.remainingTokens > 0).length === 0 ? (
-                    <div className="meme-oc-empty">
-                      No active positions
+            <div className="trenches-main-content">
+              <div className="trenches-activity-section">
+                  <div className="trenches-activity-header">
+                    <div className="trenches-activity-tabs">
+                      {[
+                        { key: 'positions', label: 'Active Positions' },
+                        { key: 'history', label: 'History' },
+                        { key: 'top100', label: 'Top 100' }
+                      ].map(tab => (
+                        <button
+                          key={tab.key}
+                          className={`trenches-activity-tab ${activeHistoryTab === tab.key ? 'active' : ''}`}
+                          onClick={() => setActiveHistoryTab(tab.key as 'positions' | 'history' | 'top100')}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
                     </div>
-                  ) : (
-                    [...(positions || []).filter(p => p.remainingTokens > 0)]
-                      .sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0))
-                      .map((p) => {
-                        const tokenShort =
-                          p.symbol ||
-                          `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
-                        const tokenImageUrl = p.imageUrl || null;
+                    <div className="trenches-activity-filters">
+                      <input
+                        type="text"
+                        placeholder="Search by name or address"
+                        className="trenches-search-input"
+                        value={trenchesSearchQuery}
+                        onChange={(e) => setTrenchesSearchQuery(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                {activeHistoryTab === 'positions' && (
 
-                        return (
-                          <div key={p.tokenId} className="meme-portfolio-oc-item">
-                            <div className="meme-oc-cell">
-                              <div className="oc-meme-wallet-info">
-                                <div
-                                  className="meme-portfolio-token-info"
-                                  style={{ display: 'flex', alignItems: 'center' }}
-                                >
-                                  <div className="meme-portfolio-token-icon-container">
-                                    {tokenImageUrl && !tokenImageErrors[p.tokenId] ? (
-                                      <img
-                                        src={tokenImageUrl}
-                                        alt={p.symbol}
-                                        className="meme-portfolio-token-icon"
-                                        onError={() => {
-                                          setTokenImageErrors(prev => ({ ...prev, [p.tokenId]: true }));
-                                        }}
-                                      />
-                                    ) : (
-                                      <div
-                                        className="meme-portfolio-token-icon"
-                                        style={{
-                                          backgroundColor: 'rgba(35, 34, 41, .7)',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          fontSize: (p.symbol || '').length <= 3 ? '14px' : '12px',
-                                          fontWeight: '200',
-                                          color: '#ffffff',
-                                          borderRadius: '1px',
-                                          letterSpacing: (p.symbol || '').length > 3 ? '-0.5px' : '0',
+                  <div className="meme-oc-section-content" data-section="positions">
+                    <div className="meme-oc-header">
+                      <div className="meme-oc-header-cell">Token</div>
+                      <div
+                        className="meme-oc-header-cell clickable"
+                        style={{
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        Bought
+                      </div>
+                      <div className="meme-oc-header-cell">Sold</div>
+                      <div className="meme-oc-header-cell">Remaining</div>
+                      <div className="meme-oc-header-cell">PnL</div>
+                      <div className="meme-oc-header-cell">Actions</div>
+                    </div>
+                    <div className="meme-oc-items">
+                      {!positions || positions.filter(p => p.remainingTokens > 0).length === 0 ? (
+                        <div className="meme-oc-empty">
+                          No active positions
+                        </div>
+                      ) : (
+                        (() => {
+                          const filteredPositions = [...(positions || [])
+                            .filter(p => p.remainingTokens > 0)]
+                            .filter(p => {
+                              if (!trenchesSearchQuery.trim()) return true;
+
+                              const searchLower = trenchesSearchQuery.toLowerCase();
+                              const tokenName = (p.name || '').toLowerCase();
+                              const tokenSymbol = (p.symbol || '').toLowerCase();
+                              const tokenAddress = p.tokenId.toLowerCase();
+
+                              return tokenName.includes(searchLower) ||
+                                tokenSymbol.includes(searchLower) ||
+                                tokenAddress.includes(searchLower);
+                            })
+                            .sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0));
+
+                          if (filteredPositions.length === 0) {
+                            return (
+                              <div className="meme-oc-empty">
+                                No positions found matching "{trenchesSearchQuery}"
+                              </div>
+                            );
+                          }
+
+                          return filteredPositions.map((p) => {
+                            const tokenShort =
+                              p.symbol ||
+                              `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
+                            const tokenImageUrl = p.imageUrl || null;
+                            return (
+                              <div key={p.tokenId} className="meme-portfolio-oc-item">
+                                <div className="meme-oc-cell">
+                                  <div className="oc-meme-wallet-info">
+                                    <div
+                                      className="meme-portfolio-token-info"
+                                      style={{ display: 'flex', alignItems: 'center' }}
+                                    >
+                                      <div className="meme-portfolio-token-icon-container">
+                                        {tokenImageUrl && !tokenImageErrors[p.tokenId] ? (
+                                          <img
+                                            src={tokenImageUrl}
+                                            alt={p.symbol}
+                                            className="meme-portfolio-token-icon"
+                                            onError={() => {
+                                              setTokenImageErrors(prev => ({ ...prev, [p.tokenId]: true }));
+                                            }}
+                                          />
+                                        ) : (
+                                          <div
+                                            className="meme-portfolio-token-icon"
+                                            style={{
+                                              backgroundColor: 'rgba(35, 34, 41, .7)',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              fontSize: (p.symbol || '').length <= 3 ? '14px' : '12px',
+                                              fontWeight: '200',
+                                              color: '#ffffff',
+                                              borderRadius: '1px',
+                                              letterSpacing: (p.symbol || '').length > 3 ? '-0.5px' : '0',
+                                            }}
+                                          >
+                                            {(p.symbol || p.name || '?').slice(0, 2).toUpperCase()}
+                                          </div>
+                                        )}
+
+                                        <div className={`portfolio-launchpad-indicator ${p.source === 'nadfun' ? 'nadfun' : ''}`
+                                        }>
+                                          <Tooltip content="nad.fun">
+                                            <svg width="10" height="10" viewBox="0 0 32 32" className="header-launchpad-logo" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                              <defs>
+                                                <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                  <stop offset="0%" stopColor="#7C55FF" stopOpacity="1" />
+                                                  <stop offset="100%" stopColor="#AD5FFB" stopOpacity="1" />
+                                                </linearGradient>
+                                              </defs>
+                                              <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
+                                            </svg>
+                                          </Tooltip>
+                                        </div>
+                                      </div>
+                                      <span
+                                        className="portfolio-meme-wallet-address portfolio-meme-clickable-token"
+                                        onClick={() => {
+                                          navigate(`/meme/${p.tokenId}`)
                                         }}
                                       >
-                                        {(p.symbol || p.name || '?').slice(0, 2).toUpperCase()}
-                                      </div>
-                                    )}
-
-                                    <div className={`portfolio-launchpad-indicator ${p.source === 'nadfun' ? 'nadfun' : ''}`
-                                  }>
-                                  <Tooltip content="nad.fun">
-                                      <svg width="10" height="10" viewBox="0 0 32 32" className="header-launchpad-logo" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <defs>
-                                          <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
-                                            <stop offset="0%" stopColor="#7C55FF" stopOpacity="1" />
-                                            <stop offset="100%" stopColor="#AD5FFB" stopOpacity="1" />
-                                          </linearGradient>
-                                        </defs>
-                                        <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
-                                      </svg>
-                                  </Tooltip>
+                                        <span className="meme-token-symbol-portfolio">
+                                          {tokenShort}
+                                        </span>
+                                        <span className="meme-token-name-portfolio">
+                                          {p.name}
+                                        </span>
+                                      </span>
                                     </div>
                                   </div>
-                                  <span
-                                    className="portfolio-meme-wallet-address portfolio-meme-clickable-token"
-                                    onClick={() => {
-                                      navigate(`/meme/${p.tokenId}`)
-                                    }}
-                                  >
-                                    <span className="meme-token-symbol-portfolio">
-                                      {tokenShort}
-                                    </span>
-                                    <span className="meme-token-name-portfolio">
-                                      {p.name}
-                                    </span>
-                                  </span>
                                 </div>
-                              </div>
-                            </div>
-                            <div className="meme-oc-cell">
-                              <div className="meme-trade-info">
-                                <div className="meme-ordercenter-info">
-                                  {amountMode === 'MON' && (
-                                    <img
-                                      className="meme-portfolio-monad-icon"
-                                      src={monadicon}
-                                      alt="MONAD"
-                                    />
-                                  )}
-                                  <span className={`meme-usd-amount buy ${isBlurred ? 'blurred' : ''}`}>
-                                    {fmtAmount(
-                                      p.spentNative,
-                                      amountMode,
-                                      monUsdPrice,
-                                    )}{' '}
-                                  </span>
+                                <div className="meme-oc-cell">
+                                  <div className="meme-trade-info">
+                                    <div className="meme-ordercenter-info">
+                                      {amountMode === 'MON' && (
+                                        <img
+                                          className="meme-portfolio-monad-icon"
+                                          src={monadicon}
+                                          alt="MONAD"
+                                        />
+                                      )}
+                                      <span className={`meme-usd-amount buy ${isBlurred ? 'blurred' : ''}`}>
+                                        {fmtAmount(
+                                          p.spentNative,
+                                          amountMode,
+                                          monUsdPrice,
+                                        )}{' '}
+                                      </span>
+                                    </div>
+                                    <span className="meme-token-amount">
+                                      {fmt(p.boughtTokens)} {p.symbol || ''}
+                                    </span>
+                                  </div>
                                 </div>
-                                <span className="meme-token-amount">
-                                  {fmt(p.boughtTokens)} {p.symbol || ''}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="meme-oc-cell">
-                              <div className="meme-trade-info">
-                                <div className="meme-ordercenter-info">
-                                  {amountMode === 'MON' && (
-                                    <img
-                                      className="meme-portfolio-monad-icon"
-                                      src={monadicon}
-                                      alt="MONAD"
-                                    />
-                                  )}
-                                  <span className={`meme-usd-amount sell ${isBlurred ? 'blurred' : ''}`}>
-                                    {fmtAmount(
-                                      p.receivedNative,
-                                      amountMode,
-                                      monUsdPrice,
+                                <div className="meme-oc-cell">
+                                  <div className="meme-trade-info">
+                                    <div className="meme-ordercenter-info">
+                                      {amountMode === 'MON' && (
+                                        <img
+                                          className="meme-portfolio-monad-icon"
+                                          src={monadicon}
+                                          alt="MONAD"
+                                        />
+                                      )}
+                                      <span className={`meme-usd-amount sell ${isBlurred ? 'blurred' : ''}`}>
+                                        {fmtAmount(
+                                          p.receivedNative,
+                                          amountMode,
+                                          monUsdPrice,
+                                        )}
+                                      </span>
+                                    </div>
+                                    <span className="meme-token-amount">
+                                      {fmt(p.soldTokens)} {p.symbol || ''}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="meme-oc-cell">
+                                  <div className="meme-remaining-info">
+                                    <div className="meme-remaining-container">
+                                      <span className={`meme-remaining ${isBlurred ? 'blurred' : ''}`}>
+                                        <img
+                                          src={monadicon}
+                                          className="meme-portfolio-monad-icon"
+                                        />
+                                        {fmt(p.remainingTokens * (p.lastPrice || 0))}
+                                      </span>
+                                      <span className="meme-remaining-percentage">
+                                        {p.remainingPct.toFixed(0)}%
+                                      </span>
+                                    </div>
+                                    <div className="meme-remaining-bar">
+                                      <div
+                                        className="meme-remaining-bar-fill"
+                                        style={{
+                                          width: `${Math.max(0, Math.min(100, p.remainingPct)).toFixed(0)}%`,
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="meme-oc-cell">
+                                  <div className="meme-ordercenter-info">
+                                    {amountMode === 'MON' && (
+                                      <img
+                                        className="meme-portfolio-pnl-monad-icon"
+                                        src={monadicon}
+                                        alt="MONAD"
+                                      />
                                     )}
-                                  </span>
+                                    <div className="meme-pnl-info">
+                                      <span
+                                        className={`meme-portfolio-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}
+                                      >
+                                        {p.pnlNative >= 0 ? '+' : '-'}
+                                        {fmtAmount(
+                                          Math.abs(p.pnlNative),
+                                          amountMode,
+                                          monUsdPrice,
+                                        )}{' '}
+                                        (
+                                        {p.spentNative > 0
+                                          ? ((p.pnlNative / p.spentNative) * 100).toFixed(
+                                            1,
+                                          )
+                                          : '0.0'}
+                                        %)
+                                      </span>
+                                    </div>
+                                  </div>
                                 </div>
-                                <span className="meme-token-amount">
-                                  {fmt(p.soldTokens)} {p.symbol || ''}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="meme-oc-cell">
-                              <div className="meme-remaining-info">
-                                <div className="meme-remaining-container">
-                                  <span className={`meme-remaining ${isBlurred ? 'blurred' : ''}`}>
-                                    <img
-                                      src={monadicon}
-                                      className="meme-portfolio-monad-icon"
-                                    />
-                                    {fmt(p.remainingTokens * (p.lastPrice || 0))}
-                                  </span>
-                                  <span className="meme-remaining-percentage">
-                                    {p.remainingPct.toFixed(0)}%
-                                  </span>
-                                </div>
-                                <div className="meme-remaining-bar">
-                                  <div
-                                    className="meme-remaining-bar-fill"
-                                    style={{
-                                      width: `${Math.max(0, Math.min(100, p.remainingPct)).toFixed(0)}%`,
+                                <div className="meme-oc-cell">
+                                  <button
+                                    className="meme-action-btn"
+                                    onClick={() => {
+                                      if (onSellPosition) {
+                                        onSellPosition(p, (p.remainingTokens * (p.lastPrice || 0)).toString());
+                                      }
                                     }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                            <div className="meme-oc-cell">
-                              <div className="meme-ordercenter-info">
-                                {amountMode === 'MON' && (
-                                  <img
-                                    className="meme-portfolio-pnl-monad-icon"
-                                    src={monadicon}
-                                    alt="MONAD"
-                                  />
-                                )}
-                                <div className="meme-pnl-info">
-                                  <span
-                                    className={`meme-portfolio-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}
                                   >
-                                    {p.pnlNative >= 0 ? '+' : '-'}
-                                    {fmtAmount(
-                                      Math.abs(p.pnlNative),
-                                      amountMode,
-                                      monUsdPrice,
-                                    )}{' '}
-                                    (
-                                    {p.spentNative > 0
-                                      ? ((p.pnlNative / p.spentNative) * 100).toFixed(
-                                        1,
-                                      )
-                                      : '0.0'}
-                                    %)
-                                  </span>
+                                    Sell
+                                  </button>
                                 </div>
                               </div>
-                            </div>
-                            <div className="meme-oc-cell">
-                              <button
-                                className="meme-action-btn"
-                                onClick={() => {
-                                  if (onSellPosition) {
-                                    onSellPosition(p, (p.remainingTokens * (p.lastPrice || 0)).toString());
-                                  }
-                                }}
-                              >
-                                Sell
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })
-                  )}
+                            );
+                          });
+                        })()
+
+                      )}
+                    </div>
+                  </div>
+                )}
+                {activeHistoryTab === 'history' && (
+                  <div className="meme-oc-section-content" data-section="history">
+                    <div className="meme-oc-header">
+                      <div className="meme-oc-header-cell">Token</div>
+                      <div className="meme-oc-header-cell">Bought</div>
+                      <div className="meme-oc-header-cell">Sold</div>
+                      <div className="meme-oc-header-cell">Remaining</div>
+                      <div className="meme-oc-header-cell">PnL</div>
+                      <div className="meme-oc-header-cell">Actions</div>
+                    </div>
+                    <div className="meme-oc-items">
+                      {!positions || positions.filter(p => p.remainingTokens === 0).length === 0 ? (
+                        <div className="meme-oc-empty">
+                          No trading history
+                        </div>
+                      ) : (
+                        (() => {
+                          const filteredHistory = [...(positions || [])
+                            .filter(p => p.remainingTokens === 0)]
+                            .filter(p => {
+                              if (!trenchesSearchQuery.trim()) return true;
+
+                              const searchLower = trenchesSearchQuery.toLowerCase();
+                              const tokenName = (p.name || '').toLowerCase();
+                              const tokenSymbol = (p.symbol || '').toLowerCase();
+                              const tokenAddress = p.tokenId.toLowerCase();
+
+                              return tokenName.includes(searchLower) ||
+                                tokenSymbol.includes(searchLower) ||
+                                tokenAddress.includes(searchLower);
+                            })
+                            .sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0));
+
+                          if (filteredHistory.length === 0) {
+                            return (
+                              <div className="meme-oc-empty">
+                                No history found matching "{trenchesSearchQuery}"
+                              </div>
+                            );
+                          }
+
+                          return filteredHistory.map((p) => {
+                            const tokenShort =
+                              p.symbol ||
+                              `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
+                            const tokenImageUrl = p.imageUrl || null;
+                            return (
+                              <div key={p.tokenId} className="meme-portfolio-oc-item meme-portfolio-oc-item-5-col">
+                                <div className="meme-oc-cell">
+                                  <div className="oc-meme-wallet-info">
+                                    <div className="meme-portfolio-token-info">
+                                      <div className="meme-portfolio-token-icon-container">
+                                        {tokenImageUrl && !tokenImageErrors[p.tokenId] ? (
+                                          <img
+                                            src={tokenImageUrl}
+                                            alt={p.symbol}
+                                            className="meme-portfolio-token-icon"
+                                            onError={() => {
+                                              setTokenImageErrors(prev => ({ ...prev, [p.tokenId]: true }));
+                                            }}
+                                          />
+                                        ) : (
+                                          <div
+                                            className="meme-portfolio-token-icon"
+                                            style={{
+                                              backgroundColor: 'rgba(35, 34, 41, .7)',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              fontSize: (p.symbol || '').length <= 3 ? '14px' : '12px',
+                                              fontWeight: '200',
+                                              color: '#ffffff',
+                                              borderRadius: '1px',
+                                              letterSpacing: (p.symbol || '').length > 3 ? '-0.5px' : '0',
+                                            }}
+                                          >
+                                            {(p.symbol || p.name || '?').slice(0, 2).toUpperCase()}
+                                          </div>
+                                        )}
+                                        <div className={`portfolio-launchpad-indicator ${p.source === 'nadfun' ? 'nadfun' : ''}`}>
+                                          <Tooltip content="nad.fun">
+                                            <svg width="10" height="10" viewBox="0 0 32 32" className="header-launchpad-logo" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                              <defs>
+                                                <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                  <stop offset="0%" stopColor="#7C55FF" stopOpacity="1" />
+                                                  <stop offset="100%" stopColor="#AD5FFB" stopOpacity="1" />
+                                                </linearGradient>
+                                              </defs>
+                                              <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
+                                            </svg>
+                                          </Tooltip>
+                                        </div>
+                                      </div>
+                                      <span
+                                        className="portfolio-meme-wallet-address portfolio-meme-clickable-token"
+                                        onClick={() => navigate(`/meme/${p.tokenId}`)}
+                                      >
+                                        <span className="meme-token-symbol-portfolio">
+                                          {tokenShort}
+                                        </span>
+                                        <span className="meme-token-name-portfolio">
+                                          {p.name}
+                                        </span>
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="meme-oc-cell">
+                                  <div className="meme-trade-info">
+                                    <div className="meme-ordercenter-info">
+                                      {amountMode === 'MON' && (
+                                        <img className="meme-portfolio-monad-icon" src={monadicon} alt="MONAD" />
+                                      )}
+                                      <span className={`meme-usd-amount buy ${isBlurred ? 'blurred' : ''}`}>
+                                        {fmtAmount(p.spentNative, amountMode, monUsdPrice)}
+                                      </span>
+                                    </div>
+                                    <span className="meme-token-amount">
+                                      {fmt(p.boughtTokens)} {p.symbol || ''}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="meme-oc-cell">
+                                  <div className="meme-trade-info">
+                                    <div className="meme-ordercenter-info">
+                                      {amountMode === 'MON' && (
+                                        <img className="meme-portfolio-monad-icon" src={monadicon} alt="MONAD" />
+                                      )}
+                                      <span className={`meme-usd-amount sell ${isBlurred ? 'blurred' : ''}`}>
+                                        {fmtAmount(p.receivedNative, amountMode, monUsdPrice)}
+                                      </span>
+                                    </div>
+                                    <span className="meme-token-amount">
+                                      {fmt(p.soldTokens)} {p.symbol || ''}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="meme-oc-cell">
+                                  <div className="meme-remaining-info">
+                                    <div className="meme-remaining-container">
+                                      <span className={`meme-remaining ${isBlurred ? 'blurred' : ''}`}>
+                                        <img src={monadicon} className="meme-portfolio-monad-icon" />
+                                        {fmt(p.remainingTokens * (p.lastPrice || 0))}
+                                      </span>
+                                      <span className="meme-remaining-percentage">
+                                        {p.remainingPct.toFixed(0)}%
+                                      </span>
+                                    </div>
+                                    <div className="meme-remaining-bar">
+                                      <div
+                                        className="meme-remaining-bar-fill"
+                                        style={{
+                                          width: `${Math.max(0, Math.min(100, p.remainingPct)).toFixed(0)}%`,
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="meme-oc-cell">
+                                  <div className="meme-ordercenter-info">
+                                    {amountMode === 'MON' && (
+                                      <img className="meme-portfolio-pnl-monad-icon" src={monadicon} alt="MONAD" />
+                                    )}
+                                    <div className="meme-pnl-info">
+                                      <span className={`meme-portfolio-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'} ${isBlurred ? 'blurred' : ''}`}>
+                                        {p.pnlNative >= 0 ? '+' : '-'}
+                                        {fmtAmount(Math.abs(p.pnlNative), amountMode, monUsdPrice)} (
+                                        {p.spentNative > 0
+                                          ? ((p.pnlNative / p.spentNative) * 100).toFixed(1)
+                                          : '0.0'}%)
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="meme-oc-cell">
+                                  <button
+                                    className="share-pnl-btn"
+                                    onClick={() => {
+                                      const shareData = {
+                                        tokenAddress: p.tokenId,
+                                        tokenSymbol: p.symbol || 'Unknown',
+                                        tokenName: p.name || 'Unknown Token',
+                                        userAddress: address,
+                                        externalUserStats: {
+                                          balance: p.remainingTokens,
+                                          amountBought: p.boughtTokens,
+                                          amountSold: p.soldTokens,
+                                          valueBought: p.spentNative,
+                                          valueSold: p.receivedNative,
+                                          valueNet: p.pnlNative,
+                                        },
+                                        currentPrice: p.lastPrice || 0,
+                                      };
+
+                                      if (onMarketSelect) {
+                                        onMarketSelect(shareData);
+                                      }
+
+                                      if (setpopup) {
+                                        setpopup(27);
+                                      }
+                                    }}
+                                    title="Share PNL"
+                                  >
+                                    <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
+                                      <path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {activeHistoryTab === 'top100' && (
+                  <div className="meme-oc-section-content" data-section="top100">
+                    <div className="meme-oc-empty">
+                      Top 100 coming soon
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="trenches-activity-feed">
+                <div className="trenches-activity-header">
+                  <div className="trenches-activity-tabs">
+                    <button className="trenches-activity-tab active">
+                      Activity
+                    </button>
+                  </div>
+                </div>
+
+                <div className="meme-oc-section-content">
+                  <div className="meme-oc-header">
+                    <div className="meme-oc-header-cell">Type</div>
+                    <div className="meme-oc-header-cell">Token</div>
+                    <div className="meme-oc-header-cell">Amount</div>
+                    <div className="meme-oc-header-cell">Market Cap</div>
+                    <div className="meme-oc-header-cell">Age</div>
+                    <div className="meme-oc-header-cell">Explorer</div>
+                  </div>
+                  <div className="meme-oc-items">
+                    <div className="meme-oc-empty">
+                      No recent activity
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-
             {pnlCalendarLoading && (
               <div className="pnl-calendar-backdrop">
                 <div className="pnl-calendar-container">
@@ -3452,17 +3815,36 @@ const Portfolio: React.FC<PortfolioProps> = ({
                       </button>
                     </div>
                   </div>
-                  <div className="pnl-calendar-gradient-bar">
-                    <span className="pnl-calendar-total-label">$0</span>
-                    <div className="pnl-calendar-ratio-container">
-                      <div className="pnl-calendar-ratio-buy"></div>
-                      <div className="pnl-calendar-ratio-sell"></div>
-                    </div>
-                    <div className="pnl-calendar-gradient-labels">
-                      <span><span className="pnl-buy-color">0</span> / <span className="pnl-buy-color">$0</span></span>
-                      <span><span className="pnl-sell-color">0</span> / <span className="pnl-sell-color">$0</span></span>
-                    </div>
-                  </div>
+                  {(() => {
+                    const { buyCount, sellCount, buyValue, sellValue, buyPercent, sellPercent } = calculateBuySellRatio();
+                    const totalPnl = totalUnrealizedPnlNative;
+
+                    return (
+                      <div className="pnl-calendar-gradient-bar">
+                        <span className="pnl-calendar-total-label">
+                          {totalPnl >= 0 ? '+' : ''}${formatNumberWithCommas(totalPnl * monUsdPrice, 2)}
+                        </span>
+                        <div className="pnl-calendar-ratio-container">
+                          <div
+                            className="pnl-calendar-ratio-buy"
+                            style={{ width: `${buyPercent}%` }}
+                          ></div>
+                          <div
+                            className="pnl-calendar-ratio-sell"
+                            style={{ width: `${sellPercent}%` }}
+                          ></div>
+                        </div>
+                        <div className="pnl-calendar-gradient-labels">
+                          <span>
+                            <span className="pnl-buy-color">{buyCount}</span> / <span className="pnl-buy-color">${formatNumberWithCommas(buyValue * monUsdPrice, 2)}</span>
+                          </span>
+                          <span>
+                            <span className="pnl-sell-color">{sellCount}</span> / <span className="pnl-sell-color">${formatNumberWithCommas(sellValue * monUsdPrice, 2)}</span>
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="pnl-calendar-content">
                     <div className="pnl-calendar-weekdays">
                       {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
