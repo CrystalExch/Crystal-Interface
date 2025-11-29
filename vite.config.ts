@@ -14,7 +14,7 @@ export default defineConfig({
         secure: true
       },
       '/api': {
-        target: 'https://pro.edgex.exchange',
+        target: 'https://testnet.edgex.exchange',
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api/, '/api'),
         secure: true

@@ -20141,7 +20141,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   const qs = Object.keys(payload).sort().map(k => `${k}=${(payload as any)[k]}`).join('&')
                   const signature = computeHmac("sha256", Buffer.from(btoa(encodeURI(perpsKeystore.apiSecret))), toUtf8Bytes(ts + "POST" + path + qs)).slice(2)
                   const [metaRes] = await Promise.all([
-                    fetch("https://perps.crystal.exchange/api/v1/private/account/updateLeverageSetting", {
+                    fetch(`${settings.perpsEndpoint}/api/v1/private/account/updateLeverageSetting`, {
                       method: "POST",
                       headers: {
                         "Content-Type": "application/json",
