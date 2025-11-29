@@ -1749,15 +1749,16 @@
 }
 
 .explorer-app-title.inactive {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(217, 222, 243, 0.6);
   cursor: not-allowed;
 }
 
 .explorer-app-title {
   color: #d9dbf6;
-  font-size: 1.25rem;
-  letter-spacing: -0.5px;
+  font-size: 1.15rem;
+  letter-spacing: -.75px;
   margin: 0;
+  font-weight: 400;
 }
 
 .explorer-header-right {
