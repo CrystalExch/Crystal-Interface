@@ -3640,9 +3640,9 @@ interface TokenExplorerProps {
   alertSettingsRef: any;
   pausedColumnRef: any;
   pausedTokenQueueRef: React.MutableRefObject<{
-    new: Token[];
-    graduating: Token[];
-    graduated: Token[];
+    new: string[];
+    graduating: string[];
+    graduated: string[];
   }>;
   dispatch: any;
   hidden: any;
@@ -4101,17 +4101,11 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     if (wasPaused) {
       const status = wasPaused as Token['status'];
       if (pausedTokenQueueRef.current[status].length > 0) {
-        dispatch({
-          type: 'ADD_QUEUED_TOKENS',
-          payload: {
-            status: status,
-            tokens: pausedTokenQueueRef.current[status]
-          }
-        });
         pausedTokenQueueRef.current[status] = [];
       }
     }
   }, [dispatch]);
+
   const copyToClipboard = useCallback(
     async (
       text: string,

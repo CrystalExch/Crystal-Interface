@@ -279,7 +279,6 @@ type Action =
   | { type: 'HIDE_TOKEN'; id: string }
   | { type: 'SHOW_TOKEN'; id: string }
   | { type: 'SET_LOADING'; id: string; loading: boolean; buttonType?: 'primary' | 'secondary' }
-  | { type: 'ADD_QUEUED_TOKENS'; payload: { status: Token['status']; tokens: Token[] } };
 
 interface AlertSettings {
   soundAlertsEnabled: boolean;
@@ -2208,9 +2207,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const explorerReconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pausedColumnRef = useRef<any>(null);
   const pausedTokenQueueRef = useRef<{
-    new: Token[];
-    graduating: Token[];
-    graduated: Token[];
+    new: string[];
+    graduating: string[];
+    graduated: string[];
   }>({
     new: [],
     graduating: [],
@@ -4405,19 +4404,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         return { ...state, loading: l };
       }
 
-      case 'ADD_QUEUED_TOKENS': {
-        return {
-          ...state,
-          tokensByStatus: {
-            ...state.tokensByStatus,
-            [action.payload.status]: [
-              ...action.payload.tokens,
-              ...state.tokensByStatus[action.payload.status]
-            ]
-          }
-        };
-      }
-
       default:
         return state;
     }
@@ -4479,8 +4465,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       };
 
       if (token.status && pausedColumnRef.current == token.status) {
-        pausedTokenQueueRef.current[token.status].push(token as any);
-        return;
+        pausedTokenQueueRef.current[token.status].push(args.token);
       }
       dispatch({ type: 'ADD_MARKET', token });
       if (alertSettingsRef.current.soundAlertsEnabled) {
@@ -5542,10 +5527,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 .catch(() => { });
 
               if (pausedColumnRef.current === 'new') {
-                pausedTokenQueueRef.current['new'].push(newToken);
-              } else {
-                dispatch({ type: 'ADD_MARKET', token: newToken });
+                pausedTokenQueueRef.current['new'].push(tokenAddress);
               }
+              dispatch({ type: 'ADD_MARKET', token: newToken });
             }
             else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveBuy || log.topics?.[0] == NAD_FUN_EVENTS.CurveSell) {
               const syncEvent = wsPendingLogsRef.current.get(log.hash);

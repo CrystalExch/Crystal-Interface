@@ -195,9 +195,9 @@ interface SpectraWidgetProps {
   hidden: Set<string>;
   dispatch: any;
   pausedTokenQueueRef: React.MutableRefObject<{
-    new: Token[];
-    graduating: Token[];
-    graduated: Token[];
+    new: string[];
+    graduating: string[];
+    graduated: string[];
   }>;
   pausedColumnRef: any;
 }
@@ -2840,6 +2840,7 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
     },
     [showLoadingPopup, updatePopup],
   );
+
   const handleColumnHover = useCallback(() => {
     pausedColumnRef.current = activeTab;
     setPausedColumn(activeTab);
@@ -2854,17 +2855,11 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
     if (wasPaused) {
       const status = wasPaused as Token['status'];
       if (pausedTokenQueueRef.current[status].length > 0) {
-        dispatch({
-          type: 'ADD_QUEUED_TOKENS',
-          payload: {
-            status: status,
-            tokens: pausedTokenQueueRef.current[status]
-          }
-        });
         pausedTokenQueueRef.current[status] = [];
       }
     }
   }, [activeTab, dispatch]);
+
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [pausedColumn, setPausedColumn] = useState<Token['status'] | null>(null);
   const filteredTokens = useMemo(() => {
