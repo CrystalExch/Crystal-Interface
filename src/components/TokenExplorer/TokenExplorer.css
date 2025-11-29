@@ -1664,10 +1664,11 @@
     display: flex !important;
   }
 
-    .display-dropdown-content {
+  .display-dropdown-content {
     left: 0;
     right: auto;
   }
+
   .explorer-columns {
     display: block;
     height: calc(100% - 60px);
@@ -1683,7 +1684,7 @@
   }
 
   .explorer-token-row {
-    height: 125px;
+    height: 130px !important;
   }
 }
 
@@ -1692,6 +1693,25 @@
     height: 140px;
   }
 
+  .explorer-holdings-section {
+    position: absolute;
+    bottom: 5px;
+    left: 10px;
+  }
+
+  .explorer-quick-buy-btn.size-small {
+    margin-top: 30px !important;
+
+  }
+
+  .explorer-quick-buy-btn.size-large {
+    margin-top: 40px !important;
+
+  }
+
+  .explorer-quick-buy-btn.size-mega {
+    margin-top: 30px !important;
+  }
 
 }
 
@@ -1704,26 +1724,35 @@
 
   }
 
-  .explorer-token-row {
-    height: 130px;
-  }
-
   .explorer-actions-section {
     margin-top: 15px;
+  }
+    .explorer-quick-buy-btn.size-small {
+    margin-top: 5px !important;
+
+  }
+
+  .explorer-quick-buy-btn.size-large {
+    margin-top: 20px !important;
+
+  }
+
+  .explorer-quick-buy-btn.size-mega {
+    margin-top: 5px !important;
   }
 }
 
 @media(max-width:450px) {
   .explorer-token-row {
-    height: 140px;
+    height: 140px !important;
   }
 
   .explorer-holdings-section {
     position: absolute;
-    bottom: 10px;
+    bottom: 5px;
     left: 10px;
-    margin-top: 5px;
   }
+
 }
 
 @media(max-width:360px) {
@@ -4667,6 +4696,7 @@
 
 
 @media (max-width: 1020px) {
+
   .explorer-quick-buy-btn,
   .explorer-preset-pill,
   .explorer-preset-pill-second,
@@ -4841,9 +4871,11 @@
     0% {
       transform: scale(0.95);
     }
+
     50% {
       transform: scale(1.02);
     }
+
     100% {
       transform: scale(1);
     }
