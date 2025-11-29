@@ -466,7 +466,24 @@ const Loader = () => {
     </>
   );
 }
-
+interface Position {
+  tokenId: string;
+  symbol?: string;
+  name?: string;
+  metadataCID?: string;
+  imageUrl?: string;
+  boughtTokens: number;
+  soldTokens: number;
+  spentNative: number;
+  receivedNative: number;
+  remainingTokens: number;
+  remainingPct: number;
+  pnlNative: number;
+  lastPrice?: number;
+  source?: 'nadfun' | 'crystal' | string;
+  status?: 'new' | 'graduating' | 'graduated';
+  bondingPercentage?: number;
+}
 function App({ stateloading, setstateloading, addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
   const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
   const lastProcessedTradeId = useRef<string | null>(null);
@@ -510,6 +527,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const presets = loadSellPresets();
     return presets[1]?.priority || '0.01';
   });
+
+
+
 
   const handleBuyPresetSelect = useCallback(
     (preset: number) => {
@@ -1350,7 +1370,61 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [vaultInputStrings, setVaultInputStrings] = useState<{ quote: string, base: string }>({ quote: '', base: '' });
   const [selectedVault, setselectedVault] = useState<any | null>(null);
   const [isVaultDepositSigning, setIsVaultDepositSigning] = useState(false);
-  const [isVaultWithdrawSigning, setIsVaultWithdrawSigning] = useState(false);
+  const [isVaultWithdrawSigning, setIsVaultWithdrawSigning] = useState(false); const [trenchesSelectedWallets, setTrenchesSelectedWallets] = useState<string[]>([]);
+  const [trenchesPositions, setTrenchesPositions] = useState<Position[]>([]);
+  const [trenchesLoading, setTrenchesLoading] = useState(false);
+
+  const fetchTrenchesPositions = useCallback(async (walletAddresses: string[]) => {
+    if (walletAddresses.length === 0) {
+      setTrenchesPositions([]);
+      return;
+    }
+
+    setTrenchesLoading(true);
+
+    try {
+      const positionsPromises = walletAddresses.map(async (address) => {
+        const response = await fetch(`/api/positions/${address}`);
+        const data = await response.json();
+        return data.positions || [];
+      });
+
+      const allPositionsArrays = await Promise.all(positionsPromises);
+
+      const combinedPositions = allPositionsArrays.flat();
+
+      const positionsMap = new Map<string, Position>();
+
+      combinedPositions.forEach(position => {
+        const existing = positionsMap.get(position.tokenId);
+
+        if (existing) {
+          existing.boughtTokens += position.boughtTokens;
+          existing.soldTokens += position.soldTokens;
+          existing.spentNative += position.spentNative;
+          existing.receivedNative += position.receivedNative;
+          existing.remainingTokens += position.remainingTokens;
+          existing.pnlNative = existing.receivedNative + (existing.remainingTokens * (existing.lastPrice || 0)) - existing.spentNative;
+          existing.remainingPct = existing.boughtTokens > 0 ? (existing.remainingTokens / existing.boughtTokens) * 100 : 0;
+        } else {
+          positionsMap.set(position.tokenId, { ...position });
+        }
+      });
+
+      setTrenchesPositions(Array.from(positionsMap.values()));
+    } catch (error) {
+      console.error('Error fetching trenches positions:', error);
+      setTrenchesPositions([]);
+    } finally {
+      setTrenchesLoading(false);
+    }
+  }, []);
+
+  const handleTrenchesWalletsChange = useCallback((wallets: string[]) => {
+    setTrenchesSelectedWallets(wallets);
+    fetchTrenchesPositions(wallets);
+  }, [fetchTrenchesPositions]);
+
   const updateNotificationPosition = (position: string) => {
     if (previewTimer) {
       clearTimeout(previewTimer);
@@ -4238,9 +4312,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         };
         action.tokens.forEach((t) => buckets[t.status].push(t));
         buckets.graduating = buckets.graduating
-        .slice()
-        .sort((a, b) => (b.bondingPercentage ?? 0) - (a.bondingPercentage ?? 0));
-        
+          .slice()
+          .sort((a, b) => (b.bondingPercentage ?? 0) - (a.bondingPercentage ?? 0));
+
         return { ...state, tokensByStatus: buckets };
       }
 
@@ -14598,22 +14672,22 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       </ul>
     </div>
   );
-  
+
   const [displayNotifications, setDisplayNotifications] = useState(true);
-const [toastPosition, setToastPosition] = useState<string>(() => {
-  try {
-    return localStorage.getItem('crystal_toast_position') || 'top-center';
-  } catch {
-    return 'top-center';
-  }
-});  useEffect(() => {
-  try {
-    localStorage.setItem('crystal_toast_position', toastPosition);
-    window.dispatchEvent(new Event('toast-position-updated'));
-  } catch (error) {
-    console.error('Error saving toast position:', error);
-  }
-}, [toastPosition]);
+  const [toastPosition, setToastPosition] = useState<string>(() => {
+    try {
+      return localStorage.getItem('crystal_toast_position') || 'top-center';
+    } catch {
+      return 'top-center';
+    }
+  }); useEffect(() => {
+    try {
+      localStorage.setItem('crystal_toast_position', toastPosition);
+      window.dispatchEvent(new Event('toast-position-updated'));
+    } catch (error) {
+      console.error('Error saving toast position:', error);
+    }
+  }, [toastPosition]);
   const [transactionSounds, setTransactionSounds] = useState(true);
   const [volume, setVolume] = useState(75);
   const [buySound, setBuySound] = useState('Step Audio');
@@ -28841,6 +28915,10 @@ const [toastPosition, setToastPosition] = useState<string>(() => {
                 monUsdPrice={monUsdPrice}
                 selectedWallets={selectedWallets}
                 setSelectedWallets={setSelectedWallets}
+                onTrenchesWalletsChange={handleTrenchesWalletsChange}
+                trenchesPositions={trenchesPositions}
+                trenchesLoading={trenchesLoading}
+                refreshTrenchesData={() => fetchTrenchesPositions(trenchesSelectedWallets)}
               />
             } />
           <Route path="/trackers"

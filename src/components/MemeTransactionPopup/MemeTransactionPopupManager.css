@@ -1,7 +1,5 @@
 .meme-transaction-popup-manager {
   pointer-events: none;
-  width: auto;
-  max-width: 400px;
 }
 
 .meme-transaction-popup-wrapper {
@@ -13,15 +11,4 @@
   transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
               opacity 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
   will-change: transform;
-}
-
-/* Center-aligned popups - keep centered */
-.meme-transaction-popup-manager[data-position*="center"] .meme-transaction-popup-wrapper {
-  left: 50%;
-}
-
-/* Right-aligned popups - align to right */
-.meme-transaction-popup-manager[data-position*="right"] .meme-transaction-popup-wrapper {
-  right: 0;
-  left: auto;
 }

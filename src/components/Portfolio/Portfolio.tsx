@@ -287,6 +287,10 @@ interface PortfolioProps {
   monUsdPrice: number;
   selectedWallets: any;
   setSelectedWallets: any;
+  onTrenchesWalletsChange?: (wallets: string[]) => void;
+  trenchesPositions?: Position[];
+  trenchesLoading?: boolean;
+  refreshTrenchesData?: () => void;
 }
 
 type PortfolioTab = 'spot' | 'Perpetuals' | 'wallets' | 'trenches';
@@ -357,7 +361,11 @@ const Portfolio: React.FC<PortfolioProps> = ({
   setOneCTDepositAddress,
   monUsdPrice,
   selectedWallets,
-  setSelectedWallets
+  setSelectedWallets,
+  onTrenchesWalletsChange,
+  trenchesPositions,
+  trenchesLoading,
+  refreshTrenchesData,
 }) => {
   const formatBalanceCompact = (value: number): string => {
     if (value >= 1_000_000_000) {
@@ -630,6 +638,15 @@ const Portfolio: React.FC<PortfolioProps> = ({
   useEffect(() => {
     localStorage.setItem('crystal_trenches_selected_wallets', JSON.stringify(Array.from(trenchesSelectedWallets)));
   }, [trenchesSelectedWallets]);
+  useEffect(() => {
+    localStorage.setItem('crystal_trenches_selected_wallets', JSON.stringify(Array.from(trenchesSelectedWallets)));
+  }, [trenchesSelectedWallets]);
+
+  useEffect(() => {
+    if (onTrenchesWalletsChange) {
+      onTrenchesWalletsChange(Array.from(trenchesSelectedWallets));
+    }
+  }, [trenchesSelectedWallets, onTrenchesWalletsChange]);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (trenchesDropdownRef.current && !trenchesDropdownRef.current.contains(event.target as Node)) {
@@ -2339,11 +2356,13 @@ const Portfolio: React.FC<PortfolioProps> = ({
     setTotalVolume(parseFloat(volume.toFixed(2)));
   }, [tradehistory, days]);
 
-  const totalUnrealizedPnl = positions?.reduce((sum, p) => {
+  const activePositions = trenchesPositions || positions || [];
+
+  const totalUnrealizedPnl = activePositions.reduce((sum, p) => {
     return sum + (p.pnlNative || 0)
-  }, 0) || 0
-  const totalUnrealizedPnlNative =
-    positions?.reduce((sum, p) => sum + (p.pnlNative || 0), 0) || 0
+  }, 0)
+
+  const totalUnrealizedPnlNative = activePositions.reduce((sum, p) => sum + (p.pnlNative || 0), 0)
 
   const totalUnrealizedPnlUsd = totalUnrealizedPnlNative * monUsdPrice
 
@@ -2355,7 +2374,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
 
   const calculatePerformanceRanges = () => {
-    if (!positions || positions.length === 0) {
+    if (!activePositions || activePositions.length === 0) {
       return [
         { label: '>500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
         { label: '200% ~ 500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
@@ -2373,7 +2392,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
       belowNeg50: 0
     };
 
-    positions.forEach(p => {
+    activePositions.forEach(p => {
       if (p.spentNative === 0) return;
 
       const pnlPercent = (p.pnlNative / p.spentNative) * 100;
@@ -2401,7 +2420,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   };
 
   const calculateBuySellRatio = () => {
-    if (!positions || positions.length === 0) {
+    if (!activePositions || activePositions.length === 0) {
       return { buyCount: 0, sellCount: 0, buyValue: 0, sellValue: 0, buyPercent: 50, sellPercent: 50 };
     }
 
@@ -2410,7 +2429,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
     let buyValue = 0;
     let sellValue = 0;
 
-    positions.forEach(p => {
+    activePositions.forEach(p => {
       if (p.boughtTokens > 0) {
         buyCount++;
         buyValue += p.spentNative;
@@ -2428,7 +2447,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
     return { buyCount, sellCount, buyValue, sellValue, buyPercent, sellPercent };
   };
 
-  const totalRealizedPnlNative = positions?.reduce((sum, p) => {
+  const totalRealizedPnlNative = activePositions.reduce((sum, p) => {
     if (p.remainingTokens > 0 && p.boughtTokens > 0) {
       const soldPortion = p.soldTokens / p.boughtTokens;
       const realizedPnl = p.receivedNative - (p.spentNative * soldPortion);
@@ -2438,7 +2457,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
       return sum + (p.receivedNative - p.spentNative);
     }
     return sum;
-  }, 0) || 0;
+  }, 0);
 
   const totalRealizedPnlUsd = totalRealizedPnlNative * monUsdPrice;
   const realizedClass = totalRealizedPnlNative >= 0 ? 'positive' : 'negative';
@@ -3235,8 +3254,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
                 </div>
                 {(() => {
                   const oneDayAgo = Date.now() / 1000 - 24 * 60 * 60;
-                  const totalPositions = positions?.length || 0;
-                  const activePositions = positions?.filter(p => p.remainingTokens > 0).length || 0;
+                  const totalPositions = activePositions.length;
+                  const activePositionsCount = activePositions.filter(p => p.remainingTokens > 0).length;
 
                   return (
                     <div className="trenches-performance-stats">
@@ -3255,7 +3274,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                       <div className="trenches-performance-stat-row">
                         <span className="trenches-performance-stat-label">Positions</span>
                         <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
-                          {activePositions}/{totalPositions}
+                          {activePositionsCount}/{totalPositions}
                         </span>
                       </div>
                     </div>
@@ -3348,13 +3367,13 @@ const Portfolio: React.FC<PortfolioProps> = ({
                       <div className="meme-oc-header-cell">Actions</div>
                     </div>
                     <div className="meme-oc-items">
-                      {!positions || positions.filter(p => p.remainingTokens > 0).length === 0 ? (
+                      {activePositions.filter(p => p.remainingTokens > 0).length === 0 ? (
                         <div className="meme-oc-empty">
                           No active positions
                         </div>
                       ) : (
                         (() => {
-                          const filteredPositions = [...(positions || [])
+                          const filteredPositions = [...activePositions
                             .filter(p => p.remainingTokens > 0)]
                             .filter(p => {
                               if (!trenchesSearchQuery.trim()) return true;
@@ -3583,13 +3602,13 @@ const Portfolio: React.FC<PortfolioProps> = ({
                       <div className="meme-oc-header-cell">Actions</div>
                     </div>
                     <div className="meme-oc-items">
-                      {!positions || positions.filter(p => p.remainingTokens === 0).length === 0 ? (
+                      {activePositions.filter(p => p.remainingTokens === 0).length === 0 ? (
                         <div className="meme-oc-empty">
                           No trading history
                         </div>
                       ) : (
                         (() => {
-                          const filteredHistory = [...(positions || [])
+                          const filteredHistory = [...activePositions
                             .filter(p => p.remainingTokens === 0)]
                             .filter(p => {
                               if (!trenchesSearchQuery.trim()) return true;
@@ -4105,8 +4124,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div ref={trenchesDropdownRef} style={{ position: 'relative' }} className="trenches-dropdown">
               <button
-                className="footer-transparent-button" 
-                style={{ height:'30px' }}
+                className="footer-transparent-button"
+                style={{ height: '30px' }}
                 onClick={() => setIsTrenchesWalletDropdownOpen(!isTrenchesWalletDropdownOpen)}
               >
                 <span
@@ -4332,19 +4351,19 @@ const Portfolio: React.FC<PortfolioProps> = ({
                 }}
                 alt="MON"
               />
-              <span style={{ fontSize: '1rem', color:"white" }}>
+              <span style={{ fontSize: '1rem', color: "white" }}>
                 {formatBalanceCompact(totalTrenchesSelectedBalance)}
               </span>
             </div>
 
-              <div className="trenches-wallet-token-count">
-                <div className="wallet-token-structure-icons">
-                  <div className="token1"></div>
-                  <div className="token2"></div>
-                  <div className="token3"></div>
-                </div>
-                <span className="trenches-wallet-total-tokens">{totalTrenchesTokenCount}</span>
+            <div className="trenches-wallet-token-count">
+              <div className="wallet-token-structure-icons">
+                <div className="token1"></div>
+                <div className="token2"></div>
+                <div className="token3"></div>
               </div>
+              <span className="trenches-wallet-total-tokens">{totalTrenchesTokenCount}</span>
+            </div>
 
           </div>
 

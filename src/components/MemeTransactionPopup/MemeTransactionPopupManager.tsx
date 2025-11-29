@@ -420,48 +420,43 @@ const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = 
       position: 'fixed',
       zIndex: 999999,
       pointerEvents: 'none',
+      width: '400px',
     };
 
     switch (position) {
       case 'top-left':
         styles.top = '20px';
-        styles.left = '0px';
-        styles.transform = 'none';
+        styles.left = '20px';
         break;
       case 'top-center':
         styles.top = '20px';
         styles.left = '50%';
         styles.transform = 'translateX(-50%)';
+        styles.width = 'auto';
         break;
       case 'top-right':
         styles.top = '20px';
         styles.right = '350px';
-        styles.left = 'auto';
-        styles.transform = 'none';
         break;
       case 'bottom-left':
         styles.bottom = '100px';
-        styles.left = '0px';
-        styles.top = 'auto';
-        styles.transform = 'none';
+        styles.left = '20px';
         break;
       case 'bottom-center':
         styles.bottom = '100px';
         styles.left = '50%';
-        styles.top = 'auto';
         styles.transform = 'translateX(-50%)';
+        styles.width = 'auto';
         break;
       case 'bottom-right':
         styles.bottom = '100px';
         styles.right = '350px';
-        styles.left = 'auto';
-        styles.top = 'auto';
-        styles.transform = 'none';
         break;
       default:
         styles.top = '20px';
         styles.left = '50%';
         styles.transform = 'translateX(-50%)';
+        styles.width = 'auto';
     }
 
     return styles;

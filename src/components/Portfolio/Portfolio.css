@@ -4727,6 +4727,7 @@
 .trenches-time-button{
   font-size: 0.9rem;
   color: white;
+  cursor: pointer;
 }
 
 .trenches-time-button-active{
