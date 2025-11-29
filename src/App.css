@@ -8416,7 +8416,7 @@ input::-webkit-inner-spin-button {
 
 .position-option {
   border-radius: 12px;
-  padding: 12px;
+  padding: 4px;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -8480,7 +8480,7 @@ input::-webkit-inner-spin-button {
 }
 
 .position-option span {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   letter-spacing: -0.3px;
   color: #e0e3f473;
   text-align: center;
@@ -8490,7 +8490,14 @@ input::-webkit-inner-spin-button {
   color: #d8dcff;
 }
 
-
+.notifications-main-label {
+  color: #ffffff;
+  font-size: 1rem;
+  letter-spacing: -0.5px;
+  margin: 0;
+  color: rgb(255,255,255,0.8);
+  font-size: 0.9rem;
+}
 
 .notification-manager-popup {
   background: rgb(6, 6, 6);

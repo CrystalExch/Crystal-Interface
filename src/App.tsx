@@ -20259,7 +20259,7 @@ const [toastPosition, setToastPosition] = useState<string>(() => {
                 <div className="alerts-section">
                   <div className="alerts-main-toggle">
                     <div>
-                      <h4 className="alerts-main-label">Display notifications</h4>
+                      <h4 className="notifications-main-label">Display notifications</h4>
                       <p className="alerts-description">
                         Display wallet tracker toasts, and notification cards
                       </p>
@@ -20274,7 +20274,7 @@ const [toastPosition, setToastPosition] = useState<string>(() => {
                 </div>
 
                 <div className="alerts-section">
-                  <h4 className="alerts-main-label">Toast Position</h4>
+                  <h4 className="notifications-main-label">Toast Position</h4>
                   <div className="position-grid">
                     {['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'].map((pos) => (
                       <button
@@ -20294,7 +20294,7 @@ const [toastPosition, setToastPosition] = useState<string>(() => {
                 <div className="alerts-section">
                   <div className="alerts-main-toggle">
                     <div>
-                      <h4 className="alerts-main-label">Transaction Sounds</h4>
+                      <h4 className="notifications-main-label">Transaction Sounds</h4>
                     </div>
                     <div
                       className={`toggle-switch ${transactionSounds ? 'active' : ''}`}
