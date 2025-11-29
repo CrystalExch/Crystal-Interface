@@ -45,10 +45,11 @@ interface TraderPortfolioPopupProps {
   onAddTrackedWallet?: (wallet: { address: string; name: string; emoji: string }) => void;
 }
 const Tooltip: React.FC<{
-  content: string;
+  content: string | React.ReactNode;
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
-}> = ({ content, children, position = 'top' }) => {
+  offset?: number;
+}> = ({ content, children, position = 'top', offset = 10 }) => {
   const [shouldRender, setShouldRender] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -70,41 +71,41 @@ const Tooltip: React.FC<{
 
     switch (position) {
       case 'top':
-        top = rect.top + scrollY - tooltipRect.height - 25;
+        top = rect.top + scrollY - tooltipRect.height - offset - 15;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'bottom':
-        top = rect.bottom + scrollY + 10;
+        top = rect.top + scrollY - tooltipRect.height - offset;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'left':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.left + scrollX - tooltipRect.width - 10;
+        left = rect.left + scrollX - tooltipRect.width - offset;
         break;
       case 'right':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.right + scrollX + 10;
+        left = rect.right + scrollX + offset;
         break;
     }
 
-    const Perpetuals = 10;
+    const margin = 10;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
     if (position === 'top' || position === 'bottom') {
       left = Math.min(
-        Math.max(left, Perpetuals + tooltipRect.width / 2),
-        viewportWidth - Perpetuals - tooltipRect.width / 2,
+        Math.max(left, margin + tooltipRect.width / 2),
+        viewportWidth - margin - tooltipRect.width / 2,
       );
     } else {
       top = Math.min(
-        Math.max(top, Perpetuals),
-        viewportHeight - Perpetuals - tooltipRect.height,
+        Math.max(top, margin),
+        viewportHeight - margin - tooltipRect.height,
       );
     }
 
     setTooltipPosition({ top, left });
-  }, [position]);
+  }, [position, offset]);
 
   const handleMouseEnter = useCallback(() => {
     if (fadeTimeoutRef.current) {
@@ -165,32 +166,33 @@ const Tooltip: React.FC<{
       onMouseLeave={handleMouseLeave}
     >
       {children}
-      {shouldRender && createPortal(
-        <div
-          ref={tooltipRef}
-          className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
-          style={{
-            position: 'absolute',
-            top: `${tooltipPosition.top}px`,
-            left: `${tooltipPosition.left}px`,
-            transform: `${position === 'top' || position === 'bottom'
-              ? 'translateX(-50%)'
-              : position === 'left' || position === 'right'
-                ? 'translateY(-50%)'
-                : 'none'} scale(${isVisible ? 1 : 0})`,
-            opacity: isVisible ? 1 : 0,
-            zIndex: 9999,
-            pointerEvents: 'none',
-            transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-            willChange: 'transform, opacity'
-          }}
-        >
-          <div className="tooltip-content">
-            {content}
-          </div>
-        </div>,
-        document.body
-      )}
+      {shouldRender &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+            style={{
+              position: 'absolute',
+              top: `${tooltipPosition.top}px`,
+              left: `${tooltipPosition.left}px`,
+              transform: `${position === 'top' || position === 'bottom'
+                ? 'translateX(-50%)'
+                : position === 'left' || position === 'right'
+                  ? 'translateY(-50%)'
+                  : 'none'
+                } scale(${isVisible ? 1 : 0})`,
+              opacity: isVisible ? 1 : 0,
+              zIndex: 9999,
+              pointerEvents: 'none',
+              transition:
+                'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+              willChange: 'transform, opacity',
+            }}
+          >
+            <div className="tooltip-content">{content}</div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };
@@ -388,14 +390,12 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   const [totalAccountValue, setTotalAccountValue] = useState<number | null>(null);
   const [tokenBalances, setTokenBalances] = useState<{ [key: string]: string }>({});
 
-  // Filter positions based on active tab
   const tabFilteredPositions = activeTab === 'active'
     ? traderPositions.filter(p => p.remainingTokens > 0)
     : activeTab === 'history'
       ? traderPositions.filter(p => p.remainingTokens === 0)
       : [];
 
-  // Apply search filter on top of tab filter
   const displayedPositions = tabFilteredPositions.filter(p => {
     if (!searchQuery.trim()) return true;
 
@@ -533,10 +533,8 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
-  // Calculate unrealized PNL only from active positions (remainingTokens > 0)
   const totalUnrealizedPnlNative = traderPositions?.reduce((sum, p) => {
     if (p.remainingTokens > 0) {
-      // Only count the unrealized portion: remainingTokens * lastPrice
       const unrealizedValue = p.remainingTokens * (p.lastPrice || 0);
       const spentOnRemaining = (p.remainingTokens / p.boughtTokens) * p.spentNative;
       const unrealizedPnl = unrealizedValue - spentOnRemaining;
@@ -548,10 +546,8 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   const unrealizedClass = totalUnrealizedPnlNative >= 0 ? 'positive' : 'negative';
   const unrealizedSign = totalUnrealizedPnlNative >= 0 ? '+' : '-';
 
-  // Calculate realized PNL from closed positions (remainingTokens === 0)
   const totalRealizedPnlNative = traderPositions?.reduce((sum, p) => {
     if (p.remainingTokens === 0) {
-      // For fully closed positions, realized PNL = received - spent
       return sum + (p.receivedNative - p.spentNative);
     }
     return sum;
@@ -578,20 +574,34 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
       ranges.underNeg50++;
     }
 
+    if (pnlPercentage >= 0) {
+      ranges.profitable++;
+    } else {
+      ranges.unprofitable++;
+    }
+
     return ranges;
   }, {
     over500: 0,
     range200to500: 0,
     range0to200: 0,
     range0toNeg50: 0,
-    underNeg50: 0
+    underNeg50: 0,
+    profitable: 0,
+    unprofitable: 0
   }) || {
     over500: 0,
     range200to500: 0,
     range0to200: 0,
     range0toNeg50: 0,
-    underNeg50: 0
+    underNeg50: 0,
+    profitable: 0,
+    unprofitable: 0
   };
+
+  const totalPositions = pnlRanges.profitable + pnlRanges.unprofitable;
+  const profitablePercentage = totalPositions > 0 ? (pnlRanges.profitable / totalPositions) * 100 : 50;
+  const unprofitablePercentage = totalPositions > 0 ? (pnlRanges.unprofitable / totalPositions) * 100 : 50;
 
   return (
     <div className="trader-popup-backdrop" onClick={handleBackdropClick}>
@@ -779,8 +789,14 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                 ))}
               </div>
               <div className="pnl-calendar-ratio-container">
-                <div className="pnl-calendar-ratio-buy"></div>
-                <div className="pnl-calendar-ratio-sell"></div>
+                <div
+                  className="pnl-calendar-ratio-buy"
+                  style={{ flex: profitablePercentage }}
+                ></div>
+                <div
+                  className="pnl-calendar-ratio-sell"
+                  style={{ flex: unprofitablePercentage }}
+                ></div>
               </div>
             </div>
           </div>
@@ -1047,6 +1063,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                                 setpopup(27);
                               }
                             }}
+                            title="Share PNL"
                           >
                             <Tooltip content="Share PnL">
 
