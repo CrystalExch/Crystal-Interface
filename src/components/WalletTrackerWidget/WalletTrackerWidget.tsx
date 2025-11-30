@@ -15,6 +15,7 @@ import AddWalletModal, { TrackedWallet } from '../Tracker/AddWalletModal';
 import LiveTradesFiltersPopup from '../Tracker/LiveTradesFiltersPopup/LiveTradesFiltersPopup';
 import { FilterState } from '../Tracker/Tracker';
 import MonitorFiltersPopup, { MonitorFilterState } from '../Tracker/MonitorFiltersPopup/MonitorFiltersPopup';
+import TraderPortfolioPopup from '../MemeInterface/MemeTradesComponent/TraderPortfolioPopup/TraderPortfolioPopup.tsx';
 import circle from '../../assets/circle_handle.png';
 import lightning from '../../assets/flash.png';
 import SortArrow from '../OrderCenter/SortArrow/SortArrow';
@@ -23,6 +24,7 @@ import { encodeFunctionData } from 'viem';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
 import { NadFunAbi } from '../../abis/NadFun.ts';
 import { settings as appSettings } from '../../settings';
+import EmojiPicker from 'emoji-picker-react';
 import {
   showLoadingPopup,
   updatePopup,
@@ -76,6 +78,10 @@ interface WalletTrackerWidgetProps {
     chainId?: number;
   };
   selectedWallets?: Set<string>;
+  onMarketSelect?: (market: any) => void;
+  setSendTokenIn?: (token: any) => void;
+  positions?: any[];
+  trackedWalletsRef?: any;
 }
 
 type TrackerTab = 'wallets' | 'trades' | 'monitor';
@@ -357,7 +363,28 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   activeWalletPrivateKey,
   account,
   selectedWallets,
+  onMarketSelect,
+  setSendTokenIn,
+  positions = [],
+  trackedWalletsRef,
 }) => {
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiPickerPosition, setEmojiPickerPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+  const [editingEmojiWalletId, setEditingEmojiWalletId] = useState<string | null>(null);
+  const [editingEmoji, setEditingEmoji] = useState<string | null>(null);
+  const handleEmojiSelect = (emojiData: any) => {
+    if (editingEmojiWalletId) {
+      setLocalWallets((prev) =>
+        prev.map((w) => (w.id === editingEmojiWalletId ? { ...w, emoji: emojiData.emoji } : w))
+      );
+    }
+    setShowEmojiPicker(false);
+    setEmojiPickerPosition(null);
+    setEditingEmojiWalletId(null);
+  }; const [selectedWalletAddress, setSelectedWalletAddress] = useState<string | null>(null);
 
   const copyToClipboard = async (text: string, label = 'Address copied') => {
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -1833,9 +1860,21 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
 
                       <div className="wtw-wallet-profile">
-                        <div className="wtw-wallet-avatar">
+                        <button
+                          className="wtw-wallet-avatar wtw-emoji-button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingEmojiWalletId(wallet.id);
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setEmojiPickerPosition({
+                              top: rect.bottom + window.scrollY + 8,
+                              left: rect.left + window.scrollX + rect.width / 2,
+                            });
+                            setShowEmojiPicker(true);
+                          }}
+                        >
                           <span className="wtw-wallet-emoji-avatar">{wallet.emoji}</span>
-                        </div>
+                        </button>
                         <div className="wtw-wallet-name-container">
                           <div className="wtw-wallet-name-container">
                             {editingWallet === wallet.id ? (
@@ -1925,7 +1964,24 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                             )}
                           </button>
                         </Tooltip>
-
+                        <Tooltip content="Scan Address">
+                          <button
+                            className="wtw-wallet-action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedWalletAddress(wallet.address);
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="wtw-action-icon">
+                              <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                              <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                              <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                              <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                              <circle cx="12" cy="12" r="1" />
+                              <path d="M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0" />
+                            </svg>
+                          </button>
+                        </Tooltip>
                         <Tooltip content="View on Explorer">
                           <a
                             href={`${chainCfg?.explorer}/address/${wallet.address}`}
@@ -2088,6 +2144,79 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
           <div className="wtw-resize-handle left snapped-resize" onMouseDown={(e) => handleResizeStart(e, 'left')} />
         )}
       </div>
+      {selectedWalletAddress && (
+        <TraderPortfolioPopup
+          traderAddress={selectedWalletAddress}
+          onClose={() => setSelectedWalletAddress(null)}
+          tokenList={tokenList}
+          marketsData={marketsData}
+          onMarketSelect={onMarketSelect}
+          setSendTokenIn={setSendTokenIn}
+          setpopup={setpopup}
+          positions={positions}
+          onSellPosition={(position, monAmount) => {
+            console.log('Sell position:', position, monAmount);
+          }}
+          monUsdPrice={monUsdPrice}
+          trackedWalletsRef={trackedWalletsRef}
+          onAddTrackedWallet={(wallet) => {
+            const existing = localWallets.findIndex(
+              (w) => w.address.toLowerCase() === wallet.address.toLowerCase()
+            );
+            if (existing >= 0) {
+              setLocalWallets(prev => prev.map((w, i) =>
+                i === existing ? { ...w, name: wallet.name, emoji: wallet.emoji } : w
+              ));
+            } else {
+              const newWallet: TrackedWallet = {
+                id: `wallet-${Date.now()}-${Math.random()}`,
+                address: wallet.address,
+                name: wallet.name,
+                emoji: wallet.emoji,
+                balance: 0,
+                lastActiveAt: Date.now(),
+                createdAt: new Date().toISOString(),
+              };
+              setLocalWallets(prev => [...prev, newWallet]);
+            }
+          }}
+        />
+      )}
+      {showEmojiPicker && emojiPickerPosition && (
+  <div
+    className="add-wallet-emoji-picker-backdrop"
+    onClick={() => {
+      setShowEmojiPicker(false);
+      setEmojiPickerPosition(null);
+      setEditingEmojiWalletId(null);
+    }}
+  >
+    <div
+      className="add-wallet-emoji-picker-positioned"
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        top: `${emojiPickerPosition.top}px`,
+        left: `${emojiPickerPosition.left}px`,
+        transform: 'translateX(-50%)',
+      }}
+    >
+      <EmojiPicker
+        onEmojiClick={handleEmojiSelect}
+        width={350}
+        height={400}
+        searchDisabled={false}
+        skinTonesDisabled={true}
+        previewConfig={{
+          showPreview: false,
+        }}
+        style={{
+          backgroundColor: '#000000',
+          border: '1px solid rgba(179, 184, 249, 0.2)',
+        }}
+      />
+    </div>
+  </div>
+)}
     </>
   );
 };

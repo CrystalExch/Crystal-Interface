@@ -15,6 +15,7 @@ import ImportWalletsPopup from './ImportWalletsPopup';
 import AddWalletModal, { TrackedWallet } from './AddWalletModal';
 import LiveTradesFiltersPopup from './LiveTradesFiltersPopup/LiveTradesFiltersPopup';
 import MonitorFiltersPopup, { MonitorFilterState } from './MonitorFiltersPopup/MonitorFiltersPopup';
+import TraderPortfolioPopup from '../MemeInterface/MemeTradesComponent/TraderPortfolioPopup/TraderPortfolioPopup.tsx';
 import circle from '../../assets/circle_handle.png';
 import lightning from '../../assets/flash.png';
 import SortArrow from '../OrderCenter/SortArrow/SortArrow';
@@ -23,6 +24,7 @@ import { encodeFunctionData } from 'viem';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
 import { NadFunAbi } from '../../abis/NadFun.ts';
 import { settings as appSettings } from '../../settings';
+import EmojiPicker from 'emoji-picker-react';
 import {
   showLoadingPopup,
   updatePopup,
@@ -94,6 +96,10 @@ interface TrackerProps {
     chainId?: number;
   };
   selectedWallets?: Set<string>;
+  onMarketSelect?: (market: any) => void;
+  setSendTokenIn?: (token: any) => void;
+  positions?: any[];
+  trackedWalletsRef?: any;
 }
 
 type TrackerTab = 'wallets' | 'trades' | 'monitor';
@@ -338,7 +344,29 @@ const Tracker: React.FC<TrackerProps> = ({
   activeWalletPrivateKey,
   account,
   selectedWallets,
+  onMarketSelect,
+  setSendTokenIn,
+  positions = [],
+  trackedWalletsRef,
 }) => {
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiPickerPosition, setEmojiPickerPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+  const [editingEmojiWalletId, setEditingEmojiWalletId] = useState<string | null>(null);
+  const [walletBalances, setWalletBalances] = useState<{ [address: string]: number }>({});
+  const [selectedWalletAddress, setSelectedWalletAddress] = useState<string | null>(null);
+  const handleEmojiSelect = (emojiData: any) => {
+  if (editingEmojiWalletId) {
+    setLocalWallets((prev) =>
+      prev.map((w) => (w.id === editingEmojiWalletId ? { ...w, emoji: emojiData.emoji } : w))
+    );
+  }
+  setShowEmojiPicker(false);
+  setEmojiPickerPosition(null);
+  setEditingEmojiWalletId(null);
+};
   const getWalletNotificationPreferences = (): Record<string, boolean> => {
     try {
       const stored = localStorage.getItem('wallet_notifications_preferences');
@@ -720,7 +748,49 @@ const Tracker: React.FC<TrackerProps> = ({
     const allEnabled = !walletAddresses.some(addr => notificationPrefs[addr] === false);
     setMasterNotificationsEnabled(allEnabled);
   }, [notificationPrefs, localWallets]);
+  useEffect(() => {
+    const fetchAllBalances = async () => {
+      if (!localWallets || localWallets.length === 0) return;
 
+      try {
+        const { getBalance } = await import('@wagmi/core');
+        const { config } = await import('../../wagmi');
+
+        const balancePromises = localWallets.map(async (wallet) => {
+          try {
+            const balance = await getBalance(config, {
+              address: wallet.address as `0x${string}`,
+            });
+            return {
+              address: wallet.address.toLowerCase(),
+              balance: Number(balance.value) / 1e18,
+            };
+          } catch (error) {
+            console.error(`Failed to fetch balance for ${wallet.address}:`, error);
+            return {
+              address: wallet.address.toLowerCase(),
+              balance: 0,
+            };
+          }
+        });
+
+        const results = await Promise.all(balancePromises);
+        const balancesMap: { [address: string]: number } = {};
+        results.forEach(({ address, balance }) => {
+          balancesMap[address] = balance;
+        });
+
+        setWalletBalances(balancesMap);
+      } catch (error) {
+        console.error('Failed to fetch wallet balances:', error);
+      }
+    };
+
+    fetchAllBalances();
+    const interval = setInterval(fetchAllBalances, 30000);
+
+    return () => clearInterval(interval);
+  }, [localWallets]);
   useEffect(() => {
     const handleNotificationUpdate = (e: Event) => {
       const customEvent = e as CustomEvent;
@@ -1262,10 +1332,10 @@ const Tracker: React.FC<TrackerProps> = ({
             Trades
           </button>
         </div>
-          {activeTab === 'wallets' && (
-            <div className="wtw-master-notification-toggle">
-              <Tooltip content={masterNotificationsEnabled ? "Disable all notifications" : "Enable all notifications"}>
-                        <div className="import-main">
+        {activeTab === 'wallets' && (
+          <div className="wtw-master-notification-toggle">
+            <Tooltip content={masterNotificationsEnabled ? "Disable all notifications" : "Enable all notifications"}>
+              <div className="import-main">
 
                 <button
                   className="wtw-master-notification-btn"
@@ -1286,10 +1356,10 @@ const Tracker: React.FC<TrackerProps> = ({
                     </svg>
                   )}
                 </button>
-                </div>
-              </Tooltip>
-            </div>
-          )}
+              </div>
+            </Tooltip>
+          </div>
+        )}
         <div className="wtw-widget-header-right">
           {activeTab === 'wallets' && (
             <div className="wallet-tracker-header">
@@ -1368,233 +1438,252 @@ const Tracker: React.FC<TrackerProps> = ({
         </div>
       </div>
       <div className="trackers-mobile-row">
-              <div className="wtw-header-actions">
-                <div className="wtw-search-bar">
-                    <div className="wtw-search">
-                      <Search size={14} className="wtw-search-icon" />
-                      <input
-                        type="text"
-                        className="wtw-search-input"
-                        placeholder="Search by name or addr..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                    </div>
-                </div>
-                  <button
-                    className="wtw-import-button"
-                    onClick={() => setShowImportPopup(true)}
-                  >
-                    Import
-                  </button>
-                  <button
-                    className="wtw-export-button"
-                    onClick={handleExport}
-                  >
-                    Export
-                  </button>
-              </div>
+        <div className="wtw-header-actions">
+          <div className="wtw-search-bar">
+            <div className="wtw-search">
+              <Search size={14} className="wtw-search-icon" />
+              <input
+                type="text"
+                className="wtw-search-input"
+                placeholder="Search by name or addr..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+          <button
+            className="wtw-import-button"
+            onClick={() => setShowImportPopup(true)}
+          >
+            Import
+          </button>
+          <button
+            className="wtw-export-button"
+            onClick={handleExport}
+          >
+            Export
+          </button>
+        </div>
       </div>
 
 
 
       <div className="wtw-content">
         {activeTab === 'wallets' && (
-          <div className="wtw-wallet-manager">
-            <div className="wtw-wallets-header" data-wallet-count={filteredWallets.length}>
-              <div
-                className={`wtw-wallet-header-cell wtw-wallet-created sortable ${sortBy === 'created' ? 'active' : ''}`}
-                onClick={() => handleSort('created')}
-              >
-                Created
-                <SortArrow sortDirection={sortBy === 'created' ? sortDirection : undefined} />
-              </div>
-              <div
-                className={`wtw-wallet-header-cell wtw-wallet-profile sortable ${sortBy === 'name' ? 'active' : ''}`}
-                onClick={() => handleSort('name')}
-              >
-                Name
-                <SortArrow sortDirection={sortBy === 'name' ? sortDirection : undefined} />
-              </div>
-              <div
-                className={`wtw-wallet-header-cell wtw-wallet-balance sortable ${sortBy === 'balance' ? 'active' : ''}`}
-                onClick={() => handleSort('balance')}
-              >
-                Balance
-                <SortArrow sortDirection={sortBy === 'balance' ? sortDirection : undefined} />
-              </div>
-              <div
-                className={`wtw-wallet-header-cell wtw-wallet-last-active sortable ${sortBy === 'lastActive' ? 'active' : ''}`}
-                onClick={() => handleSort('lastActive')}
-              >
-                Last Active
-                <SortArrow sortDirection={sortBy === 'lastActive' ? sortDirection : undefined} />
-              </div>
-              <div
-                className="wtw-wallet-header-cell wtw-wallet-remove sortable"
-                onClick={handleRemoveAll}
-              >
-                Remove All
-              </div>
-            </div>
-
-            <div className="wtw-wallets-container">
-              {filteredWallets.length === 0 ? (
-                <div className="wtw-empty-state">
-                  <div className="wtw-empty-content">
-                    <h4>No Wallets Found</h4>
-                    <p>Add a wallet to start tracking</p>
-                  </div>
+          <div className="tracker-wallet-manager">
+            <div style={{ minWidth: '450px' }}>
+              <div className="tracker-wallets-header" data-wallet-count={filteredWallets.length}>
+                <div
+                  className={`wtw-wallet-header-cell wtw-wallet-created sortable ${sortBy === 'created' ? 'active' : ''}`}
+                  onClick={() => handleSort('created')}
+                >
+                  Created
+                  <SortArrow sortDirection={sortBy === 'created' ? sortDirection : undefined} />
                 </div>
-              ) : (
-                filteredWallets.map((wallet) => (
-                  <div key={wallet.id} className="wtw-wallet-item">
-                    <div className="wtw-wallet-created">
-                      <span className="wtw-wallet-created-date">
-                        {formatCreatedDate(wallet.createdAt)}
-                      </span>
-                    </div>
+                <div
+                  className={`wtw-wallet-header-cell wtw-wallet-profile sortable ${sortBy === 'name' ? 'active' : ''}`}
+                  onClick={() => handleSort('name')}
+                >
+                  Name
+                  <SortArrow sortDirection={sortBy === 'name' ? sortDirection : undefined} />
+                </div>
+                <div
+                  className={`wtw-wallet-header-cell wtw-wallet-balance sortable ${sortBy === 'balance' ? 'active' : ''}`}
+                  onClick={() => handleSort('balance')}
+                >
+                  Balance
+                  <SortArrow sortDirection={sortBy === 'balance' ? sortDirection : undefined} />
+                </div>
+                <div
+                  className={`wtw-wallet-header-cell wtw-wallet-last-active sortable ${sortBy === 'lastActive' ? 'active' : ''}`}
+                  onClick={() => handleSort('lastActive')}
+                >
+                  Last Active
+                  <SortArrow sortDirection={sortBy === 'lastActive' ? sortDirection : undefined} />
+                </div>
+                <div
+                  className="wtw-wallet-header-cell wtw-wallet-remove sortable"
+                  onClick={handleRemoveAll}
+                >
+                  Remove All
+                </div>
+              </div>
 
-                    <div className="wtw-wallet-profile">
-                      <div className="wtw-wallet-avatar">
-                        <span className="wtw-wallet-emoji-avatar">{wallet.emoji}</span>
+              <div className="wtw-wallets-container">
+                {filteredWallets.length === 0 ? (
+                  <div className="wtw-empty-state">
+                    <div className="wtw-empty-content">
+                      <h4>No Wallets Found</h4>
+                      <p>Add a wallet to start tracking</p>
+                    </div>
+                  </div>
+                ) : (
+                  filteredWallets.map((wallet) => (
+                    <div key={wallet.id} className="tracker-wallet-item">
+                      <div className="wtw-wallet-created">
+                        <span className="wtw-wallet-created-date">
+                          {formatCreatedDate(wallet.createdAt)}
+                        </span>
                       </div>
-                      <div className="wtw-wallet-name-display">
-                        <div className="wtw-wallet-name-container">
-                          {editingWallet === wallet.id ? (
-                            <input
-                              type="text"
-                              className="wtw-wallet-name-input"
-                              value={editingName}
-                              onChange={(e) => setEditingName(e.target.value)}
-                              onBlur={() => saveWalletName(wallet.id)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveWalletName(wallet.id);
-                                if (e.key === 'Escape') {
-                                  setEditingWallet(null);
-                                  setEditingName('');
-                                }
-                              }}
-                              autoFocus
-                              onFocus={(e) => e.target.select()}
-                              style={{ width: `${editingName.length * 8 + 12}px` }}
-                            />
-                          ) : (
-                            <div className="wtw-wallet-name-display">
-                              <span className="wtw-wallet-name">
-                                {wallet.name}
-                              </span>
-                              <Edit2
-                                size={12}
-                                className="wtw-wallet-name-edit-icon"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  startEditingWallet(wallet);
+
+                      <div className="wtw-wallet-profile">
+<button
+  className="wtw-wallet-avatar wtw-emoji-button"
+  onClick={(e) => {
+    e.stopPropagation();
+    setEditingEmojiWalletId(wallet.id);
+    const rect = e.currentTarget.getBoundingClientRect();
+    setEmojiPickerPosition({
+      top: rect.bottom + window.scrollY + 8,
+      left: rect.left + window.scrollX + rect.width / 2,
+    });
+    setShowEmojiPicker(true);
+  }}
+>
+  <span className="wtw-wallet-emoji-avatar">{wallet.emoji}</span>
+</button>
+                        <div className="wtw-wallet-name-display">
+                          <div className="wtw-wallet-name-container">
+                            {editingWallet === wallet.id ? (
+                              <input
+                                type="text"
+                                className="wtw-wallet-name-input"
+                                value={editingName}
+                                onChange={(e) => setEditingName(e.target.value)}
+                                onBlur={() => saveWalletName(wallet.id)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveWalletName(wallet.id);
+                                  if (e.key === 'Escape') {
+                                    setEditingWallet(null);
+                                    setEditingName('');
+                                  }
                                 }}
+                                autoFocus
+                                onFocus={(e) => e.target.select()}
+                                style={{ width: `${editingName.length * 8 + 12}px` }}
                               />
+                            ) : (
+                              <div className="wtw-wallet-name-display">
+                                <span className="wtw-wallet-name">
+                                  {wallet.name}
+                                </span>
+                                <Edit2
+                                  size={12}
+                                  className="wtw-wallet-name-edit-icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startEditingWallet(wallet);
+                                  }}
+                                />
+                              </div>
+                            )}
+                            <div className="wtw-wallet-address">
+                              <span className="address">
+                                {formatAddress(wallet.address)}
+                              </span>
+                              <button
+                                className="wtw-copy-address"
+                                onClick={() => handleCopyAddress(wallet.address)}
+                              >
+                                <img src={copy} alt="copy" />
+                              </button>
                             </div>
-                          )}
-                          <div className="wtw-wallet-address">
-                            <span className="address">
-                              {formatAddress(wallet.address)}
-                            </span>
-                            <button
-                              className="wtw-copy-address"
-                              onClick={() => handleCopyAddress(wallet.address)}
-                            >
-                              <img src={copy} alt="copy" />
-                            </button>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="wtw-wallet-balance">
-                      <img src={monadicon} className="wtw-balance-icon" alt="MON" />
-                      <span className="wtw-balance-value">
-                        {(() => {
-                          const b = walletTokenBalances[wallet.address] || walletTokenBalances[wallet.address.toLowerCase()];
-                          const ethToken = chainCfg?.eth;
+                      <div className="wtw-wallet-balance">
+                        <img src={monadicon} className="wtw-balance-icon" alt="MON" />
+                        <span className="wtw-balance-value">
+                          {(walletBalances[wallet.address.toLowerCase()] || 0).toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="wtw-wallet-last-active">
+                        <span className="wtw-wallet-last-active-time">
+                          {lastActiveLabel(wallet)}
+                        </span>
+                      </div>
 
-                          let balanceInMON;
-                          if (b && ethToken) {
-                            balanceInMON = Number(b[ethToken] || b[ethToken?.toLowerCase()] || b[ethToken?.toUpperCase()] || 0) / 1e18;
-                          } else {
-                            balanceInMON = wallet.balance || 0;
-                          }
-                          return balanceInMON.toFixed(2);
-                        })()}
-                      </span>
-                    </div>
-
-                    <div className="wtw-wallet-last-active">
-                      <span className="wtw-wallet-last-active-time">
-                        {lastActiveLabel(wallet)}
-                      </span>
-                    </div>
-
-                    <div className="wtw-wallet-actions">
-                      <Tooltip content={notificationPrefs[wallet.address.toLowerCase()] !== false ? "Disable notifications" : "Enable notifications"}>
-                        <button
-                          className="wtw-wallet-action-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleWalletNotifications(wallet.address);
-                          }}
-                        >
-                          {notificationPrefs[wallet.address.toLowerCase()] !== false ? (
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="rgb(235, 112, 112)" stroke="rgb(235, 112, 112)" strokeWidth="1.5">
-                              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                            </svg>
-                          ) : (
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="rgba(255, 255, 255, 0.5)" strokeWidth="1.5">
-                              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                            </svg>
-                          )}
-                        </button>
-                      </Tooltip>
-
-                      <Tooltip content="View on Explorer">
-                        <a
-                          href={`${chainCfg?.explorer}/address/${wallet.address}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="wtw-wallet-action-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                        >
-                          <svg
-                            className="wtw-action-icon-svg"
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
+                      <div className="wtw-wallet-actions">
+                        <Tooltip content={notificationPrefs[wallet.address.toLowerCase()] !== false ? "Disable notifications" : "Enable notifications"}>
+                          <button
+                            className="wtw-wallet-action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleWalletNotifications(wallet.address);
+                            }}
                           >
-                            <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                            <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                          </svg>
-                        </a>
-                      </Tooltip>
+                            {notificationPrefs[wallet.address.toLowerCase()] !== false ? (
+                              <svg viewBox="0 0 24 24" width="16" height="16" fill="rgb(235, 112, 112)" stroke="rgb(235, 112, 112)" strokeWidth="1.5">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                              </svg>
+                            ) : (
+                              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="rgba(255, 255, 255, 0.5)" strokeWidth="1.5">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                              </svg>
+                            )}
+                          </button>
+                        </Tooltip>
+                        <Tooltip content="Scan Address">
+                          <button
+                            className="wtw-wallet-action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedWalletAddress(wallet.address);
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="wtw-action-icon">
+                              <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                              <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                              <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                              <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                              <circle cx="12" cy="12" r="1" />
+                              <path d="M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0" />
+                            </svg>
+                          </button>
+                        </Tooltip>
+                        <Tooltip content="View on Explorer">
+                          <a
+                            href={`${chainCfg?.explorer}/address/${wallet.address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="wtw-wallet-action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                          >
+                            <svg
+                              className="wtw-action-icon-svg"
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                            >
+                              <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                              <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                            </svg>
+                          </a>
+                        </Tooltip>
 
-                      <Tooltip content="Delete Wallet">
-                        <button
-                          className="wtw-wallet-action-btn wtw-delete-button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            confirmDeleteWallet(wallet.id);
-                          }}
-                        >
-                          <img src={trash} className="wtw-action-icon" alt="Delete" />
-                        </button>
-                      </Tooltip>
+                        <Tooltip content="Delete Wallet">
+                          <button
+                            className="wtw-wallet-action-btn wtw-delete-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              confirmDeleteWallet(wallet.id);
+                            }}
+                          >
+                            <img src={trash} className="wtw-action-icon" alt="Delete" />
+                          </button>
+                        </Tooltip>
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -1699,6 +1788,80 @@ const Tracker: React.FC<TrackerProps> = ({
           existingWallets={localWallets}
         />
       )}
+      {selectedWalletAddress && (
+        <TraderPortfolioPopup
+          traderAddress={selectedWalletAddress}
+          onClose={() => setSelectedWalletAddress(null)}
+          tokenList={tokenList}
+          marketsData={marketsData}
+          onMarketSelect={onMarketSelect}
+          setSendTokenIn={setSendTokenIn}
+          setpopup={setpopup}
+          positions={positions}
+          onSellPosition={(position, monAmount) => {
+            console.log('Sell position:', position, monAmount);
+          }}
+          monUsdPrice={monUsdPrice}
+          trackedWalletsRef={trackedWalletsRef}
+          onAddTrackedWallet={(wallet) => {
+            const existing = localWallets.findIndex(
+              (w) => w.address.toLowerCase() === wallet.address.toLowerCase()
+            );
+
+            if (existing >= 0) {
+              setLocalWallets(prev => prev.map((w, i) =>
+                i === existing ? { ...w, name: wallet.name, emoji: wallet.emoji } : w
+              ));
+            } else {
+              const newWallet: TrackedWallet = {
+                id: `wallet-${Date.now()}-${Math.random()}`,
+                address: wallet.address,
+                name: wallet.name,
+                emoji: wallet.emoji,
+                balance: 0,
+                lastActiveAt: Date.now(),
+                createdAt: new Date().toISOString(),
+              };
+              setLocalWallets(prev => [...prev, newWallet]);
+            }
+          }}
+        />
+      )}
+{showEmojiPicker && emojiPickerPosition && (
+  <div
+    className="add-wallet-emoji-picker-backdrop"
+    onClick={() => {
+      setShowEmojiPicker(false);
+      setEmojiPickerPosition(null);
+      setEditingEmojiWalletId(null);
+    }}
+  >
+    <div
+      className="add-wallet-emoji-picker-positioned"
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        top: `${emojiPickerPosition.top}px`,
+        left: `${emojiPickerPosition.left}px`,
+        transform: 'translateX(-50%)',
+      }}
+    >
+      <EmojiPicker
+        onEmojiClick={handleEmojiSelect}
+        width={350}
+        height={400}
+        searchDisabled={false}
+        skinTonesDisabled={true}
+        previewConfig={{
+          showPreview: false,
+        }}
+        style={{
+          backgroundColor: '#000000',
+          border: '1px solid rgba(179, 184, 249, 0.2)',
+        }}
+      />
+    </div>
+  </div>
+)}
     </div>
   );
 };

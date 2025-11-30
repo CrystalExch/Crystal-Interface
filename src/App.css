@@ -2794,7 +2794,6 @@ body {
   height: 100%;
   justify-content: center;
   width: 100%;
-  background: linear-gradient(180deg, rgb(6, 6, 6) 0%, rgb(10, 10, 12) 100%);
 }
 
 .main-content-wrapper.simple-view .right-column {

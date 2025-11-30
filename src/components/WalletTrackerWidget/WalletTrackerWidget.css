@@ -498,6 +498,7 @@
 
 
 .wtw-wallet-action-btn .wtw-action-icon {
+  flex-shrink: 0;
   width: 14px;
   height: 14px;
   filter: brightness(0) saturate(100%) invert(52%) sepia(9%) saturate(325%) hue-rotate(193deg) brightness(89%) contrast(92%);

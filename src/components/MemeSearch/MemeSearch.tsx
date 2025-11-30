@@ -1051,10 +1051,16 @@ const abortRef = useRef<AbortController | null>(null);
                         </div>
                     </div>
                     <div ref={walletDropdownRef} style={{ position: 'relative' }}>
-                        <button
-                            className="meme-search-wallet-button"
-                            onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
-                        >
+<button
+    className="meme-search-wallet-button"
+    onClick={() => {
+        if (!address) {
+            setpopup(4);
+        } else {
+            setIsWalletDropdownOpen(!isWalletDropdownOpen);
+        }
+    }}
+>
                             <img src={walleticon} className="meme-search-wallet-icon" alt="Wallet" />
                             <span>{selectedWallets.size}</span>
                             {totalSelectedBalance > 0 ? (

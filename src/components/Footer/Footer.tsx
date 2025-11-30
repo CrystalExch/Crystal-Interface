@@ -395,17 +395,17 @@ const Footer: React.FC<FooterProps> = ({
     const savedName = localStorage.getItem(`wallet_name_${address}`);
     return savedName || `Wallet ${index + 1}`;
   };
-const totalSelectedBalance = useMemo(() => {
-  if (subWallets.length === 0) {
-    return 0;
-  }
-  if (selectedWallets.size === 0) {
-    return 0;
-  }
-  return Array.from(selectedWallets).reduce((total, w) => {
-    return total + getWalletBalance(w);
-  }, 0);
-}, [selectedWallets, getWalletBalance, subWallets.length]);
+  const totalSelectedBalance = useMemo(() => {
+    if (subWallets.length === 0) {
+      return 0;
+    }
+    if (selectedWallets.size === 0) {
+      return 0;
+    }
+    return Array.from(selectedWallets).reduce((total, w) => {
+      return total + getWalletBalance(w);
+    }, 0);
+  }, [selectedWallets, getWalletBalance, subWallets.length]);
 
   return (
     <footer className="footer">
@@ -421,85 +421,91 @@ const totalSelectedBalance = useMemo(() => {
                 PRESET 1
               </div>
             </Tooltip>
-            <div ref={dropdownRef} style={{ position: 'relative' }}>
-                <button
-                  className="footer-transparent-button"
-                  onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
+<div ref={dropdownRef} style={{ position: 'relative' }}>
+  <button
+    className="footer-transparent-button"
+    onClick={() => {
+      if (!address) {
+        setpopup(4);
+      } else {
+        setIsWalletDropdownOpen(!isWalletDropdownOpen);
+      }
+    }}
+  >
+                <span
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                    width: '100%',
+                  }}
                 >
+                  <img
+                    src={walleticon}
+                    style={{
+                      width: '14px',
+                      height: '14px',
+                      opacity: 0.5
+                    }}
+                    alt="Wallet"
+                  />
+                  <span style={{ fontSize: '0.85rem', fontWeight: '300' }}>
+                    {selectedWallets.size}
+                  </span>
                   <span
                     style={{
+                      fontSize: '0.85rem',
+                      fontWeight: '300',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '2px',
-                      width: '100%',
+                      marginLeft: '4px',
                     }}
                   >
-                    <img
-                      src={walleticon}
-                      style={{
-                        width: '14px',
-                        height: '14px',
-                        opacity: 0.5
-                      }}
-                      alt="Wallet"
-                    />
-                    <span style={{ fontSize: '0.85rem', fontWeight: '300' }}>
-                      {selectedWallets.size}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '0.85rem',
-                        fontWeight: '300',
-                        display: 'flex',
-                        alignItems: 'center',
-                        marginLeft: '4px',
-                      }}
-                    >
-                      {totalSelectedBalance > 0 ? (
-                        <>
-                          <img
-                            src={monadicon}
-                            className="wallet-dropdown-mon-icon"
-                            style={{
-                              width: '13px',
-                              height: '13px',
-                              marginRight: '4px',
-                            }}
-                            alt="MON"
-                          />
-                          <span>
-                            {formatBalanceCompact(totalSelectedBalance)}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <img
-                            src={monadicon}
-                            className="wallet-dropdown-mon-icon"
-                            style={{
-                              width: '13px',
-                              height: '13px',
-                              marginRight: '4px',
-                            }}
-                            alt="MON"
-                          />
-                          <span>0</span>
-                        </>
-                      )}
-                    </span>
-                    <svg
-                      className={`footer-wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
+                    {totalSelectedBalance > 0 ? (
+                      <>
+                        <img
+                          src={monadicon}
+                          className="wallet-dropdown-mon-icon"
+                          style={{
+                            width: '13px',
+                            height: '13px',
+                            marginRight: '4px',
+                          }}
+                          alt="MON"
+                        />
+                        <span>
+                          {formatBalanceCompact(totalSelectedBalance)}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <img
+                          src={monadicon}
+                          className="wallet-dropdown-mon-icon"
+                          style={{
+                            width: '13px',
+                            height: '13px',
+                            marginRight: '4px',
+                          }}
+                          alt="MON"
+                        />
+                        <span>0</span>
+                      </>
+                    )}
                   </span>
-                </button>
+                  <svg
+                    className={`footer-wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </span>
+              </button>
 
               <div className={`footer-wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
                 <div className="footer-wallet-dropdown-header">
@@ -713,7 +719,14 @@ const totalSelectedBalance = useMemo(() => {
             </Tooltip>
             <Tooltip content="nad.fun Migration Price">
               <div className="crystal-migration-mc">
-                <img src={crystallogo} className="footer-crystal-logo" />
+                <svg width="13" height="13" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
+
+                    </linearGradient>
+                  </defs>
+                  <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
+                </svg>
                 <span>${formatNumberWithCommas(monUsdPrice * 1296000)}</span>
               </div>
             </Tooltip>
@@ -722,7 +735,7 @@ const totalSelectedBalance = useMemo(() => {
       </div>
       <div className="footer-content-right">
         <Tooltip content="Notification Settings">
-        <Bell className="footer-icon" size={18} style={{marginRight: '10px', cursor: 'pointer'}} onClick={() => setpopup(38)} />
+          <Bell className="footer-icon" size={18} style={{ marginRight: '10px', cursor: 'pointer' }} onClick={() => setpopup(38)} />
         </Tooltip>
         <div className="footer-right">
           <Tooltip content="Join our Discord">
