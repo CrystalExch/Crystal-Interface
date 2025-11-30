@@ -352,7 +352,6 @@
   top: 0;
   background: rgb(6, 6, 6);
   z-index: 1;
-  min-width: 800px;
   width: 100%;
 }
 
@@ -363,8 +362,6 @@
   transition: all .2s ease;
   cursor: pointer;
   position: relative;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.05);
-  min-width: 800px;
   width: 100%;
 }
 
@@ -397,7 +394,7 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
-.tracker-wallets-header::after {
+.wtw-wallets-header::after {
   content: "Wallets (" attr(data-wallet-count) ")";
   position: absolute;
   right: 20px;
@@ -405,7 +402,6 @@
   transform: translateY(-50%);
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.8rem;
-
   letter-spacing: -0.3px;
   pointer-events: none;
 }
@@ -2742,7 +2738,7 @@
 
   .tracker-wallet-item,
   .tracker-wallets-header {
-    min-width: 750px;
+    min-width: 450px;
   }
 
   .tracker-detail-trades-body {
@@ -2768,17 +2764,11 @@
     grid-template-columns: 1fr !important;
   }
 
-  .tracker-wallet-item,
-  .tracker-wallets-header {
-    min-width: 600px;
-  }
-
   .tracker-live-trades .tracker-detail-trades-row,
   .tracker-live-trades .detail-trades-table-header {
     min-width: 600px;
   }
 
-  /* Adjust flex ratios for smaller screens */
   .tracker-wallet-profile {
     flex: 1.5;
   }
@@ -4803,4 +4793,204 @@
   .trackers-mobile-row {
     display: flex;
   }
+}
+
+@media (max-width: 1020px) {
+  .tracker-tab,
+  .wtw-tab,
+  .tracker-search-input,
+  .tracker-header-button,
+  .flash-button,
+  .counter-button,
+  .tracker-add-button,
+  .tracker-cta-button,
+  .wtw-search-input,
+  .wtw-import-button,
+  .wtw-export-button,
+  .wtw-add-button,
+  .wtw-header-button,
+  .wtw-combined-flash-btn,
+  .tracker-wallet-name-display,
+  .wtw-wallet-name-display,
+  .tracker-copy-icon,
+  .wtw-copy-address,
+  .tracker-action-button,
+  .wtw-wallet-action-btn,
+  .wtw-delete-button,
+  .tracker-wallet-header-cell.sortable,
+  .wtw-wallet-header-cell.sortable,
+  .tracker-wallet-item,
+  .wtw-wallet-item,
+  .detail-trades-header-cell.sortable,
+  .wtw-detail-trades-header-cell.sortable,
+  .tracker-detail-trades-row,
+  .wtw-detail-trades-row,
+  .tracker-modal-close,
+  .tracker-delete-checkbox,
+  .tracker-delete-confirm-button,
+  .tracker-confirm-button,
+  .tracker-input,
+  .wtw-trade-quickbuy-btn,
+  .tracker-monitor-quickbuy-btn,
+  .tracker-monitor-action-btn,
+  .tracker-monitor-expand-btn,
+  .tracker-monitor-hide-button,
+  .tracker-monitor-blacklist-button,
+  .tracker-monitor-card,
+  .tracker-display-dropdown-trigger,
+  .tracker-display-tab,
+  .tracker-small-size-option,
+  .tracker-large-size-option,
+  .tracker-quickbuy-option,
+  .tracker-behavior-option,
+  .tracker-toggle-switch,
+  .tracker-row-toggle,
+  .tracker-style-toggle-btn,
+  .tracker-metric-color-square,
+  .tracker-metric-reset-btn,
+  .tracker-column-drag-item,
+  .tracker-color-preview,
+  .tracker-refresh-button,
+  .tracker-emoji-picker-trigger,
+  .tracker-emoji-picker-option,
+  .tracker-explorer-preset-pill-second,
+  .explorer-column-dropdown-trigger,
+  .explorer-column-dropdown-item,
+  .wtw-master-notification-btn {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .tracker-tab:active,
+  .wtw-tab:active,
+  .tracker-search-input:active,
+  .tracker-header-button:active,
+  .flash-button:active,
+  .counter-button:active,
+  .tracker-add-button:active,
+  .tracker-cta-button:active,
+  .wtw-search-input:active,
+  .wtw-import-button:active,
+  .wtw-export-button:active,
+  .wtw-add-button:active,
+  .wtw-header-button:active,
+  .wtw-combined-flash-btn:active,
+  .tracker-action-button:active,
+  .wtw-wallet-action-btn:active,
+  .tracker-confirm-button:active,
+  .tracker-delete-confirm-button:active,
+  .wtw-trade-quickbuy-btn:active:not(:disabled),
+  .tracker-monitor-quickbuy-btn:active:not(:disabled),
+  .tracker-monitor-action-btn:active,
+  .tracker-monitor-expand-btn:active,
+  .tracker-add-wallet-empty-btn:active,
+  .tracker-display-dropdown-trigger:active,
+  .wtw-master-notification-btn:active {
+    transform: scale(0.95);
+  }
+
+  .tracker-wallet-name-display:active,
+  .wtw-wallet-name-display:active,
+  .tracker-copy-icon:active,
+  .wtw-copy-address:active,
+  .wtw-delete-button:active,
+  .tracker-modal-close:active {
+    transform: scale(0.9);
+  }
+
+  .tracker-wallet-header-cell.sortable:active,
+  .wtw-wallet-header-cell.sortable:active,
+  .detail-trades-header-cell.sortable:active,
+  .wtw-detail-trades-header-cell.sortable:active {
+    transform: scale(0.98);
+  }
+
+  .tracker-wallet-item:active,
+  .wtw-wallet-item:active,
+  .tracker-detail-trades-row:active,
+  .wtw-detail-trades-row:active,
+  .tracker-monitor-card:active {
+    transform: scale(0.99);
+  }
+
+  .tracker-input:active,
+  .tracker-delete-checkbox:active,
+  .tracker-monitor-hide-button:active,
+  .tracker-monitor-blacklist-button:active {
+    transform: scale(0.98);
+  }
+
+  .tracker-display-tab:active,
+  .tracker-small-size-option:active,
+  .tracker-large-size-option:active,
+  .tracker-quickbuy-option:active,
+  .tracker-behavior-option:active,
+  .tracker-toggle-switch:active,
+  .tracker-row-toggle:active,
+  .tracker-style-toggle-btn:active {
+    transform: scale(0.97);
+  }
+
+  .tracker-metric-color-square:active,
+  .tracker-color-preview:active,
+  .tracker-emoji-picker-option:active {
+    transform: scale(0.9);
+  }
+
+  .tracker-metric-reset-btn:active,
+  .tracker-refresh-button:active,
+  .tracker-emoji-picker-trigger:active,
+  .tracker-explorer-preset-pill-second:active,
+  .explorer-column-dropdown-trigger:active,
+  .explorer-column-dropdown-item:active {
+    transform: scale(0.95);
+  }
+
+  .tracker-column-drag-item:active {
+    transform: scale(0.98);
+    cursor: grabbing;
+  }
+
+  .tracker-wallet-item.loading:active,
+  .wtw-wallet-item.loading:active,
+  .tracker-detail-trades-row.loading:active,
+  .wtw-detail-trades-row.loading:active {
+    transform: none;
+  }
+
+  .wtw-trade-quickbuy-btn:disabled:active,
+  .tracker-monitor-quickbuy-btn:disabled:active {
+    transform: none;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+
+
+.tracker-wallets-header {
+  display: grid;
+  grid-template-columns: .4fr 1.2fr 1fr 1fr 1fr;
+  align-items: center;
+  padding: 6px 15px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  position: sticky;
+  top: 0;
+  background: rgb(6, 6, 6);
+  z-index: 1;
+  width: 100%;
+  gap: 16px;
+}
+
+
+.tracker-wallet-item{
+  display: grid;
+  grid-template-columns: .4fr 1.2fr 1fr 1fr 1fr;
+  align-items: center;
+  padding: 8px 15px;
+  transition: all 0.2s ease;
+  position: relative;
+  width: 100%;
+  gap: 16px;
 }

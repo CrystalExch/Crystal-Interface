@@ -1262,10 +1262,10 @@ const Tracker: React.FC<TrackerProps> = ({
             Trades
           </button>
         </div>
-          {activeTab === 'wallets' && (
-            <div className="wtw-master-notification-toggle">
-              <Tooltip content={masterNotificationsEnabled ? "Disable all notifications" : "Enable all notifications"}>
-                        <div className="import-main">
+        {activeTab === 'wallets' && (
+          <div className="wtw-master-notification-toggle">
+            <Tooltip content={masterNotificationsEnabled ? "Disable all notifications" : "Enable all notifications"}>
+              <div className="import-main">
 
                 <button
                   className="wtw-master-notification-btn"
@@ -1286,10 +1286,10 @@ const Tracker: React.FC<TrackerProps> = ({
                     </svg>
                   )}
                 </button>
-                </div>
-              </Tooltip>
-            </div>
-          )}
+              </div>
+            </Tooltip>
+          </div>
+        )}
         <div className="wtw-widget-header-right">
           {activeTab === 'wallets' && (
             <div className="wallet-tracker-header">
@@ -1368,40 +1368,40 @@ const Tracker: React.FC<TrackerProps> = ({
         </div>
       </div>
       <div className="trackers-mobile-row">
-              <div className="wtw-header-actions">
-                <div className="wtw-search-bar">
-                    <div className="wtw-search">
-                      <Search size={14} className="wtw-search-icon" />
-                      <input
-                        type="text"
-                        className="wtw-search-input"
-                        placeholder="Search by name or addr..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                    </div>
-                </div>
-                  <button
-                    className="wtw-import-button"
-                    onClick={() => setShowImportPopup(true)}
-                  >
-                    Import
-                  </button>
-                  <button
-                    className="wtw-export-button"
-                    onClick={handleExport}
-                  >
-                    Export
-                  </button>
-              </div>
+        <div className="wtw-header-actions">
+          <div className="wtw-search-bar">
+            <div className="wtw-search">
+              <Search size={14} className="wtw-search-icon" />
+              <input
+                type="text"
+                className="wtw-search-input"
+                placeholder="Search by name or addr..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+          <button
+            className="wtw-import-button"
+            onClick={() => setShowImportPopup(true)}
+          >
+            Import
+          </button>
+          <button
+            className="wtw-export-button"
+            onClick={handleExport}
+          >
+            Export
+          </button>
+        </div>
       </div>
 
 
 
       <div className="wtw-content">
         {activeTab === 'wallets' && (
-          <div className="wtw-wallet-manager">
-            <div className="wtw-wallets-header" data-wallet-count={filteredWallets.length}>
+          <div className="tracker-wallet-manager">
+            <div className="tracker-wallets-header" data-wallet-count={filteredWallets.length}>
               <div
                 className={`wtw-wallet-header-cell wtw-wallet-created sortable ${sortBy === 'created' ? 'active' : ''}`}
                 onClick={() => handleSort('created')}
@@ -1448,7 +1448,7 @@ const Tracker: React.FC<TrackerProps> = ({
                 </div>
               ) : (
                 filteredWallets.map((wallet) => (
-                  <div key={wallet.id} className="wtw-wallet-item">
+                  <div key={wallet.id} className="tracker-wallet-item">
                     <div className="wtw-wallet-created">
                       <span className="wtw-wallet-created-date">
                         {formatCreatedDate(wallet.createdAt)}
