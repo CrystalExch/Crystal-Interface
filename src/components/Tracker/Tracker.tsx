@@ -1471,7 +1471,7 @@ const Tracker: React.FC<TrackerProps> = ({
       <div className="wtw-content">
         {activeTab === 'wallets' && (
           <div className="tracker-wallet-manager">
-            <div style={{ minWidth: '450px' }}>
+            <div style={{ minWidth: '450px', display: 'flex', height: '100%', flexDirection: 'column' }}>
               <div className="tracker-wallets-header" data-wallet-count={filteredWallets.length}>
                 <div
                   className={`wtw-wallet-header-cell wtw-wallet-created sortable ${sortBy === 'created' ? 'active' : ''}`}

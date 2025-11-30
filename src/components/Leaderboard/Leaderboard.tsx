@@ -347,18 +347,18 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     
   return (
     <div className={`leaderboard-container ${loading ? 'is-loading' : ''}`}>
-      {!address && (
+      {true && (
         <div className="connect-wallet-overlay">
           <div className="connect-wallet-content">
-            <h2>{t('connectYourWallet')}</h2>
-            <p>{t('connectYourWalletSubtitle')}</p>
-            <button
+            <h2>{'Coming Soon!'}</h2>
+            <p>{'The leaderboard will be updated at the end of the week.'}</p>
+            <a
               type="button"
               className="leaderboard-connect-wallet-button"
-              onClick={handleConnectWallet}
+              href={'https://crystal.exchange/spectra'}
             >
-              <div className="connect-content">{t('connectWallet')}</div>
-            </button>
+              <div className="connect-content">{'Back to Trading'}</div>
+            </a>
           </div>
         </div>
       )}

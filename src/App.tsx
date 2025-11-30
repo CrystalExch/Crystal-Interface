@@ -11347,8 +11347,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (tempQueryData?.aggregatorRes != null) {
           setStateIsLoading(false);
           setstateloading(false);
-          setSwapButtonDisabled(false)
-          setamountOutSwap(BigInt(tempQueryData?.aggregatorRes?.amountOut || 0))
           setoutputString(Number(tempQueryData?.aggregatorRes?.amountOut || 0) == 0 ? '' : customRound(Number(tempQueryData?.aggregatorRes?.amountOut || 0) / (10 ** Number(tokendict[tokenOut].decimals)), 3))
         }
       }
@@ -11503,12 +11501,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     tokenOut,
     activechain,
     isWrap,
-    addliquidityonly,
-    limitPrice,
-    highestBid,
-    lowestAsk,
-    activeMarket.quoteAddress,
-    activeMarket.baseAddress,
     orderType,
     slippage,
     connected,
@@ -11516,11 +11508,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     walletTokenBalances[address],
     multihop,
     recipient,
-    mids,
-    scaleStart,
-    scaleEnd,
-    scaleOrders,
-    scaleSkew,
   ]);
 
   // changed to quoteRefetch
@@ -21603,6 +21590,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 if (slider && popup) {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
+                newTxPopup(
+                  hash,
+                  'swap',
+                  tokenIn,
+                  tokenOut,
+                  customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn == eth ? eth : tokenIn].decimals), 3),
+                  customRound(Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
+                  '',
+                  '',
+                );
                 await terminalRefetch()
                 txPending.current = false
               } catch (error) {
