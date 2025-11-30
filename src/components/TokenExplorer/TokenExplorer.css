@@ -796,12 +796,24 @@
 }
 
 .explorer-column-title-right {
+  display: flex;
   align-items: center;
   border-right: 1px solid rgba(179, 184, 249, 0.1);
   display: flex;
   gap: .75rem;
   padding-right: .75rem;
 }
+
+.explorer-column-title-right-final {
+  align-items: center;
+  display: flex;
+  gap: .75rem;
+  padding-right: .75rem;
+}
+
+
+
+
 
 .quickbuy-monad-icon {
   height: 15px;
@@ -1214,6 +1226,9 @@
   .explorer-main {
     height: calc(100vh - 115px)
   }
+  .explorer-column-title-right{
+    border-right: none;
+  }
 
   .explorer-twitter-username {
     margin-bottom: -28px !important;
@@ -1262,6 +1277,12 @@
 
 .explorer-column:nth-child(1) .explorer-tokens-list {
   border-left: 1px solid transparent;
+}
+
+
+
+.explorer-column:nth-child(3) .explorer-tokens-list {
+  border-right: none;
 }
 
 .explorer-tokens-list::-webkit-scrollbar {

@@ -5601,7 +5601,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           />
                         </div>
                       </div>
-                      <div className="explorer-column-title-right">
+                      <div className="explorer-column-title-right-final">
                         <div
                           className={`column-pause-icon ${pausedColumn === 'graduated' ? 'visible' : ''}`}
                         >
