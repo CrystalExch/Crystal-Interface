@@ -5101,3 +5101,21 @@
     display: none;
   }
 }
+
+
+.top100-rank {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #888;
+  margin-right: 8px;
+  min-width: 32px;
+}
+
+
+.meme-portfolio-oc-item-5-col {
+  grid-template-columns: 2fr 1.2fr 1.2fr 1.2fr 0.8fr;
+}
+
+.meme-oc-header-5-col {
+  grid-template-columns: 2fr 1.2fr 1.2fr 1.2fr 0.8fr;
+}

@@ -390,12 +390,16 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   const [totalAccountValue, setTotalAccountValue] = useState<number | null>(null);
   const [tokenBalances, setTokenBalances] = useState<{ [key: string]: string }>({});
 
-  const tabFilteredPositions = activeTab === 'active'
-    ? traderPositions.filter(p => p.remainingTokens > 0)
-    : activeTab === 'history'
-      ? traderPositions.filter(p => p.remainingTokens === 0)
+const tabFilteredPositions = activeTab === 'active'
+  ? traderPositions.filter(p => p.remainingTokens > 0)
+  : activeTab === 'history'
+    ? traderPositions.filter(p => p.remainingTokens === 0)
+    : activeTab === 'top100'
+      ? traderPositions
+          .filter(p => p.remainingTokens === 0)
+          .sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0))
+          .slice(0, 100)
       : [];
-
   const displayedPositions = tabFilteredPositions.filter(p => {
     if (!searchQuery.trim()) return true;
 
