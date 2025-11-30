@@ -494,7 +494,21 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const [activeSection, setActiveSection] = useState<
     'orders' | 'tradeHistory' | 'orderHistory'
   >('orders');
+  useEffect(() => {
+    const handleTabOnResize = () => {
+      const isMobileView = window.innerWidth <= 1020;
 
+      if (isMobileView && activeTab === 'wallets') {
+        setActiveTab('trenches');
+      }
+    };
+
+    window.addEventListener('resize', handleTabOnResize);
+
+    handleTabOnResize();
+
+    return () => window.removeEventListener('resize', handleTabOnResize);
+  }, [activeTab]);
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     column: 'balance',

@@ -5094,3 +5094,10 @@
     transform: scale(0.9);
   }
 }
+
+
+@media (max-width: 1020px) {
+  .portfolio-tab-title:nth-child(2) {
+    display: none;
+  }
+}
