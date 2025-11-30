@@ -3230,7 +3230,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           <div className="meme-wallet-dropdown-container" ref={walletDropdownRef}>
             <button
               className={`meme-wallet-dropdown-trigger ${isWalletDropdownOpen ? 'active' : ''}`}
-              onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
+              onClick={() => {
+                if (!address) {
+                  setpopup(4);
+                } else {
+                  setIsWalletDropdownOpen(!isWalletDropdownOpen);
+                }
+              }}
             >
               <img src={walleticon} className="meme-wallet-icon" alt="Wallets" />
               {selectedWallets.size == 0 ? <Tooltip content="Primary Wallet">
@@ -5081,11 +5087,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           </div>
 
           <div className="meme-mobile-controls">
-            <button
-              className={`meme-mobile-wallets-button ${isWalletDropdownOpen ? 'active' : ''}`}
-              onClick={() => setIsWalletDropdownOpen(!isWalletDropdownOpen)}
-              title="Toggle Wallets"
-            >
+<button
+  className={`meme-mobile-wallets-button ${isWalletDropdownOpen ? 'active' : ''}`}
+  onClick={() => {
+    if (!address) {
+      setpopup(4);
+    } else {
+      setIsWalletDropdownOpen(!isWalletDropdownOpen);
+    }
+  }}
+  title="Toggle Wallets"
+>
               <img
                 src={walleticon}
                 alt="Wallet"
