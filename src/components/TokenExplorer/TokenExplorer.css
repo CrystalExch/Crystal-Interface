@@ -1699,6 +1699,11 @@
     left: 10px;
   }
 
+  .explorer-token-row.loading .explorer-holdings-section {
+    left: 0;
+    bottom: 0;
+  }
+
   .explorer-quick-buy-btn.size-small {
     margin-top: 30px !important;
 
@@ -1721,13 +1726,22 @@
     bottom: -15px;
     left: 0;
     margin-top: 0;
+  }
 
+  .explorer-container{
+    overflow: hidden;
+    height: calc(100% - 30px);
   }
 
   .explorer-actions-section {
     margin-top: 15px;
   }
-    .explorer-quick-buy-btn.size-small {
+
+  .explorer-token-row.loading .explorer-actions-section {
+    margin-top: 0;
+  }
+
+  .explorer-quick-buy-btn.size-small {
     margin-top: 5px !important;
 
   }
@@ -1740,11 +1754,17 @@
   .explorer-quick-buy-btn.size-mega {
     margin-top: 5px !important;
   }
+
 }
 
 @media(max-width:450px) {
   .explorer-token-row {
     height: 140px !important;
+  }
+
+  
+  .explorer-token-row.loading {
+    height: 111px !important;
   }
 
   .explorer-holdings-section {
