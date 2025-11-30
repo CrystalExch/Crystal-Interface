@@ -4881,3 +4881,216 @@
   font-size: .85rem;
   color: white;
 }
+
+
+@media (max-width: 1020px) {
+  .portfolio-tab-title,
+  .trenches-activity-tab,
+  .trenches-time-button,
+  .trenches-time-button-active {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .portfolio-tab-title:active:not(.perpetuals),
+  .trenches-activity-tab:active,
+  .trenches-time-button:active,
+  .trenches-time-button-active:active {
+    transform: scale(0.95);
+  }
+
+  .create-wallet-button,
+  .import-wallet-button,
+  .wallet-search-confirm-button,
+  .distribution-popup-button,
+  .clear-zone-button,
+  .wallet-icon-button,
+  .wallet-action-btn,
+  .meme-action-btn,
+  .share-pnl-btn,
+  .create-wallet-cta-button,
+  .import-wallet-cta-button,
+  .trenches-pnl-button,
+  .trenches-pnl-calendar-button,
+  .footer-transparent-button {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .create-wallet-button:active,
+  .import-wallet-button:active,
+  .wallet-search-confirm-button:active:not(.disabled),
+  .distribution-popup-button:active:not(:disabled),
+  .clear-zone-button:active,
+  .wallet-action-btn:active,
+  .meme-action-btn:active,
+  .share-pnl-btn:active,
+  .create-wallet-cta-button:active,
+  .import-wallet-cta-button:active,
+  .trenches-pnl-button:active,
+  .trenches-pnl-calendar-button:active,
+  .footer-transparent-button:active {
+    transform: scale(0.95);
+  }
+
+  .wallet-icon-button:active,
+  .pk-modal-close:active,
+  .export-private-key-modal-close:active,
+  .delete-confirmation-modal-close:active,
+  .pnl-calendar-close:active,
+  .pnl-calendar-nav-button:active {
+    transform: scale(0.9);
+  }
+
+  .draggable-wallet-item,
+  .dropped-wallet-item,
+  .footer-wallet-item,
+  .meme-portfolio-oc-item {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .draggable-wallet-item:active,
+  .dropped-wallet-item:active,
+  .footer-wallet-item:active,
+  .meme-portfolio-oc-item:active {
+    transform: scale(0.99);
+  }
+
+  .portfolio-wallet-search-input,
+  .distribution-amount-input,
+  .pk-input,
+  .custom-address-input,
+  .wallet-name-input,
+  .deposit-amount-input,
+  .deposit-source-select,
+  .trenches-search-input {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .portfolio-wallet-search-input:active,
+  .distribution-amount-input:active,
+  .pk-input:active,
+  .custom-address-input:active,
+  .wallet-name-input:active,
+  .deposit-amount-input:active,
+  .deposit-source-select:active,
+  .trenches-search-input:active {
+    transform: scale(0.98);
+  }
+
+  .execute-distribution-button,
+  .pk-confirm-button,
+  .pk-cancel-button,
+  .export-private-key-copy-button,
+  .export-private-key-close-button,
+  .export-private-key-reveal-button,
+  .delete-confirmation-confirm-button,
+  .deposit-max-button,
+  .deposit-main-max-button {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .execute-distribution-button:active:not(:disabled),
+  .pk-confirm-button:active:not(:disabled),
+  .pk-cancel-button:active,
+  .export-private-key-copy-button:active,
+  .export-private-key-close-button:active,
+  .export-private-key-reveal-button:active,
+  .delete-confirmation-confirm-button:active,
+  .deposit-max-button:active:not(:disabled),
+  .deposit-main-max-button:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+
+  .wallet-name-save,
+  .wallet-name-cancel,
+  .remove-wallet-button {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .wallet-name-save:active,
+  .wallet-name-cancel:active,
+  .remove-wallet-button:active {
+    transform: scale(0.9);
+  }
+
+  .pnl-calendar-day {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .pnl-calendar-day:active {
+    transform: scale(0.98);
+  }
+
+  .wallet-checkbox,
+  .wallet-active-checkbox,
+  .quickbuy-wallet-checkbox {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .wallet-checkbox:active,
+  .wallet-active-checkbox:active,
+  .quickbuy-wallet-checkbox:active {
+    transform: scale(0.9);
+  }
+
+  .wallet-copy-button,
+  .ref-icon-container,
+  .wallet-name-display,
+  .wallet-dropdown-address {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .wallet-copy-button:active,
+  .ref-icon-container:active,
+  .wallet-name-display:active .wallet-name-edit-icon,
+  .wallet-dropdown-address:active {
+    transform: scale(0.95);
+  }
+
+  .trenches-performance-range {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .trenches-performance-range:active {
+    transform: scale(0.99);
+  }
+
+  .execute-distribution-button:disabled:active,
+  .pk-confirm-button:disabled:active,
+  .wallet-search-confirm-button.disabled:active,
+  .distribution-popup-button:disabled:active,
+  .deposit-max-button:disabled:active,
+  .deposit-main-max-button:disabled:active {
+    transform: none;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .draggable-wallet-item[draggable]:active {
+    transform: none;
+  }
+
+  .meme-portfolio-token-info:active,
+  .portfolio-meme-clickable-token:active {
+    transform: scale(0.98);
+  }
+
+  .perps-balance-amount-slider {
+    transition: all 0.1s ease;
+  }
+
+  .wallet-drag-balance:active,
+  .wallet-dropdown-balance-amount:active,
+  .trenches-balance-display:active {
+    transform: scale(0.98);
+  }
+
+  .distribution-mode-select:active {
+    transform: scale(0.98);
+  }
+
+  .wallet-icon-button.explorer-button:active {
+    transform: scale(0.9);
+  }
+}
