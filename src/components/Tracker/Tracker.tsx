@@ -95,10 +95,10 @@ interface TrackerProps {
     chainId?: number;
   };
   selectedWallets?: Set<string>;
-    onMarketSelect?: (market: any) => void; 
-  setSendTokenIn?: (token: any) => void;    
-  positions?: any[];                      
-  trackedWalletsRef?: any;     
+  onMarketSelect?: (market: any) => void;
+  setSendTokenIn?: (token: any) => void;
+  positions?: any[];
+  trackedWalletsRef?: any;
 }
 
 type TrackerTab = 'wallets' | 'trades' | 'monitor';
@@ -343,11 +343,12 @@ const Tracker: React.FC<TrackerProps> = ({
   activeWalletPrivateKey,
   account,
   selectedWallets,
-    onMarketSelect,      
-  setSendTokenIn,      
-  positions = [], 
-  trackedWalletsRef, 
+  onMarketSelect,
+  setSendTokenIn,
+  positions = [],
+  trackedWalletsRef,
 }) => {
+  const [walletBalances, setWalletBalances] = useState<{ [address: string]: number }>({});
   const [selectedWalletAddress, setSelectedWalletAddress] = useState<string | null>(null);
   const getWalletNotificationPreferences = (): Record<string, boolean> => {
     try {
@@ -730,7 +731,49 @@ const Tracker: React.FC<TrackerProps> = ({
     const allEnabled = !walletAddresses.some(addr => notificationPrefs[addr] === false);
     setMasterNotificationsEnabled(allEnabled);
   }, [notificationPrefs, localWallets]);
+  useEffect(() => {
+    const fetchAllBalances = async () => {
+      if (!localWallets || localWallets.length === 0) return;
 
+      try {
+        const { getBalance } = await import('@wagmi/core');
+        const { config } = await import('../../wagmi');
+
+        const balancePromises = localWallets.map(async (wallet) => {
+          try {
+            const balance = await getBalance(config, {
+              address: wallet.address as `0x${string}`,
+            });
+            return {
+              address: wallet.address.toLowerCase(),
+              balance: Number(balance.value) / 1e18,
+            };
+          } catch (error) {
+            console.error(`Failed to fetch balance for ${wallet.address}:`, error);
+            return {
+              address: wallet.address.toLowerCase(),
+              balance: 0,
+            };
+          }
+        });
+
+        const results = await Promise.all(balancePromises);
+        const balancesMap: { [address: string]: number } = {};
+        results.forEach(({ address, balance }) => {
+          balancesMap[address] = balance;
+        });
+
+        setWalletBalances(balancesMap);
+      } catch (error) {
+        console.error('Failed to fetch wallet balances:', error);
+      }
+    };
+
+    fetchAllBalances();
+    const interval = setInterval(fetchAllBalances, 30000);
+
+    return () => clearInterval(interval);
+  }, [localWallets]);
   useEffect(() => {
     const handleNotificationUpdate = (e: Event) => {
       const customEvent = e as CustomEvent;
@@ -1523,21 +1566,9 @@ const Tracker: React.FC<TrackerProps> = ({
                       <div className="wtw-wallet-balance">
                         <img src={monadicon} className="wtw-balance-icon" alt="MON" />
                         <span className="wtw-balance-value">
-                          {(() => {
-                            const b = walletTokenBalances[wallet.address] || walletTokenBalances[wallet.address.toLowerCase()];
-                            const ethToken = chainCfg?.eth;
-
-                            let balanceInMON;
-                            if (b && ethToken) {
-                              balanceInMON = Number(b[ethToken] || b[ethToken?.toLowerCase()] || b[ethToken?.toUpperCase()] || 0) / 1e18;
-                            } else {
-                              balanceInMON = wallet.balance || 0;
-                            }
-                            return balanceInMON.toFixed(2);
-                          })()}
+                          {(walletBalances[wallet.address.toLowerCase()] || 0).toFixed(2)}
                         </span>
                       </div>
-
                       <div className="wtw-wallet-last-active">
                         <span className="wtw-wallet-last-active-time">
                           {lastActiveLabel(wallet)}
@@ -1749,7 +1780,7 @@ const Tracker: React.FC<TrackerProps> = ({
             );
 
             if (existing >= 0) {
-              setLocalWallets(prev => prev.map((w, i) => 
+              setLocalWallets(prev => prev.map((w, i) =>
                 i === existing ? { ...w, name: wallet.name, emoji: wallet.emoji } : w
               ));
             } else {

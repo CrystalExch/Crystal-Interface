@@ -15,6 +15,7 @@ import AddWalletModal, { TrackedWallet } from '../Tracker/AddWalletModal';
 import LiveTradesFiltersPopup from '../Tracker/LiveTradesFiltersPopup/LiveTradesFiltersPopup';
 import { FilterState } from '../Tracker/Tracker';
 import MonitorFiltersPopup, { MonitorFilterState } from '../Tracker/MonitorFiltersPopup/MonitorFiltersPopup';
+import TraderPortfolioPopup from '../MemeInterface/MemeTradesComponent/TraderPortfolioPopup/TraderPortfolioPopup.tsx';
 import circle from '../../assets/circle_handle.png';
 import lightning from '../../assets/flash.png';
 import SortArrow from '../OrderCenter/SortArrow/SortArrow';
@@ -76,6 +77,10 @@ interface WalletTrackerWidgetProps {
     chainId?: number;
   };
   selectedWallets?: Set<string>;
+  onMarketSelect?: (market: any) => void;
+  setSendTokenIn?: (token: any) => void;
+  positions?: any[];
+  trackedWalletsRef?: any;
 }
 
 type TrackerTab = 'wallets' | 'trades' | 'monitor';
@@ -357,7 +362,12 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   activeWalletPrivateKey,
   account,
   selectedWallets,
+  onMarketSelect,
+  setSendTokenIn,
+  positions = [],
+  trackedWalletsRef,
 }) => {
+  const [selectedWalletAddress, setSelectedWalletAddress] = useState<string | null>(null);
 
   const copyToClipboard = async (text: string, label = 'Address copied') => {
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -1925,7 +1935,24 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                             )}
                           </button>
                         </Tooltip>
-
+                        <Tooltip content="Scan Address">
+                          <button
+                            className="wtw-wallet-action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedWalletAddress(wallet.address);
+                            }}
+                          >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="wtw-action-icon">
+                                                          <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                                                          <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                                                          <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                                                          <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                                                          <circle cx="12" cy="12" r="1" />
+                                                          <path d="M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0" />
+                                                        </svg>
+                          </button>
+                        </Tooltip>
                         <Tooltip content="View on Explorer">
                           <a
                             href={`${chainCfg?.explorer}/address/${wallet.address}`}
@@ -2088,6 +2115,44 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
           <div className="wtw-resize-handle left snapped-resize" onMouseDown={(e) => handleResizeStart(e, 'left')} />
         )}
       </div>
+      {selectedWalletAddress && (
+        <TraderPortfolioPopup
+          traderAddress={selectedWalletAddress}
+          onClose={() => setSelectedWalletAddress(null)}
+          tokenList={tokenList}
+          marketsData={marketsData}
+          onMarketSelect={onMarketSelect}
+          setSendTokenIn={setSendTokenIn}
+          setpopup={setpopup}
+          positions={positions}
+          onSellPosition={(position, monAmount) => {
+            console.log('Sell position:', position, monAmount);
+          }}
+          monUsdPrice={monUsdPrice}
+          trackedWalletsRef={trackedWalletsRef}
+          onAddTrackedWallet={(wallet) => {
+            const existing = localWallets.findIndex(
+              (w) => w.address.toLowerCase() === wallet.address.toLowerCase()
+            );
+            if (existing >= 0) {
+              setLocalWallets(prev => prev.map((w, i) =>
+                i === existing ? { ...w, name: wallet.name, emoji: wallet.emoji } : w
+              ));
+            } else {
+              const newWallet: TrackedWallet = {
+                id: `wallet-${Date.now()}-${Math.random()}`,
+                address: wallet.address,
+                name: wallet.name,
+                emoji: wallet.emoji,
+                balance: 0,
+                lastActiveAt: Date.now(),
+                createdAt: new Date().toISOString(),
+              };
+              setLocalWallets(prev => [...prev, newWallet]);
+            }
+          }}
+        />
+      )}
     </>
   );
 };
