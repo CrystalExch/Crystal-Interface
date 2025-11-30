@@ -289,17 +289,16 @@
   filter: brightness(1.1);
 }
 
-/* Wallet Manager */
 .tracker-wallet-manager {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: hidden;
+  overflow-x: scroll;
   background: rgb(6, 6, 6);
   width: 100%;
 }
 
-/* Live Trades */
 .tracker-live-trades {
   flex: 1;
   display: flex;
