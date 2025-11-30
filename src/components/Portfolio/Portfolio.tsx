@@ -4203,7 +4203,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                           }}
                           style={{ cursor: 'pointer' }}
                         >
-                          {scaAddress.slice(0, 6)}...{scaAddress.slice(-4)}
+                          {scaAddress?.slice(0, 6)}...{scaAddress?.slice(-4)}
                           <svg
                             className="wallet-dropdown-address-copy-icon"
                             width="11"
