@@ -703,7 +703,7 @@ const Header: React.FC<HeaderProps> = ({
             )}
           </button> */}
           <div>
-            <button
+            {false && <button
               type="button"
               className="app-settings-button"
               onClick={() => {
@@ -714,7 +714,7 @@ const Header: React.FC<HeaderProps> = ({
                 className="other-settings-image"
                 src={settingsicon}
               />
-            </button>
+            </button>}
             {isLanguageDropdownOpen && (
               <LanguageSelector
                 languages={languageOptions}

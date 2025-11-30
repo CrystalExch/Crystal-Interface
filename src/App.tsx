@@ -1746,9 +1746,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [reserveQuote, setReserveQuote] = useState(BigInt(0));
   const [reserveBase, setReserveBase] = useState(BigInt(0));
   const [priceImpact, setPriceImpact] = useState('');
-  const [averagePrice, setAveragePrice] = useState('');
-  const [tradeFee, setTradeFee] = useState('');
-  const [stateIsLoading, setStateIsLoading] = useState(true);
+  const [averagePrice, setAveragePrice] = useState('0');
+  const [tradeFee, setTradeFee] = useState(`0 ${tokendict[tokenIn].ticker}`);
+  const [stateIsLoading, setStateIsLoading] = useState(false);
   const [displayValuesLoading, setDisplayValuesLoading] = useState(false);
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
   const [recipient, setrecipient] = useState('');
@@ -11349,24 +11349,20 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           setstateloading(false);
           setSwapButtonDisabled(false)
           setamountOutSwap(BigInt(tempQueryData?.aggregatorRes?.amountOut || 0))
-          setoutputString((Number(tempQueryData?.aggregatorRes?.amountOut || 0) / (10 ** Number(tokendict[tokenOut].decimals))).toString())
+          setoutputString(Number(tempQueryData?.aggregatorRes?.amountOut || 0) == 0 ? '' : customRound(Number(tempQueryData?.aggregatorRes?.amountOut || 0) / (10 ** Number(tokendict[tokenOut].decimals)), 3))
         }
       }
     } else {
     }
   }, [tempQueryData, activechain, isQuoteFetching, quoteUpdatedAt, location.pathname.slice(1)]);
 
-  // update display values when loading is finished
+  // temp update display values when loading is finished
   useLayoutEffect(() => {
     if (!isLoading && !stateIsLoading && tempQueryData?.aggregatorRes) {
       setDisplayValuesLoading(false);
       if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
         let estPrice = 0;
-        setAveragePrice(
-          multihop
-            ? `${customRound(estPrice, 2)}`
-            : `${formatSubscript(formatSig(estPrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))), activeMarket?.marketType != 0))}`,
-        );
+        setAveragePrice(amountOutSwap == 0n ? '0' : `${customRound((Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals)) / (Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut].decimals)),  2)}`);
         setPriceImpact(() => {
           let temppriceimpact;
           if (multihop) {
@@ -11495,6 +11491,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     } else if (stateIsLoading && !isWrap) {
       setDisplayValuesLoading(true);
     }
+    else {
+      setSwapButtonDisabled(true)
+    }
   }, [
     isLoading,
     stateIsLoading,
@@ -11600,35 +11599,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
     }
   };
-
-  /* useEffect(() => {
-    const fetchUsername = async () => {
-      try {
-        const read = await readContracts(config, {
-          contracts: [
-            {
-              abi: CrystalReferralAbi,
-              address: settings.chainConfig[activechain].referralManager,
-              functionName: 'addressToUsername',
-              args: [address as `0x${string}`],
-            },
-          ]
-        });
-
-        if (read[0]?.result?.length != null) {
-          setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
-          setUsername(read[0]?.result?.length > 0 ? read[0]?.result : "");
-          setUsernameResolved(true);
-        }
-      } catch (error) {
-        console.error("Failed to fetch username:", error);
-      }
-    };
-
-    if (address) {
-      fetchUsername();
-    }
-  }, [address, activechain, config]); */
 
   const formatKeyDisplay = (key: string) => {
     if (!key) return '';
@@ -20699,6 +20669,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
                         }px`;
                     }
+                    if (inputValue == 0n) {
+                      setoutputString('')
+                      setamountOutSwap(0n)
+                      setStateIsLoading(false);
+                      setstateloading(false);
+                      setDisplayValuesLoading(false);
+                    }
                   }
                 }}
                 onChange={(e) => {
@@ -20748,6 +20725,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       const rect = slider.getBoundingClientRect();
                       (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
                         }px`;
+                    }
+                    if (inputValue == 0n) {
+                      setoutputString('')
+                      setamountOutSwap(0n)
+                      setStateIsLoading(false);
+                      setstateloading(false);
+                      setDisplayValuesLoading(false);
                     }
                   }
                 }}
@@ -21568,222 +21552,42 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     ''
                   );
                 } else {
-                  if (switched == false) {
-                    if (tokenIn == eth) {
-                      hash = await sendUserOperationAsync({
-                        uo: {
-                          target: settings.chainConfig[activechain].madHouseRouter,
-                          data: tempQueryData?.aggregatorRes?.tx?.data,
-                          value: tempQueryData?.aggregatorRes?.tx?.value
-                        }
-                      })
-                    } else {
-                      hash = await sendUserOperationAsync({
-                        uo: {
-                          target: settings.chainConfig[activechain].madHouseRouter,
-                          data: tempQueryData?.aggregatorRes?.tx?.data,
-                          value: tempQueryData?.aggregatorRes?.tx?.value
-                        }
-                      })
-                    }
+                  if (tokenIn == eth) {
+                    hash = await sendUserOperationAsync({
+                      uo: {
+                        target: settings.chainConfig[activechain].madHouseRouter,
+                        data: tempQueryData?.aggregatorRes?.tx?.data,
+                        value: tempQueryData?.aggregatorRes?.tx?.value
+                      }
+                    })
                   } else {
-                    if (tokenIn == eth) {
-                      if (orderType == 1 || multihop) {
-                        hash = await sendUserOperationAsync({
-                          uo: swapETHForExactTokens(
-                            router,
-                            amountOutSwap,
-                            (amountIn * 10000n + slippage / 2n) / slippage,
-                            activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                            address as `0x${string}`,
-                            BigInt(Math.floor(Date.now() / 1000) + 900),
-                            usedRefAddress as `0x${string}`
-                          )
-                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
-                      } else {
-                        hash = await sendUserOperationAsync({
-                          uo: _swap(
-                            router,
-                            BigInt((amountIn * 10000n + slippage / 2n) / slippage),
-                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                            false,
-                            BigInt(0),
-                            amountOutSwap,
-                            tokenIn == activeMarket.quoteAddress
-                              ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                              : (highestBid * slippage + 5000n) / 10000n,
-                            BigInt(Math.floor(Date.now() / 1000) + 900),
-                            usedRefAddress as `0x${string}`
-                          )
-                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
-                      }
-                    } else {
-                      if (allowance < amountIn) {
-                        if (client) {
-                          let uo = []
-                          uo.push(approve(
-                            tokenIn as `0x${string}`,
-                            router,
-                            maxUint256
-                          ))
-                          if (tokenOut == eth) {
-                            if (orderType == 1 || multihop) {
-                              uo.push(swapTokensForExactETH(
-                                router,
-                                amountOutSwap,
-                                (amountIn * 10000n + slippage / 2n) / slippage,
-                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                                address as `0x${string}`,
-                                BigInt(Math.floor(Date.now() / 1000) + 900),
-                                usedRefAddress as `0x${string}`
-                              ))
-                            } else {
-                              uo.push(_swap(
-                                router,
-                                BigInt(0),
-                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                                false,
-                                BigInt(0),
-                                amountOutSwap,
-                                tokenIn == activeMarket.quoteAddress
-                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                                  : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(Date.now() / 1000) + 900),
-                                usedRefAddress as `0x${string}`
-                              ))
-                            }
-                          } else {
-                            if (orderType == 1 || multihop) {
-                              uo.push(swapTokensForExactTokens(
-                                router,
-                                amountOutSwap,
-                                (amountIn * 10000n + slippage / 2n) / slippage,
-                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                                address as `0x${string}`,
-                                BigInt(Math.floor(Date.now() / 1000) + 900),
-                                usedRefAddress as `0x${string}`
-                              ))
-                            } else {
-                              uo.push(_swap(
-                                router,
-                                BigInt(0),
-                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                                false,
-                                BigInt(0),
-                                amountOutSwap,
-                                tokenIn == activeMarket.quoteAddress
-                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                                  : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(Date.now() / 1000) + 900),
-                                usedRefAddress as `0x${string}`
-                              ))
-                            }
-                          }
-                          hash = await sendUserOperationAsync({ uo: uo })
-                          newTxPopup(
-                            hash,
-                            'approve',
-                            tokenIn,
-                            '',
-                            customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
-                            0,
-                            '',
-                            router
-                          );
-                        }
-                        else {
-                          hash = await sendUserOperationAsync({
-                            uo: approve(
-                              tokenIn as `0x${string}`,
-                              router,
-                              maxUint256
-                            )
-                          })
-                          newTxPopup(
-                            hash,
-                            'approve',
-                            tokenIn,
-                            '',
-                            customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
-                            0,
-                            '',
-                            router
-                          );
-                        }
-                      }
-                      if (!client || !(allowance < amountIn)) {
-                        if (tokenOut == eth) {
-                          if (orderType == 1 || multihop) {
-                            hash = await sendUserOperationAsync({
-                              uo: swapTokensForExactETH(
-                                router,
-                                amountOutSwap,
-                                (amountIn * 10000n + slippage / 2n) / slippage,
-                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                                address as `0x${string}`,
-                                BigInt(Math.floor(Date.now() / 1000) + 900),
-                                usedRefAddress as `0x${string}`
-                              )
-                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
-                          } else {
-                            hash = await sendUserOperationAsync({
-                              uo: _swap(
-                                router,
-                                BigInt(0),
-                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                                false,
-                                BigInt(0),
-                                amountOutSwap,
-                                tokenIn == activeMarket.quoteAddress
-                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                                  : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(Date.now() / 1000) + 900),
-                                usedRefAddress as `0x${string}`
-                              )
-                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
-                          }
-                        } else {
-                          if (orderType == 1 || multihop) {
-                            hash = await sendUserOperationAsync({
-                              uo: swapTokensForExactTokens(
-                                router,
-                                amountOutSwap,
-                                (amountIn * 10000n + slippage / 2n) / slippage,
-                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                                address as `0x${string}`,
-                                BigInt(Math.floor(Date.now() / 1000) + 900),
-                                usedRefAddress as `0x${string}`
-                              )
-                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
-                          } else {
-                            hash = await sendUserOperationAsync({
-                              uo: _swap(
-                                router,
-                                BigInt(0),
-                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                                false,
-                                BigInt(0),
-                                amountOutSwap,
-                                tokenIn == activeMarket.quoteAddress
-                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                                  : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(Date.now() / 1000) + 900),
-                                usedRefAddress as `0x${string}`
-                              )
-                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
-                          }
-                        }
-                      }
+                    if (allowance < amountIn) {
+                      hash = await sendUserOperationAsync({
+                        uo: approve(
+                          tokenIn as `0x${string}`,
+                          settings.chainConfig[activechain].madHouseRouter,
+                          maxUint256
+                        )
+                      })
+                      newTxPopup(
+                        hash,
+                        'approve',
+                        tokenIn,
+                        '',
+                        customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
+                        0,
+                        '',
+                        settings.chainConfig[activechain].madHouseRouter
+                      );
                     }
+                    hash = await sendUserOperationAsync({
+                      uo: {
+                        target: settings.chainConfig[activechain].madHouseRouter,
+                        data: tempQueryData?.aggregatorRes?.tx?.data,
+                        value: tempQueryData?.aggregatorRes?.tx?.value
+                      }
+                    })
                   }
-                }
-                if (!client) {
-                  txPending.current = true
                 }
                 setswitched(false);
                 setInputString('');
@@ -21799,7 +21603,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 if (slider && popup) {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
-                await refetch()
+                await terminalRefetch()
                 txPending.current = false
               } catch (error) {
                 if (!(error instanceof TransactionExecutionError)) {
@@ -21970,38 +21774,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               ) : isWrap ? (
                 `1 ${tokendict[tokenOut].ticker}`
               ) : (
-                `${formatSubscript(averagePrice)} ${multihop ? tokendict[tokenIn].ticker : activeMarket.quoteAsset}`
+                `${formatSubscript(averagePrice)} ${tokendict[tokenIn].ticker}`
               )}
             </div>
           </div>
         )}
-
-        <div className="price-impact">
-          <div className="label-container">
-            <TooltipLabel
-              label={t('priceImpact')}
-              tooltipText={
-                <div>
-                  <div className="tooltip-description">
-                    {t('priceImpactHelp')}
-                  </div>
-                </div>
-              }
-              className="impact-label"
-            />
-          </div>
-          <div className="value-container">
-            {displayValuesLoading ? (
-              <div className="limit-fee-skeleton" style={{ width: 60 }} />
-            ) : isWrap || ((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) ? (
-              `0%`
-            ) : priceImpact ? (
-              formatCommas(priceImpact)
-            ) : (
-              '0.00%'
-            )}
-          </div>
-        </div>
 
         <div className="trade-fee">
           <div className="label-container">
