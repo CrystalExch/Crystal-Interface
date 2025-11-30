@@ -11318,7 +11318,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const { data: tempQueryData, isFetching: isQuoteFetching, dataUpdatedAt: quoteUpdatedAt, refetch: quoteRefetch } = useQuery({
     queryKey: ['madhouse_quote', tokenIn, tokenOut, address, activechain, slippage.toString(), amountIn ? amountIn.toString() : null],
     queryFn: async () => {
-      const allowanceBody = JSON.stringify({
+      const allowanceBody = address ? JSON.stringify({
         jsonrpc: '2.0',
         id: 1,
         method: 'eth_call',
@@ -11326,14 +11326,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           to: tokenIn,
           data: '0xdd62ed3e' + address.replace('0x', '').padStart(64, '0') + settings.chainConfig[activechain]?.madHouseRouter.replace('0x', '').padStart(64, '0')
         }, 'latest']
-      })
+      }) : ''
       const [aggregatorRes, allowanceRes] = await Promise.all([
         fetch(`https://api.madhouse.ag/swap/v1/quote?chain=${activechain}&tokenIn=${tokenIn == eth ? '0x0000000000000000000000000000000000000000' : tokenIn}&tokenOut=${tokenOut == eth ? '0x0000000000000000000000000000000000000000' : tokenOut}&amountIn=${amountIn.toString()}&slippage=${(10000 - Number(slippage)) / 10000}`).then(r => r.json()),
-        fetch(HTTP_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: allowanceBody }).then(r => r.json())
+        allowanceBody ? fetch(HTTP_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: allowanceBody }).then(r => r.json()) : Promise.resolve({ result: '0x0' })
       ])
       return { aggregatorRes, allowanceRes: BigInt(allowanceRes?.result == '0x' ? 0 : allowanceRes?.result) }
     },
-    enabled: !!tokenIn && !!tokenOut && !!address && !!activechain && !!amountIn && ['swap'].includes(location.pathname.split('/')[1]),
+    enabled: !!tokenIn && !!tokenOut && !!activechain && !!amountIn && ['swap'].includes(location.pathname.split('/')[1]),
     refetchInterval: 3000,
     gcTime: 0
   })

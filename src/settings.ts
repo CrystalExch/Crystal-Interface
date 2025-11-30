@@ -16,7 +16,7 @@ import MonadLogo from './assets/monad.svg';
 export const settings: any = {
   useAdv: true,
   graphKey: '976ed95a54cf8e4abcbdd954605a3a6e',
-  perpsEndpoint: '',
+  perpsEndpoint: window.location.hostname == 'localhost' ? '' : 'https://pro.edgex.exchange',
   chains: [
     {
       id: 10143,
