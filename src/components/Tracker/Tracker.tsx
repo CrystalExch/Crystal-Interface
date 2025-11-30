@@ -24,6 +24,7 @@ import { encodeFunctionData } from 'viem';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
 import { NadFunAbi } from '../../abis/NadFun.ts';
 import { settings as appSettings } from '../../settings';
+import EmojiPicker from 'emoji-picker-react';
 import {
   showLoadingPopup,
   updatePopup,
@@ -348,8 +349,24 @@ const Tracker: React.FC<TrackerProps> = ({
   positions = [],
   trackedWalletsRef,
 }) => {
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiPickerPosition, setEmojiPickerPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+  const [editingEmojiWalletId, setEditingEmojiWalletId] = useState<string | null>(null);
   const [walletBalances, setWalletBalances] = useState<{ [address: string]: number }>({});
   const [selectedWalletAddress, setSelectedWalletAddress] = useState<string | null>(null);
+  const handleEmojiSelect = (emojiData: any) => {
+  if (editingEmojiWalletId) {
+    setLocalWallets((prev) =>
+      prev.map((w) => (w.id === editingEmojiWalletId ? { ...w, emoji: emojiData.emoji } : w))
+    );
+  }
+  setShowEmojiPicker(false);
+  setEmojiPickerPosition(null);
+  setEditingEmojiWalletId(null);
+};
   const getWalletNotificationPreferences = (): Record<string, boolean> => {
     try {
       const stored = localStorage.getItem('wallet_notifications_preferences');
@@ -1510,9 +1527,21 @@ const Tracker: React.FC<TrackerProps> = ({
                       </div>
 
                       <div className="wtw-wallet-profile">
-                        <div className="wtw-wallet-avatar">
-                          <span className="wtw-wallet-emoji-avatar">{wallet.emoji}</span>
-                        </div>
+<button
+  className="wtw-wallet-avatar wtw-emoji-button"
+  onClick={(e) => {
+    e.stopPropagation();
+    setEditingEmojiWalletId(wallet.id);
+    const rect = e.currentTarget.getBoundingClientRect();
+    setEmojiPickerPosition({
+      top: rect.bottom + window.scrollY + 8,
+      left: rect.left + window.scrollX + rect.width / 2,
+    });
+    setShowEmojiPicker(true);
+  }}
+>
+  <span className="wtw-wallet-emoji-avatar">{wallet.emoji}</span>
+</button>
                         <div className="wtw-wallet-name-display">
                           <div className="wtw-wallet-name-container">
                             {editingWallet === wallet.id ? (
@@ -1798,7 +1827,41 @@ const Tracker: React.FC<TrackerProps> = ({
           }}
         />
       )}
-
+{showEmojiPicker && emojiPickerPosition && (
+  <div
+    className="add-wallet-emoji-picker-backdrop"
+    onClick={() => {
+      setShowEmojiPicker(false);
+      setEmojiPickerPosition(null);
+      setEditingEmojiWalletId(null);
+    }}
+  >
+    <div
+      className="add-wallet-emoji-picker-positioned"
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        top: `${emojiPickerPosition.top}px`,
+        left: `${emojiPickerPosition.left}px`,
+        transform: 'translateX(-50%)',
+      }}
+    >
+      <EmojiPicker
+        onEmojiClick={handleEmojiSelect}
+        width={350}
+        height={400}
+        searchDisabled={false}
+        skinTonesDisabled={true}
+        previewConfig={{
+          showPreview: false,
+        }}
+        style={{
+          backgroundColor: '#000000',
+          border: '1px solid rgba(179, 184, 249, 0.2)',
+        }}
+      />
+    </div>
+  </div>
+)}
     </div>
   );
 };
