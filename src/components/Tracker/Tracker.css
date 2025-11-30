@@ -393,18 +393,6 @@
   color: rgba(255, 255, 255, 0.4);
 }
 
-.wtw-wallets-header::after {
-  content: "Wallets (" attr(data-wallet-count) ")";
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
-  letter-spacing: -0.3px;
-  pointer-events: none;
-}
-
 .tracker-wallet-header-cell {
   color: rgba(255, 255, 255, .5);
   font-size: .75rem;
@@ -2730,34 +2718,6 @@
   }
 }
 
-@media (max-width: 1020px) {
-  .tracker-wallets-container {
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .tracker-wallet-item,
-  .tracker-wallets-header {
-    min-width: 450px;
-  }
-
-  .tracker-detail-trades-body {
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .address {
-    display: none;
-  }
-
-  .tracker-live-trades .tracker-detail-trades-row,
-  .tracker-live-trades .detail-trades-table-header {
-    min-width: 750px;
-  }
-
-  .import-main {
-    display: none;
-  }
-}
-
 @media (max-width: 768px) {
   .tracker-monitor-grid {
     grid-template-columns: 1fr !important;
@@ -4788,13 +4748,41 @@
   padding: 0 10px
 }
 
-@media(max-width: 1020px) {
+@media (max-width: 1020px) {
   .trackers-mobile-row {
     display: flex;
   }
-}
 
-@media (max-width: 1020px) {
+  .tracker-wallets-container {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tracker-wallet-item,
+  .tracker-wallets-header {
+    min-width: 450px;
+  }
+
+  .tracker-detail-trades-body {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .address {
+    display: none;
+  }
+
+  .tracker-live-trades .tracker-detail-trades-row,
+  .tracker-live-trades .detail-trades-table-header {
+    min-width: 750px;
+  }
+
+  .import-main {
+    display: none;
+  }
+
+  .tracker-container {
+    height: calc(100vh - 115px) !important;
+  }
+
   .tracker-tab,
   .wtw-tab,
   .tracker-search-input,
@@ -4983,7 +4971,7 @@
 }
 
 
-.tracker-wallet-item{
+.tracker-wallet-item {
   display: grid;
   grid-template-columns: .4fr 1.2fr 1fr 1fr 1fr;
   align-items: center;

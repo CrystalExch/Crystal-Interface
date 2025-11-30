@@ -5628,7 +5628,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   return updated;
                 });
               }
-              
+
               dispatch({ type: 'ADD_MARKET', token: newToken });
             }
             else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveBuy || log.topics?.[0] == NAD_FUN_EVENTS.CurveSell) {
@@ -11362,7 +11362,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       setDisplayValuesLoading(false);
       if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
         let estPrice = 0;
-        setAveragePrice(amountOutSwap == 0n ? '0' : `${customRound((Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals)) / (Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut].decimals)),  2)}`);
+        setAveragePrice(amountOutSwap == 0n ? '0' : `${customRound((Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals)) / (Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut].decimals)), 2)}`);
         setPriceImpact(() => {
           let temppriceimpact;
           if (multihop) {
@@ -28660,6 +28660,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   chainId: userchain,
                 }}
                 selectedWallets={selectedWallets}
+                onMarketSelect={onMarketSelect}
+                setSendTokenIn={setSendTokenIn}
+                positions={memePositions}
+                trackedWalletsRef={trackedWalletsRef}
               />
             } />
           <Route path="/perps" element={<Navigate to={`/perps/${perpsActiveMarketKey}`} replace />} />
