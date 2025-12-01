@@ -515,21 +515,21 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const presets = loadBuyPresets();
     return presets[1]?.slippage || '20';
   });
+  
   const [buyPriorityFee, setBuyPriorityFee] = useState(() => {
     const presets = loadBuyPresets();
     return presets[1]?.priority || '0.01';
   });
+
   const [sellSlippageValue, setSellSlippageValue] = useState(() => {
     const presets = loadSellPresets();
     return presets[1]?.slippage || '20';
   });
+
   const [sellPriorityFee, setSellPriorityFee] = useState(() => {
     const presets = loadSellPresets();
     return presets[1]?.priority || '0.01';
   });
-
-
-
 
   const handleBuyPresetSelect = useCallback(
     (preset: number) => {
@@ -11327,11 +11327,42 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           data: '0xdd62ed3e' + address.replace('0x', '').padStart(64, '0') + settings.chainConfig[activechain]?.madHouseRouter.replace('0x', '').padStart(64, '0')
         }, 'latest']
       }) : ''
-      const [aggregatorRes, allowanceRes] = await Promise.all([
+
+      let gasEstimateCall: any = null;
+      if (address && tempQueryData?.aggregatorRes?.tx?.data) {
+        try {
+          let tx: any = null;
+
+          tx = {
+            target: settings.chainConfig[activechain].madHouseRouter,
+            data: tempQueryData?.aggregatorRes?.tx?.data,
+            value: BigInt(tempQueryData?.aggregatorRes?.tx?.value)
+          }
+
+          if (tx) {
+            gasEstimateCall = JSON.stringify({
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'eth_estimateGas',
+              params: [{
+                from: address as `0x${string}`,
+                to: tx.target,
+                data: tx.data,
+                value: tx.value ? `0x${BigInt(tx.value).toString(16)}` : '0x',
+              }]
+            });
+          }
+        } catch (e) {
+          gasEstimateCall = null;
+        }
+      }
+
+      const [aggregatorRes, allowanceRes, gasEstimateRes] = await Promise.all([
         fetch(`https://api.madhouse.ag/swap/v1/quote?chain=${activechain}&tokenIn=${tokenIn == eth ? '0x0000000000000000000000000000000000000000' : tokenIn}&tokenOut=${tokenOut == eth ? '0x0000000000000000000000000000000000000000' : tokenOut}&amountIn=${amountIn.toString()}&slippage=${(10000 - Number(slippage)) / 10000}`).then(r => r.json()),
-        allowanceBody ? fetch(HTTP_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: allowanceBody }).then(r => r.json()) : Promise.resolve({ result: '0x0' })
+        allowanceBody ? fetch(HTTP_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: allowanceBody }).then(r => r.json()) : Promise.resolve({ result: '0x0' }),
+        gasEstimateCall ? fetch(HTTP_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: gasEstimateCall }).then(r => r.json()) : Promise.resolve({ result: '0x0' })
       ])
-      return { aggregatorRes, allowanceRes: BigInt(allowanceRes?.result == '0x' ? 0 : allowanceRes?.result) }
+      return { aggregatorRes, allowanceRes: BigInt(allowanceRes?.result == '0x' ? 0 : allowanceRes?.result), gasEstimateRes: BigInt(gasEstimateRes?.result == '0x' ? 0 : gasEstimateRes?.result) }
     },
     enabled: !!tokenIn && !!tokenOut && !!activechain && !!amountIn && ['swap'].includes(location.pathname.split('/')[1]),
     refetchInterval: 3000,
@@ -11347,6 +11378,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (tempQueryData?.aggregatorRes != null) {
           setStateIsLoading(false);
           setstateloading(false);
+          setamountOutSwap(BigInt(tempQueryData?.aggregatorRes?.amountOut))
           setoutputString(Number(tempQueryData?.aggregatorRes?.amountOut || 0) == 0 ? '' : customRound(Number(tempQueryData?.aggregatorRes?.amountOut || 0) / (10 ** Number(tokendict[tokenOut].decimals)), 3))
         }
       }
@@ -21544,9 +21576,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       uo: {
                         target: settings.chainConfig[activechain].madHouseRouter,
                         data: tempQueryData?.aggregatorRes?.tx?.data,
-                        value: tempQueryData?.aggregatorRes?.tx?.value
+                        value: BigInt(tempQueryData?.aggregatorRes?.tx?.value)
                       }
-                    })
+                    }, tempQueryData?.gasEstimateRes)
                   } else {
                     if (allowance < amountIn) {
                       hash = await sendUserOperationAsync({
@@ -21571,9 +21603,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       uo: {
                         target: settings.chainConfig[activechain].madHouseRouter,
                         data: tempQueryData?.aggregatorRes?.tx?.data,
-                        value: tempQueryData?.aggregatorRes?.tx?.value
+                        value: BigInt(tempQueryData?.aggregatorRes?.tx?.value)
                       }
-                    })
+                    }, tempQueryData?.gasEstimateRes)
                   }
                 }
                 setswitched(false);
@@ -21651,28 +21683,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         </button>
       </div>
       <div className="trade-info-rectangle">
-        {(tokenIn == eth && tokendict[tokenOut]?.lst == true) && <div className="trade-fee">
-          <div className="label-container">
-            <TooltipLabel
-              label={t('stake')}
-              tooltipText={
-                <div>
-                  <div className="tooltip-description">
-                    {t('stakeSubtitle')}
-                  </div>
-                </div>
-              }
-              className="impact-label"
-            />
-          </div>
-          <ToggleSwitch
-            checked={isStake}
-            onChange={() => {
-              const newValue = isStake == true ? false : true;
-              setIsStake(newValue);
-            }}
-          />
-        </div>}
         {!isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) && (
           <div className="slippage-row">
             <div className="label-container">

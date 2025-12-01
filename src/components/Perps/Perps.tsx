@@ -2372,7 +2372,6 @@ const Perps: React.FC<PerpsProps> = ({
         <div className="perps-deposit-withdraw-section">
           <button
             className="perps-deposit-button"
-            disabled
             onClick={async () => {
               if (!address) {
                 setpopup(4)
