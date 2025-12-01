@@ -3,7 +3,7 @@
   border-radius: 20px;
   padding: 20px 25px;
   border: 1.5px solid rgba(17, 17, 18, 0.671);
-  margin: 20px 0;
+  margin: 16px 0;
 }
 
 .fee-tier-header {
@@ -222,7 +222,6 @@
 .fee-tier-benefit-card {
   display: flex;
   align-items: center;
-  background: rgba(0, 0, 0, 0.3);
   text-align: center;
   gap: 4px;
 }

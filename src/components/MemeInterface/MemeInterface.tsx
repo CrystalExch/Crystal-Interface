@@ -3270,8 +3270,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             </button>
           </div>
         </div>
-        {isWalletDropdownOpen && account.connected && (
-          <div className="meme-wallet-dropdown-panel" ref={walletDropdownPanelRef}>
+        {(
+          <div className={`meme-wallet-dropdown-panel ${isWalletDropdownOpen && account.connected ? 'visible' : ''}`} ref={walletDropdownPanelRef}>
             {(() => {
               const walletsWithToken = subWallets.filter(
                 (w) => getWalletTokenBalance(w.address) > 0,
