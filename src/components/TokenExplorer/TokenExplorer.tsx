@@ -4782,6 +4782,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const graduatingTokens = visibleTokens.graduating;
   const graduatedTokens = visibleTokens.graduated;
   const handleColumnHover = useCallback((columnType: Token['status']) => {
+    if (isLoading) return;
+
     pausedColumnRef.current = columnType;
     setPausedColumn(columnType);
 
@@ -4792,8 +4794,20 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     pausedTokenSnapshotRef.current[columnType] = new Set(
       currentTokens.map(t => t.id)
     );
-  }, [newTokens, graduatingTokens, graduatedTokens]);
+  }, [newTokens, graduatingTokens, graduatedTokens, isLoading]);
+  useEffect(() => {
+    if (!isLoading && pausedColumn) {
+      const currentTokens = pausedColumn === 'new' ? newTokens
+        : pausedColumn === 'graduating' ? graduatingTokens
+          : graduatedTokens;
 
+      if (pausedTokenSnapshotRef.current[pausedColumn].size === 0 && currentTokens.length > 0) {
+        pausedTokenSnapshotRef.current[pausedColumn] = new Set(
+          currentTokens.map(t => t.id)
+        );
+      }
+    }
+  }, [isLoading, pausedColumn, newTokens, graduatingTokens, graduatedTokens]);
   const handleColumnLeave = useCallback(() => {
     const wasPaused = pausedColumnRef.current;
     pausedColumnRef.current = null;
