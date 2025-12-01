@@ -1416,7 +1416,7 @@ const Perps: React.FC<PerpsProps> = ({
           }).then(r => r.json())
         ])
         if (liveStreamCancelled) return
-        if (metaRes?.data?.dataList?.[0]?.defaultTradeSetting) {
+        if (metaRes?.data?.dataList?.[0]?.defaultTradeSetting && metaRes.data.dataList[0].defaultTradeSetting.takerFeeRate != 0) {
           setUserFees([metaRes.data.dataList[0].defaultTradeSetting.takerFeeRate, metaRes.data.dataList[0].defaultTradeSetting.makerFeeRate])
         }
         return metaRes.data.dataList[0]
