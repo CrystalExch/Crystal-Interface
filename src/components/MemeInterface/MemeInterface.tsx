@@ -3098,8 +3098,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             onFilterDev={setTrackedToDev}
             onFilterYou={setTrackedToYou}
             onFilterTracked={setTrackedToSet}
-            onTradesHoverChange={setIsOCTradesHovered}
             devAddress={token.dev}
+            onTradesHoverChange={setIsOCTradesHovered}
+            tokenList={tokenList}
+            marketsData={marketsData}
+            setSendTokenIn={setSendTokenIn}
+            setpopup={setpopup}
+            trackedWalletsRef={trackedWalletsRef}
+            onShareDataSelected={onTokenDataChange}
           />
         </div>
       </div>
@@ -5087,17 +5093,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           </div>
 
           <div className="meme-mobile-controls">
-<button
-  className={`meme-mobile-wallets-button ${isWalletDropdownOpen ? 'active' : ''}`}
-  onClick={() => {
-    if (!address) {
-      setpopup(4);
-    } else {
-      setIsWalletDropdownOpen(!isWalletDropdownOpen);
-    }
-  }}
-  title="Toggle Wallets"
->
+            <button
+              className={`meme-mobile-wallets-button ${isWalletDropdownOpen ? 'active' : ''}`}
+              onClick={() => {
+                if (!address) {
+                  setpopup(4);
+                } else {
+                  setIsWalletDropdownOpen(!isWalletDropdownOpen);
+                }
+              }}
+              title="Toggle Wallets"
+            >
               <img
                 src={walleticon}
                 alt="Wallet"

@@ -25,6 +25,7 @@ import walleticon from '../../../assets/wallet_icon.svg';
 import { settings } from '../../../settings';
 import filter from '../../../assets/filter.svg';
 import TransactionFiltersPopup from '../MemeTradesComponent/TransactionFiltersPopup';
+import TraderPortfolioPopup from '../MemeTradesComponent/TraderPortfolioPopup/TraderPortfolioPopup';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -69,7 +70,7 @@ interface Position {
   remainingTokens: number;
   remainingPct: number;
   pnlNative: number;
-  lastPrice: number;
+  lastPrice?: number;
 }
 
 interface MemeOrderCenterProps {
@@ -109,7 +110,13 @@ interface MemeOrderCenterProps {
   onFilterTracked?: () => void;
   devAddress?: string;
   onTradesHoverChange?: (isHovered: boolean) => void;
-
+  // New props for TraderPortfolioPopup
+  tokenList?: any[];
+  marketsData: any;
+  setSendTokenIn?: (t: any) => void;
+  setpopup?: (v: number) => void;
+  trackedWalletsRef: any;
+  onShareDataSelected?: (shareData: any) => void;
 }
 
 interface DevToken {
@@ -586,8 +593,17 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   onFilterTracked,
   devAddress = '',
   onTradesHoverChange,
+  tokenList = [],
+  marketsData,
+  setSendTokenIn,
+  setpopup,
+  trackedWalletsRef,
+  onShareDataSelected,
 }) => {
   const [showFiltersPopup, setShowFiltersPopup] = useState(false);
+  const [popupAddr, setPopupAddr] = useState<string | null>(null);
+  const [selectedShareData, setSelectedShareData] = useState<any>(null);
+
   const handleApplyFilters = (filters: TransactionFilters) => {
     setTransactionFilters(filters);
   };
@@ -994,6 +1010,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       isUser: false
     };
   };
+
   const renderContent = () => {
     switch (activeSection) {
       case 'positions':
@@ -1129,7 +1146,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                                 src={monadicon}
                                 className="meme-ordercenter-monad-icon"
                               />
-                              {fmt(p.remainingTokens * p.lastPrice)}
+                              {fmt(p.remainingTokens * (p.lastPrice ?? currentPrice))}
                             </span>
                             <span className="meme-remaining-percentage">
                               {p.remainingPct.toFixed(0)}%
@@ -1272,7 +1289,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                             </span>
                           )}
                           <span
-                            className={`oc-meme-wallet-address ${walletDisplay.isUser ? 'current-user' : walletDisplay.isTracked ? 'tracked-wallet' : ''}`}
+                            className={`oc-meme-wallet-address ${walletDisplay.isUser ? 'current-user' : walletDisplay.isTracked ? 'tracked-wallet clickable' : 'clickable'}`}
+                            onClick={() => !walletDisplay.isUser && setPopupAddr(row.wallet)}
+                            style={{ cursor: walletDisplay.isUser ? 'default' : 'pointer' }}
                           >
                             {walletDisplay.text}
                           </span>
@@ -1507,7 +1526,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                             </span>
                           )}
                           <span
-                            className={`oc-meme-wallet-address ${walletDisplay.isUser ? 'current-user' : walletDisplay.isTracked ? 'tracked-wallet' : ''}`}
+                            className={`oc-meme-wallet-address ${walletDisplay.isUser ? 'current-user' : walletDisplay.isTracked ? 'tracked-wallet clickable' : 'clickable'}`}
+                            onClick={() => !walletDisplay.isUser && setPopupAddr(row.address)}
+                            style={{ cursor: walletDisplay.isUser ? 'default' : 'pointer' }}
                           >
                             {walletDisplay.text}
                           </span>
@@ -1839,7 +1860,13 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               <div className="meme-oc-dev-stats-content">
                 <div className="meme-oc-dev-stats-row">
                   <span className="meme-oc-dev-stats-label">DEV</span>
-                  <span className="meme-oc-dev-stats-value">{token.dev ? `${token.dev.slice(0, 6)}...${token.dev.slice(-4)}` : '—'}</span>
+                  <span
+                    className="meme-oc-dev-stats-value clickable"
+                    onClick={() => token.dev && setPopupAddr(token.dev)}
+                    style={{ cursor: token.dev ? 'pointer' : 'default' }}
+                  >
+                    {token.dev ? `${token.dev.slice(0, 6)}...${token.dev.slice(-4)}` : '—'}
+                  </span>
                 </div>
 
                 <div className="meme-oc-dev-stats-row">
@@ -2289,6 +2316,54 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
         onApplyFilters={handleApplyFilters}
         currentFilters={transactionFilters}
       />
+
+      {popupAddr && (
+        <TraderPortfolioPopup
+          traderAddress={popupAddr}
+          onClose={() => setPopupAddr(null)}
+          tokenList={tokenList}
+          marketsData={marketsData}
+          onMarketSelect={(shareData) => {
+            setSelectedShareData(shareData);
+            if (setpopup) {
+              setpopup(27);
+            }
+            if (onShareDataSelected) {
+              onShareDataSelected(shareData);
+            }
+          }}
+          setSendTokenIn={setSendTokenIn}
+          setpopup={setpopup}
+          positions={positions}
+          onSellPosition={onSellPosition}
+          monUsdPrice={monUsdPrice}
+          trackedWalletsRef={trackedWalletsRef}
+          onAddTrackedWallet={(wallet) => {
+            const existing = trackedWalletsRef.current.findIndex(
+              (w: any) => w.address.toLowerCase() === wallet.address.toLowerCase()
+            );
+
+            if (existing >= 0) {
+              trackedWalletsRef.current[existing] = {
+                ...trackedWalletsRef.current[existing],
+                name: wallet.name,
+                emoji: wallet.emoji,
+              };
+            } else {
+              trackedWalletsRef.current.push({
+                id: `tracked-${Date.now()}`,
+                address: wallet.address,
+                name: wallet.name,
+                emoji: wallet.emoji,
+                balance: 0,
+                lastActiveAt: Date.now(),
+                createdAt: new Date().toISOString(),
+              });
+            }
+            localStorage.setItem('tracked_wallets_data', JSON.stringify(trackedWalletsRef.current));
+          }}
+        />
+      )}
     </div>
   );
 };
