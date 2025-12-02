@@ -1214,7 +1214,7 @@ const abortRef = useRef<AbortController | null>(null);
                         </div>
                     </div>
                 </div>
-                {searchTerm.trim().length >= 2 && (loading || isSearching) ? (
+                {searchTerm.trim().length >= 1 && (loading || isSearching) ? (
                     <div className="meme-search-results">
                         {Array.from({ length: 8 }).map((_, i) => (
                             <div key={`skeleton-${i}`} className="meme-search-skeleton-container">
@@ -1306,10 +1306,6 @@ const abortRef = useRef<AbortController | null>(null);
                                 </div>
                             </div>
                         )}
-                        {searchTerm.trim().length >= 2 && (loading || isSearching) && (
-                            <div className="meme-search-loading">Searching...</div>
-                        )}
-
                         <div className="meme-search-list">
                             {showCombinedRecent && (
                                 combinedRecentlyViewed.map((item, index) => {
@@ -1386,7 +1382,6 @@ const abortRef = useRef<AbortController | null>(null);
 
                                         const tokenElement = (
                                             <div
-                                                key={`token-${index}`}
                                                 className={`meme-token-row ${hiddenTokens.has(token.id) ? 'hidden-token' : ''}`}
                                                 onClick={() => handleTokenClick(token)}
                                                 onMouseEnter={() => handleTokenHover(token.id)}
@@ -2014,7 +2009,7 @@ const abortRef = useRef<AbortController | null>(null);
                                         );
 
                                         return (
-                                            <>
+                                            <div key={`token-${index}`}>
                                                 {tokenElement}
                                                 {hoveredImage === token.id && token.image && createPortal(
                                                     <div className="meme-search-explorer-image-preview">
@@ -2024,7 +2019,7 @@ const abortRef = useRef<AbortController | null>(null);
                                                     </div>,
                                                     document.body
                                                 )}
-                                            </>
+                                            </div>
                                         );
                                     }
                                 })
@@ -2037,7 +2032,7 @@ const abortRef = useRef<AbortController | null>(null);
                                             <div className="meme-search-section-header">Tokens</div>
                                         </div>
                                     )}
-                                    {!showMarkets && searchTerm.trim().length >= 2 && !(loading || isSearching) && (
+                                    {!showMarkets && searchTerm.trim().length >= 1 && !(loading || isSearching) && (
                                         <div className="meme-search-section">
                                             <div className="meme-search-section-header">Results</div>
                                         </div>
@@ -2574,7 +2569,7 @@ const abortRef = useRef<AbortController | null>(null);
                                         recentlyViewedMarkets.length === 0 && (
                                             <p>No recently viewed tokens or markets</p>
                                         )}
-                                    {searchTerm.trim().length >= 2 && !loading && !isSearching && (
+                                    {searchTerm.trim().length >= 1 && !loading && !isSearching && (
                                         <p>No markets or tokens found matching "{searchTerm}"</p>
                                     )}
                                 </div>
