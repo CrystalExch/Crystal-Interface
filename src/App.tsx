@@ -6038,10 +6038,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               let price = decodeSqrtPriceX96(sqrtPriceX96);
               let tokenInfo: any = null;
-              Object.values(tokensByStatusRef.current).forEach((tokens: any[]) => {
-                const found = tokens.find(t => t.market?.toLowerCase() == pool);
-                if (found) tokenInfo = found;
-              });
+              if (memeRef.current?.market && pool === memeRef.current.market.toLowerCase()) {
+                tokenInfo = memeRef.current;
+              }
+              else {
+                Object.values(tokensByStatusRef.current).forEach((tokens: any[]) => {
+                  const found = tokens.find(t => t.market?.toLowerCase() == pool);
+                  if (found) tokenInfo = found;
+                });
+              }
               if (!tokenInfo) return tempset;
               const tokenAddr = tokenInfo.tokenAddress
               const wethIsToken0 = weth.toLowerCase() < tokenAddr.toLowerCase();
@@ -6506,11 +6511,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   useEffect(() => {
     if (!explorerWsRef.current) return;
     if (explorerWsRef.current.readyState !== WebSocket.OPEN) return;
-
     const graduated = Object.values(tokensByStatus.graduated || []);
     const pools = graduated
       .map((t: any) => t.market?.toLowerCase())
       .filter(Boolean);
+    pools.push(token?.market);
 
     const unsub = JSON.stringify({
       jsonrpc: "2.0",
@@ -6531,7 +6536,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     explorerWsRef.current.send(unsub);
     explorerWsRef.current.send(sub);
 
-  }, [tokensByStatus?.graduated?.[0]?.market, wsReady]);
+  }, [token?.market, tokensByStatus?.graduated?.[0]?.market, wsReady]);
 
   useEffect(() => {
     if (!explorerWsRef.current) return;
@@ -6539,7 +6544,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     const unsub = JSON.stringify({
       jsonrpc: "2.0",
-      id: "unsub_uni",
+      id: "unsub_transfer",
       method: "eth_unsubscribe",
       params: ["sub_transfer"]
     });
