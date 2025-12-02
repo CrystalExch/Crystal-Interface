@@ -2760,19 +2760,19 @@
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  animation: slideDown 0.2s ease;
   width: 350px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+  pointer-events: none;
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.meme-wallet-dropdown-panel.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .meme-wallet-dropdown-header {

@@ -3195,6 +3195,260 @@ const Portfolio: React.FC<PortfolioProps> = ({
       case 'trenches':
         return (
           <div className="trenches-container">
+            <div className="trenches-second-row">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <div ref={trenchesDropdownRef} style={{ position: 'relative' }} className="trenches-dropdown">
+                  <button
+                    className="footer-transparent-button"
+                    style={{ height: '30px' }}
+                    onClick={() => setIsTrenchesWalletDropdownOpen(!isTrenchesWalletDropdownOpen)}
+                  >
+                    <span
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        width: '100%',
+                      }}
+                    >
+                      <span style={{ fontSize: '0.85rem', fontWeight: '300' }}>
+                        {trenchesSelectedWallets.size} {trenchesSelectedWallets.size === 1 ? 'wallet' : 'wallets'}
+                      </span>
+                      <svg
+                        className={`footer-wallet-dropdown-arrow ${isTrenchesWalletDropdownOpen ? 'open' : ''}`}
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </span>
+                  </button>
+
+                  <div className={`wallet-dropdown-panel ${isTrenchesWalletDropdownOpen ? 'visible' : ''}`} style={{right: 'auto'}}>
+                    <div className="footer-wallet-dropdown-header">
+                      <div className="footer-wallet-dropdown-actions">
+                        <button
+                          className="wallet-action-btn"
+                          onClick={
+                            trenchesSelectedWallets.size === (subWallets.length + 1)
+                              ? unselectAllTrenchesWallets
+                              : selectAllTrenchesWallets
+                          }
+                        >
+                          {trenchesSelectedWallets.size === (subWallets.length + 1)
+                            ? 'Unselect All'
+                            : 'Select All'}
+                        </button>
+                        <button
+                          className="wallet-action-btn"
+                          onClick={selectAllTrenchesWithBalance}
+                        >
+                          Select All with Balance
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="wallet-dropdown-list">
+                      <div>
+                        <div
+                          className={`footer-wallet-item ${trenchesSelectedWallets.has(scaAddress) ? 'selected' : ''}`}
+                          onClick={() => toggleTrenchesWalletSelection(scaAddress)}
+                        >
+                          <div className="quickbuy-wallet-checkbox-container">
+                            <input
+                              type="checkbox"
+                              className="quickbuy-wallet-checkbox selection"
+                              checked={trenchesSelectedWallets.has(scaAddress)}
+                              readOnly
+                            />
+                          </div>
+                          <div className="wallet-dropdown-info">
+                            <div className="quickbuy-wallet-name">
+                              Main Wallet
+                            </div>
+                            <div
+                              className="wallet-dropdown-address"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyToClipboard(scaAddress, 'Wallet address copied');
+                              }}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              {scaAddress?.slice(0, 6)}...{scaAddress?.slice(-4)}
+                              <svg
+                                className="wallet-dropdown-address-copy-icon"
+                                width="11"
+                                height="11"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                style={{ marginLeft: '2px' }}
+                              >
+                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                              </svg>
+                            </div>
+                          </div>
+                          <div className="wallet-dropdown-balance">
+                            {(() => {
+                              const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                              const balanceWei = walletTokenBalances[scaAddress]?.[
+                                settings.chainConfig[activechain]?.eth
+                              ] || 0n;
+                              const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+                              const balance = getWalletBalance(scaAddress);
+
+                              return (
+                                <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                  <div
+                                    className={`wallet-dropdown-balance-amount ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                  >
+                                    <img
+                                      src={monadicon}
+                                      className="wallet-dropdown-mon-icon"
+                                      alt="MON"
+                                    />
+                                    {formatBalanceCompact(balance)}
+                                  </div>
+                                </Tooltip>
+                              );
+                            })()}
+                          </div>
+                          <div className="wallet-drag-tokens">
+                            <div className="wallet-token-count">
+                              <div className="wallet-token-structure-icons">
+                                <div className="token1"></div>
+                                <div className="token2"></div>
+                                <div className="token3"></div>
+                              </div>
+                              <span className="wallet-total-tokens">
+                                {getWalletTokenCount(scaAddress)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Sub Wallets */}
+                        {subWallets.map((wallet, index) => {
+                          const balance = getWalletBalance(wallet.address);
+                          const isSelected = trenchesSelectedWallets.has(wallet.address);
+                          return (
+                            <div
+                              key={wallet.address}
+                              className={`footer-wallet-item ${isSelected ? 'selected' : ''}`}
+                              onClick={() => toggleTrenchesWalletSelection(wallet.address)}
+                            >
+                              <div className="quickbuy-wallet-checkbox-container">
+                                <input
+                                  type="checkbox"
+                                  className="quickbuy-wallet-checkbox selection"
+                                  checked={isSelected}
+                                  readOnly
+                                />
+                              </div>
+                              <div className="wallet-dropdown-info">
+                                <div className="quickbuy-wallet-name">
+                                  {getWalletName(wallet.address, index)}
+                                </div>
+                                <div
+                                  className="wallet-dropdown-address"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    copyToClipboard(wallet.address, 'Wallet address copied');
+                                  }}
+                                  style={{ cursor: 'pointer' }}
+                                >
+                                  {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                                  <svg
+                                    className="wallet-dropdown-address-copy-icon"
+                                    width="11"
+                                    height="11"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                    style={{ marginLeft: '2px' }}
+                                  >
+                                    <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                                  </svg>
+                                </div>
+                              </div>
+                              <div className="wallet-dropdown-balance">
+                                {(() => {
+                                  const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+                                  const balanceWei = walletTokenBalances[wallet.address]?.[
+                                    settings.chainConfig[activechain]?.eth
+                                  ] || 0n;
+                                  const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
+
+                                  return (
+                                    <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
+                                      <div
+                                        className={`wallet-dropdown-balance-amount ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
+                                      >
+                                        <img
+                                          src={monadicon}
+                                          className="wallet-dropdown-mon-icon"
+                                          alt="MON"
+                                        />
+                                        {formatBalanceCompact(balance)}
+                                      </div>
+                                    </Tooltip>
+                                  );
+                                })()}
+                              </div>
+                              <div className="wallet-drag-tokens">
+                                <div className="wallet-token-count">
+                                  <div className="wallet-token-structure-icons">
+                                    <div className="token1"></div>
+                                    <div className="token2"></div>
+                                    <div className="token3"></div>
+                                  </div>
+                                  <span className="wallet-total-tokens">
+                                    {getWalletTokenCount(wallet.address)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="trenches-balance-display">
+                  <img
+                    src={monadicon}
+                    style={{
+                      width: '15px',
+                      height: '15px',
+                      marginRight: '4px',
+                    }}
+                    alt="MON"
+                  />
+                  <span style={{ fontSize: '1rem', color: "white" }}>
+                    {formatBalanceCompact(totalTrenchesSelectedBalance)}
+                  </span>
+                </div>
+
+                <div className="trenches-wallet-token-count">
+                  <div className="wallet-token-structure-icons">
+                    <div className="token1"></div>
+                    <div className="token2"></div>
+                    <div className="token3"></div>
+                  </div>
+                  <span className="trenches-wallet-total-tokens">{totalTrenchesTokenCount}</span>
+                </div>
+
+              </div>
+
+              <div className="trenches-time-controls">
+                <div className="trenches-time-button">1d</div>
+                <div className="trenches-time-button">7d</div>
+                <div className="trenches-time-button">30d</div>
+                <div className="trenches-time-button-active">MAX</div>
+              </div>
+            </div>
             <div className="trenches-top-section">
 
               <div className="trenches-balance-section">
@@ -4320,260 +4574,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
                 onKeyPress={handleKeyPress}
               />
             </div>
-          </div>
-        </div>
-        <div className="trenches-second-row">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div ref={trenchesDropdownRef} style={{ position: 'relative' }} className="trenches-dropdown">
-              <button
-                className="footer-transparent-button"
-                style={{ height: '30px' }}
-                onClick={() => setIsTrenchesWalletDropdownOpen(!isTrenchesWalletDropdownOpen)}
-              >
-                <span
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    width: '100%',
-                  }}
-                >
-                  <span style={{ fontSize: '0.85rem', fontWeight: '300' }}>
-                    {trenchesSelectedWallets.size} {trenchesSelectedWallets.size === 1 ? 'wallet' : 'wallets'}
-                  </span>
-                  <svg
-                    className={`footer-wallet-dropdown-arrow ${isTrenchesWalletDropdownOpen ? 'open' : ''}`}
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </span>
-              </button>
-
-              <div className={`footer-wallet-dropdown-panel ${isTrenchesWalletDropdownOpen ? 'visible' : ''}`}>
-                <div className="footer-wallet-dropdown-header">
-                  <div className="footer-wallet-dropdown-actions">
-                    <button
-                      className="wallet-action-btn"
-                      onClick={
-                        trenchesSelectedWallets.size === (subWallets.length + 1)
-                          ? unselectAllTrenchesWallets
-                          : selectAllTrenchesWallets
-                      }
-                    >
-                      {trenchesSelectedWallets.size === (subWallets.length + 1)
-                        ? 'Unselect All'
-                        : 'Select All'}
-                    </button>
-                    <button
-                      className="wallet-action-btn"
-                      onClick={selectAllTrenchesWithBalance}
-                    >
-                      Select All with Balance
-                    </button>
-                  </div>
-                </div>
-
-                <div className="wallet-dropdown-list">
-                  <div>
-                    <div
-                      className={`footer-wallet-item ${trenchesSelectedWallets.has(scaAddress) ? 'selected' : ''}`}
-                      onClick={() => toggleTrenchesWalletSelection(scaAddress)}
-                    >
-                      <div className="quickbuy-wallet-checkbox-container">
-                        <input
-                          type="checkbox"
-                          className="quickbuy-wallet-checkbox selection"
-                          checked={trenchesSelectedWallets.has(scaAddress)}
-                          readOnly
-                        />
-                      </div>
-                      <div className="wallet-dropdown-info">
-                        <div className="quickbuy-wallet-name">
-                          Main Wallet
-                        </div>
-                        <div
-                          className="wallet-dropdown-address"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            copyToClipboard(scaAddress, 'Wallet address copied');
-                          }}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          {scaAddress?.slice(0, 6)}...{scaAddress?.slice(-4)}
-                          <svg
-                            className="wallet-dropdown-address-copy-icon"
-                            width="11"
-                            height="11"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            style={{ marginLeft: '2px' }}
-                          >
-                            <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                          </svg>
-                        </div>
-                      </div>
-                      <div className="wallet-dropdown-balance">
-                        {(() => {
-                          const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-                          const balanceWei = walletTokenBalances[scaAddress]?.[
-                            settings.chainConfig[activechain]?.eth
-                          ] || 0n;
-                          const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
-                          const balance = getWalletBalance(scaAddress);
-
-                          return (
-                            <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
-                              <div
-                                className={`wallet-dropdown-balance-amount ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
-                              >
-                                <img
-                                  src={monadicon}
-                                  className="wallet-dropdown-mon-icon"
-                                  alt="MON"
-                                />
-                                {formatBalanceCompact(balance)}
-                              </div>
-                            </Tooltip>
-                          );
-                        })()}
-                      </div>
-                      <div className="wallet-drag-tokens">
-                        <div className="wallet-token-count">
-                          <div className="wallet-token-structure-icons">
-                            <div className="token1"></div>
-                            <div className="token2"></div>
-                            <div className="token3"></div>
-                          </div>
-                          <span className="wallet-total-tokens">
-                            {getWalletTokenCount(scaAddress)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Sub Wallets */}
-                    {subWallets.map((wallet, index) => {
-                      const balance = getWalletBalance(wallet.address);
-                      const isSelected = trenchesSelectedWallets.has(wallet.address);
-                      return (
-                        <div
-                          key={wallet.address}
-                          className={`footer-wallet-item ${isSelected ? 'selected' : ''}`}
-                          onClick={() => toggleTrenchesWalletSelection(wallet.address)}
-                        >
-                          <div className="quickbuy-wallet-checkbox-container">
-                            <input
-                              type="checkbox"
-                              className="quickbuy-wallet-checkbox selection"
-                              checked={isSelected}
-                              readOnly
-                            />
-                          </div>
-                          <div className="wallet-dropdown-info">
-                            <div className="quickbuy-wallet-name">
-                              {getWalletName(wallet.address, index)}
-                            </div>
-                            <div
-                              className="wallet-dropdown-address"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyToClipboard(wallet.address, 'Wallet address copied');
-                              }}
-                              style={{ cursor: 'pointer' }}
-                            >
-                              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                              <svg
-                                className="wallet-dropdown-address-copy-icon"
-                                width="11"
-                                height="11"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                                style={{ marginLeft: '2px' }}
-                              >
-                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                              </svg>
-                            </div>
-                          </div>
-                          <div className="wallet-dropdown-balance">
-                            {(() => {
-                              const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-                              const balanceWei = walletTokenBalances[wallet.address]?.[
-                                settings.chainConfig[activechain]?.eth
-                              ] || 0n;
-                              const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
-
-                              return (
-                                <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
-                                  <div
-                                    className={`wallet-dropdown-balance-amount ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
-                                  >
-                                    <img
-                                      src={monadicon}
-                                      className="wallet-dropdown-mon-icon"
-                                      alt="MON"
-                                    />
-                                    {formatBalanceCompact(balance)}
-                                  </div>
-                                </Tooltip>
-                              );
-                            })()}
-                          </div>
-                          <div className="wallet-drag-tokens">
-                            <div className="wallet-token-count">
-                              <div className="wallet-token-structure-icons">
-                                <div className="token1"></div>
-                                <div className="token2"></div>
-                                <div className="token3"></div>
-                              </div>
-                              <span className="wallet-total-tokens">
-                                {getWalletTokenCount(wallet.address)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="trenches-balance-display">
-              <img
-                src={monadicon}
-                style={{
-                  width: '15px',
-                  height: '15px',
-                  marginRight: '4px',
-                }}
-                alt="MON"
-              />
-              <span style={{ fontSize: '1rem', color: "white" }}>
-                {formatBalanceCompact(totalTrenchesSelectedBalance)}
-              </span>
-            </div>
-
-            <div className="trenches-wallet-token-count">
-              <div className="wallet-token-structure-icons">
-                <div className="token1"></div>
-                <div className="token2"></div>
-                <div className="token3"></div>
-              </div>
-              <span className="trenches-wallet-total-tokens">{totalTrenchesTokenCount}</span>
-            </div>
-
-          </div>
-
-          <div className="trenches-time-controls">
-            <div className="trenches-time-button">1d</div>
-            <div className="trenches-time-button">7d</div>
-            <div className="trenches-time-button">30d</div>
-            <div className="trenches-time-button-active">MAX</div>
           </div>
         </div>
         <div className="portfolio-content-container">

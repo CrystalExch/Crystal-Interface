@@ -177,13 +177,13 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
   const getTierGradient = (tierName: string): string => {
     switch (tierName) {
       case 'Bronze':
-        return 'linear-gradient(180deg, rgba(169, 133, 98, 0.15) 0%, rgba(0, 0, 0, 1) 100%)';
+        return 'linear-gradient(180deg, rgba(169, 133, 98, 0.25) 0%, rgba(6, 6, 6, 1) 100%)';
       case 'Silver':
-        return 'linear-gradient(180deg, rgba(212, 212, 212, 0.12) 0%, rgba(0, 0, 0, 1) 100%)';
+        return 'linear-gradient(180deg, rgba(212, 212, 212, 0.25) 0%, rgba(6, 6, 6, 1) 100%)';
       case 'Gold':
-        return 'linear-gradient(180deg, rgba(245, 213, 118, 0.15) 0%, rgba(0, 0, 0, 1) 100%)';
+        return 'linear-gradient(180deg, rgba(245, 213, 118, 0.25) 0%, rgba(6, 6, 6, 1) 100%)';
       case 'Diamond':
-        return 'linear-gradient(180deg, rgba(170, 174, 207, 0.15) 0%, rgba(0, 0, 0, 1) 100%)';
+        return 'linear-gradient(180deg, rgba(170, 174, 207, 0.25) 0%, rgba(6, 6, 6, 1) 100%)';
       default:
         return 'rgb(6, 6, 6)';
     }

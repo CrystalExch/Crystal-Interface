@@ -888,7 +888,7 @@ const abortRef = useRef<AbortController | null>(null);
             setIsSearching(true);
 
             const searchQuery = searchTerm.trim();
-            const url = `${BACKEND_BASE_URL}/search/query?query=${encodeURIComponent(searchQuery)}&limit=100`;
+            const url = `${BACKEND_BASE_URL}/search/query?query=${encodeURIComponent(searchQuery)}&limit=10`;
 
             const res = await fetch(url, {
                 method: 'GET',
@@ -1051,16 +1051,16 @@ const abortRef = useRef<AbortController | null>(null);
                         </div>
                     </div>
                     <div ref={walletDropdownRef} style={{ position: 'relative' }}>
-<button
-    className="meme-search-wallet-button"
-    onClick={() => {
-        if (!address) {
-            setpopup(4);
-        } else {
-            setIsWalletDropdownOpen(!isWalletDropdownOpen);
-        }
-    }}
->
+                        <button
+                            className="meme-search-wallet-button"
+                            onClick={() => {
+                                if (!address) {
+                                    setpopup(4);
+                                } else {
+                                    setIsWalletDropdownOpen(!isWalletDropdownOpen);
+                                }
+                            }}
+                        >
                             <img src={walleticon} className="meme-search-wallet-icon" alt="Wallet" />
                             <span>{selectedWallets.size}</span>
                             {totalSelectedBalance > 0 ? (
@@ -1087,7 +1087,7 @@ const abortRef = useRef<AbortController | null>(null);
                             </svg>
                         </button>
 
-                        <div className={`meme-search-wallet-dropdown-panel ${isWalletDropdownOpen ? 'meme-search-visible' : ''}`}>
+                        <div className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
                             <div className="meme-search-wallet-dropdown-header">
                                 <div className="meme-search-wallet-dropdown-actions">
                                     <button

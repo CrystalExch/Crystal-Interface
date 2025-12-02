@@ -515,21 +515,21 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const presets = loadBuyPresets();
     return presets[1]?.slippage || '20';
   });
+  
   const [buyPriorityFee, setBuyPriorityFee] = useState(() => {
     const presets = loadBuyPresets();
     return presets[1]?.priority || '0.01';
   });
+
   const [sellSlippageValue, setSellSlippageValue] = useState(() => {
     const presets = loadSellPresets();
     return presets[1]?.slippage || '20';
   });
+
   const [sellPriorityFee, setSellPriorityFee] = useState(() => {
     const presets = loadSellPresets();
     return presets[1]?.priority || '0.01';
   });
-
-
-
 
   const handleBuyPresetSelect = useCallback(
     (preset: number) => {
@@ -11327,11 +11327,42 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           data: '0xdd62ed3e' + address.replace('0x', '').padStart(64, '0') + settings.chainConfig[activechain]?.madHouseRouter.replace('0x', '').padStart(64, '0')
         }, 'latest']
       }) : ''
-      const [aggregatorRes, allowanceRes] = await Promise.all([
+
+      let gasEstimateCall: any = null;
+      if (address && tempQueryData?.aggregatorRes?.tx?.data) {
+        try {
+          let tx: any = null;
+
+          tx = {
+            target: settings.chainConfig[activechain].madHouseRouter,
+            data: tempQueryData?.aggregatorRes?.tx?.data,
+            value: BigInt(tempQueryData?.aggregatorRes?.tx?.value)
+          }
+
+          if (tx) {
+            gasEstimateCall = JSON.stringify({
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'eth_estimateGas',
+              params: [{
+                from: address as `0x${string}`,
+                to: tx.target,
+                data: tx.data,
+                value: tx.value ? `0x${BigInt(tx.value).toString(16)}` : '0x',
+              }]
+            });
+          }
+        } catch (e) {
+          gasEstimateCall = null;
+        }
+      }
+
+      const [aggregatorRes, allowanceRes, gasEstimateRes] = await Promise.all([
         fetch(`https://api.madhouse.ag/swap/v1/quote?chain=${activechain}&tokenIn=${tokenIn == eth ? '0x0000000000000000000000000000000000000000' : tokenIn}&tokenOut=${tokenOut == eth ? '0x0000000000000000000000000000000000000000' : tokenOut}&amountIn=${amountIn.toString()}&slippage=${(10000 - Number(slippage)) / 10000}`).then(r => r.json()),
-        allowanceBody ? fetch(HTTP_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: allowanceBody }).then(r => r.json()) : Promise.resolve({ result: '0x0' })
+        allowanceBody ? fetch(HTTP_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: allowanceBody }).then(r => r.json()) : Promise.resolve({ result: '0x0' }),
+        gasEstimateCall ? fetch(HTTP_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: gasEstimateCall }).then(r => r.json()) : Promise.resolve({ result: '0x0' })
       ])
-      return { aggregatorRes, allowanceRes: BigInt(allowanceRes?.result == '0x' ? 0 : allowanceRes?.result) }
+      return { aggregatorRes, allowanceRes: BigInt(allowanceRes?.result == '0x' ? 0 : allowanceRes?.result), gasEstimateRes: BigInt(gasEstimateRes?.result == '0x' ? 0 : gasEstimateRes?.result) }
     },
     enabled: !!tokenIn && !!tokenOut && !!activechain && !!amountIn && ['swap'].includes(location.pathname.split('/')[1]),
     refetchInterval: 3000,
@@ -11347,6 +11378,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (tempQueryData?.aggregatorRes != null) {
           setStateIsLoading(false);
           setstateloading(false);
+          setamountOutSwap(BigInt(tempQueryData?.aggregatorRes?.amountOut || 0))
           setoutputString(Number(tempQueryData?.aggregatorRes?.amountOut || 0) == 0 ? '' : customRound(Number(tempQueryData?.aggregatorRes?.amountOut || 0) / (10 ** Number(tokendict[tokenOut].decimals)), 3))
         }
       }
@@ -11979,57 +12011,58 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   );
 
   const [arbUSDCBalance, setarbUSDCBalance] = useState(0n);
+  const [arbUSDCAllowance, setarbUSDCAllowance] = useState(0n);
   const perpsDepositDisabled = !perpsDepositAmount || parseFloat(perpsDepositAmount) < 1 || isVaultDepositSigning || (parseFloat(perpsDepositAmount) > (Number(arbUSDCBalance) / 1e6))
 
   useEffect(() => {
     if (popup != 30 && popup != 31) return;
-
+  
     let disposed = false;
     let inFlight: AbortController | null = null;
-
+  
     const tick = async () => {
       if (disposed) return;
       try {
         inFlight?.abort();
         inFlight = new AbortController();
-
+  
         const rpc = "https://arb1.arbitrum.io/rpc";
         const usdc = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
+        const spender = "0x81144d6E7084928830f9694a201E8c1ce6eD0cb2";
 
-        const data =
-          "0x70a08231" +
-          scaAddress.toLowerCase().replace("0x", "").padStart(64, "0");
-
-        const body = {
-          jsonrpc: "2.0",
-          id: 1,
-          method: "eth_call",
-          params: [{ to: usdc, data }, "latest"]
-        };
-
+        const balData = "0x70a08231" + scaAddress.toLowerCase().replace("0x", "").padStart(64, "0");
+        const allowanceData = "0xdd62ed3e"
+          + scaAddress.toLowerCase().replace("0x", "").padStart(64, "0")
+          + spender.replace("0x", "").padStart(64, "0");
+  
+        const body = JSON.stringify([
+          { jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to: usdc, data: balData }, "latest"] },
+          { jsonrpc: "2.0", id: 2, method: "eth_call", params: [{ to: usdc, data: allowanceData }, "latest"] }
+        ]);
+  
         const res = await fetch(rpc, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body)
+          signal: inFlight.signal,
+          body
         });
-
+  
         if (!res.ok) return;
-
-        const msg = await res.json();
-        setarbUSDCBalance(BigInt(msg?.result))
-      } catch (e) {
-        console.log(e)
-      }
+  
+        const replies = await res.json();
+  
+        const bal = replies[0]?.result ? BigInt(replies[0].result) : 0n;
+        const allowance = replies[1]?.result ? BigInt(replies[1].result) : 0n;
+  
+        setarbUSDCBalance(bal);
+        setarbUSDCAllowance(allowance);
+      } catch {}
     };
-
+  
     const handle = setInterval(tick, 3000);
     tick();
-
-    return () => {
-      disposed = true;
-      inFlight?.abort();
-      clearInterval(handle);
-    };
+  
+    return () => { disposed = true; inFlight?.abort(); clearInterval(handle); };
   }, [popup, scaAddress]);
 
   // input tokenlist
@@ -14823,8 +14856,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               <img src={closebutton} className="close-button-icon" />
             </button>
             <div className="tokenselectheader1">{t('selectAToken')}</div>
-            <div className="tokenselectheader2">{t('selectTokenSubtitle')}</div>
-            <div className="tokenselectheader-divider"></div>
             <div style={{ position: 'relative' }}>
               <input
                 className="tokenselect"
@@ -14868,7 +14899,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               <img src={closebutton} className="close-button-icon" />
             </button>
             <div className="tokenselectheader1">{t('selectAToken')}</div>
-            <div className="tokenselectheader2">{t('selectTokenSubtitle')}</div>
             <div style={{ position: 'relative' }}>
               <input
                 className="tokenselect"
@@ -19824,6 +19854,28 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       const amount = BigInt(Math.floor(parseFloat(perpsDepositAmount) * 1e6));
 
                       await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: 42161 as any });
+                      if (arbUSDCAllowance < amount) {
+                        await rawSendUserOperationAsync({
+                          uo: {
+                            target: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831' as `0x${string}`,
+                            data: encodeFunctionData({
+                              abi: [{
+                                inputs: [
+                                  { name: "spender", type: "address" },
+                                  { name: "amount", type: "uint256" },
+                                ],
+                                name: "approve",
+                                outputs: [],
+                                stateMutability: "nonpayable",
+                                type: "function",
+                              }],
+                              functionName: "approve",
+                              args: ['0x81144d6E7084928830f9694a201E8c1ce6eD0cb2', amount],
+                            }),
+                            value: 0n,
+                          }
+                        });
+                      }
                       await rawSendUserOperationAsync({
                         uo: {
                           target: '0x81144d6E7084928830f9694a201E8c1ce6eD0cb2' as `0x${string}`,
@@ -21544,9 +21596,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       uo: {
                         target: settings.chainConfig[activechain].madHouseRouter,
                         data: tempQueryData?.aggregatorRes?.tx?.data,
-                        value: tempQueryData?.aggregatorRes?.tx?.value
+                        value: BigInt(tempQueryData?.aggregatorRes?.tx?.value)
                       }
-                    })
+                    }, tempQueryData?.gasEstimateRes)
                   } else {
                     if (allowance < amountIn) {
                       hash = await sendUserOperationAsync({
@@ -21571,9 +21623,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       uo: {
                         target: settings.chainConfig[activechain].madHouseRouter,
                         data: tempQueryData?.aggregatorRes?.tx?.data,
-                        value: tempQueryData?.aggregatorRes?.tx?.value
+                        value: BigInt(tempQueryData?.aggregatorRes?.tx?.value)
                       }
-                    })
+                    }, tempQueryData?.gasEstimateRes)
                   }
                 }
                 setswitched(false);
@@ -21591,7 +21643,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
                 newTxPopup(
-                  hash,
+                  hash?.hash,
                   'swap',
                   tokenIn,
                   tokenOut,
@@ -21605,7 +21657,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               } catch (error) {
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
-                    hash,
+                    hash?.hash,
                     "swapFailed",
                     tokenIn == eth ? eth : tokenIn,
                     tokenOut == eth ? eth : tokenOut,
@@ -21651,28 +21703,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         </button>
       </div>
       <div className="trade-info-rectangle">
-        {(tokenIn == eth && tokendict[tokenOut]?.lst == true) && <div className="trade-fee">
-          <div className="label-container">
-            <TooltipLabel
-              label={t('stake')}
-              tooltipText={
-                <div>
-                  <div className="tooltip-description">
-                    {t('stakeSubtitle')}
-                  </div>
-                </div>
-              }
-              className="impact-label"
-            />
-          </div>
-          <ToggleSwitch
-            checked={isStake}
-            onChange={() => {
-              const newValue = isStake == true ? false : true;
-              setIsStake(newValue);
-            }}
-          />
-        </div>}
         {!isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) && (
           <div className="slippage-row">
             <div className="label-container">

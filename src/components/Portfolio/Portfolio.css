@@ -4711,9 +4711,9 @@
 
 
 .trenches-second-row{
-  border-top: 1px solid rgba(179, 184, 249, 0.1);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   padding: 0 20px;
-  height: 50px;
+  min-height: 50px;
   display: flex;
   align-items: center;
   justify-content: space-between;
