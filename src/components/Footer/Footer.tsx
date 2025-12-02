@@ -671,7 +671,7 @@ const Footer: React.FC<FooterProps> = ({
                   Wallet
                 </div>
               </Tooltip>
-              <Tooltip content="Spectra Tracker">
+              <Tooltip content="Spectra Explorer">
                 <div
                   className={`footer-widget-button ${isSpectraWidgetOpen ? 'active' : ''}`}
                   onClick={() => onToggleSpectraWidget?.(!isSpectraWidgetOpen)}

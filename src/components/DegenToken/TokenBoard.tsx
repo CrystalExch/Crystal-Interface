@@ -276,8 +276,8 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
     ];
 
     return groups.map((t: any) => {
-      const id = (t.id ?? t.tokenAddress ?? '').toLowerCase();
-      const tokenAddress = (t.tokenAddress ?? t.id ?? '').toLowerCase();
+      const id = (t.id ?? t.id ?? '').toLowerCase();
+      const tokenAddress = (t.id ?? t.id ?? '').toLowerCase();
 
       const price =
         Number(
@@ -366,7 +366,7 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
 
   const handleTokenClick = (token: Token) => {
     setTokenData(token)
-    navigate(`/board/${token.tokenAddress}`);
+    navigate(`/board/${token.id}`);
   };
 
   const handleSortChange = (newSort: 'newest' | 'marketCap' | 'volume') => {

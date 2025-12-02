@@ -217,7 +217,6 @@ type Holder = {
 
 interface Token {
   id: string;
-  tokenAddress: string;
   dev: string;
   name: string;
   symbol: string;
@@ -2190,6 +2189,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   const [walletTokenBalances, setWalletTokenBalances] = useState<any>({});
   const [walletsLoading, _setWalletsLoading] = useState(false);
+  const [isTokenExplorerLoading, setIsTokenExplorerLoading] = useState(true);
   const [isUsernameSigning, setIsUsernameSigning] = useState(false);
   const [typedRefCode, setTypedRefCode] = useState(() => searchParams.get('ref') || '');
   const [usernameInput, setUsernameInput] = useState("");
@@ -2219,153 +2219,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [withdrawHistory, setWithdrawHistory] = useState<any[]>([]);
   const [openOrders, setOpenOrders] = useState<any[]>([]);
   const [_allOrders, setAllOrders] = useState<any[]>([]);
-
-  const ALERT_DEFAULTS: AlertSettings = {
-    soundAlertsEnabled: true,
-    volume: 100,
-    sounds: {
-      newPairs: stepaudio,
-      pairMigrating: stepaudio,
-      migrated: stepaudio,
-    },
-  };
-
-  const [alertSettings, setAlertSettings] = useState<AlertSettings>(() => {
-    const saved = localStorage.getItem('explorer-alert-settings');
-    if (!saved) return ALERT_DEFAULTS;
-    try {
-      const parsed = JSON.parse(saved);
-      return {
-        ...ALERT_DEFAULTS,
-        ...parsed,
-        sounds: { ...ALERT_DEFAULTS.sounds, ...(parsed?.sounds || {}) },
-      };
-    } catch {
-      return ALERT_DEFAULTS;
-    }
-  });
-  const [isTokenExplorerLoading, setIsTokenExplorerLoading] = useState(true);
-  const getInitialHidden = (): Set<string> => {
-    const saved = localStorage.getItem('explorer-hidden-tokens');
-    if (saved) {
-      try {
-        return new Set(JSON.parse(saved));
-      } catch {
-        return new Set();
-      }
-    }
-    return new Set();
-  };
-
-  const initialState: State = {
-    tokensByStatus: { new: [], graduating: [], graduated: [] },
-    hidden: getInitialHidden(),
-    loading: new Set(),
-  };
-
-  const [{ tokensByStatus, hidden, loading: teLoading }, dispatch] = useReducer(
-    reducer,
-    initialState,
-  );
-
-  const tokensByStatusRef = useRef(tokensByStatus);
-
-  useEffect(() => {
-    tokensByStatusRef.current = tokensByStatus;
-  }, [tokensByStatus]);
-
-  const tokenAddress = (matchPath('/meme/:tokenAddress', location.pathname) || matchPath('/board/:tokenAddress', location.pathname))?.params?.tokenAddress?.toLowerCase();
-  const [wsReady, setWsReady] = useState(false);
-  const explorerWsRef = useRef<WebSocket | null>(null);
-  const explorerPingIntervalRef = useRef<any>(null);
-  const explorerReconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const pausedColumnRef = useRef<any>(null);
-  const pausedTokenQueueRef = useRef<{
-    new: string[];
-    graduating: string[];
-    graduated: string[];
-  }>({
-    new: [],
-    graduating: [],
-    graduated: []
-  });
-  const alertSettingsRef = useRef<any>(alertSettings);
-  const memeRealtimeCallbackRef = useRef<any>({});
-  const trackedWalletsRef = useRef<any>(
-    (() => {
-      try {
-        return JSON.parse(localStorage.getItem('tracked_wallets_data') || '[]');
-      } catch {
-        return [];
-      }
-    })()
-  );
-  const trackedWalletTradesRef = useRef<any>([]);
-  const [trackedWalletTrades, setTrackedWalletTrades] = useState<any[]>([]);
-  const wsPendingLogsRef = useRef(new Map());
-  const transferPendingLogsRef = useRef(new Map());
-
-  // reload if throttled
-  useEffect(() => {
-    if (!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])) return;
-    let last = Date.now();
-    let throttled = false;
-
-    const check = setInterval(() => {
-      const now = Date.now();
-      if (!throttled && now - last > 10000) throttled = true;
-      last = now;
-    }, 1000);
-
-    const onFocus = () => {
-      if (throttled) window.location.reload();
-    };
-
-    window.addEventListener('focus', onFocus);
-
-    return () => {
-      clearInterval(check);
-      window.removeEventListener('focus', onFocus);
-    };
-  }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
-
-  useEffect(() => {
-    const updateTrackedWalletsRef = () => {
-      try {
-        const stored = localStorage.getItem('tracked_wallets_data');
-        if (stored) {
-          const wallets = JSON.parse(stored);
-          trackedWalletsRef.current = wallets;
-        } else {
-          trackedWalletsRef.current = [];
-        }
-      } catch (error) {
-        trackedWalletsRef.current = [];
-      }
-    };
-
-    updateTrackedWalletsRef();
-
-    const handleWalletsUpdate = (e: CustomEvent) => {
-      if (e.detail?.wallets) {
-        trackedWalletsRef.current = e.detail.wallets;
-      }
-    };
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'tracked_wallets_data') {
-        updateTrackedWalletsRef();
-      }
-    };
-
-    window.addEventListener('wallets-updated', handleWalletsUpdate as EventListener);
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('wallets-updated', handleWalletsUpdate as EventListener);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
 
   const audio = useMemo(() => {
     const a = new Audio(stepaudio);
@@ -4520,7 +4373,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       const token: Partial<Token> = {
         ...defaultMetrics,
         id: args.token,
-        tokenAddress: args.token,
         name: args.name,
         symbol: args.symbol,
         image: args.metadataCID || '',
@@ -4666,6 +4518,175 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     };
   }, [address]);
 
+  const ALERT_DEFAULTS: AlertSettings = {
+    soundAlertsEnabled: true,
+    volume: 100,
+    sounds: {
+      newPairs: stepaudio,
+      pairMigrating: stepaudio,
+      migrated: stepaudio,
+    },
+  };
+
+  const [alertSettings, setAlertSettings] = useState<AlertSettings>(() => {
+    const saved = localStorage.getItem('explorer-alert-settings');
+    if (!saved) return ALERT_DEFAULTS;
+    try {
+      const parsed = JSON.parse(saved);
+      return {
+        ...ALERT_DEFAULTS,
+        ...parsed,
+        sounds: { ...ALERT_DEFAULTS.sounds, ...(parsed?.sounds || {}) },
+      };
+    } catch {
+      return ALERT_DEFAULTS;
+    }
+  });
+
+  const initialState: State = {
+    tokensByStatus: { new: [], graduating: [], graduated: [] },
+    hidden: (() => {
+      const s = localStorage.getItem('explorer-hidden-tokens');
+      if (!s) return new Set();
+      try { return new Set(JSON.parse(s)); }
+      catch { return new Set(); }
+    })(),
+    loading: new Set(),
+  };
+
+  const [{ tokensByStatus, hidden, loading: teLoading }, dispatch] = useReducer(
+    reducer,
+    initialState,
+  );
+
+  const tokensByStatusRef = useRef(tokensByStatus);
+
+  useEffect(() => {
+    tokensByStatusRef.current = tokensByStatus;
+  }, [tokensByStatus]);
+
+  const tokenAddress = (matchPath('/meme/:tokenAddress', location.pathname) || matchPath('/board/:tokenAddress', location.pathname))?.params?.tokenAddress?.toLowerCase();
+  const [wsReady, setWsReady] = useState(false);
+  const explorerWsRef = useRef<WebSocket | null>(null);
+  const explorerPingIntervalRef = useRef<any>(null);
+  const explorerReconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pausedColumnRef = useRef<any>(null);
+  const pausedTokenQueueRef = useRef<{
+    new: string[];
+    graduating: string[];
+    graduated: string[];
+  }>({
+    new: [],
+    graduating: [],
+    graduated: []
+  });
+  const alertSettingsRef = useRef<any>(alertSettings);
+  const memeRealtimeCallbackRef = useRef<any>({});
+  const trackedWalletsRef = useRef<any>(
+    (() => {
+      try {
+        return JSON.parse(localStorage.getItem('tracked_wallets_data') || '[]');
+      } catch {
+        return [];
+      }
+    })()
+  );
+  const trackedWalletTradesRef = useRef<any>([]);
+  const [trackedWalletTrades, setTrackedWalletTrades] = useState<any[]>([]);
+  const wsPendingLogsRef = useRef(new Map());
+  const transferPendingLogsRef = useRef(new Map());
+  const [memeTrades, setMemeTrades] = useState<LaunchpadTrade[]>([]);
+  const [memeHolders, setMemeHolders] = useState<Holder[]>([]);
+  const [memeTopTraders, setMemeTopTraders] = useState<Holder[]>([]);
+  const [memePositions, setMemePositions] = useState<any[]>([]);
+  const [memeDevTokens, setMemeDevTokens] = useState<any[]>([]);
+  const [memeTop10HoldingPct, setMemeTop10HoldingPct] = useState(0);
+  const [memeUserStats, setMemeUserStats] = useState({
+    balance: 0, amountBought: 0, amountSold: 0, valueBought: 0, valueSold: 0, valueNet: 0,
+  });
+  const [memeSimilarTokens, setMemeSimilarTokens] = useState<any[]>([]);
+  const [memeSelectedInterval, setMemeSelectedInterval] = useState(
+    () => localStorage.getItem('meme_chart_timeframe') || '15s',
+  );
+  const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
+  const uniSubRef = useRef<string>('');
+  const transferSubRef = useRef<string>('');
+  const processedTradeIds = useRef<Set<string>>(new Set());
+
+  const [page, _setPage] = useState(0);
+  const [currentTokenData, setCurrentTokenData] = useState({
+    address: '',
+    symbol: '',
+    name: '',
+    price: 0,
+  });
+  const memeRef = useRef<any>();
+  const memeDevTokenIdsRef = useRef<Set<string>>(new Set());
+  const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
+  const [isLoadingTrades, setIsLoadingTrades] = useState(false);
+
+  // reload if throttled
+  useEffect(() => {
+    if (!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])) return;
+    let last = Date.now();
+    let throttled = false;
+
+    const check = setInterval(() => {
+      const now = Date.now();
+      if (!throttled && now - last > 10000) throttled = true;
+      last = now;
+    }, 1000);
+
+    const onFocus = () => {
+      if (throttled) window.location.reload();
+    };
+
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      clearInterval(check);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
+
+  useEffect(() => {
+    const updateTrackedWalletsRef = () => {
+      try {
+        const stored = localStorage.getItem('tracked_wallets_data');
+        if (stored) {
+          const wallets = JSON.parse(stored);
+          trackedWalletsRef.current = wallets;
+        } else {
+          trackedWalletsRef.current = [];
+        }
+      } catch (error) {
+        trackedWalletsRef.current = [];
+      }
+    };
+
+    updateTrackedWalletsRef();
+
+    const handleWalletsUpdate = (e: CustomEvent) => {
+      if (e.detail?.wallets) {
+        trackedWalletsRef.current = e.detail.wallets;
+      }
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'tracked_wallets_data') {
+        updateTrackedWalletsRef();
+      }
+    };
+
+    window.addEventListener('wallets-updated', handleWalletsUpdate as EventListener);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('wallets-updated', handleWalletsUpdate as EventListener);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+  
   useEffect(() => {
     let cancelled = false;
 
@@ -4730,7 +4751,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             const token: Token = {
               ...defaultMetrics,
               id: (m.token as string).toLowerCase(),
-              tokenAddress: (m.token as string).toLowerCase(),
               dev: (m.creator as string) || '',
               name: (m.name as string) || '',
               symbol: (m.symbol as string) || '',
@@ -4832,8 +4852,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       explorerWsRef.current.onmessage = ({ data }) => {
         try {
           const msg = JSON.parse(data);
-          if (msg.method !== 'eth_subscription' || !msg.params?.result)
+          if (msg.method !== 'eth_subscription' || !msg.params?.result) {
+            if (msg?.id == "sub_uni_update") {
+              uniSubRef.current = msg?.result;
+            }
+            else if (msg?.id == "sub_transfers") {
+              transferSubRef.current = msg?.result;
+            }
             return;
+          }
           const log = msg.params?.result;
           if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
 
@@ -5222,7 +5249,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 }
                 let tokenInfo: any = null;
                 Object.values(tokensByStatusRef.current).forEach((tokens: any[]) => {
-                  const found = tokens.find(t => t.tokenAddress?.toLowerCase() === tokenAddr);
+                  const found = tokens.find(t => t.id?.toLowerCase() === tokenAddr);
                   if (found) tokenInfo = found;
                 });
 
@@ -5572,7 +5599,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               const newToken: Token = {
                 ...defaultMetrics,
                 id: tokenAddress,
-                tokenAddress: tokenAddress,
                 dev: creatorAddress,
                 name: name || 'Token',
                 symbol: symbol || 'TKN',
@@ -5702,7 +5728,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 let tokenInfo: any = null;
 
                 Object.values(tokensByStatusRef.current).forEach((tokens: any[]) => {
-                  const found = tokens.find(t => t.tokenAddress?.toLowerCase() == tokenAddr);
+                  const found = tokens.find(t => t.id?.toLowerCase() == tokenAddr);
                   if (found) tokenInfo = found;
                 });
 
@@ -6048,7 +6074,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 });
               }
               if (!tokenInfo) return tempset;
-              const tokenAddr = tokenInfo.tokenAddress
+              const tokenAddr = tokenInfo.id
               const wethIsToken0 = weth.toLowerCase() < tokenAddr.toLowerCase();
 
               let nativeDelta: bigint;
@@ -6425,39 +6451,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
 
   // memeinterface
-  const [memeTrades, setMemeTrades] = useState<LaunchpadTrade[]>([]);
-  const [memeHolders, setMemeHolders] = useState<Holder[]>([]);
-  const [memeTopTraders, setMemeTopTraders] = useState<Holder[]>([]);
-  const [memePositions, setMemePositions] = useState<any[]>([]);
-  const [memeDevTokens, setMemeDevTokens] = useState<any[]>([]);
-  const [memeTop10HoldingPct, setMemeTop10HoldingPct] = useState(0);
-  const [memeUserStats, setMemeUserStats] = useState({
-    balance: 0, amountBought: 0, amountSold: 0, valueBought: 0, valueSold: 0, valueNet: 0,
-  });
-  const [memeSimilarTokens, setMemeSimilarTokens] = useState<any[]>([]);
-  const [memeSelectedInterval, setMemeSelectedInterval] = useState(
-    () => localStorage.getItem('meme_chart_timeframe') || '15s',
-  );
-  const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
-
-  const processedTradeIds = useRef<Set<string>>(new Set());
-
-  const [page, _setPage] = useState(0);
-  const [currentTokenData, setCurrentTokenData] = useState({
-    address: '',
-    symbol: '',
-    name: '',
-    price: 0,
-  });
-  const memeRef = useRef<any>();
-  const memeDevTokenIdsRef = useRef<Set<string>>(new Set());
-  const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
-  const [isLoadingTrades, setIsLoadingTrades] = useState(false);
-
   const token: Token = useMemo(() => {
     const baseDefaults: Token = {
       id: tokenAddress || "",
-      tokenAddress: tokenAddress || "",
       name: "Token",
       symbol: "TKN",
       dev: "",
@@ -6500,7 +6496,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     } as Token;
 
     merged.id = (tokenAddress || "").toLowerCase();
-    merged.tokenAddress = (merged.tokenAddress || tokenAddress || "").toLowerCase();
     if (!merged.created) {
       merged.created = Math.floor(Date.now() / 1000);
     }
@@ -6517,13 +6512,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       .filter(Boolean);
     pools.push(token?.market);
 
-    const unsub = JSON.stringify({
-      jsonrpc: "2.0",
-      id: "unsub_uni",
-      method: "eth_unsubscribe",
-      params: ["sub_uni_update"]
-    });
-
     const sub = JSON.stringify({
       jsonrpc: "2.0",
       id: "sub_uni_update",
@@ -6533,22 +6521,23 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         { address: pools, topics: [[UNIV3_EVENTS.Swap]] }
       ]
     });
-    explorerWsRef.current.send(unsub);
     explorerWsRef.current.send(sub);
 
+    if (uniSubRef.current) {
+      const unsub = JSON.stringify({
+        jsonrpc: "2.0",
+        id: "unsub_uni",
+        method: "eth_unsubscribe",
+        params: [uniSubRef.current]
+      });
+      explorerWsRef.current.send(unsub);
+    }
   }, [token?.market, tokensByStatus?.graduated?.[0]?.market, wsReady]);
 
   useEffect(() => {
     if (!explorerWsRef.current) return;
     if (explorerWsRef.current.readyState !== WebSocket.OPEN) return;
 
-    const unsub = JSON.stringify({
-      jsonrpc: "2.0",
-      id: "unsub_transfer",
-      method: "eth_unsubscribe",
-      params: ["sub_transfer"]
-    });
-    explorerWsRef.current.send(unsub);
     if (token.id) {
       const sub = JSON.stringify({
         jsonrpc: "2.0",
@@ -6560,6 +6549,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         ]
       });
       explorerWsRef.current.send(sub);
+    }
+    if (transferSubRef.current) {
+      const unsub = JSON.stringify({
+        jsonrpc: "2.0",
+        id: "unsub_transfer",
+        method: "eth_unsubscribe",
+        params: [transferSubRef.current]
+      });
+      explorerWsRef.current.send(unsub);
     }
   }, [token.id, wsReady]);
 
@@ -6713,7 +6711,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           ...tokenData,
           ...m,
           id: m.id.toLowerCase(),
-          tokenAddress: m.id.toLowerCase(),
           dev: m.creator?.id?.toLowerCase() ?? "",
           name: m.name,
           symbol: m.symbol,
@@ -7644,7 +7641,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     if (setTokenData) {
       setTokenData(token);
     }
-    navigate(`/meme/${token.tokenAddress}`);
+    navigate(`/meme/${token.id}`);
     setpopup(0);
   };
 
@@ -7676,7 +7673,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         data: encodeFunctionData({
           abi: CrystalRouterAbi,
           functionName: 'buy',
-          args: [true, token.tokenAddress as `0x${string}`, val, 0n]
+          args: [true, token.id as `0x${string}`, val, 0n]
         }),
         value: val,
       };

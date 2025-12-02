@@ -144,7 +144,7 @@ interface MemeInterfaceProps {
 const STATS_HTTP_BASE = 'https://api.crystal.exchange';
 const PAGE_SIZE = 100;
 
-const formatNumberWithCommas = (v: number, d = 6) => {
+const formatNumberWithCommas = (v: number, d = 2) => {
   if (v === 0) return '0.00';
   if (v >= 1e11) return `${(v / 1e9).toFixed(0)}B`;
   if (v >= 1e10) return `${(v / 1e9).toFixed(1)}B`;
@@ -5702,6 +5702,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         buySound={buySound}
         sellSound={sellSound}
         volume={volume}
+        formatNumberWithCommas={formatNumberWithCommas}
       />
 
       {hoveredSimilarTokenImage &&

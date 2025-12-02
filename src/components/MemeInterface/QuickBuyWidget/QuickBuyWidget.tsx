@@ -80,6 +80,7 @@ interface QuickBuyWidgetProps {
   buySound: string;
   sellSound: string;
   volume: number;
+  formatNumberWithCommas: any;
 }
 
 const Tooltip: React.FC<{
@@ -277,6 +278,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   buySound,
   sellSound,
   volume,
+  formatNumberWithCommas
 }) => {
   const playTradeSound = useCallback((isBuy: boolean) => {
     if (!transactionSounds) return;
@@ -557,16 +559,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     },
     [showLoadingPopup, updatePopup],
   );
-
-  const formatNumberWithCommas = (num: number, decimals = 2) => {
-    if (num === 0) return '0.00';
-    if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;
-    if (num >= 1e6) return `${(num / 1e6).toFixed(decimals)}M`;
-    if (num >= 1e3) return `${(num / 1e3).toFixed(decimals)}K`;
-    if (num >= 1)
-      return num.toLocaleString('en-US', { maximumFractionDigits: decimals });
-    return num.toFixed(Math.min(decimals, 8));
-  };
 
   const getWalletBalance = (address: string) => {
     const balances = walletTokenBalances[address];

@@ -58,7 +58,6 @@ import './TokenExplorer.css';
 
 interface Token {
   id: string;
-  tokenAddress: string;
   dev: string;
   name: string;
   symbol: string;
@@ -1403,6 +1402,21 @@ const formatPrice = (p: number, noDecimals = false) => {
   if (p >= 1e3)
     return `$${noDecimals ? Math.round(p / 1e3) : (p / 1e3).toFixed(1)}K`;
   return `$${noDecimals ? Math.round(p) : p.toFixed(2)}`;
+};
+
+const formatNumberWithCommas = (v: number, d = 2) => {
+  if (v === 0) return '0.00';
+  if (v >= 1e11) return `${(v / 1e9).toFixed(0)}B`;
+  if (v >= 1e10) return `${(v / 1e9).toFixed(1)}B`;
+  if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
+  if (v >= 1e8) return `${(v / 1e6).toFixed(0)}M`;
+  if (v >= 1e7) return `${(v / 1e6).toFixed(1)}M`;
+  if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
+  if (v >= 1e5) return `${(v / 1e3).toFixed(0)}K`;
+  if (v >= 1e4) return `${(v / 1e3).toFixed(1)}K`;
+  if (v >= 1e3) return `${(v / 1e3).toFixed(2)}K`;
+  if (v >= 1) return v.toLocaleString('en-US', { maximumFractionDigits: d });
+  return v.toFixed(Math.min(d, 8));
 };
 
 const DisplayDropdown: React.FC<{
@@ -3048,7 +3062,7 @@ const TokenRow = React.memo<{
                       <Tooltip content="View on nad.fun">
                         <a
                           className="token-info-meme-interface-social-btn"
-                          href={`https://nad.fun/tokens/${token.tokenAddress}`}
+                          href={`https://nad.fun/tokens/${token.id}`}
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
@@ -3906,16 +3920,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     }
   };
 
-  const formatNumberWithCommas = (num: number, decimals = 2) => {
-    if (num === 0) return '0';
-    if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;
-    if (num >= 1e6) return `${(num / 1e6).toFixed(decimals)}M`;
-    if (num >= 1e3) return `${(num / 1e3).toFixed(decimals)}K`;
-    if (num >= 1)
-      return num.toLocaleString('en-US', { maximumFractionDigits: decimals });
-    return num.toFixed(Math.min(decimals, 8));
-  };
-
   const selectedSet = useMemo(() => new Set<string>(), []);
 
   const totalSelectedBalance = useMemo(() => {
@@ -4097,7 +4101,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     },
     [],
   );
-
 
   const copyToClipboard = useCallback(
     async (
