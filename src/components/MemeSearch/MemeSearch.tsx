@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import './MemeSearch.css';
 import { TwitterHover } from '../TwitterHover/TwitterHover';
 import telegram from '../../assets/telegram.png';
@@ -747,6 +747,15 @@ const abortRef = useRef<AbortController | null>(null);
         });
     };
 
+    const clearHistory = () => {
+        setTokens([]);
+        setRecentlyViewed([]);
+        setRecentlyViewedMarkets([]);
+        localStorage.removeItem('crystal_meme_search_history');
+        localStorage.removeItem('crystal_meme_recently_viewed');
+        localStorage.removeItem('crystal_meme_recently_viewed_markets');
+    };
+
     const getCurrentQuickBuyAmount = useCallback(() => {
         const customAmount = quickAmounts?.new;
         if (customAmount && customAmount.trim() !== '') return customAmount;
@@ -1284,7 +1293,16 @@ const abortRef = useRef<AbortController | null>(null);
 {showCombinedRecent && (
                             <div className="meme-search-section">
                                 <div className="meme-search-section-header">
-                                    <span>History</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span>History</span>
+                                        <button
+                                            className="meme-search-clear-history-btn"
+                                            onClick={clearHistory}
+                                            title="Clear History"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}
