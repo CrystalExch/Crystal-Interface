@@ -1061,6 +1061,7 @@
   align-items: center;
   display: flex;
   justify-content: space-between;
+  cursor: pointer;
 }
 
 .meme-token-info-collapse-button {

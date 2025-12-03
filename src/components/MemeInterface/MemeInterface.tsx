@@ -3213,20 +3213,20 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               </div>
             </div>
           </div>
-        <div className="indicator-legend">
+          <div className="indicator-legend">
             {(() => {
               const totalVolume = currentStats.buyVolume + currentStats.sellVolume;
               const buyPercentage = totalVolume > 0 ? (currentStats.buyVolume / totalVolume) * 100 : 50;
               const sellPercentage = totalVolume > 0 ? (currentStats.sellVolume / totalVolume) * 100 : 50;
-              
+
               return (
                 <>
-                  <div 
-                    className="indicator-line green-line" 
+                  <div
+                    className="indicator-line green-line"
                     style={{ width: `${buyPercentage}%` }}
                   />
-                  <div 
-                    className="indicator-line red-line" 
+                  <div
+                    className="indicator-line red-line"
                     style={{ width: `${sellPercentage}%` }}
                   />
                 </>
@@ -4613,11 +4613,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         </div>
 
         <div className="meme-token-info-container">
-          <div className="meme-token-info-header">
+          <div className="meme-token-info-header" onClick={() => setTokenInfoExpanded(!tokenInfoExpanded)}>
             <h3 className="meme-token-info-title">Token Info</h3>
             <button
               className="meme-token-info-collapse-button"
-              onClick={() => setTokenInfoExpanded(!tokenInfoExpanded)}
             >
               <svg
                 className={`meme-token-info-arrow ${tokenInfoExpanded ? 'expanded' : ''}`}
@@ -4949,11 +4948,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           )}
         </div>
         <div className="meme-similar-tokens-container">
-          <div className="meme-token-info-header">
+          <div className="meme-token-info-header" onClick={() => setSimilarTokensExpanded((v) => !v)}>
             <h3 className="meme-token-info-title">Similar Tokens</h3>
             <button
               className="meme-token-info-collapse-button"
-              onClick={() => setSimilarTokensExpanded((v) => !v)}
             >
               <svg
                 className={`meme-token-info-arrow ${similarTokensExpanded ? 'expanded' : ''}`}
