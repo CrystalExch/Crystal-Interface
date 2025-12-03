@@ -2036,7 +2036,11 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                     <div className="meme-oc-cell">
                       <div className="meme-trader-info">
                         {trackedWallet?.emoji && <span>{trackedWallet.emoji}</span>}
-                        <span className={`oc-meme-wallet-address ${isCurrentUser ? 'current-user' : isTracked ? 'tracked-wallet' : ''}`}>
+                        <span
+                          className={`oc-meme-wallet-address ${isCurrentUser ? 'current-user' : isTracked ? 'tracked-wallet clickable' : 'clickable'}`}
+                          onClick={() => !isCurrentUser && setPopupAddr(trade.caller)}
+                          style={{ cursor: isCurrentUser ? 'default' : 'pointer' }}
+                        >
                           {walletDisplay}
                         </span>
                         <div className="meme-wallet-tags">

@@ -1,11 +1,26 @@
 .wallet-popup-overlay {
-  position: fixed;
-  inset: 0;
+  position: relative;
   z-index: 101;
   pointer-events: none;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: flex-start;
+  width: 100%;
+}
+
+.meme-transaction-popup-manager[data-position="top-center"] .wallet-popup-overlay,
+.meme-transaction-popup-manager[data-position="bottom-center"] .wallet-popup-overlay {
+  justify-content: center;
+}
+
+.meme-transaction-popup-manager[data-position="top-right"] .wallet-popup-overlay,
+.meme-transaction-popup-manager[data-position="bottom-right"] .wallet-popup-overlay {
+  justify-content: flex-end;
+}
+
+.meme-transaction-popup-manager[data-position="top-left"] .wallet-popup-overlay,
+.meme-transaction-popup-manager[data-position="bottom-left"] .wallet-popup-overlay {
+  justify-content: flex-start;
 }
 
 .wallet-popup-overlay.exiting {

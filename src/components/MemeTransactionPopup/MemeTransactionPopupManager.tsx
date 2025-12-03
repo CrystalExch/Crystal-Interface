@@ -329,7 +329,6 @@ const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = 
     };
 
     loadWallets();
-    // Listen for wallet updates
     const handleWalletUpdate = (e: CustomEvent) => {
       if (e.detail?.wallets) {
         setTrackedWallets(e.detail.wallets);
@@ -426,7 +425,7 @@ const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = 
     switch (position) {
       case 'top-left':
         styles.top = '20px';
-        styles.left = '20px';
+        styles.left = '70px';
         break;
       case 'top-center':
         styles.top = '20px';
@@ -436,11 +435,11 @@ const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = 
         break;
       case 'top-right':
         styles.top = '20px';
-        styles.right = '350px';
+        styles.right = '20px';
         break;
       case 'bottom-left':
         styles.bottom = '100px';
-        styles.left = '20px';
+        styles.left = '70px';
         break;
       case 'bottom-center':
         styles.bottom = '100px';
@@ -450,7 +449,7 @@ const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = 
         break;
       case 'bottom-right':
         styles.bottom = '100px';
-        styles.right = '350px';
+        styles.right = '20px';
         break;
       default:
         styles.top = '20px';
