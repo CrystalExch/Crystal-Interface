@@ -310,7 +310,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
                 : { background: 'rgb(210, 82, 82)', border: '' },
               label,
               labelFontColor: 'black',
-              minSize: 17,
+              minSize: 20,
               text: `${label} • ${amt.toFixed(2)} ${'MON'} at ` + formatMemePrice(tr.price),
             }
           }).sort((a, b) => a.time - b.time)          
@@ -397,7 +397,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
                 : { background: 'rgb(210, 82, 82)', border: '' },
               label,
               labelFontColor: 'black',
-              minSize: 17,
+              minSize: 20,
               text: `${label} • ${amt.toFixed(2)} ${'MON'} at ` + formatMemePrice(tr.price),
             }
           }).sort((a, b) => a.time - b.time)
@@ -449,7 +449,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         '240',
         '1D',
       ],
-      enabled_features: ['seconds_resolution'],
+      enabled_features: ['seconds_resolution', 'two_character_bar_marks_labels'],
       auto_save_delay: 0.1,
       disabled_features: [
         'header_symbol_search',
@@ -700,7 +700,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
                   : { background: 'rgb(210, 82, 82)', border: '' },
                 label,
                 labelFontColor: 'black',
-                minSize: 17,
+                minSize: 20,
                 text: `${label} • ${amt.toFixed(2)} ${'MON'} at ` + formatMemePrice(tr.price),
               }
             }).sort((a, b) => a.time - b.time)            
