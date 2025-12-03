@@ -1325,6 +1325,11 @@
   color: rgb(206, 208, 223);
 }
 
+.meme-oc-dev-stats-value:hover{
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .meme-oc-dev-stats-migration {
   display: flex;
   flex-direction: column;

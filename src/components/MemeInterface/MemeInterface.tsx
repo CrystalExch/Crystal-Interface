@@ -3213,9 +3213,25 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               </div>
             </div>
           </div>
-          <div className="indicator-legend">
-            <div className="indicator-line green-line" />
-            <div className="indicator-line red-line" />
+        <div className="indicator-legend">
+            {(() => {
+              const totalVolume = currentStats.buyVolume + currentStats.sellVolume;
+              const buyPercentage = totalVolume > 0 ? (currentStats.buyVolume / totalVolume) * 100 : 50;
+              const sellPercentage = totalVolume > 0 ? (currentStats.sellVolume / totalVolume) * 100 : 50;
+              
+              return (
+                <>
+                  <div 
+                    className="indicator-line green-line" 
+                    style={{ width: `${buyPercentage}%` }}
+                  />
+                  <div 
+                    className="indicator-line red-line" 
+                    style={{ width: `${sellPercentage}%` }}
+                  />
+                </>
+              );
+            })()}
           </div>
         </div>
         <div className="meme-buy-sell-container">

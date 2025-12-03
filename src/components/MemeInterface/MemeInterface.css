@@ -2249,12 +2249,9 @@
 
 .indicator-line {
   border-radius: 1px;
-  bottom: 8px;
   height: 2px;
-  left: 50%;
-  width: 100%;
+  transition: width 0.3s ease;
 }
-
 .green-line {
   background: #28ed8a;
 }

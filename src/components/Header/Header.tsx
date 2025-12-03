@@ -6,6 +6,7 @@ import SideMenuOverlay from './SideMenuOverlay/SideMenuOverlay';
 import TransactionHistoryMenu from '../TransactionHistoryMenu/TransactionHistoryMenu';
 import ChartHeader from '../Header/ChartHeader/ChartHeader';
 import MemeSearch from '../MemeSearch/MemeSearch';
+import TraderPortfolioPopup from '../MemeInterface/MemeTradesComponent/TraderPortfolioPopup/TraderPortfolioPopup';
 import { formatCommas, formatSubscript } from '../../utils/numberDisplayFormat';
 import { useNavigate } from 'react-router-dom';
 import { encodeFunctionData } from 'viem';
@@ -370,6 +371,7 @@ const Header: React.FC<HeaderProps> = ({
   };
   const location = useLocation();
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
+  const [isTraderPortfolioOpen, setIsTraderPortfolioOpen] = useState(false);
   const navigate = useNavigate();
   const [isHeaderSubwalletsOpen, setIsHeaderSubwalletsOpen] = useState(true);
 
@@ -591,7 +593,8 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const handleOpenPortfolio = () => {
-    setpopup(4);
+    setIsTraderPortfolioOpen(true);
+    setIsWalletDropdownOpen(false);
   };
 
   const getCurrentWalletInfo = () => {
@@ -1076,6 +1079,18 @@ const Header: React.FC<HeaderProps> = ({
           setIsLanguageDropdownOpen={setIsLanguageDropdownOpen}
           isHeader={true}
           languages={[]}
+        />
+      )}
+
+      {isTraderPortfolioOpen && displayAddress && (
+        <TraderPortfolioPopup
+          traderAddress={displayAddress}
+          onClose={() => setIsTraderPortfolioOpen(false)}
+          tokenList={tokenList}
+          marketsData={marketsData || []}
+          onMarketSelect={onMarketSelect}
+          setpopup={setpopup}
+          monUsdPrice={monUsdPrice}
         />
       )}
     </>
