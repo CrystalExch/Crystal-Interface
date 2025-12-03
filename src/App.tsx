@@ -1383,8 +1383,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     try {
       const positionsPromises = walletAddresses.map(async (address) => {
-        const response = await fetch(`/api/positions/${address}`);
+        const response = await fetch(`https://api.crystal.exchange/user/${address}`);
         const data = await response.json();
+        console.log(data)
         return data.positions || [];
       });
 
@@ -1395,21 +1396,21 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       const positionsMap = new Map<string, Position>();
 
       combinedPositions.forEach(position => {
-        const existing = positionsMap.get(position.tokenId);
+        const existing = positionsMap.get(position.token);
 
         if (existing) {
-          existing.boughtTokens += position.boughtTokens;
-          existing.soldTokens += position.soldTokens;
-          existing.spentNative += position.spentNative;
-          existing.receivedNative += position.receivedNative;
-          existing.remainingTokens += position.remainingTokens;
+          existing.boughtTokens += position.token_bought;
+          existing.soldTokens += position.token_sold;
+          existing.spentNative += position.native_spent;
+          existing.receivedNative += position.native_recieved;
+          existing.remainingTokens += position.balance_token;
           existing.pnlNative = existing.receivedNative + (existing.remainingTokens * (existing.lastPrice || 0)) - existing.spentNative;
           existing.remainingPct = existing.boughtTokens > 0 ? (existing.remainingTokens / existing.boughtTokens) * 100 : 0;
         } else {
-          positionsMap.set(position.tokenId, { ...position });
+          positionsMap.set(position.token, { ...position });
         }
       });
-
+      console.log(positionsMap)
       setTrenchesPositions(Array.from(positionsMap.values()));
     } catch (error) {
       console.error('Error fetching trenches positions:', error);
