@@ -671,7 +671,7 @@ const Footer: React.FC<FooterProps> = ({
                   Wallet
                 </div>
               </Tooltip>
-              <Tooltip content="Spectra Tracker">
+              <Tooltip content="Spectra Explorer">
                 <div
                   className={`footer-widget-button ${isSpectraWidgetOpen ? 'active' : ''}`}
                   onClick={() => onToggleSpectraWidget?.(!isSpectraWidgetOpen)}
@@ -735,22 +735,20 @@ const Footer: React.FC<FooterProps> = ({
       </div>
       <div className="footer-content-right">
         <Tooltip content="Notification Settings">
-          <Bell className="footer-icon" size={18} style={{ marginRight: '10px', cursor: 'pointer' }} onClick={() => setpopup(38)} />
+          <Bell className="footer-icon" size={18} style={{ marginRight: '8px', cursor: 'pointer' }} onClick={() => setpopup(38)} />
         </Tooltip>
         <div className="footer-right">
-          <Tooltip content="Join our Discord">
-            <img className="footer-icon" src={discord} />
-          </Tooltip>
-          <Tooltip content="Follow us on X">
-            <img className="footer-icon" src={twitter} />
-          </Tooltip>
           <Tooltip content="Docs">
-            <div className="footer-docs-icon">
+            <a
+              href="https://docs.crystal.exchange"
+              target="_blank"
+              rel="noreferrer"
+              className="footer-docs-icon"
+            >
               <img className="footer-icon" src={docs} />
               Docs
-            </div>
+            </a>
           </Tooltip>
-
         </div>
       </div>
 

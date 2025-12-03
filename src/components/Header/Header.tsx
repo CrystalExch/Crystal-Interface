@@ -377,7 +377,7 @@ const Header: React.FC<HeaderProps> = ({
     if (setTokenData) {
       setTokenData(token);
     }
-    navigate(`/meme/${token.tokenAddress}`);
+    navigate(`/meme/${token.id}`);
     setIsMemeSearchOpen(false);
   };
 
@@ -409,7 +409,7 @@ const Header: React.FC<HeaderProps> = ({
         data: encodeFunctionData({
           abi: CrystalRouterAbi,
           functionName: 'buy',
-          args: [true, token.tokenAddress as `0x${string}`, val, 0n]
+          args: [true, token.id as `0x${string}`, val, 0n]
         }),
         value: val,
       };

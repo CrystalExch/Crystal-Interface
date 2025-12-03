@@ -80,6 +80,7 @@ interface QuickBuyWidgetProps {
   buySound: string;
   sellSound: string;
   volume: number;
+  formatNumberWithCommas: any;
 }
 
 const Tooltip: React.FC<{
@@ -277,6 +278,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   buySound,
   sellSound,
   volume,
+  formatNumberWithCommas
 }) => {
   const playTradeSound = useCallback((isBuy: boolean) => {
     if (!transactionSounds) return;
@@ -557,16 +559,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     },
     [showLoadingPopup, updatePopup],
   );
-
-  const formatNumberWithCommas = (num: number, decimals = 2) => {
-    if (num === 0) return '0.00';
-    if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;
-    if (num >= 1e6) return `${(num / 1e6).toFixed(decimals)}M`;
-    if (num >= 1e3) return `${(num / 1e3).toFixed(decimals)}K`;
-    if (num >= 1)
-      return num.toLocaleString('en-US', { maximumFractionDigits: decimals });
-    return num.toFixed(Math.min(decimals, 8));
-  };
 
   const getWalletBalance = (address: string) => {
     const balances = walletTokenBalances[address];
@@ -2101,28 +2093,26 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             </div>
 
             <div className="quickbuy-controls-right-side">
-              {subWallets.length > 0 && (
-                <Tooltip
-                  content={`Toggle Wallets • ${selectedWallets.size} active`}
+              <Tooltip
+                content={`Toggle Wallets • ${selectedWallets.size} active`}
+              >
+                <button
+                  className={`quickbuy-wallets-button ${isWalletsExpanded ? 'active' : ''}`}
+                  onClick={() => setIsWalletsExpanded(!isWalletsExpanded)}
+                  aria-label={`Toggle Wallets, ${selectedWallets.size} active`}
                 >
-                  <button
-                    className={`quickbuy-wallets-button ${isWalletsExpanded ? 'active' : ''}`}
-                    onClick={() => setIsWalletsExpanded(!isWalletsExpanded)}
-                    aria-label={`Toggle Wallets, ${selectedWallets.size} active`}
+                  <img
+                    src={walleticon}
+                    alt="Wallet"
+                    className="quickbuy-wallets-icon"
+                  />
+                  <span
+                    className={`quickbuy-wallets-count ${selectedWallets.size ? 'has-active' : ''}`}
                   >
-                    <img
-                      src={walleticon}
-                      alt="Wallet"
-                      className="quickbuy-wallets-icon"
-                    />
-                    <span
-                      className={`quickbuy-wallets-count ${selectedWallets.size ? 'has-active' : ''}`}
-                    >
-                      {selectedWallets.size}
-                    </span>
-                  </button>
-                </Tooltip>
-              )}
+                    {selectedWallets.size}
+                  </span>
+                </button>
+              </Tooltip>
 
               <button className="close-btn" onClick={onClose}>
                 <img
@@ -2878,10 +2868,15 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                     <div
                       className="quickbuy-add-wallet-button"
                       onClick={async () => {
-                        let isSuccess = await createSubWallet(true);
-                        if (isSuccess) {
-                          setOneCTDepositAddress(isSuccess);
-                          setpopup(25);
+                        if (!account?.connected) {
+                          setpopup(4)
+                        }
+                        else {
+                          let isSuccess = await createSubWallet(true);
+                          if (isSuccess) {
+                            setOneCTDepositAddress(isSuccess);
+                            setpopup(25);
+                          }
                         }
                       }}
                     >

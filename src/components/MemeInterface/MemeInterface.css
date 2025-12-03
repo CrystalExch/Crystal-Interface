@@ -589,7 +589,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   margin-top: 12px;
-  padding: 8px 0 8px;
+  padding: 8px 0px 8px 4px;
 }
 
 .meme-portfolio-stat {
@@ -2141,7 +2141,7 @@
 .meme-trading-stats-enhanced {
   background: rgb(6, 6, 6);
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-  padding: 8px;
+  padding: 8px 12px 8px 8px;
   position: relative;
   transition: all 0.3s ease;
 }

@@ -339,7 +339,7 @@ interface TokenInfoProps {
     symbol: string;
     name: string;
     image: string;
-    tokenAddress: string;
+    id: string;
     marketCap: number;
     change24h: number;
     status: 'new' | 'graduating' | 'graduated';
@@ -1239,7 +1239,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   useEffect(() => {
     setMemeImageError(false);
-  }, [memeTokenData?.tokenAddress, memeTokenData?.image]);
+  }, [memeTokenData?.id, memeTokenData?.image]);
 
   useEffect(() => {
     if (!perpsTokenInfo?.lastPrice) return
@@ -1311,7 +1311,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 <div className="meme-interface-image-container">
                   {memeTokenData.image && !memeImageError ? (
                     <img
-                      key={memeTokenData.tokenAddress}
+                      key={memeTokenData.id}
                       src={memeTokenData.image}
                       className="meme-interface-token-icon"
                       onError={() => setMemeImageError(true)}
@@ -1319,7 +1319,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     />
                   ) : (
                     <div
-                      key={memeTokenData.tokenAddress}
+                      key={memeTokenData.id}
                       className="meme-interface-token-icon"
                       style={{
                         width: '37px',
@@ -1353,14 +1353,14 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   <div className="meme-interface-token-name-container">
                     <span
                       className="meme-interface-token-name"
-                      onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
+                      onClick={() => copyToClipboard(memeTokenData.id, 'Contract address copied')}
                       style={{ cursor: 'pointer' }}
                     >
                       {memeTokenData.name}
                     </span>
                     <button
                       className="meme-interface-social-btn"
-                      onClick={() => copyToClipboard(memeTokenData.tokenAddress, 'Contract address copied')}
+                      onClick={() => copyToClipboard(memeTokenData.id, 'Contract address copied')}
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
@@ -1372,7 +1372,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   <Tooltip content="Share link to this pair">
                     <button
                       className="meme-interface-share-btn"
-                      onClick={() => linkCopyToClipboard(`app.crystal.exchange/meme/${memeTokenData.tokenAddress}`)}
+                      onClick={() => linkCopyToClipboard(`app.crystal.exchange/meme/${memeTokenData.id}`)}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" ><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /><line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></svg>
                     </button>
@@ -1381,8 +1381,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     <button
                       className="meme-interface-share-btn"
                       onClick={() => {
-                        const isCurrentlyFavorited = favorites.includes(memeTokenData.tokenAddress.toLowerCase());
-                        toggleFavorite(memeTokenData.tokenAddress.toLowerCase());
+                        const isCurrentlyFavorited = favorites.includes(memeTokenData.id.toLowerCase());
+                        toggleFavorite(memeTokenData.id.toLowerCase());
 
                         const txId = `favorite-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                         if (showLoadingPopup && updatePopup) {
@@ -1393,9 +1393,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                           }, 100);
                         }
                       }}
-                      title={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? "Remove from Watchlist" : "Add to Watchlist"}
+                      title={favorites.includes(memeTokenData.id.toLowerCase()) ? "Remove from Watchlist" : "Add to Watchlist"}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? '#d8dcff' : 'none'} stroke={favorites.includes(memeTokenData.tokenAddress.toLowerCase()) ? '#d8dcff' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" ><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill={favorites.includes(memeTokenData.id.toLowerCase()) ? '#d8dcff' : 'none'} stroke={favorites.includes(memeTokenData.id.toLowerCase()) ? '#d8dcff' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" ><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>
                     </button>
                   </Tooltip>
                 </div>
@@ -1560,7 +1560,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   <Tooltip content="Search on Twitter">
                     <a
                       className="token-info-meme-interface-social-btn"
-                      href={`https://twitter.com/search?q=${memeTokenData.tokenAddress}`}
+                      href={`https://twitter.com/search?q=${memeTokenData.id}`}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -1571,7 +1571,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     <Tooltip content="View on nad.fun">
                       <a
                         className="token-info-meme-interface-social-btn"
-                        href={`https://nad.fun/tokens/${memeTokenData.tokenAddress}`}
+                        href={`https://nad.fun/tokens/${memeTokenData.id}`}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -1715,7 +1715,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                       className="token-info-trenches-pnl-button"
                       onClick={() => {
                         const currentShareData = {
-                          tokenAddress: memeTokenData?.tokenAddress || '',
+                          tokenAddress: memeTokenData?.id || '',
                           tokenSymbol: memeTokenData?.symbol || '',
                           tokenName: memeTokenData?.name || '',
                           userAddress: userAddress || '',

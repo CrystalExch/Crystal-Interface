@@ -721,7 +721,7 @@ const TokenCard: React.FC<{
     const buyPct = totalTransactions === 0 ? 0 : ((token.buyTransactions || 0) / totalTransactions) * 100;
     const sellPct = totalTransactions === 0 ? 0 : ((token.sellTransactions || 0) / totalTransactions) * 100;
 
-    const tokenId = token.id || token.tokenAddress;
+    const tokenId = token.id || token.id;
     const devAddress = token.dev?.toLowerCase();
     const isHidden = hiddenTokens.has(tokenId);
     const isLoadingPrimary = loadingTokens.has(`${tokenId}-primary`);
@@ -975,7 +975,7 @@ const bondingPercentage = useMemo(
             )}
 
             <span className="spectra-contract-address">
-              {token.tokenAddress?.slice(0, 6)}…{token.tokenAddress?.slice(-4)}
+              {token.id?.slice(0, 6)}…{token.id?.slice(-4)}
             </span>
           </div>
 
@@ -1018,7 +1018,7 @@ const bondingPercentage = useMemo(
                       <div className="spectra-market-name-container"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onCopyToClipboard(token.tokenAddress);
+                          onCopyToClipboard(token.id);
                         }}
                         style={{ cursor: 'pointer' }}>
                         <p className="spectra-market-name">{token.name || 'Token'}</p>
@@ -1027,7 +1027,7 @@ const bondingPercentage = useMemo(
                         className="explorer-copy-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onCopyToClipboard(token.tokenAddress);
+                          onCopyToClipboard(token.id);
                         }}
                       >
                         <svg
@@ -1143,7 +1143,7 @@ const bondingPercentage = useMemo(
 
                       <a
                         className="spectra-telegram-btn"
-                        href={`https://twitter.com/search?q=${token.tokenAddress}`}
+                        href={`https://twitter.com/search?q=${token.id}`}
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
@@ -1157,7 +1157,7 @@ const bondingPercentage = useMemo(
                       <Tooltip content="View on nad.fun">
                         <a
                           className="token-info-meme-interface-social-btn"
-                          href={`https://nad.fun/tokens/${token.tokenAddress}`}
+                          href={`https://nad.fun/tokens/${token.id}`}
                           target="_blank"
                           rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
@@ -2653,7 +2653,7 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
   const handleTokenClick = useCallback(
     (t: Token) => {
       setTokenData(t);
-      navigate(`/meme/${t.tokenAddress}`);
+      navigate(`/meme/${t.id}`);
     },
     [navigate],
   );
@@ -2876,7 +2876,7 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
       if (token.name && token.name.toLowerCase().includes(query)) {
         return true;
       }
-      if (token.tokenAddress && token.tokenAddress.toLowerCase().includes(query)) {
+      if (token.id && token.id.toLowerCase().includes(query)) {
         return true;
       }
       return false;
@@ -3241,7 +3241,7 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
       blacklisted.delete(devAddress);
     } else {
       blacklisted.add(devAddress);
-      dispatch({ type: 'HIDE_TOKEN', id: token.id || token.tokenAddress });
+      dispatch({ type: 'HIDE_TOKEN', id: token.id || token.id });
     }
 
     localStorage.setItem('spectra-blacklisted-devs', JSON.stringify(Array.from(blacklisted)));
@@ -3686,7 +3686,7 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
             {filteredTokens && filteredTokens.length > 0 ? (
               filteredTokens
                 .filter((token: any) => {
-                  const tokenId = token.id || token.tokenAddress;
+                  const tokenId = token.id || token.id;
                   const devAddress = token.dev?.toLowerCase();
                   if (displaySettings.hideHiddenTokens) {
                     return !hiddenTokens.has(tokenId) && (!devAddress || !blacklistedDevs.has(devAddress));
@@ -3695,7 +3695,7 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
                 })
                 .map((token: any, idx: number) => (
                   <TokenCard
-                    key={token.id || token.tokenAddress || idx}
+                    key={token.id || token.id || idx}
                     token={token}
                     idx={idx}
                     hiddenTokens={hiddenTokens}
@@ -3703,8 +3703,8 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
                     loadingTokens={loadingTokens}
                     quickbuyAmount={quickbuyAmounts[activeTab]}
                     quickbuyAmountSecond={quickAmountsSecond[activeTab]}
-                    isLoadingPrimary={loadingTokens.has(`${token.id || token.tokenAddress}-primary`)}
-                    isLoadingSecondary={loadingTokens.has(`${token.id || token.tokenAddress}-secondary`)}
+                    isLoadingPrimary={loadingTokens.has(`${token.id || token.id}-primary`)}
+                    isLoadingSecondary={loadingTokens.has(`${token.id || token.id}-secondary`)}
                     monUsdPrice={monUsdPrice}
                     handleHideToken={handleHideToken}
                     handleBlacklistDev={handleBlacklistDev}
