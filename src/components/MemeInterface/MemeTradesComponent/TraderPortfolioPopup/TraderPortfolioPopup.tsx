@@ -390,16 +390,16 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   const [totalAccountValue, setTotalAccountValue] = useState<number | null>(null);
   const [tokenBalances, setTokenBalances] = useState<{ [key: string]: string }>({});
 
-const tabFilteredPositions = activeTab === 'active'
-  ? traderPositions.filter(p => p.remainingTokens > 0)
-  : activeTab === 'history'
-    ? traderPositions.filter(p => p.remainingTokens === 0)
-    : activeTab === 'top100'
-      ? traderPositions
+  const tabFilteredPositions = activeTab === 'active'
+    ? traderPositions.filter(p => p.remainingTokens > 0)
+    : activeTab === 'history'
+      ? traderPositions.filter(p => p.remainingTokens === 0)
+      : activeTab === 'top100'
+        ? traderPositions
           .filter(p => p.remainingTokens === 0)
           .sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0))
           .slice(0, 100)
-      : [];
+        : [];
   const displayedPositions = tabFilteredPositions.filter(p => {
     if (!searchQuery.trim()) return true;
 
@@ -550,17 +550,17 @@ const tabFilteredPositions = activeTab === 'active'
   const unrealizedClass = totalUnrealizedPnlNative >= 0 ? 'positive' : 'negative';
   const unrealizedSign = totalUnrealizedPnlNative >= 0 ? '+' : '-';
 
-const totalRealizedPnlNative = traderPositions?.reduce((sum, p) => {
-  if (p.remainingTokens > 0 && p.boughtTokens > 0) {
-    const soldPortion = p.soldTokens / p.boughtTokens;
-    const realizedPnl = p.receivedNative - (p.spentNative * soldPortion);
-    return sum + realizedPnl;
-  }
-  if (p.remainingTokens === 0) {
-    return sum + (p.receivedNative - p.spentNative);
-  }
-  return sum;
-}, 0) || 0;
+  const totalRealizedPnlNative = traderPositions?.reduce((sum, p) => {
+    if (p.remainingTokens > 0 && p.boughtTokens > 0) {
+      const soldPortion = p.soldTokens / p.boughtTokens;
+      const realizedPnl = p.receivedNative - (p.spentNative * soldPortion);
+      return sum + realizedPnl;
+    }
+    if (p.remainingTokens === 0) {
+      return sum + (p.receivedNative - p.spentNative);
+    }
+    return sum;
+  }, 0) || 0;
   const totalRealizedPnlUsd = totalRealizedPnlNative * monUsdPrice;
   const realizedClass = totalRealizedPnlNative >= 0 ? 'positive' : 'negative';
   const realizedSign = totalRealizedPnlNative >= 0 ? '+' : '-';
@@ -851,7 +851,7 @@ const totalRealizedPnlNative = traderPositions?.reduce((sum, p) => {
                 <div className="meme-oc-header-cell">Actions</div>
               </div>
               <div className="meme-oc-items">
-                {isLoadingPositions ? (
+                {!isLoadingPositions ? (
                   <>
                     {Array.from({ length: 5 }).map((_, index) => (
                       <div key={`skeleton-${index}`} className="meme-portfolio-oc-item trader-portfolio-skeleton-item">
@@ -871,7 +871,6 @@ const totalRealizedPnlNative = traderPositions?.reduce((sum, p) => {
                         <div className="meme-oc-cell">
                           <div className="meme-trade-info">
                             <div className="meme-ordercenter-info">
-                              <div className="trader-portfolio-skeleton-icon-small"></div>
                               <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-medium"></span>
                             </div>
                             <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-short"></span>
@@ -880,7 +879,6 @@ const totalRealizedPnlNative = traderPositions?.reduce((sum, p) => {
                         <div className="meme-oc-cell">
                           <div className="meme-trade-info">
                             <div className="meme-ordercenter-info">
-                              <div className="trader-portfolio-skeleton-icon-small"></div>
                               <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-medium"></span>
                             </div>
                             <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-short"></span>
@@ -888,7 +886,11 @@ const totalRealizedPnlNative = traderPositions?.reduce((sum, p) => {
                         </div>
                         <div className="meme-oc-cell">
                           <div className="meme-ordercenter-info">
-                            <div className="trader-portfolio-skeleton-icon-small"></div>
+                            <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-long"></span>
+                          </div>
+                        </div>
+                        <div className="meme-oc-cell">
+                          <div className="meme-ordercenter-info">
                             <span className="trader-portfolio-skeleton-text trader-portfolio-skeleton-text-long"></span>
                           </div>
                         </div>

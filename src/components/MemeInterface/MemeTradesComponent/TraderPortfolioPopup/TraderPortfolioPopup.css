@@ -496,7 +496,8 @@
 
 .trader-portfolio-skeleton-icon {
   background: rgba(179, 184, 249, 0.1);
-  border-radius: 1px;
+  border: none !important;
+  border-radius:4px;
   width: 32px;
   height: 32px;
   animation: trader-portfolio-skeleton-pulse 1.5s ease-in-out infinite;
@@ -523,6 +524,7 @@
 
 .trader-portfolio-skeleton-text-short {
   width: 50px;
+  margin: 3px 0;
 }
 
 .trader-portfolio-skeleton-text-medium {
