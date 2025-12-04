@@ -3688,27 +3688,46 @@ const metricData = useMetricColorClasses(token, displaySettings, monUsdPrice);
     </>
   );
 }, (prevProps, nextProps) => {
-  return (
-    prevProps.token.id === nextProps.token.id &&
-    prevProps.token.price === nextProps.token.price &&
-    prevProps.token.marketCap === nextProps.token.marketCap &&
-    prevProps.token.volume24h === nextProps.token.volume24h &&
-    prevProps.token.bondingPercentage === nextProps.token.bondingPercentage &&
-    prevProps.quickbuyAmount === nextProps.quickbuyAmount &&
-    prevProps.quickbuyAmountSecond === nextProps.quickbuyAmountSecond &&
-    prevProps.isLoadingPrimary === nextProps.isLoadingPrimary &&
-    prevProps.isLoadingSecondary === nextProps.isLoadingSecondary &&
-    prevProps.hoveredToken === nextProps.hoveredToken &&
-    prevProps.hoveredImage === nextProps.hoveredImage &&
-    prevProps.isHidden === nextProps.isHidden &&
-    prevProps.isBlacklisted === nextProps.isBlacklisted &&
-    prevProps.displaySettings.quickBuySize === nextProps.displaySettings.quickBuySize &&
-    prevProps.displaySettings.metricSize === nextProps.displaySettings.metricSize &&
-    prevProps.displaySettings.progressBar === nextProps.displaySettings.progressBar &&
-    prevProps.displaySettings.squareImages === nextProps.displaySettings.squareImages &&
-    prevProps.displaySettings.noDecimals === nextProps.displaySettings.noDecimals &&
-    prevProps.displaySettings.visibleRows === nextProps.displaySettings.visibleRows
-  );
+  if (prevProps.token.id !== nextProps.token.id) return false;
+  
+  if (
+    prevProps.token.price !== nextProps.token.price ||
+    prevProps.token.marketCap !== nextProps.token.marketCap ||
+    prevProps.token.volume24h !== nextProps.token.volume24h ||
+    prevProps.token.bondingPercentage !== nextProps.token.bondingPercentage
+  ) return false;
+  
+  if (
+    prevProps.isLoadingPrimary !== nextProps.isLoadingPrimary ||
+    prevProps.isLoadingSecondary !== nextProps.isLoadingSecondary ||
+    prevProps.isHidden !== nextProps.isHidden ||
+    prevProps.isBlacklisted !== nextProps.isBlacklisted
+  ) return false;
+  
+  const wasHovered = prevProps.hoveredToken === prevProps.token.id || 
+                     prevProps.hoveredImage === prevProps.token.id;
+  const isHovered = nextProps.hoveredToken === nextProps.token.id || 
+                    nextProps.hoveredImage === nextProps.token.id;
+  if (wasHovered !== isHovered) return false;
+  
+  if (
+    prevProps.quickbuyAmount !== nextProps.quickbuyAmount ||
+    prevProps.quickbuyAmountSecond !== nextProps.quickbuyAmountSecond
+  ) return false;
+  
+  const prevDS = prevProps.displaySettings;
+  const nextDS = nextProps.displaySettings;
+  if (
+    prevDS.quickBuySize !== nextDS.quickBuySize ||
+    prevDS.metricSize !== nextDS.metricSize ||
+    prevDS.progressBar !== nextDS.progressBar ||
+    prevDS.squareImages !== nextDS.squareImages ||
+    prevDS.noDecimals !== nextDS.noDecimals ||
+    prevDS.metricColoring !== nextDS.metricColoring
+  ) return false;
+    if (prevDS.visibleRows !== nextDS.visibleRows) return false;
+  
+  return true;
 });
 interface TokenExplorerProps {
   setpopup: (popup: number) => void;
@@ -4809,55 +4828,63 @@ useEffect(() => {
       return true;
     });
   }, []);
-const blacklistedDevs = useMemo(() => 
-  new Set(blacklistSettings.items.filter(i => i.type === 'dev').map(i => i.text.toLowerCase())),
-  [blacklistSettings]
-);
-
-const blacklistedCAs = useMemo(() =>
-  new Set(blacklistSettings.items.filter(i => i.type === 'ca').map(i => i.text.toLowerCase())),
-  [blacklistSettings]
-);
-  const visibleTokens = useMemo(() => {
- const markBlacklistStatus = (tokens: Token[]) => {
-    return tokens.map((token) => {
+const { blacklistedDevs, blacklistedCAs } = useMemo(() => {
+  const devs = new Set<string>();
+  const cas = new Set<string>();
+  
+  for (const item of blacklistSettings.items) {
+    const lowerText = item.text.toLowerCase();
+    if (item.type === 'dev') devs.add(lowerText);
+    else if (item.type === 'ca') cas.add(lowerText);
+  }
+  
+  return { blacklistedDevs: devs, blacklistedCAs: cas };
+}, [blacklistSettings.items]);
+const visibleTokens = useMemo(() => {
+  const processTokens = (tokens: Token[], status: Token['status']) => {
+    const hideHidden = displaySettings.hideHiddenTokens;
+    const hasFilters = appliedFilters?.[status];
+    
+    let result = tokens;
+    
+    result = tokens.filter((token) => {
       const isBlacklisted = 
         blacklistedDevs.has(token.dev.toLowerCase()) ||
         blacklistedCAs.has(token.id.toLowerCase());
-      return { ...token, isBlacklisted };
-    });
+      
+      if (hideHidden && (hidden.has(token.id) || isBlacklisted)) {
+        return false;
+      }
+      
+      return true;
+    }).map((token) => ({
+      ...token,
+      isBlacklisted: blacklistedDevs.has(token.dev.toLowerCase()) ||
+                     blacklistedCAs.has(token.id.toLowerCase())
+    }));
+    
+    if (hasFilters) {
+      result = applyFilters(result, appliedFilters[status]);
+    }
+    
+    return result;
   };
 
-    const allTokensWithBlacklist = {
-      new: markBlacklistStatus(tokensByStatus.new),
-      graduating: markBlacklistStatus(tokensByStatus.graduating),
-      graduated: markBlacklistStatus(tokensByStatus.graduated),
-    };
-
-    const filtered = {
-      new: displaySettings.hideHiddenTokens
-        ? allTokensWithBlacklist.new.filter((t: any) => !hidden.has(t.id) && !t.isBlacklisted)
-        : allTokensWithBlacklist.new,
-      graduating: displaySettings.hideHiddenTokens
-        ? allTokensWithBlacklist.graduating.filter((t: any) => !hidden.has(t.id) && !t.isBlacklisted)
-        : allTokensWithBlacklist.graduating,
-      graduated: displaySettings.hideHiddenTokens
-        ? allTokensWithBlacklist.graduated.filter((t: any) => !hidden.has(t.id) && !t.isBlacklisted)
-        : allTokensWithBlacklist.graduated,
-    };
-
-    if (!appliedFilters) return filtered;
-
-    return (['new', 'graduating', 'graduated'] as Token['status'][]).reduce(
-      (acc, s) => ({
-        ...acc,
-        [s]: appliedFilters[s]
-          ? applyFilters(filtered[s], appliedFilters[s])
-          : filtered[s],
-      }),
-      {} as Record<Token['status'], Token[]>,
-    );
-}, [tokensByStatus, hidden, appliedFilters, displaySettings.hideHiddenTokens, blacklistedDevs, blacklistedCAs]);
+  return {
+    new: processTokens(tokensByStatus.new, 'new'),
+    graduating: processTokens(tokensByStatus.graduating, 'graduating'),
+    graduated: processTokens(tokensByStatus.graduated, 'graduated'),
+  };
+}, [
+  tokensByStatus.new,
+  tokensByStatus.graduating,
+  tokensByStatus.graduated,
+  hidden,
+  appliedFilters,
+  displaySettings.hideHiddenTokens,
+  blacklistedDevs,
+  blacklistedCAs
+]);
   const newTokens = visibleTokens.new;
   const graduatingTokens = visibleTokens.graduating;
   const graduatedTokens = visibleTokens.graduated;
@@ -4897,19 +4924,25 @@ const blacklistedCAs = useMemo(() =>
       pausedTokenSnapshotRef.current[wasPaused as Token['status']].clear();
     }
   }, []);
-  const displayTokens = useMemo(() => {
-    return {
-      new: pausedColumn === 'new'
-        ? newTokens.filter(t => pausedTokenSnapshotRef.current.new.has(t.id))
-        : newTokens,
-      graduating: pausedColumn === 'graduating'
-        ? graduatingTokens.filter(t => pausedTokenSnapshotRef.current.graduating.has(t.id))
-        : graduatingTokens,
-      graduated: pausedColumn === 'graduated'
-        ? graduatedTokens.filter(t => pausedTokenSnapshotRef.current.graduated.has(t.id))
-        : graduatedTokens
-    };
-  }, [pausedColumn, newTokens, graduatingTokens, graduatedTokens]);
+const displayTokens = useMemo(() => {
+  if (!pausedColumn) {
+    return { new: newTokens, graduating: graduatingTokens, graduated: graduatedTokens };
+  }
+  
+  const snapshot = pausedTokenSnapshotRef.current[pausedColumn];
+  
+  return {
+    new: pausedColumn === 'new' && snapshot.size > 0
+      ? newTokens.filter(t => snapshot.has(t.id))
+      : newTokens,
+    graduating: pausedColumn === 'graduating' && snapshot.size > 0
+      ? graduatingTokens.filter(t => snapshot.has(t.id))
+      : graduatingTokens,
+    graduated: pausedColumn === 'graduated' && snapshot.size > 0
+      ? graduatedTokens.filter(t => snapshot.has(t.id))
+      : graduatedTokens
+  };
+}, [pausedColumn, newTokens, graduatingTokens, graduatedTokens]);
 
   const tokenCounts = useMemo(
     () => ({
