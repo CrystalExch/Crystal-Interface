@@ -851,7 +851,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                 <div className="meme-oc-header-cell">Actions</div>
               </div>
               <div className="meme-oc-items">
-                {!isLoadingPositions ? (
+                {isLoadingPositions ? (
                   <>
                     {Array.from({ length: 5 }).map((_, index) => (
                       <div key={`skeleton-${index}`} className="meme-portfolio-oc-item trader-portfolio-skeleton-item">
