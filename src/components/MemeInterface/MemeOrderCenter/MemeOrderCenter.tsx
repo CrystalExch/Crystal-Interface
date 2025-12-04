@@ -116,6 +116,8 @@ interface MemeOrderCenterProps {
   setpopup?: (v: number) => void;
   trackedWallets: any;
   onShareDataSelected?: (shareData: any) => void;
+  sellToken: any;
+  setSellToken: any;
 }
 
 interface DevToken {
@@ -532,14 +534,6 @@ const SellPopup: React.FC<SellPopupProps> = ({
             disabled={
               !sellAmount ||
               parseFloat(sellAmount) <= 0 ||
-              (() => {
-                const totalTokenBalance = selectedPosition.remainingTokens;
-                return (
-                  parseFloat(sellAmount) >
-                  totalTokenBalance *
-                  (selectedPosition.lastPrice || currentPrice)
-                );
-              })() ||
               isLoading
             }
           >
@@ -598,6 +592,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   setpopup,
   trackedWallets,
   onShareDataSelected,
+  sellToken,
+  setSellToken
 }) => {
   const [showFiltersPopup, setShowFiltersPopup] = useState(false);
   const [popupAddr, setPopupAddr] = useState<string | null>(null);
@@ -658,6 +654,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   const handleSellClose = useCallback(() => {
     setShowSellPopup(false);
     setSelectedPosition(null);
+    setSellToken({})
     setSellAmount('');
     setSellSliderPercent(0);
   }, []);
@@ -895,6 +892,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
   const handleSellClick = (position: Position) => {
     setSelectedPosition(position);
+    setSellToken(position)
     setShowSellPopup(true);
     setSellAmount('');
     setSellSliderPercent(0);

@@ -2468,7 +2468,6 @@ const DisplayDropdown: React.FC<{
                               onClick={() =>
                                 updateSetting('secondQuickBuyColor', '#aaaecf')
                               }
-                              title="Reset to default"
                               type="button"
                             >
                               <svg
@@ -3666,7 +3665,6 @@ const SpectraWidget: React.FC<SpectraWidgetProps> = ({
                 <button
                   className={`column-filter-icon ${appliedFilters?.new ? 'active' : ''}`}
                   onClick={() => onOpenFiltersForColumn('new')}
-                  title="filter new pairs"
                 >
                   <img className="filter-icon" src={filter} />
                   {appliedFilters?.new && (

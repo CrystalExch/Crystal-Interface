@@ -1315,7 +1315,6 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
                                         <button
                                             className="meme-search-clear-history-btn"
                                             onClick={clearHistory}
-                                            title="Clear History"
                                         >
                                             <Trash2 size={16} />
                                         </button>

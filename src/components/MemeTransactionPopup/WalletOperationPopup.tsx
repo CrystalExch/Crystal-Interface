@@ -288,7 +288,6 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
           <button
             className="wallet-popup-notification-toggle"
             onClick={handleToggleNotifications}
-            title={notificationsEnabled ? "Disable notifications" : "Enable notifications"}
           >
             {notificationsEnabled ? (
               <svg viewBox="0 0 24 24" width="14" height="14" fill="rgb(235, 112, 112)" stroke="rgb(235, 112, 112)" strokeWidth="1.5">

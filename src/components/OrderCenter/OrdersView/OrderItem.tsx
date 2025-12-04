@@ -116,8 +116,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
                onClick={(e) => {
                  e.stopPropagation();
                  openEditOrderSizePopup(order);
-               }}
-               title="Edit order size">
+               }}>
             <img src={editicon} className="edit-icon"/>
           </div>
         </div>
@@ -133,8 +132,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
                onClick={(e) => {
                  e.stopPropagation();
                  openEditOrderPopup(order);
-               }}
-               title="Edit limit price">
+               }}>
             <img src={editicon} className="edit-icon"/>
           </div>
         </div>

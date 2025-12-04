@@ -821,7 +821,6 @@ export default function MemeTradesComponent({
           <button
             className={`filter-icon-button ${hasActiveFilters ? 'active' : ''}`}
             onClick={() => setShowFiltersPopup(true)}
-            title="Advanced Filters"
           >
             <img
               className="filter-icon"

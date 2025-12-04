@@ -924,7 +924,6 @@ const loadImages = useCallback(async () => {
             className="refresh-button"
             onMouseDown={(e) => e.preventDefault()}
             onClick={handleRefreshClick}
-            title="Reset to default"
             type="button"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

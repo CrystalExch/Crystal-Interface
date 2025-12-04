@@ -1172,7 +1172,7 @@
 }
 
 .sell-popup-content {
-  padding: 15px
+  padding: 10px 15px 15px 15px;
 }
 
 .alerts-popup .meme-trade-action-button.sell .meme-button-spinner {

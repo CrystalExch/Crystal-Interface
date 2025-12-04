@@ -924,6 +924,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   useEffect(() => {
     saveSelectedWalletsToStorage(selectedWallets, scaAddress);
     saveWalletsToStorage(subWallets, scaAddress);
+    subwalletsRef.current = [
+      (address || '').toLowerCase(),
+      ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
+    ];
     const signerKey = `crystal_active_wallet_private_key_${scaAddress?.toLowerCase() || 'default'}`;
     localStorage.setItem(signerKey, oneCTSigner)
   }, [subWallets, selectedWallets, oneCTSigner]);
@@ -4610,6 +4614,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [memeSelectedInterval, setMemeSelectedInterval] = useState(
     () => localStorage.getItem('meme_chart_timeframe') || '15s',
   );
+  const [sellToken, setSellToken] = useState<any>({});
   const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
   const uniSubRef = useRef<string>('');
   const transferSubRef = useRef<string>('');
@@ -4622,6 +4627,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     name: '',
     price: 0,
   });
+  const subwalletsRef = useRef<any>(subWallets);
   const memeRef = useRef<any>();
   const memeDevTokenIdsRef = useRef<Set<string>>(new Set());
   const [trackedAddresses, setTrackedAddresses] = useState<string[]>([]);
@@ -5100,10 +5106,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               setMemePositions(prev => {
                 const copy = Array.isArray(prev) ? [...prev] : [];
-                const allUserAddresses = [
-                  (address || '').toLowerCase(),
-                  ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
-                ];
+                const allUserAddresses = subwalletsRef.current;
                 const isUserTrade = allUserAddresses.includes(callerAddr);
                 if (!isUserTrade) return prev;
                 let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddrFromMarket);
@@ -5420,10 +5423,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                 setMemePositions(prev => {
                   const copy = Array.isArray(prev) ? [...prev] : [];
-                  const allUserAddresses = [
-                    (address || '').toLowerCase(),
-                    ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
-                  ];
+                  const allUserAddresses = subwalletsRef.current;
                   const isUserTrade = allUserAddresses.includes(callerAddr);
                   if (!isUserTrade) return prev;
                   let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddr);
@@ -5684,10 +5684,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               setMemePositions(prev => {
                 const copy = Array.isArray(prev) ? [...prev] : [];
-                const allUserAddresses = [
-                  (address || '').toLowerCase(),
-                  ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
-                ];
+                const allUserAddresses = subwalletsRef.current;
                 const isUserTrade = allUserAddresses.includes(callerAddr);
                 if (!isUserTrade) return prev;
                 let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddr);
@@ -6099,10 +6096,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               setMemePositions(prev => {
                 const copy = Array.isArray(prev) ? [...prev] : [];
-                const allUserAddresses = [
-                  (address || '').toLowerCase(),
-                  ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
-                ];
+                const allUserAddresses = subwalletsRef.current;
                 const isUserTrade = allUserAddresses.includes(callerAddr);
                 if (!isUserTrade) return prev;
                 let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddr);
@@ -7130,7 +7124,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       'crystal_rpc_terminal_reads',
       address,
       token.id,
-      subWallets.length
+      subWallets.length,
+      sellToken.tokenId
     ],
     queryFn: async () => {
       let gasEstimateCall: any = null;
@@ -7207,6 +7202,29 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       const groups: any = {
         mainGroup
       };
+
+      if (sellToken?.tokenId) {
+        const sellGroup: any = [
+          ...([
+            true
+              ? {
+                disabled: false,
+                to: balancegetter,
+                abi: CrystalDataHelperAbi,
+                functionName: "getReserves",
+                args: [settings.chainConfig[activechain].nadFunBondingCurve, sellToken?.market || sellToken.tokenId, weth, sellToken.tokenId, settings.chainConfig[activechain].zeroXAllowanceHolder, [scaAddress].concat(subWallets.map(w => w.address))]
+              }
+              : {
+                disabled: false,
+                to: balancegetter,
+                abi: CrystalDataHelperAbi,
+                functionName: "getVirtualReserves",
+                args: [router, sellToken.tokenId, weth, BigInt(1000000), BigInt(1), BigInt(100)]
+              }
+          ])
+        ];
+        groups.sellGroup = sellGroup;
+      }
 
       const callData: any = []
       const callMapping: any = []
@@ -7415,6 +7433,22 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           )
         }));
       }
+
+      if (groupResults?.sellGroup?.at(-1)?.result) {
+        const reservesData = groupResults?.sellGroup?.at(-1)?.result;
+        setSellToken((prev: any) => ({
+          ...prev, migrated: true ? reservesData[2] : prev.migrated, reserveQuote: true ? reservesData[0] : reservesData[0], reserveBase: true ? reservesData[1] : reservesData[1], allowances: Object.fromEntries(
+            [scaAddress, ...subWallets.map(w => w.address)].map((wallet, i) => [
+              wallet.toLowerCase(),
+              {
+                allowance: reservesData[3][i] ?? 0n,
+                nonce: reservesData[4][i] ?? 0n
+              }
+            ])
+          )
+        }));
+      }
+
       return { readContractData: groupResults, gasEstimate: gasEstimate }
     },
     enabled: !!activeMarket && !!tokendict && !!markets,
@@ -20446,7 +20480,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                         e.stopPropagation();
                                         playSound(key);
                                       }}
-                                      title="Play sound"
                                     >
                                       <Play size={14} />
                                     </button>
@@ -20461,7 +20494,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                                           setSellSound(stepaudio);
                                         }
                                       }}
-                                      title="Reset to default"
                                     >
                                       <RotateCcw size={14} />
                                     </button>
@@ -28386,6 +28418,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 buySound={buySound}
                 sellSound={sellSound}
                 volume={volume}
+                sellToken={sellToken}
+                setSellToken={setSellToken}
               />
             }
           />

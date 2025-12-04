@@ -1129,7 +1129,6 @@ const AlertsPopup: React.FC<{
                                     e.stopPropagation();
                                     playSound(key);
                                   }}
-                                  title="Play sound"
                                 >
                                   <Play size={14} />
                                 </button>
@@ -1140,7 +1139,6 @@ const AlertsPopup: React.FC<{
                                     e.stopPropagation();
                                     updateSoundSetting(key, stepaudio);
                                   }}
-                                  title="Reset to default"
                                 >
                                   <RotateCcw size={14} />
                                 </button>
@@ -2072,7 +2070,6 @@ const DisplayDropdown: React.FC<{
                                         resetMetricThreshold(metric);
                                       }
                                     }}
-                                    title={range === 'range1' ? 'Reset color and thresholds' : 'Reset color'}
                                   >
                                     <img
                                       src={reset}
@@ -2295,7 +2292,6 @@ const DisplayDropdown: React.FC<{
                               onClick={() =>
                                 updateSetting('secondQuickBuyColor', '#aaaecf')
                               }
-                              title="Reset to default"
                               type="button"
                             >
                               <svg
@@ -5509,7 +5505,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                               <button
                                 className={`column-filter-icon ${appliedFilters?.new ? 'active' : ''}`}
                                 onClick={() => onOpenFiltersForColumn('new')}
-                                title="filter new pairs"
                               >
                                 <img className="filter-icon" src={filter} />
                                 {appliedFilters?.new && (
@@ -5748,7 +5743,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                               <button
                                 className={`column-filter-icon ${appliedFilters?.graduating ? 'active' : ''}`}
                                 onClick={() => onOpenFiltersForColumn('graduating')}
-                                title="Filter graduating tokens"
                               >
                                 <img className="filter-icon" src={filter} />
                                 {appliedFilters?.graduating && (
@@ -5987,7 +5981,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                               <button
                                 className={`column-filter-icon ${appliedFilters?.graduated ? 'active' : ''}`}
                                 onClick={() => onOpenFiltersForColumn('graduated')}
-                                title="filter graduated tokens"
                               >
                                 <img className="filter-icon" src={filter} />
                                 {appliedFilters?.graduated && (

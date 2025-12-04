@@ -1071,7 +1071,6 @@ const totalRealizedPnlNative = traderPositions?.reduce((sum, p) => {
                                 setpopup(27);
                               }
                             }}
-                            title="Share PNL"
                           >
                             <Tooltip content="Share PnL">
 
