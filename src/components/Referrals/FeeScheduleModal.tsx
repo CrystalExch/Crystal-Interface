@@ -15,50 +15,29 @@ const FeeScheduleModal: React.FC<FeeScheduleModalProps> = ({ isOpen, onClose }) 
       name: 'Bronze',
       tier: 1,
       volume: '$0+',
-      cashback: '5%',
+      cashback: '1x',
       referralCommission: '10%',
     },
     {
       name: 'Silver',
       tier: 2,
       volume: '$100K+',
-      cashback: '10%',
-      referralCommission: '10%',
+      cashback: '2x',
+      referralCommission: '20%',
     },
     {
       name: 'Gold',
       tier: 3,
       volume: '$500K+',
-      cashback: '15%',
-      referralCommission: '10%',
+      cashback: '5x',
+      referralCommission: '30%',
     },
     {
       name: 'Diamond',
       tier: 4,
       volume: '$1M+',
-      cashback: '20%',
-      referralCommission: '10%',
-    },
-  ];
-
-  const makerRebateTiers = [
-    {
-      tier: 'R1',
-      volumeShare: '0.5%+',
-      rebate: '0.002%',
-      description: 'Additional maker rebate',
-    },
-    {
-      tier: 'R2',
-      volumeShare: '1.0%+',
-      rebate: '0.003%',
-      description: 'Additional maker rebate',
-    },
-    {
-      tier: 'R3',
-      volumeShare: '2.0%+',
-      rebate: '0.005%',
-      description: 'Additional maker rebate',
+      cashback: '10x',
+      referralCommission: '40%',
     },
   ];
 

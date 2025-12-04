@@ -41,8 +41,8 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         gradient: 'linear-gradient(135deg, #aaaecf 0%, #7f82a1 100%)',
         takerFee: '0.030%',
         makerFee: '0.000%',
-        cashback: '20%',
-        referralCommission: '10%',
+        cashback: '30%',
+        referralCommission: '40%',
         minVolume: 1000000,
         next: null,
       };
@@ -56,7 +56,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         takerFee: '0.035%',
         makerFee: '0.005%',
         cashback: '15%',
-        referralCommission: '10%',
+        referralCommission: '30%',
         minVolume: 500000,
         next: {
           name: 'Diamond',
@@ -74,8 +74,8 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
         gradient: 'linear-gradient(135deg, #D4D4D4 0%, #7A7A7A 100%)',
         takerFee: '0.040%',
         makerFee: '0.010%',
-        cashback: '10%',
-        referralCommission: '10%',
+        cashback: '6%',
+        referralCommission: '20%',
         minVolume: 100000,
         next: {
           name: 'Gold',
@@ -92,7 +92,7 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
       gradient: 'linear-gradient(135deg, #D4915A 0%, #8B5A1E 100%)',
       takerFee: '0.050%',
       makerFee: '0.020%',
-      cashback: '5%',
+      cashback: '3%',
       referralCommission: '10%',
       minVolume: 0,
       next: {
@@ -197,9 +197,9 @@ const FeeTier: React.FC<FeeTierProps> = ({ tradingVolume, commissionBonus, onVie
       >
         <div className="fee-tier-header">
           <div className="fee-tier-header-left">
-            <h3 className="referrals-fee-tier-title">Fee Tiers</h3>
+            <h3 className="referrals-fee-tier-title">Fee Tier:</h3>
             <div className="fee-tier-badge" style={{ color: tier.color }}>
-              <span className="fee-tier-badge-name">{tier.name}</span>
+              {tier.name}
             </div>
           </div>
           <button className="view-schedule-button" onClick={onViewFeeSchedule}>
