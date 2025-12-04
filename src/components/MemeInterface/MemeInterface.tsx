@@ -152,8 +152,8 @@ const formatNumberWithCommas = (v: number, d = 2) => {
   if (v >= 1e8) return `${(v / 1e6).toFixed(0)}M`;
   if (v >= 1e7) return `${(v / 1e6).toFixed(1)}M`;
   if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
-  if (v >= 1e5) return `${(v / 1e3).toFixed(0)}K`;
-  if (v >= 1e4) return `${(v / 1e3).toFixed(1)}K`;
+  if (v >= 1e5) return `${(v / 1e3).toFixed(2)}K`;
+  if (v >= 1e4) return `${(v / 1e3).toFixed(2)}K`;
   if (v >= 1e3) return `${(v / 1e3).toFixed(2)}K`;
   if (v >= 1) return v.toLocaleString('en-US', { maximumFractionDigits: d });
   return v.toFixed(Math.min(d, 8));
@@ -3267,7 +3267,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               }}
             >
               <img src={walleticon} className="meme-wallet-icon" alt="Wallets" />
-              {selectedWallets.size == 0 ? <Tooltip content="Primary Wallet">
+              {selectedWallets.size == 0 ? 
+              <Tooltip content="Primary Wallet">
                 {(
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d8dcff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px', verticalAlign: 'middle' }}>
                     <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />

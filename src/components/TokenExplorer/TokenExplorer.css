@@ -4304,6 +4304,7 @@
 .subwallet-total-balance {
   align-items: center;
   display: flex;
+  color: #e3e5f4
 }
 
 .blacklist-category-dropdown {

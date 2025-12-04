@@ -224,6 +224,7 @@ const Footer: React.FC<FooterProps> = ({
   const isWalletActive = (privateKey: string) => {
     return activeWalletPrivateKey === privateKey;
   };
+  const userAddr = address;
 
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [isDiscoverPopupOpen, setIsDiscoverPopupOpen] = useState(false);
@@ -400,7 +401,7 @@ const Footer: React.FC<FooterProps> = ({
       return 0;
     }
     if (selectedWallets.size === 0) {
-      return 0;
+      return (Number(walletTokenBalances?.[userAddr]?.[settings.chainConfig[activechain]?.eth] ?? 0) / 10 ** Number(18))
     }
     return Array.from(selectedWallets).reduce((total, w) => {
       return total + getWalletBalance(w);
@@ -421,17 +422,17 @@ const Footer: React.FC<FooterProps> = ({
                 PRESET 1
               </div>
             </Tooltip>
-<div ref={dropdownRef} style={{ position: 'relative' }}>
-  <button
-    className="footer-transparent-button"
-    onClick={() => {
-      if (!address) {
-        setpopup(4);
-      } else {
-        setIsWalletDropdownOpen(!isWalletDropdownOpen);
-      }
-    }}
-  >
+            <div ref={dropdownRef} style={{ position: 'relative' }}>
+              <button
+                className="footer-transparent-button"
+                onClick={() => {
+                  if (!address) {
+                    setpopup(4);
+                  } else {
+                    setIsWalletDropdownOpen(!isWalletDropdownOpen);
+                  }
+                }}
+              >
                 <span
                   style={{
                     display: 'flex',
@@ -449,9 +450,25 @@ const Footer: React.FC<FooterProps> = ({
                     }}
                     alt="Wallet"
                   />
-                  <span style={{ fontSize: '0.85rem', fontWeight: '300' }}>
-                    {selectedWallets.size}
-                  </span>
+                  {selectedWallets.size == 0 ?
+                    <Tooltip content="Primary Wallet">
+                      {(
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d8dcff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle' }}>
+                          <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                          <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                          <path d="m20 9-3 9" />
+                          <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                          <path d="M7 18 4 9" />
+                          <circle cx="12" cy="4" r="2" />
+                          <circle cx="20" cy="7" r="2" />
+                          <circle cx="4" cy="7" r="2" />
+                        </svg>
+                      )}
+                    </Tooltip> :
+                    <span style={{ fontSize: '0.85rem', fontWeight: '300' }}>
+                      {selectedWallets.size}
+                    </span>
+                  }
                   <span
                     style={{
                       fontSize: '0.85rem',
@@ -459,6 +476,7 @@ const Footer: React.FC<FooterProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       marginLeft: '4px',
+                      color:"#e3e5f4"
                     }}
                   >
                     {totalSelectedBalance > 0 ? (
