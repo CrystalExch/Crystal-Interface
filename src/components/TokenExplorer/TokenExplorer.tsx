@@ -2460,7 +2460,72 @@ const MobileTabSelector: React.FC<{
     </div>
   );
 };
+const useMetricColorClasses = (
+  token: Token | undefined,
+  display: DisplaySettings | undefined,
+  monUsdPrice: number,
+) => {
+  return useMemo(() => {
+    if (!token || !display?.metricColors || !display?.metricColoring) return null;
 
+    const classes: string[] = [];
+    const cssVars: Record<string, string> = {};
+
+    const thresholds = display?.metricThresholds || DISPLAY_DEFAULTS.metricThresholds;
+
+    const marketCapUsd = token.marketCap * monUsdPrice;
+    if (typeof token.marketCap === 'number' && !isNaN(token.marketCap)) {
+      if (marketCapUsd < thresholds.marketCap.range1) {
+        classes.push('market-cap-range1');
+        cssVars['--metric-market-cap-range1'] = display.metricColors.marketCap.range1;
+      } else if (marketCapUsd < thresholds.marketCap.range2) {
+        classes.push('market-cap-range2');
+        cssVars['--metric-market-cap-range2'] = display.metricColors.marketCap.range2;
+      } else {
+        classes.push('market-cap-range3');
+        cssVars['--metric-market-cap-range3'] = display.metricColors.marketCap.range3;
+      }
+    }
+
+    const volumeUsd = token.volume24h * monUsdPrice;
+    if (typeof token.volume24h === 'number' && !isNaN(token.volume24h)) {
+      if (volumeUsd < thresholds.volume.range1) {
+        classes.push('volume-range1');
+        cssVars['--metric-volume-range1'] = display.metricColors.volume.range1;
+      } else if (volumeUsd < thresholds.volume.range2) {
+        classes.push('volume-range2');
+        cssVars['--metric-volume-range2'] = display.metricColors.volume.range2;
+      } else {
+        classes.push('volume-range3');
+        cssVars['--metric-volume-range3'] = display.metricColors.volume.range3;
+      }
+    }
+
+    if (typeof token.holders === 'number' && !isNaN(token.holders)) {
+      if (token.holders < thresholds.holders.range1) {
+        classes.push('holders-range1');
+        cssVars['--metric-holders-range1'] = display.metricColors.holders.range1;
+      } else if (token.holders < thresholds.holders.range2) {
+        classes.push('holders-range2');
+        cssVars['--metric-holders-range2'] = display.metricColors.holders.range2;
+      } else {
+        classes.push('holders-range3');
+        cssVars['--metric-holders-range3'] = display.metricColors.holders.range3;
+      }
+    }
+
+    return classes.length > 0 ? { classes: classes.join(' '), cssVars } : null;
+  }, [
+    token?.id,
+    token?.marketCap,
+    token?.volume24h,
+    token?.holders,
+    display?.metricColoring,
+    display?.metricThresholds,
+    display?.metricColors,
+    monUsdPrice,
+  ]);
+};
 const TokenRow = React.memo<{
   token: Token;
   quickbuyAmount: string;
@@ -2684,10 +2749,8 @@ const TokenRow = React.memo<{
         : (token.sellTransactions / totalTransactions) * 100,
     [token.sellTransactions, totalTransactions],
   );
+const metricData = useMetricColorClasses(token, displaySettings, monUsdPrice);
 
-  const metricData = hasMetricColoring(displaySettings)
-    ? getMetricColorClasses(token, displaySettings, monUsdPrice)
-    : null;
   const cssVariables: CSSVars = metricData?.cssVars || {};
   const [imageError, setImageError] = useState(false);
 
@@ -3624,8 +3687,29 @@ const TokenRow = React.memo<{
         )}
     </>
   );
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.token.id === nextProps.token.id &&
+    prevProps.token.price === nextProps.token.price &&
+    prevProps.token.marketCap === nextProps.token.marketCap &&
+    prevProps.token.volume24h === nextProps.token.volume24h &&
+    prevProps.token.bondingPercentage === nextProps.token.bondingPercentage &&
+    prevProps.quickbuyAmount === nextProps.quickbuyAmount &&
+    prevProps.quickbuyAmountSecond === nextProps.quickbuyAmountSecond &&
+    prevProps.isLoadingPrimary === nextProps.isLoadingPrimary &&
+    prevProps.isLoadingSecondary === nextProps.isLoadingSecondary &&
+    prevProps.hoveredToken === nextProps.hoveredToken &&
+    prevProps.hoveredImage === nextProps.hoveredImage &&
+    prevProps.isHidden === nextProps.isHidden &&
+    prevProps.isBlacklisted === nextProps.isBlacklisted &&
+    prevProps.displaySettings.quickBuySize === nextProps.displaySettings.quickBuySize &&
+    prevProps.displaySettings.metricSize === nextProps.displaySettings.metricSize &&
+    prevProps.displaySettings.progressBar === nextProps.displaySettings.progressBar &&
+    prevProps.displaySettings.squareImages === nextProps.displaySettings.squareImages &&
+    prevProps.displaySettings.noDecimals === nextProps.displaySettings.noDecimals &&
+    prevProps.displaySettings.visibleRows === nextProps.displaySettings.visibleRows
+  );
 });
-
 interface TokenExplorerProps {
   setpopup: (popup: number) => void;
   appliedFilters?: TabFilters;
@@ -3672,7 +3756,21 @@ interface TokenExplorerProps {
   createSubWallet: any;
   setOneCTDepositAddress: any;
 }
-
+const formatTimeAgoStatic = (createdTimestamp: number, now: number) => {
+  const ageSec = now - createdTimestamp;
+  
+  if (ageSec < 60) {
+    return `${Math.ceil(ageSec)}s`;
+  } else if (ageSec < 3600) {
+    return `${Math.floor(ageSec / 60)}m`;
+  } else if (ageSec < 86400) {
+    return `${Math.floor(ageSec / 3600)}h`;
+  } else if (ageSec < 604800) {
+    return `${Math.floor(ageSec / 86400)}d`;
+  } else {
+    return `${Math.floor(ageSec / 604800)}w`;
+  }
+};
 const TokenExplorer: React.FC<TokenExplorerProps> = ({
   appliedFilters,
   // activeFilterTab,
@@ -3776,22 +3874,16 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     ),
   }));
 
-  const formatTimeAgo = (createdTimestamp: number) => {
-    const now = Math.floor(Date.now() / 1000);
-    const ageSec = now - createdTimestamp;
-
-    if (ageSec < 60) {
-      return `${Math.ceil(ageSec)}s`;
-    } else if (ageSec < 3600) {
-      return `${Math.floor(ageSec / 60)}m`;
-    } else if (ageSec < 86400) {
-      return `${Math.floor(ageSec / 3600)}h`;
-    } else if (ageSec < 604800) {
-      return `${Math.floor(ageSec / 86400)}d`;
-    } else {
-      return `${Math.floor(ageSec / 604800)}w`;
-    }
+const currentTime = useMemo(() => Math.floor(Date.now() / 1000), []);
+const formatTimeAgo = useMemo(() => {
+  const cache = new Map<number, string>();
+  return (timestamp: number) => {
+    if (cache.has(timestamp)) return cache.get(timestamp)!;
+    const result = formatTimeAgoStatic(timestamp, currentTime);
+    cache.set(timestamp, result);
+    return result;
   };
+}, [currentTime]);
 
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(
@@ -3799,7 +3891,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   );
   const walletDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load wallet names from localStorage
   useEffect(() => {
     const storedWalletNames = localStorage.getItem('crystal_wallet_names');
     if (storedWalletNames) {
@@ -3991,7 +4082,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       }
     },
   );
-  const [, forceUpdate] = useReducer((x) => x + 1, 0);
   const [blacklistSettings, setBlacklistSettings] = useState<BlacklistSettings>(
     () => {
       const saved = localStorage.getItem('explorer-blacklist-settings');
@@ -4026,13 +4116,16 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
   const [buyPresets, setBuyPresets] = useState(() => loadBuyPresets());
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      forceUpdate();
-    }, 1000);
+const [currentTimestamp, setCurrentTimestamp] = useState(() => Math.floor(Date.now() / 1000));
 
-    return () => clearInterval(interval);
-  }, []);
+useEffect(() => {
+  const interval = setInterval(() => {
+    setCurrentTimestamp(Math.floor(Date.now() / 1000));
+  }, 1000); 
+
+  return () => clearInterval(interval);
+}, []);
+
 
   useEffect(() => {
     localStorage.setItem(
@@ -4716,33 +4809,24 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       return true;
     });
   }, []);
+const blacklistedDevs = useMemo(() => 
+  new Set(blacklistSettings.items.filter(i => i.type === 'dev').map(i => i.text.toLowerCase())),
+  [blacklistSettings]
+);
 
+const blacklistedCAs = useMemo(() =>
+  new Set(blacklistSettings.items.filter(i => i.type === 'ca').map(i => i.text.toLowerCase())),
+  [blacklistSettings]
+);
   const visibleTokens = useMemo(() => {
-    const markBlacklistStatus = (tokens: Token[]) => {
-      return tokens.map((token) => {
-        const isBlacklisted = blacklistSettings.items.some((item) => {
-          const itemText = item.text.toLowerCase();
-
-          switch (item.type) {
-            case 'dev':
-              return token.dev.toLowerCase() === itemText;
-            case 'ca':
-              return token.id.toLowerCase() === itemText;
-            case 'keyword':
-              const searchText =
-                `${token.name} ${token.symbol} ${token.description}`.toLowerCase();
-              return searchText.includes(itemText);
-            case 'website':
-              return token.website.toLowerCase().includes(itemText);
-            case 'handle':
-              return token.twitterHandle.toLowerCase().includes(itemText);
-            default:
-              return false;
-          }
-        });
-        return { ...token, isBlacklisted };
-      });
-    };
+ const markBlacklistStatus = (tokens: Token[]) => {
+    return tokens.map((token) => {
+      const isBlacklisted = 
+        blacklistedDevs.has(token.dev.toLowerCase()) ||
+        blacklistedCAs.has(token.id.toLowerCase());
+      return { ...token, isBlacklisted };
+    });
+  };
 
     const allTokensWithBlacklist = {
       new: markBlacklistStatus(tokensByStatus.new),
@@ -4773,14 +4857,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       }),
       {} as Record<Token['status'], Token[]>,
     );
-  }, [
-    tokensByStatus,
-    hidden,
-    appliedFilters,
-    applyFilters,
-    displaySettings.hideHiddenTokens,
-    blacklistSettings,
-  ]);
+}, [tokensByStatus, hidden, appliedFilters, displaySettings.hideHiddenTokens, blacklistedDevs, blacklistedCAs]);
   const newTokens = visibleTokens.new;
   const graduatingTokens = visibleTokens.graduating;
   const graduatedTokens = visibleTokens.graduated;
