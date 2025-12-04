@@ -110,12 +110,11 @@ interface MemeOrderCenterProps {
   onFilterTracked?: () => void;
   devAddress?: string;
   onTradesHoverChange?: (isHovered: boolean) => void;
-  // New props for TraderPortfolioPopup
   tokenList?: any[];
   marketsData: any;
   setSendTokenIn?: (t: any) => void;
   setpopup?: (v: number) => void;
-  trackedWalletsRef: any;
+  trackedWallets: any;
   onShareDataSelected?: (shareData: any) => void;
 }
 
@@ -597,7 +596,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   marketsData,
   setSendTokenIn,
   setpopup,
-  trackedWalletsRef,
+  trackedWallets,
   onShareDataSelected,
 }) => {
   const [showFiltersPopup, setShowFiltersPopup] = useState(false);
@@ -612,7 +611,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   const [activeSection, setActiveSection] = useState<
     'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens' | 'trades'
   >('positions');
-  const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
   const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1200,
@@ -677,44 +675,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     currentPrice,
   ]);
 
-  useEffect(() => {
-    const loadTrackedWallets = () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          setTrackedWallets(JSON.parse(stored));
-        }
-      } catch (error) {
-        console.error('Error loading tracked wallets:', error);
-      }
-    };
-
-    loadTrackedWallets();
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY && e.newValue) {
-        try {
-          setTrackedWallets(JSON.parse(e.newValue));
-        } catch (error) {
-          console.error('Error parsing tracked wallets:', error);
-        }
-      }
-    };
-
-    const handleCustomWalletUpdate = (e: CustomEvent) => {
-      if (e.detail && e.detail.wallets) {
-        setTrackedWallets(e.detail.wallets);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange as EventListener);
-    window.addEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange as EventListener);
-      window.removeEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
-    };
-  }, []);
   useEffect(() => {
     if (isTradesTabVisible && activeSection !== 'trades') {
       setActiveSection('trades');
@@ -2341,20 +2301,20 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           positions={positions}
           onSellPosition={onSellPosition}
           monUsdPrice={monUsdPrice}
-          trackedWalletsRef={trackedWalletsRef}
+          trackedWallets={trackedWallets}
           onAddTrackedWallet={(wallet) => {
-            const existing = trackedWalletsRef.current.findIndex(
+            const existing = trackedWallets.findIndex(
               (w: any) => w.address.toLowerCase() === wallet.address.toLowerCase()
             );
 
             if (existing >= 0) {
-              trackedWalletsRef.current[existing] = {
-                ...trackedWalletsRef.current[existing],
+              trackedWallets[existing] = {
+                ...trackedWallets[existing],
                 name: wallet.name,
                 emoji: wallet.emoji,
               };
             } else {
-              trackedWalletsRef.current.push({
+              trackedWallets.push({
                 id: `tracked-${Date.now()}`,
                 address: wallet.address,
                 name: wallet.name,
@@ -2364,7 +2324,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                 createdAt: new Date().toISOString(),
               });
             }
-            localStorage.setItem('tracked_wallets_data', JSON.stringify(trackedWalletsRef.current));
+            localStorage.setItem('tracked_wallets_data', JSON.stringify(trackedWallets));
           }}
         />
       )}

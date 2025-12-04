@@ -41,7 +41,7 @@ interface TraderPortfolioPopupProps {
   positions?: Position[];
   onSellPosition?: (position: Position, monAmount: string) => void;
   monUsdPrice: number;
-  trackedWalletsRef?: React.MutableRefObject<any[]>;
+  trackedWallets?: any[];
   onAddTrackedWallet?: (wallet: { address: string; name: string; emoji: string }) => void;
 }
 const Tooltip: React.FC<{
@@ -271,7 +271,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   positions = [],
   onSellPosition,
   monUsdPrice,
-  trackedWalletsRef,
+  trackedWallets,
   onAddTrackedWallet,
 }) => {
 
@@ -290,8 +290,8 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (trackedWalletsRef?.current) {
-      const tracked = trackedWalletsRef.current.find(
+    if (trackedWallets) {
+      const tracked = trackedWallets.find(
         (w: any) => w.address.toLowerCase() === traderAddress.toLowerCase()
       );
       if (tracked) {
@@ -299,7 +299,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
         setSelectedEmoji(tracked.emoji || '🎯');
       }
     }
-  }, [traderAddress, trackedWalletsRef]);
+  }, [traderAddress, trackedWallets]);
 
   useEffect(() => {
     if (isEditingName && nameInputRef.current) {
@@ -435,8 +435,8 @@ const tabFilteredPositions = activeTab === 'active'
       handleNameSubmit();
     } else if (e.key === 'Escape') {
       setIsEditingName(false);
-      if (trackedWalletsRef?.current) {
-        const tracked = trackedWalletsRef.current.find(
+      if (trackedWallets) {
+        const tracked = trackedWallets.find(
           (w: any) => w.address.toLowerCase() === traderAddress.toLowerCase()
         );
         if (tracked) {

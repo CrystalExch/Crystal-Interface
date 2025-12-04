@@ -45,7 +45,7 @@ interface ChartHeaderProps {
     symbol: string;
     name: string;
     image: string;
-    tokenAddress: string;
+    id: string;
     marketCap: number;
     change24h: number;
     status: 'new' | 'graduating' | 'graduated';

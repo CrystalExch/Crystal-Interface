@@ -560,43 +560,44 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, []);
 
   useEffect(() => {
-    const loadWallets = () => {
-      try {
-        const stored = localStorage.getItem('tracked_wallets_data');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setTrackedWallets(parsed);
-        }
-      } catch (error) {
-      }
-    };
-
-    loadWallets();
-
-    const handleWalletUpdate = (e: CustomEvent) => {
+    const stored = localStorage.getItem('tracked_wallets_data');
+    try {
+      const v = stored ? JSON.parse(stored) : [];
+      trackedWalletsRef.current = v;
+      setTrackedWallets(v);
+    } catch {
+      trackedWalletsRef.current = [];
+      setTrackedWallets([]);
+    }
+  
+    const walletEvt = (e: CustomEvent) => {
       if (e.detail?.wallets) {
+        trackedWalletsRef.current = e.detail.wallets;
         setTrackedWallets(e.detail.wallets);
       }
     };
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'tracked_wallets_data' && e.newValue) {
+  
+    const storageEvt = (e: StorageEvent) => {
+      if (e.key === 'tracked_wallets_data') {
         try {
-          const parsed = JSON.parse(e.newValue);
-          setTrackedWallets(parsed);
-        } catch (error) {
+          const v = e.newValue ? JSON.parse(e.newValue) : [];
+          trackedWalletsRef.current = v;
+          setTrackedWallets(v);
+        } catch {
+          trackedWalletsRef.current = [];
+          setTrackedWallets([]);
         }
       }
     };
-
-    window.addEventListener('wallets-updated', handleWalletUpdate as EventListener);
-    window.addEventListener('storage', handleStorageChange);
-
+  
+    window.addEventListener('wallets-updated', walletEvt as EventListener);
+    window.addEventListener('storage', storageEvt);
+  
     return () => {
-      window.removeEventListener('wallets-updated', handleWalletUpdate as EventListener);
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('wallets-updated', walletEvt as EventListener);
+      window.removeEventListener('storage', storageEvt);
     };
-  }, []);
+  }, []);  
 
   useEffect(() => {
     const handleBuyPresetsUpdate = (event: CustomEvent) => {
@@ -4651,44 +4652,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
 
   useEffect(() => {
-    const updateTrackedWalletsRef = () => {
-      try {
-        const stored = localStorage.getItem('tracked_wallets_data');
-        if (stored) {
-          const wallets = JSON.parse(stored);
-          trackedWalletsRef.current = wallets;
-        } else {
-          trackedWalletsRef.current = [];
-        }
-      } catch (error) {
-        trackedWalletsRef.current = [];
-      }
-    };
-
-    updateTrackedWalletsRef();
-
-    const handleWalletsUpdate = (e: CustomEvent) => {
-      if (e.detail?.wallets) {
-        trackedWalletsRef.current = e.detail.wallets;
-      }
-    };
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'tracked_wallets_data') {
-        updateTrackedWalletsRef();
-      }
-    };
-
-    window.addEventListener('wallets-updated', handleWalletsUpdate as EventListener);
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('wallets-updated', handleWalletsUpdate as EventListener);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
-  
-  useEffect(() => {
     let cancelled = false;
 
     (async () => {
@@ -5679,7 +5642,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 }
                 else {
                   transferEvents = transferPendingLogsRef.current.get(log.transactionHash);
-                  if (!transferEvents) return tempset;
                   transferPendingLogsRef.current.delete(log.transactionHash);
                 }
               }
@@ -5718,6 +5680,85 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   otherVolumeDelta: isBuy == false ? amountIn : amountOut,
                   trader: callerAddr,
                 },
+              });
+
+              setMemePositions(prev => {
+                const copy = Array.isArray(prev) ? [...prev] : [];
+                const allUserAddresses = [
+                  (address || '').toLowerCase(),
+                  ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
+                ];
+                const isUserTrade = allUserAddresses.includes(callerAddr);
+                if (!isUserTrade) return prev;
+                let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddr);
+
+                if (idx == -1 && isUserTrade) {
+                  let tokenInfo: any = null;
+                  if (memeRef.current?.id && tokenAddr === memeRef.current.id.toLowerCase()) {
+                    tokenInfo = memeRef.current;
+                  }
+                  else {
+                    Object.values(tokensByStatusRef.current).forEach((tokens: any[]) => {
+                      const found = tokens.find(t => t.id?.toLowerCase() == tokenAddr);
+                      if (found) tokenInfo = found;
+                    });
+                  }
+                  if (tokenInfo) {
+                    const newPos = {
+                      tokenId: tokenInfo.id?.toLowerCase(),
+                      symbol: tokenInfo?.symbol || '',
+                      name: tokenInfo?.name || '',
+                      imageUrl: tokenInfo?.image || '',
+                      metadataCID: '',
+                      boughtTokens: 0,
+                      soldTokens: 0,
+                      spentNative: 0,
+                      receivedNative: 0,
+                      remainingTokens: 0,
+                      remainingPct: 0,
+                      pnlNative: 0,
+                      lastPrice: price,
+                    };
+                    copy.push(newPos);
+                    idx = copy.length - 1;
+                  }
+                }
+
+                const pos = { ...copy[idx] };
+                pos.lastPrice = price;
+                if (isUserTrade) {
+                  if (isBuy) {
+                    pos.boughtTokens += amountOut;
+                    pos.spentNative += amountIn;
+                    pos.remainingTokens += amountOut;
+                  } else {
+                    pos.soldTokens += amountIn;
+                    pos.receivedNative += amountOut;
+                    pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
+                  }
+                }
+                pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
+
+                const balance = Math.max(0, pos.remainingTokens);
+                const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
+                const unrealized = balance * (pos.lastPrice || 0);
+                pos.pnlNative = realized + unrealized;
+
+                copy[idx] = pos;
+
+                if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
+                  const markToMarket = balance * (pos.lastPrice || 0);
+                  const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
+                  setMemeUserStats({
+                    balance,
+                    amountBought: pos.boughtTokens || 0,
+                    amountSold: pos.soldTokens || 0,
+                    valueBought: pos.spentNative || 0,
+                    valueSold: pos.receivedNative || 0,
+                    valueNet: totalPnL,
+                  });
+                }
+                return copy;
               });
 
               if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
@@ -5932,73 +5973,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   return copy;
                 });
 
-                setMemePositions(prev => {
-                  const copy = Array.isArray(prev) ? [...prev] : [];
-                  const allUserAddresses = [
-                    (address || '').toLowerCase(),
-                    ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
-                  ];
-                  const isUserTrade = allUserAddresses.includes(callerAddr);
-                  if (!isUserTrade) return prev;
-                  let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddr);
-
-                  if (idx == -1 && isUserTrade) {
-                    const newPos = {
-                      tokenId: memeRef.current.id?.toLowerCase(),
-                      symbol: memeRef.current?.symbol || '',
-                      name: memeRef.current?.name || '',
-                      imageUrl: memeRef.current?.image || '',
-                      metadataCID: '',
-                      boughtTokens: 0,
-                      soldTokens: 0,
-                      spentNative: 0,
-                      receivedNative: 0,
-                      remainingTokens: 0,
-                      remainingPct: 0,
-                      pnlNative: 0,
-                      lastPrice: price,
-                    };
-                    copy.push(newPos);
-                    idx = copy.length - 1;
-                  }
-
-                  const pos = { ...copy[idx] };
-                  pos.lastPrice = price;
-                  if (isUserTrade) {
-                    if (isBuy) {
-                      pos.boughtTokens += amountOut;
-                      pos.spentNative += amountIn;
-                      pos.remainingTokens += amountOut;
-                    } else {
-                      pos.soldTokens += amountIn;
-                      pos.receivedNative += amountOut;
-                      pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
-                    }
-                  }
-                  pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
-
-                  const balance = Math.max(0, pos.remainingTokens);
-                  const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
-                  const unrealized = balance * (pos.lastPrice || 0);
-                  pos.pnlNative = realized + unrealized;
-
-                  copy[idx] = pos;
-
-                  if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
-                    const markToMarket = balance * (pos.lastPrice || 0);
-                    const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
-                    setMemeUserStats({
-                      balance,
-                      amountBought: pos.boughtTokens || 0,
-                      amountSold: pos.soldTokens || 0,
-                      valueBought: pos.spentNative || 0,
-                      valueSold: pos.receivedNative || 0,
-                      valueNet: totalPnL,
-                    });
-                  }
-                  return copy;
-                });
-
                 if (memeDevTokenIdsRef.current.has(tokenAddr)) {
                   setMemeDevTokens(prev => {
                     const updated = prev.map(t => {
@@ -6123,6 +6097,85 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 },
               });
 
+              setMemePositions(prev => {
+                const copy = Array.isArray(prev) ? [...prev] : [];
+                const allUserAddresses = [
+                  (address || '').toLowerCase(),
+                  ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
+                ];
+                const isUserTrade = allUserAddresses.includes(callerAddr);
+                if (!isUserTrade) return prev;
+                let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddr);
+
+                if (idx == -1 && isUserTrade) {
+                  let tokenInfo: any = null;
+                  if (memeRef.current?.id && tokenAddr === memeRef.current.id.toLowerCase()) {
+                    tokenInfo = memeRef.current;
+                  }
+                  else {
+                    Object.values(tokensByStatusRef.current).forEach((tokens: any[]) => {
+                      const found = tokens.find(t => t.id?.toLowerCase() == tokenAddr);
+                      if (found) tokenInfo = found;
+                    });
+                  }
+                  if (tokenInfo) {
+                    const newPos = {
+                      tokenId: tokenInfo.id?.toLowerCase(),
+                      symbol: tokenInfo?.symbol || '',
+                      name: tokenInfo?.name || '',
+                      imageUrl: tokenInfo?.image || '',
+                      metadataCID: '',
+                      boughtTokens: 0,
+                      soldTokens: 0,
+                      spentNative: 0,
+                      receivedNative: 0,
+                      remainingTokens: 0,
+                      remainingPct: 0,
+                      pnlNative: 0,
+                      lastPrice: price,
+                    };
+                    copy.push(newPos);
+                    idx = copy.length - 1;
+                  }
+                }
+
+                const pos = { ...copy[idx] };
+                pos.lastPrice = price;
+                if (isUserTrade) {
+                  if (isBuy) {
+                    pos.boughtTokens += amountOut;
+                    pos.spentNative += amountIn;
+                    pos.remainingTokens += amountOut;
+                  } else {
+                    pos.soldTokens += amountIn;
+                    pos.receivedNative += amountOut;
+                    pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
+                  }
+                }
+                pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
+
+                const balance = Math.max(0, pos.remainingTokens);
+                const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
+                const unrealized = balance * (pos.lastPrice || 0);
+                pos.pnlNative = realized + unrealized;
+
+                copy[idx] = pos;
+
+                if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
+                  const markToMarket = balance * (pos.lastPrice || 0);
+                  const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
+                  setMemeUserStats({
+                    balance,
+                    amountBought: pos.boughtTokens || 0,
+                    amountSold: pos.soldTokens || 0,
+                    valueBought: pos.spentNative || 0,
+                    valueSold: pos.receivedNative || 0,
+                    valueNet: totalPnL,
+                  });
+                }
+                return copy;
+              });
+              
               if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
                 const tradeId = `${log.transactionHash}-${log.logIndex}`;
 
@@ -6326,73 +6379,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   copy.sort((a, b) => b.valueNet - a.valueNet);
                   if (copy.length > 300) {
                     const removed = copy.splice(300);
-                  }
-                  return copy;
-                });
-
-                setMemePositions(prev => {
-                  const copy = Array.isArray(prev) ? [...prev] : [];
-                  const allUserAddresses = [
-                    (address || '').toLowerCase(),
-                    ...(subWallets || []).map(w => (w.address || '').toLowerCase()),
-                  ];
-                  const isUserTrade = allUserAddresses.includes(callerAddr);
-                  if (!isUserTrade) return prev;
-                  let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddr);
-
-                  if (idx == -1 && isUserTrade) {
-                    const newPos = {
-                      tokenId: memeRef.current.id?.toLowerCase(),
-                      symbol: memeRef.current?.symbol || '',
-                      name: memeRef.current?.name || '',
-                      imageUrl: memeRef.current?.image || '',
-                      metadataCID: '',
-                      boughtTokens: 0,
-                      soldTokens: 0,
-                      spentNative: 0,
-                      receivedNative: 0,
-                      remainingTokens: 0,
-                      remainingPct: 0,
-                      pnlNative: 0,
-                      lastPrice: price,
-                    };
-                    copy.push(newPos);
-                    idx = copy.length - 1;
-                  }
-
-                  const pos = { ...copy[idx] };
-                  pos.lastPrice = price;
-                  if (isUserTrade) {
-                    if (isBuy) {
-                      pos.boughtTokens += amountOut;
-                      pos.spentNative += amountIn;
-                      pos.remainingTokens += amountOut;
-                    } else {
-                      pos.soldTokens += amountIn;
-                      pos.receivedNative += amountOut;
-                      pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
-                    }
-                  }
-                  pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
-
-                  const balance = Math.max(0, pos.remainingTokens);
-                  const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
-                  const unrealized = balance * (pos.lastPrice || 0);
-                  pos.pnlNative = realized + unrealized;
-
-                  copy[idx] = pos;
-
-                  if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
-                    const markToMarket = balance * (pos.lastPrice || 0);
-                    const totalPnL = (pos.receivedNative || 0) + markToMarket - (pos.spentNative || 0);
-                    setMemeUserStats({
-                      balance,
-                      amountBought: pos.boughtTokens || 0,
-                      amountSold: pos.soldTokens || 0,
-                      valueBought: pos.spentNative || 0,
-                      valueSold: pos.receivedNative || 0,
-                      valueNet: totalPnL,
-                    });
                   }
                   return copy;
                 });
@@ -7047,23 +7033,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       cancelled = true;
     };
   }, [address, subWallets, token.id]);
-
-  // live dev holding
-  useEffect(() => {
-    const dev = (token.dev || "").toLowerCase();
-    if (!dev) {
-      setTokenData(p => ({ ...p, devHolding: 0 }));
-      return;
-    }
-
-    const row = memeHolders.find(h => (h.address || "").toLowerCase() === dev);
-    const pct = row ? (Math.max(0, row.balance || 0) / 1e9) * 100 : 0;
-
-    setTokenData(p => ({ ...p, devHolding: pct }));
-  }, [
-    memeHolders,
-    token.dev,
-  ]);
 
   useEffect(() => {
     if (!trackedWalletTrades || trackedWalletTrades.length === 0 || trackedWallets.length === 0) {
@@ -28408,7 +28377,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setTrackedAddresses={setTrackedAddresses}
                 isLoadingTrades={isLoadingTrades}
                 setIsLoadingTrades={setIsLoadingTrades}
-                trackedWalletsRef={trackedWalletsRef}
+                trackedWallets={trackedWallets}
                 createSubWallet={createSubWallet}
                 setOneCTDepositAddress={setOneCTDepositAddress}
                 scaAddress={scaAddress}

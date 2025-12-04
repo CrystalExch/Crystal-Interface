@@ -18,6 +18,7 @@ interface MemeAdvancedChartProps {
   trackedAddresses: string[];
   subWalletAddresses?: string[];
   selectedIntervalRef: any;
+  trackedWallets?: any;
 }
 
 const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
@@ -94,7 +95,8 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   devAddress,
   trackedAddresses,
   subWalletAddresses,
-  selectedIntervalRef
+  selectedIntervalRef,
+  trackedWallets
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
@@ -136,60 +138,10 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       : [];
   }, [subWalletAddresses]);
 
-  // Load tracked wallets with emojis from localStorage
-  const [trackedWallets, setTrackedWallets] = useState<Array<{
-    address: string;
-    name: string;
-    emoji: string;
-    balance: number;
-    lastActiveAt: number | null;
-    id: string;
-    createdAt: string;
-  }>>([]);
-
-  useEffect(() => {
-    const loadTrackedWallets = () => {
-      try {
-        const stored = localStorage.getItem('tracked_wallets_data');
-        if (stored) {
-          setTrackedWallets(JSON.parse(stored));
-        }
-      } catch (error) {
-        console.error('Error loading tracked wallets:', error);
-      }
-    };
-
-    loadTrackedWallets();
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'tracked_wallets_data' && e.newValue) {
-        try {
-          setTrackedWallets(JSON.parse(e.newValue));
-        } catch (error) {
-          console.error('Error parsing tracked wallets:', error);
-        }
-      }
-    };
-
-    const handleCustomWalletUpdate = (e: CustomEvent) => {
-      if (e.detail && e.detail.wallets) {
-        setTrackedWallets(e.detail.wallets);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange as EventListener);
-    window.addEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange as EventListener);
-      window.removeEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
-    };
-  }, []);
-
   // Create a memoized map for quick lookup of tracked wallet emojis
   const trackedWalletsMap = useMemo(() => {
     const map = new Map<string, { name: string; emoji: string }>();
-    trackedWallets.forEach(wallet => {
+    trackedWallets.forEach((wallet: any) => {
       map.set(wallet.address.toLowerCase(), { name: wallet.name, emoji: wallet.emoji });
     });
     return map;

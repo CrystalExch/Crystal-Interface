@@ -564,12 +564,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const balances = walletTokenBalances[address];
     if (!balances) return 0;
 
-    const ethToken = tokenList.find(
-      (t) => t.address === settings.chainConfig[activechain]?.eth,
-    );
-    if (ethToken && balances[ethToken.address]) {
+    if (balances[settings.chainConfig[activechain].eth]) {
       return (
-        Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals)
+        Number(balances[settings.chainConfig[activechain].eth]) / 10 ** Number(18)
       );
     }
     return 0;
@@ -760,6 +757,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       setIsConsolidating(false);
     }
   };
+
   const selectAllWallets = useCallback(() => {
     const walletsWithToken = subWallets.filter(
       (w) => getWalletTokenBalance(w.address) > 0,
@@ -1029,13 +1027,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   const getMaxSpendableWei = (addr: string): bigint => {
     const balances = walletTokenBalances[addr];
     if (!balances) return 0n;
+    if (!balances[settings.chainConfig[activechain].eth]) return 0n;
 
-    const ethToken = tokenList.find(
-      (t) => t.address === settings.chainConfig[activechain].eth,
-    );
-    if (!ethToken || !balances[ethToken.address]) return 0n;
-
-    const raw = balances[ethToken.address];
+    const raw = balances[settings.chainConfig[activechain].eth];
     if (raw <= 0n) return 0n;
 
     const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
@@ -1081,12 +1075,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       const balances = walletTokenBalances[addr];
       if (!balances) return false;
 
-      const ethToken = tokenList.find(
-        (t) => t.address === settings.chainConfig[activechain].eth,
-      );
-      if (!ethToken || !balances[ethToken.address]) return false;
+      if (!balances[settings.chainConfig[activechain].eth]) return false;
 
-      const raw = balances[ethToken.address];
+      const raw = balances[settings.chainConfig[activechain].eth];
       return raw > gasReserve; // Only include wallets with balance greater than gas reserve
     });
 
@@ -1374,12 +1365,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       const balances = walletTokenBalances[addr];
       if (!balances) return false;
 
-      const ethToken = tokenList.find(
-        (t) => t.address === settings.chainConfig[activechain].eth,
-      );
-      if (!ethToken || !balances[ethToken.address]) return false;
+      if (!balances[settings.chainConfig[activechain].eth]) return false;
 
-      const monBalance = balances[ethToken.address];
+      const monBalance = balances[settings.chainConfig[activechain].eth];
       return monBalance > gasReserve
     });
 
@@ -1998,7 +1986,23 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     [handleInputSubmit],
   );
 
-  const getSellButtonStatus = (value: string) => {
+  const getBuyButtonStatus = (value: string) => {
+    if (!account?.connected) return 'notconnected';
+    if (!token.id) return 'notoken';
+    if (token.source == 'nadfun' && token.status != 'migrated' && !token.reserveQuote) return 'loading';
+    if (selectedWallets.size > 0) {
+      const totalSelectedBalance = [...selectedWallets].reduce((t,a)=>t+(walletTokenBalances[a]?.[settings.chainConfig[activechain].eth]??0n),0n);
+      if (Number(totalSelectedBalance) < parseFloat(value) * 1e18) {
+        return 'nobalance'
+      }
+      else {
+        return ''
+      }
+    }
+    return 'nowallets'
+  };
+
+  const getSellButtonStatus = () => {
     if (!account?.connected) return true;
     if (!token.id) return true;
 
@@ -2008,12 +2012,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       );
       return !anySelectedHasTokens;
     }
-
-    const hasTokens = currentTokenBalance > 0n;
-    if (sellMode === 'percent') return !hasTokens;
-    const monAmount = parseFloat(value);
-    const requiredTokens = tokenPrice > 0 ? monAmount / tokenPrice : 0;
-    return requiredTokens > Number(currentTokenBalance) / 1e18;
+    return true;
   };
 
   if (!isOpen) return null;
@@ -2164,18 +2163,22 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                       className="edit-input"
                     />
                   ) : (
-                    <button
-                      className={`amount-btn ${isEditMode ? 'edit-mode' : ''} ${selectedBuyAmount === amount ? 'active' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
-                      onClick={() => handleBuyButtonClick(amount, index)}
-                      disabled={!account?.connected}
-                    >
-                      <span className="button-amount">{amount}</span>
-                      {keybindsEnabled && (
-                        <span className="keybind-indicator">
-                          {['q', 'w', 'e', 'r'][index]}
-                        </span>
-                      )}
-                    </button>
+                    <Tooltip content={
+                      getBuyButtonStatus(amount) == 'loading' ? 'Loading' : getBuyButtonStatus(amount) == 'notconnected' ? 'Connect a wallet' : getBuyButtonStatus(amount) == 'notoken' ? 'No token' : getBuyButtonStatus(amount) == 'nobalance' ? 'Insufficient MON Balance' : getBuyButtonStatus(amount) == 'nowallets' ? 'Select a wallet' : ''
+                    }>
+                      <button
+                        className={`amount-btn ${isEditMode ? 'edit-mode' : ''} ${selectedBuyAmount === amount ? 'active' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
+                        onClick={() => handleBuyButtonClick(amount, index)}
+                        disabled={!account?.connected || !!getBuyButtonStatus(amount)}
+                      >
+                        <span className="button-amount">{amount}</span>
+                        {keybindsEnabled && (
+                          <span className="keybind-indicator">
+                            {['q', 'w', 'e', 'r'][index]}
+                          </span>
+                        )}
+                      </button>
+                    </Tooltip>
                   )}
                 </div>
               ))}
@@ -2264,7 +2267,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
             <div className="percent-buttons">
               {currentSellValues.map((value: any, index: any) => {
-                const isDisabled = getSellButtonStatus(value);
+                const isDisabled = getSellButtonStatus();
                 return (
                   <div key={index} className="button-container">
                     {editingIndex === index + 100 ? (

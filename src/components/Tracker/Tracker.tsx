@@ -822,6 +822,7 @@ const Tracker: React.FC<TrackerProps> = ({
     }
     setHasInitiallyLoaded(true);
   }, [externalWallets]);
+
   useEffect(() => {
     if (!externalWallets && hasInitiallyLoaded) {
       saveWalletsToStorage(localWallets);
@@ -831,6 +832,7 @@ const Tracker: React.FC<TrackerProps> = ({
       onWalletsChange(localWallets);
     }
   }, [localWallets, externalWallets, onWalletsChange, hasInitiallyLoaded]);
+
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY && e.newValue) {
@@ -1802,7 +1804,7 @@ const Tracker: React.FC<TrackerProps> = ({
             console.log('Sell position:', position, monAmount);
           }}
           monUsdPrice={monUsdPrice}
-          trackedWalletsRef={trackedWalletsRef}
+          trackedWallets={externalWallets}
           onAddTrackedWallet={(wallet) => {
             const existing = localWallets.findIndex(
               (w) => w.address.toLowerCase() === wallet.address.toLowerCase()

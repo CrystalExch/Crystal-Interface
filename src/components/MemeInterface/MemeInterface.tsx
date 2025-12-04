@@ -128,7 +128,7 @@ interface MemeInterfaceProps {
   setTrackedAddresses: React.Dispatch<React.SetStateAction<string[]>>;
   isLoadingTrades: any;
   setIsLoadingTrades: any;
-  trackedWalletsRef: any;
+  trackedWallets: any;
   isPaused?: boolean;
   backlogCount?: number;
   createSubWallet: any;
@@ -152,8 +152,8 @@ const formatNumberWithCommas = (v: number, d = 2) => {
   if (v >= 1e8) return `${(v / 1e6).toFixed(0)}M`;
   if (v >= 1e7) return `${(v / 1e6).toFixed(1)}M`;
   if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
-  if (v >= 1e5) return `${(v / 1e3).toFixed(2)}K`;
-  if (v >= 1e4) return `${(v / 1e3).toFixed(2)}K`;
+  if (v >= 1e5) return `${(v / 1e3).toFixed(0)}K`;
+  if (v >= 1e4) return `${(v / 1e3).toFixed(1)}K`;
   if (v >= 1e3) return `${(v / 1e3).toFixed(2)}K`;
   if (v >= 1) return v.toLocaleString('en-US', { maximumFractionDigits: d });
   return v.toFixed(Math.min(d, 8));
@@ -370,7 +370,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   setTrackedAddresses,
   isLoadingTrades,
   setIsLoadingTrades,
-  trackedWalletsRef,
+  trackedWallets,
   isPaused,
   backlogCount,
   createSubWallet,
@@ -1052,11 +1052,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const trackedWalletsMap = useMemo(() => {
     const map = new Map<string, any>();
-    trackedWalletsRef.current.forEach((wallet: any) => {
+    trackedWallets.forEach((wallet: any) => {
       map.set(wallet.address.toLowerCase(), wallet);
     });
     return map;
-  }, [trackedWalletsRef.current]);
+  }, [trackedWallets]);
 
   const userAddressesSet = useMemo(() => {
     const addresses = new Set<string>();
@@ -1663,7 +1663,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const setTrackedToSet = useCallback(() => {
     setIsLoadingTrades(true);
-    setTrackedAddresses(trackedWalletsRef.current.map((w: any) => (w.address || '').toLowerCase()));
+    setTrackedAddresses(trackedWallets.map((w: any) => (w.address || '').toLowerCase()));
   }, []);
 
   const setTrackedToYou = useCallback(() => {
@@ -3012,10 +3012,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 String(token?.dev || '').toLowerCase(),
                 ...subWallets.map(w => String(w.address || '').toLowerCase()),
                 ...trackedAddresses,
-                ...trackedWalletsRef.current
+                ...trackedWallets
               ]
               }
               selectedIntervalRef={selectedIntervalRef}
+              trackedWallets={trackedWallets}
             />
           </div>
           <div
@@ -3043,7 +3044,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               isLoadingTrades={isLoadingTrades || isOCTradesHovered}
               subWallets={subWallets}
               marketsData={marketsData}
-              trackedWalletsRef={trackedWalletsRef}
+              trackedWallets={trackedWallets}
               positions={positions}
               onSellPosition={handleSellPosition}
               onShareDataSelected={onTokenDataChange}
@@ -3110,7 +3111,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             marketsData={marketsData}
             setSendTokenIn={setSendTokenIn}
             setpopup={setpopup}
-            trackedWalletsRef={trackedWalletsRef}
+            trackedWallets={trackedWallets}
             onShareDataSelected={onTokenDataChange}
           />
         </div>

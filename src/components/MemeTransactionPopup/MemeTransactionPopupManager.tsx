@@ -270,15 +270,14 @@ export const updatePopup = (id: string, data: {
 };
 
 interface MemeTransactionPopupManagerProps {
-  trackedWallets?: TrackedWallet[];
+  trackedWallets: TrackedWallet[];
 }
 
 const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = ({
-  trackedWallets: externalTrackedWallets
+  trackedWallets
 }) => {
   const [transactionPopups, setTransactionPopups] = useState<PopupData[]>([]);
   const [newPopupIds, setNewPopupIds] = useState<Set<string>>(new Set());
-  const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
   const [notificationPrefs, setNotificationPrefs] = useState<Record<string, boolean>>(() => 
     getWalletNotificationPreferences()
   );
@@ -311,48 +310,6 @@ const MemeTransactionPopupManager: React.FC<MemeTransactionPopupManagerProps> = 
     preferences[normalizedAddress] = newValue;
     setWalletNotificationPreferences(preferences);
   }, [notificationPrefs]);
-  useEffect(() => {
-    if (externalTrackedWallets && externalTrackedWallets.length > 0) {
-      setTrackedWallets(externalTrackedWallets);
-      return;
-    }
-
-    const loadWallets = () => {
-      try {
-        const stored = localStorage.getItem(TRACKED_WALLETS_KEY);
-        if (stored) {
-          setTrackedWallets(JSON.parse(stored));
-        }
-      } catch (error) {
-        console.error('Error loading tracked wallets:', error);
-      }
-    };
-
-    loadWallets();
-    const handleWalletUpdate = (e: CustomEvent) => {
-      if (e.detail?.wallets) {
-        setTrackedWallets(e.detail.wallets);
-      }
-    };
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === TRACKED_WALLETS_KEY && e.newValue) {
-        try {
-          setTrackedWallets(JSON.parse(e.newValue));
-        } catch (error) {
-          console.error('Error parsing tracked wallets:', error);
-        }
-      }
-    };
-
-    window.addEventListener('wallets-updated', handleWalletUpdate as EventListener);
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('wallets-updated', handleWalletUpdate as EventListener);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [externalTrackedWallets]);
 
   const findTrackedWallet = (address?: string): TrackedWallet | null => {
     if (!address) return null;

@@ -81,6 +81,7 @@ interface MemeChartProps {
   devAddress: any;
   trackedAddresses: string[];
   selectedIntervalRef: any;
+  trackedWallets?: any;
 }
 
 const MemeChart: React.FC<MemeChartProps> = ({
@@ -96,6 +97,7 @@ const MemeChart: React.FC<MemeChartProps> = ({
   devAddress,
   trackedAddresses,
   selectedIntervalRef,
+  trackedWallets
 }) => {
   const [memeOverlayVisible, setMemeOverlayVisible] = useState(true);
   const useAdvancedChart = settings.useAdv !== false;
@@ -117,6 +119,7 @@ const MemeChart: React.FC<MemeChartProps> = ({
           devAddress={devAddress}
           trackedAddresses={trackedAddresses}
           selectedIntervalRef={selectedIntervalRef}
+          trackedWallets={trackedWallets}
         />
       ) : (
         <>

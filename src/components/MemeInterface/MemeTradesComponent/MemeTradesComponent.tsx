@@ -259,7 +259,7 @@ interface Props {
   isLoadingTrades?: boolean;
   subWallets?: Array<{ address: string; privateKey: string }>;
   marketsData: any;
-  trackedWalletsRef: any;
+  trackedWallets: any;
   onFilterSet: any;
   positions: any[];
   onSellPosition?: (position: Position, monAmount: string) => void;
@@ -285,7 +285,7 @@ export default function MemeTradesComponent({
   isLoadingTrades = false,
   subWallets = [],
   marketsData,
-  trackedWalletsRef,
+  trackedWallets,
   onFilterSet,
   positions,
   onSellPosition,
@@ -310,7 +310,7 @@ export default function MemeTradesComponent({
 
   const trackedWalletsMap = useMemo(() => {
     const map = new Map<string, TrackedWallet>();
-    trackedWalletsRef.current.forEach((wallet: any) => {
+    trackedWallets.forEach((wallet: any) => {
       map.set(wallet.address.toLowerCase(), wallet);
     });
     return map;
@@ -331,7 +331,7 @@ export default function MemeTradesComponent({
     if (stored) {
       try {
         const wallets = JSON.parse(stored);
-        trackedWalletsRef.current = wallets;
+        trackedWallets = wallets;
         setTrackedWalletsVersion(prev => prev + 1);
       } catch (error) {
       }
@@ -984,20 +984,20 @@ export default function MemeTradesComponent({
           positions={positions}
           onSellPosition={onSellPosition}
           monUsdPrice={monUsdPrice}
-          trackedWalletsRef={trackedWalletsRef}
+          trackedWallets={trackedWallets}
           onAddTrackedWallet={(wallet) => {
-            const existing = trackedWalletsRef.current.findIndex(
+            const existing = trackedWallets.findIndex(
               (w: any) => w.address.toLowerCase() === wallet.address.toLowerCase()
             );
 
             if (existing >= 0) {
-              trackedWalletsRef.current[existing] = {
-                ...trackedWalletsRef.current[existing],
+              trackedWallets[existing] = {
+                ...trackedWallets[existing],
                 name: wallet.name,
                 emoji: wallet.emoji,
               };
             } else {
-              trackedWalletsRef.current.push({
+              trackedWallets.push({
                 id: `tracked-${Date.now()}`,
                 address: wallet.address,
                 name: wallet.name,
@@ -1007,7 +1007,7 @@ export default function MemeTradesComponent({
                 createdAt: new Date().toISOString(),
               });
             }
-            localStorage.setItem('tracked_wallets_data', JSON.stringify(trackedWalletsRef.current));
+            localStorage.setItem('tracked_wallets_data', JSON.stringify(trackedWallets));
             setTrackedWalletsVersion(prev => prev + 1);
           }}
         />

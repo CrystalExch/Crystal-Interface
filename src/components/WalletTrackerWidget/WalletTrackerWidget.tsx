@@ -1156,6 +1156,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       onWalletsChange(localWallets);
     }
   }, [localWallets, externalWallets, onWalletsChange, hasInitiallyLoaded]);
+
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY && e.newValue) {
@@ -1184,6 +1185,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       window.removeEventListener('wallets-updated', handleCustomWalletUpdate as EventListener);
     };
   }, [externalWallets, localWallets]);
+
   const handleSort = (field: 'created' | 'name' | 'balance' | 'lastActive') => {
     if (sortBy === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -2158,7 +2160,7 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
             console.log('Sell position:', position, monAmount);
           }}
           monUsdPrice={monUsdPrice}
-          trackedWalletsRef={trackedWalletsRef}
+          trackedWallets={externalWallets}
           onAddTrackedWallet={(wallet) => {
             const existing = localWallets.findIndex(
               (w) => w.address.toLowerCase() === wallet.address.toLowerCase()
