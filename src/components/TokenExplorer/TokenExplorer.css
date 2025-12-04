@@ -5313,6 +5313,8 @@
   letter-spacing: -0.5px;
   transition: all 0.2s ease;
   position: relative;
+  width: 88px;
+  height: 32px;
 }
 
 .trending-buy-btn:hover {
