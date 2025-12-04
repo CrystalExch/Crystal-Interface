@@ -2749,7 +2749,7 @@ const TokenRow = React.memo<{
         : (token.sellTransactions / totalTransactions) * 100,
     [token.sellTransactions, totalTransactions],
   );
-const metricData = useMetricColorClasses(token, displaySettings, monUsdPrice);
+  const metricData = useMetricColorClasses(token, displaySettings, monUsdPrice);
 
   const cssVariables: CSSVars = metricData?.cssVars || {};
   const [imageError, setImageError] = useState(false);
@@ -3116,7 +3116,7 @@ const metricData = useMetricColorClasses(token, displaySettings, monUsdPrice);
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Tooltip content="Search CA Twitter">
+                      <Tooltip content="Search CA on Twitter">
                         <Search size={14} />
                       </Tooltip>
                     </a>
@@ -3689,32 +3689,32 @@ const metricData = useMetricColorClasses(token, displaySettings, monUsdPrice);
   );
 }, (prevProps, nextProps) => {
   if (prevProps.token.id !== nextProps.token.id) return false;
-  
+
   if (
     prevProps.token.price !== nextProps.token.price ||
     prevProps.token.marketCap !== nextProps.token.marketCap ||
     prevProps.token.volume24h !== nextProps.token.volume24h ||
     prevProps.token.bondingPercentage !== nextProps.token.bondingPercentage
   ) return false;
-  
+
   if (
     prevProps.isLoadingPrimary !== nextProps.isLoadingPrimary ||
     prevProps.isLoadingSecondary !== nextProps.isLoadingSecondary ||
     prevProps.isHidden !== nextProps.isHidden ||
     prevProps.isBlacklisted !== nextProps.isBlacklisted
   ) return false;
-  
-  const wasHovered = prevProps.hoveredToken === prevProps.token.id || 
-                     prevProps.hoveredImage === prevProps.token.id;
-  const isHovered = nextProps.hoveredToken === nextProps.token.id || 
-                    nextProps.hoveredImage === nextProps.token.id;
+
+  const wasHovered = prevProps.hoveredToken === prevProps.token.id ||
+    prevProps.hoveredImage === prevProps.token.id;
+  const isHovered = nextProps.hoveredToken === nextProps.token.id ||
+    nextProps.hoveredImage === nextProps.token.id;
   if (wasHovered !== isHovered) return false;
-  
+
   if (
     prevProps.quickbuyAmount !== nextProps.quickbuyAmount ||
     prevProps.quickbuyAmountSecond !== nextProps.quickbuyAmountSecond
   ) return false;
-  
+
   const prevDS = prevProps.displaySettings;
   const nextDS = nextProps.displaySettings;
   if (
@@ -3725,8 +3725,8 @@ const metricData = useMetricColorClasses(token, displaySettings, monUsdPrice);
     prevDS.noDecimals !== nextDS.noDecimals ||
     prevDS.metricColoring !== nextDS.metricColoring
   ) return false;
-    if (prevDS.visibleRows !== nextDS.visibleRows) return false;
-  
+  if (prevDS.visibleRows !== nextDS.visibleRows) return false;
+
   return true;
 });
 interface TokenExplorerProps {
@@ -3777,7 +3777,7 @@ interface TokenExplorerProps {
 }
 const formatTimeAgoStatic = (createdTimestamp: number, now: number) => {
   const ageSec = now - createdTimestamp;
-  
+
   if (ageSec < 60) {
     return `${Math.ceil(ageSec)}s`;
   } else if (ageSec < 3600) {
@@ -3827,6 +3827,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   createSubWallet,
   setOneCTDepositAddress
 }) => {
+  const [isQuickBuying, setIsQuickBuying] = useState<Record<string, boolean>>({});
 
   const pausedTokenSnapshotRef = useRef<{
     new: Set<string>;
@@ -3893,16 +3894,16 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     ),
   }));
 
-const currentTime = useMemo(() => Math.floor(Date.now() / 1000), []);
-const formatTimeAgo = useMemo(() => {
-  const cache = new Map<number, string>();
-  return (timestamp: number) => {
-    if (cache.has(timestamp)) return cache.get(timestamp)!;
-    const result = formatTimeAgoStatic(timestamp, currentTime);
-    cache.set(timestamp, result);
-    return result;
-  };
-}, [currentTime]);
+  const currentTime = useMemo(() => Math.floor(Date.now() / 1000), []);
+  const formatTimeAgo = useMemo(() => {
+    const cache = new Map<number, string>();
+    return (timestamp: number) => {
+      if (cache.has(timestamp)) return cache.get(timestamp)!;
+      const result = formatTimeAgoStatic(timestamp, currentTime);
+      cache.set(timestamp, result);
+      return result;
+    };
+  }, [currentTime]);
 
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(
@@ -4044,7 +4045,7 @@ const formatTimeAgo = useMemo(() => {
   }, [selectedWallets, walletTokenBalances]);
 
   const navigate = useNavigate();
-
+  const [activeView, setActiveView] = useState<'trenches' | 'trending'>('trenches');
   const [activeMobileTab, setActiveMobileTab] =
     useState<Token['status']>('new');
   const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(
@@ -4135,15 +4136,15 @@ const formatTimeAgo = useMemo(() => {
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
   const [buyPresets, setBuyPresets] = useState(() => loadBuyPresets());
 
-const [currentTimestamp, setCurrentTimestamp] = useState(() => Math.floor(Date.now() / 1000));
+  const [currentTimestamp, setCurrentTimestamp] = useState(() => Math.floor(Date.now() / 1000));
 
-useEffect(() => {
-  const interval = setInterval(() => {
-    setCurrentTimestamp(Math.floor(Date.now() / 1000));
-  }, 1000); 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTimestamp(Math.floor(Date.now() / 1000));
+    }, 1000);
 
-  return () => clearInterval(interval);
-}, []);
+    return () => clearInterval(interval);
+  }, []);
 
 
   useEffect(() => {
@@ -4828,63 +4829,63 @@ useEffect(() => {
       return true;
     });
   }, []);
-const { blacklistedDevs, blacklistedCAs } = useMemo(() => {
-  const devs = new Set<string>();
-  const cas = new Set<string>();
-  
-  for (const item of blacklistSettings.items) {
-    const lowerText = item.text.toLowerCase();
-    if (item.type === 'dev') devs.add(lowerText);
-    else if (item.type === 'ca') cas.add(lowerText);
-  }
-  
-  return { blacklistedDevs: devs, blacklistedCAs: cas };
-}, [blacklistSettings.items]);
-const visibleTokens = useMemo(() => {
-  const processTokens = (tokens: Token[], status: Token['status']) => {
-    const hideHidden = displaySettings.hideHiddenTokens;
-    const hasFilters = appliedFilters?.[status];
-    
-    let result = tokens;
-    
-    result = tokens.filter((token) => {
-      const isBlacklisted = 
-        blacklistedDevs.has(token.dev.toLowerCase()) ||
-        blacklistedCAs.has(token.id.toLowerCase());
-      
-      if (hideHidden && (hidden.has(token.id) || isBlacklisted)) {
-        return false;
-      }
-      
-      return true;
-    }).map((token) => ({
-      ...token,
-      isBlacklisted: blacklistedDevs.has(token.dev.toLowerCase()) ||
-                     blacklistedCAs.has(token.id.toLowerCase())
-    }));
-    
-    if (hasFilters) {
-      result = applyFilters(result, appliedFilters[status]);
-    }
-    
-    return result;
-  };
+  const { blacklistedDevs, blacklistedCAs } = useMemo(() => {
+    const devs = new Set<string>();
+    const cas = new Set<string>();
 
-  return {
-    new: processTokens(tokensByStatus.new, 'new'),
-    graduating: processTokens(tokensByStatus.graduating, 'graduating'),
-    graduated: processTokens(tokensByStatus.graduated, 'graduated'),
-  };
-}, [
-  tokensByStatus.new,
-  tokensByStatus.graduating,
-  tokensByStatus.graduated,
-  hidden,
-  appliedFilters,
-  displaySettings.hideHiddenTokens,
-  blacklistedDevs,
-  blacklistedCAs
-]);
+    for (const item of blacklistSettings.items) {
+      const lowerText = item.text.toLowerCase();
+      if (item.type === 'dev') devs.add(lowerText);
+      else if (item.type === 'ca') cas.add(lowerText);
+    }
+
+    return { blacklistedDevs: devs, blacklistedCAs: cas };
+  }, [blacklistSettings.items]);
+  const visibleTokens = useMemo(() => {
+    const processTokens = (tokens: Token[], status: Token['status']) => {
+      const hideHidden = displaySettings.hideHiddenTokens;
+      const hasFilters = appliedFilters?.[status];
+
+      let result = tokens;
+
+      result = tokens.filter((token) => {
+        const isBlacklisted =
+          blacklistedDevs.has(token.dev.toLowerCase()) ||
+          blacklistedCAs.has(token.id.toLowerCase());
+
+        if (hideHidden && (hidden.has(token.id) || isBlacklisted)) {
+          return false;
+        }
+
+        return true;
+      }).map((token) => ({
+        ...token,
+        isBlacklisted: blacklistedDevs.has(token.dev.toLowerCase()) ||
+          blacklistedCAs.has(token.id.toLowerCase())
+      }));
+
+      if (hasFilters) {
+        result = applyFilters(result, appliedFilters[status]);
+      }
+
+      return result;
+    };
+
+    return {
+      new: processTokens(tokensByStatus.new, 'new'),
+      graduating: processTokens(tokensByStatus.graduating, 'graduating'),
+      graduated: processTokens(tokensByStatus.graduated, 'graduated'),
+    };
+  }, [
+    tokensByStatus.new,
+    tokensByStatus.graduating,
+    tokensByStatus.graduated,
+    hidden,
+    appliedFilters,
+    displaySettings.hideHiddenTokens,
+    blacklistedDevs,
+    blacklistedCAs
+  ]);
   const newTokens = visibleTokens.new;
   const graduatingTokens = visibleTokens.graduating;
   const graduatedTokens = visibleTokens.graduated;
@@ -4924,26 +4925,60 @@ const visibleTokens = useMemo(() => {
       pausedTokenSnapshotRef.current[wasPaused as Token['status']].clear();
     }
   }, []);
-const displayTokens = useMemo(() => {
-  if (!pausedColumn) {
-    return { new: newTokens, graduating: graduatingTokens, graduated: graduatedTokens };
-  }
-  
-  const snapshot = pausedTokenSnapshotRef.current[pausedColumn];
-  
-  return {
-    new: pausedColumn === 'new' && snapshot.size > 0
-      ? newTokens.filter(t => snapshot.has(t.id))
-      : newTokens,
-    graduating: pausedColumn === 'graduating' && snapshot.size > 0
-      ? graduatingTokens.filter(t => snapshot.has(t.id))
-      : graduatingTokens,
-    graduated: pausedColumn === 'graduated' && snapshot.size > 0
-      ? graduatedTokens.filter(t => snapshot.has(t.id))
-      : graduatedTokens
-  };
-}, [pausedColumn, newTokens, graduatingTokens, graduatedTokens]);
+  const displayTokens = useMemo(() => {
+    if (!pausedColumn) {
+      return { new: newTokens, graduating: graduatingTokens, graduated: graduatedTokens };
+    }
 
+    const snapshot = pausedTokenSnapshotRef.current[pausedColumn];
+
+    return {
+      new: pausedColumn === 'new' && snapshot.size > 0
+        ? newTokens.filter(t => snapshot.has(t.id))
+        : newTokens,
+      graduating: pausedColumn === 'graduating' && snapshot.size > 0
+        ? graduatingTokens.filter(t => snapshot.has(t.id))
+        : graduatingTokens,
+      graduated: pausedColumn === 'graduated' && snapshot.size > 0
+        ? graduatedTokens.filter(t => snapshot.has(t.id))
+        : graduatedTokens
+    };
+  }, [pausedColumn, newTokens, graduatingTokens, graduatedTokens]);
+  const trendingTokens = useMemo(() => {
+    const allTokens = [
+      ...tokensByStatus.new,
+      ...tokensByStatus.graduating,
+      ...tokensByStatus.graduated
+    ];
+
+    return allTokens
+      .filter((token) => {
+        const isBlacklisted =
+          blacklistedDevs.has(token.dev.toLowerCase()) ||
+          blacklistedCAs.has(token.id.toLowerCase());
+
+        if (displaySettings.hideHiddenTokens && (hidden.has(token.id) || isBlacklisted)) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => (b.volume24h * monUsdPrice) - (a.volume24h * monUsdPrice))
+      .slice(0, 50)
+      .map((token) => ({
+        ...token,
+        isBlacklisted: blacklistedDevs.has(token.dev.toLowerCase()) ||
+          blacklistedCAs.has(token.id.toLowerCase())
+      }));
+  }, [
+    tokensByStatus.new,
+    tokensByStatus.graduating,
+    tokensByStatus.graduated,
+    hidden,
+    displaySettings.hideHiddenTokens,
+    blacklistedDevs,
+    blacklistedCAs,
+    monUsdPrice
+  ]);
   const tokenCounts = useMemo(
     () => ({
       new: newTokens.length,
@@ -4963,21 +4998,110 @@ const displayTokens = useMemo(() => {
     <div className="explorer-main">
       <div className="explorer-header-row">
         <div className="explorer-header-left">
-          <h1 className="explorer-app-title">Trenches</h1>
-          <h1 className="explorer-app-title inactive">Trending</h1>
+          <h1
+            className={`explorer-app-title ${activeView === 'trenches' ? '' : 'inactive'}`}
+            onClick={() => setActiveView('trenches')}
+            style={{ cursor: 'pointer' }}
+          >
+            Trenches
+          </h1>
+          <h1
+            className={`explorer-app-title ${activeView === 'trending' ? '' : 'inactive'}`}
+            onClick={() => setActiveView('trending')}
+            style={{ cursor: 'pointer' }}
+          >
+            Trending
+          </h1>
         </div>
 
         <div className="explorer-header-right">
-          <div className="explorer-display-settings-dropdown">
-            <DisplayDropdown
-              settings={displaySettings}
-              onSettingsChange={setDisplaySettings}
-              quickAmountsSecond={quickAmountsSecond}
-              setQuickAmountSecond={setQuickAmountSecond}
-              activePresetsSecond={activePresetsSecond}
-              setActivePresetSecond={setActivePresetSecond}
-            />
-          </div>
+          {activeView === 'trenches' ? (
+            <div className="explorer-display-settings-dropdown">
+              <DisplayDropdown
+                settings={displaySettings}
+                onSettingsChange={setDisplaySettings}
+                quickAmountsSecond={quickAmountsSecond}
+                setQuickAmountSecond={setQuickAmountSecond}
+                activePresetsSecond={activePresetsSecond}
+                setActivePresetSecond={setActivePresetSecond}
+              />
+            </div>
+          ) : (
+            <div className="explorer-quickbuy-container">
+              <img
+                className="explorer-quick-buy-search-icon"
+                src={lightning}
+                alt=""
+              />
+              <input
+                type="text"
+                placeholder="0.0"
+                value={quickAmounts.new}
+                onChange={(e) => setQuickAmount('new', e.target.value)}
+                onFocus={handleInputFocus}
+                className="explorer-quickbuy-input"
+              />
+              <img className="quickbuy-monad-icon" src={monadicon} />
+              <div className="explorer-preset-controls">
+                {[1, 2, 3].map((p) => (
+                  <Tooltip
+                    key={p}
+                    offset={35}
+                    content={
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}
+                        >
+                          <img
+                            src={slippage}
+                            style={{
+                              width: '14px',
+                              height: '14px',
+                            }}
+                            alt="Slippage"
+                          />
+                          <span>{buyPresets[p]?.slippage || '0'}%</span>
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}
+                        >
+                          <img
+                            src={gas}
+                            style={{
+                              width: '14px',
+                              height: '14px',
+                            }}
+                          />
+                          <span>{buyPresets[p]?.priority || '0'} </span>
+                        </div>
+                      </div>
+                    }
+                  >
+                    <button
+                      className={`explorer-preset-pill ${activePresets.new === p ? 'active' : ''}`}
+                      onClick={() => setActivePreset('new', p)}
+                    >
+                      P{p}
+                    </button>
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
+          )}
           <Tooltip content="Alerts">
             <button
               className="alerts-popup-trigger"
@@ -5017,26 +5141,26 @@ const displayTokens = useMemo(() => {
                   <span
                     className={`wallet-count ${selectedSet.size ? 'has-active' : ''}`}
                   >
-                  {selectedWallets.size == 0 ?
-                    <Tooltip content="Primary Wallet">
-                      {(
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d8dcff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle' }}>
-                          <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-                          <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
-                          <path d="m20 9-3 9" />
-                          <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
-                          <path d="M7 18 4 9" />
-                          <circle cx="12" cy="4" r="2" />
-                          <circle cx="20" cy="7" r="2" />
-                          <circle cx="4" cy="7" r="2" />
-                        </svg>
-                      )}
-                    </Tooltip> :
-                    <span style={{ fontSize: '0.85rem', fontWeight: '300' }}>
-                      {selectedWallets.size}
-                    </span>
-                  }                 
-               </span>
+                    {selectedWallets.size == 0 ?
+                      <Tooltip content="Primary Wallet">
+                        {(
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d8dcff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle' }}>
+                            <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+                            <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
+                            <path d="m20 9-3 9" />
+                            <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
+                            <path d="M7 18 4 9" />
+                            <circle cx="12" cy="4" r="2" />
+                            <circle cx="20" cy="7" r="2" />
+                            <circle cx="4" cy="7" r="2" />
+                          </svg>
+                        )}
+                      </Tooltip> :
+                      <span style={{ fontSize: '0.85rem', fontWeight: '300' }}>
+                        {selectedWallets.size}
+                      </span>
+                    }
+                  </span>
                   <span className="subwallet-total-balance">
                     <img
                       src={monadicon}
@@ -5241,737 +5365,1120 @@ const displayTokens = useMemo(() => {
       </div>
 
       <div className="explorer-container">
-        <MobileTabSelector
-          activeTab={activeMobileTab}
-          onTabChange={setActiveMobileTab}
-          tokenCounts={tokenCounts}
-        />
+        {activeView === 'trenches' ? (
 
-        <div className="explorer-columns">
-          {renderOrder
-            .filter((col) => !displaySettings.hiddenColumns?.includes(col))
-            .map((columnType) => (
-              <div
-                key={columnType}
-                className={`explorer-column ${activeMobileTab === columnType ? 'mobile-active' : ''}`}
-              >
-                {columnType === 'new' && (
-                  <>
-                    <div className="explorer-column-header">
-                      <div className="explorer-column-title-section">
-                        <h2 className="explorer-column-title">New Pairs</h2>
-                        <div className="explorer-mobile-display-settings-dropdown">
-                          <DisplayDropdown
-                            settings={displaySettings}
-                            onSettingsChange={setDisplaySettings}
-                            quickAmountsSecond={quickAmountsSecond}
-                            setQuickAmountSecond={setQuickAmountSecond}
-                            activePresetsSecond={activePresetsSecond}
-                            setActivePresetSecond={setActivePresetSecond}
-                          />
-                        </div>
-                      </div>
-                      <div className="explorer-column-title-right">
-                        <div
-                          className={`column-pause-icon ${pausedColumn === 'new' ? 'visible' : ''}`}
-                        >
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                          >
-                            <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
-                          </svg>
-                        </div>
-                        <div className="explorer-quickbuy-container">
-                          <img
-                            className="explorer-quick-buy-search-icon"
-                            src={lightning}
-                            alt=""
-                          />
-                          <input
-                            type="text"
-                            placeholder="0.0"
-                            value={quickAmounts.new}
-                            onChange={(e) =>
-                              setQuickAmount('new', e.target.value)
-                            }
-                            onFocus={handleInputFocus}
-                            className="explorer-quickbuy-input"
-                          />
-                          <img
-                            className="quickbuy-monad-icon"
-                            src={monadicon}
-                          />
-                          <div className="explorer-preset-controls">
-                            {[1, 2, 3].map((p) => (
-                              <Tooltip
-                                key={p}
-                                offset={35}
-                                content={
-                                  <div
-                                    style={{
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      gap: '4px',
-                                    }}
-                                  >
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                      }}
-                                    >
-                                      <img
-                                        src={slippage}
-                                        style={{
-                                          width: '14px',
-                                          height: '14px',
-                                        }}
-                                        alt="Slippage"
-                                      />
-                                      <span>
-                                        {buyPresets[p]?.slippage || '0'}%
-                                      </span>
-                                    </div>
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                      }}
-                                    >
-                                      <img
-                                        src={gas}
-                                        style={{
-                                          width: '14px',
-                                          height: '14px',
-                                        }}
-                                      />
-                                      <span>
-                                        {buyPresets[p]?.priority || '0'}{' '}
-                                      </span>
-                                    </div>
-                                  </div>
-                                }
+          <>
+            <MobileTabSelector
+              activeTab={activeMobileTab}
+              onTabChange={setActiveMobileTab}
+              tokenCounts={tokenCounts}
+            />
+
+            <div className="explorer-columns">
+              {renderOrder
+                .filter((col) => !displaySettings.hiddenColumns?.includes(col))
+                .map((columnType) => (
+                  <div
+                    key={columnType}
+                    className={`explorer-column ${activeMobileTab === columnType ? 'mobile-active' : ''}`}
+                  >
+                    {columnType === 'new' && (
+                      <>
+                        <div className="explorer-column-header">
+                          <div className="explorer-column-title-section">
+                            <h2 className="explorer-column-title">New Pairs</h2>
+                            <div className="explorer-mobile-display-settings-dropdown">
+                              <DisplayDropdown
+                                settings={displaySettings}
+                                onSettingsChange={setDisplaySettings}
+                                quickAmountsSecond={quickAmountsSecond}
+                                setQuickAmountSecond={setQuickAmountSecond}
+                                activePresetsSecond={activePresetsSecond}
+                                setActivePresetSecond={setActivePresetSecond}
+                              />
+                            </div>
+                          </div>
+                          <div className="explorer-column-title-right">
+                            <div
+                              className={`column-pause-icon ${pausedColumn === 'new' ? 'visible' : ''}`}
+                            >
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
                               >
+                                <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                              </svg>
+                            </div>
+                            <div className="explorer-quickbuy-container">
+                              <img
+                                className="explorer-quick-buy-search-icon"
+                                src={lightning}
+                                alt=""
+                              />
+                              <input
+                                type="text"
+                                placeholder="0.0"
+                                value={quickAmounts.new}
+                                onChange={(e) =>
+                                  setQuickAmount('new', e.target.value)
+                                }
+                                onFocus={handleInputFocus}
+                                className="explorer-quickbuy-input"
+                              />
+                              <img
+                                className="quickbuy-monad-icon"
+                                src={monadicon}
+                              />
+                              <div className="explorer-preset-controls">
+                                {[1, 2, 3].map((p) => (
+                                  <Tooltip
+                                    key={p}
+                                    offset={35}
+                                    content={
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: '4px',
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                          }}
+                                        >
+                                          <img
+                                            src={slippage}
+                                            style={{
+                                              width: '14px',
+                                              height: '14px',
+                                            }}
+                                            alt="Slippage"
+                                          />
+                                          <span>
+                                            {buyPresets[p]?.slippage || '0'}%
+                                          </span>
+                                        </div>
+                                        <div
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                          }}
+                                        >
+                                          <img
+                                            src={gas}
+                                            style={{
+                                              width: '14px',
+                                              height: '14px',
+                                            }}
+                                          />
+                                          <span>
+                                            {buyPresets[p]?.priority || '0'}{' '}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    }
+                                  >
+                                    <button
+                                      className={`explorer-preset-pill ${activePresets.new === p ? 'active' : ''}`}
+                                      onClick={() => setActivePreset('new', p)}
+                                    >
+                                      P{p}
+                                    </button>
+                                  </Tooltip>
+                                ))}
+                              </div>
+                            </div>
+
+                            {alertSettings.soundAlertsEnabled && (
+                              <Tooltip content="Alerts">
                                 <button
-                                  className={`explorer-preset-pill ${activePresets.new === p ? 'active' : ''}`}
-                                  onClick={() => setActivePreset('new', p)}
+                                  className="alerts-popup-trigger"
+                                  onClick={() => setShowAlertsPopup(true)}
                                 >
-                                  P{p}
+                                  <Bell size={18} />
                                 </button>
                               </Tooltip>
-                            ))}
-                          </div>
-                        </div>
-
-                        {alertSettings.soundAlertsEnabled && (
-                          <Tooltip content="Alerts">
-                            <button
-                              className="alerts-popup-trigger"
-                              onClick={() => setShowAlertsPopup(true)}
-                            >
-                              <Bell size={18} />
-                            </button>
-                          </Tooltip>
-                        )}
-                        <Tooltip content="Filters">
-                          <button
-                            className={`column-filter-icon ${appliedFilters?.new ? 'active' : ''}`}
-                            onClick={() => onOpenFiltersForColumn('new')}
-                            title="filter new pairs"
-                          >
-                            <img className="filter-icon" src={filter} />
-                            {appliedFilters?.new && (
-                              <span className="filter-active-dot" />
                             )}
-                          </button>
-                        </Tooltip>
-                      </div>
-                    </div>
-
-                    <div className="explorer-tokens-list"
-                      onMouseEnter={() => handleColumnHover(columnType)}
-                      onMouseLeave={handleColumnLeave}>
-                      {isLoading ? (
-                        Array.from({ length: 14 }).map((_, index) => (
-                          <div
-                            key={`skeleton-new-${index}`}
-                            className="explorer-token-row loading"
-                          >
-                            <div className="explorer-token-left">
-                              <div className="explorer-token-image-container">
-                                <div className="explorer-progress-spacer">
-                                  <div className="explorer-image-wrapper">
-                                    <img
-                                      className="explorer-token-image"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                              <span className="explorer-contract-address">
-                                Loading...
-                              </span>
-                            </div>
-                            <div className="explorer-token-details">
-                              <div className="explorer-detail-section">
-                                <div className="explorer-top-row">
-                                  <div className="explorer-token-info">
-                                    <h3 className="explorer-token-symbol">
-                                      LOAD
-                                    </h3>
-                                    <p className="explorer-token-name">
-                                      Loading Token
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="explorer-second-row">
-                                  <div className="explorer-stat-item">
-                                    <span className="explorer-stat-value">
-                                      0
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="explorer-holdings-section" />
-                            </div>
-                            <div className="explorer-third-row">
-                              <div className="explorer-market-cap">
-                                <span className="mc-label"></span>
-                                <span className="mc-label"></span>
-                              </div>
-                              <div className="explorer-actions-section">
-                                <button className="explorer-quick-buy-btn">
-                                  Loading
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : displayTokens.new.length ? (
-                        displayTokens.new.map((t) => (
-                          <TokenRow
-                            key={t.id}
-                            token={t}
-                            quickbuyAmount={quickAmounts.new}
-                            quickbuyAmountSecond={quickAmountsSecond.new}
-                            onHideToken={hideToken}
-                            onBlacklistToken={handleBlacklistToken}
-                            isLoadingPrimary={loading.has(`${t.id}-primary`)}
-                            isLoadingSecondary={loading.has(
-                              `${t.id}-secondary`,
-                            )}
-                            hoveredToken={hoveredToken}
-                            hoveredImage={hoveredImage}
-                            onTokenHover={handleTokenHover}
-                            onTokenLeave={handleTokenLeave}
-                            onImageHover={handleImageHover}
-                            onImageLeave={handleImageLeave}
-                            onTokenClick={handleTokenClick}
-                            onQuickBuy={handleQuickBuy}
-                            onCopyToClipboard={copyToClipboard}
-                            displaySettings={displaySettings}
-                            isHidden={hidden.has(t.id)}
-                            isBlacklisted={(t as any).isBlacklisted || false}
-                            monUsdPrice={monUsdPrice}
-                            blacklistSettings={blacklistSettings}
-                            formatTimeAgo={formatTimeAgo}
-                          />
-                        ))
-                      ) : (
-                        <div className="no-tokens-message">
-                          <img src={empty} className="empty-icon" />
-                          No tokens match the current filters
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-                {columnType === 'graduating' && (
-                  <>
-                    <div className="explorer-column-header">
-                      <div className="explorer-column-title-section">
-                        <h2 className="explorer-column-title">Final Stretch</h2>
-                        <div className="explorer-mobile-display-settings-dropdown">
-                          <DisplayDropdown
-                            settings={displaySettings}
-                            onSettingsChange={setDisplaySettings}
-                            quickAmountsSecond={quickAmountsSecond}
-                            setQuickAmountSecond={setQuickAmountSecond}
-                            activePresetsSecond={activePresetsSecond}
-                            setActivePresetSecond={setActivePresetSecond}
-                          />
-                        </div>
-                      </div>
-                      <div className="explorer-column-title-right">
-                        <div
-                          className={`column-pause-icon ${pausedColumn === 'graduating' ? 'visible' : ''}`}
-                        >
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                          >
-                            <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
-                          </svg>
-                        </div>
-                        <div className="explorer-quickbuy-container">
-                          <img
-                            className="explorer-quick-buy-search-icon"
-                            src={lightning}
-                            alt=""
-                          />
-                          <input
-                            type="text"
-                            placeholder="0.0"
-                            value={quickAmounts.graduating}
-                            onChange={(e) =>
-                              setQuickAmount('graduating', e.target.value)
-                            }
-                            onFocus={handleInputFocus}
-                            className="explorer-quickbuy-input"
-                          />
-                          <img
-                            className="quickbuy-monad-icon"
-                            src={monadicon}
-                          />
-                          <div className="explorer-preset-controls">
-                            {[1, 2, 3].map((p) => (
-                              <Tooltip
-                                key={p}
-                                offset={35}
-                                content={
-                                  <div
-                                    style={{
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      gap: '4px',
-                                    }}
-                                  >
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                      }}
-                                    >
-                                      <img
-                                        src={slippage}
-                                        style={{
-                                          width: '14px',
-                                          height: '14px',
-                                        }}
-                                        alt="Slippage"
-                                      />
-                                      <span>
-                                        {buyPresets[p]?.slippage || '0'}%
-                                      </span>
-                                    </div>
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                      }}
-                                    >
-                                      <img
-                                        src={gas}
-                                        style={{
-                                          width: '14px',
-                                          height: '14px',
-                                        }}
-                                        alt="Priority"
-                                      />
-                                      <span>
-                                        {buyPresets[p]?.priority || '0'}
-                                      </span>
-                                    </div>
-                                  </div>
-                                }
+                            <Tooltip content="Filters">
+                              <button
+                                className={`column-filter-icon ${appliedFilters?.new ? 'active' : ''}`}
+                                onClick={() => onOpenFiltersForColumn('new')}
+                                title="filter new pairs"
                               >
+                                <img className="filter-icon" src={filter} />
+                                {appliedFilters?.new && (
+                                  <span className="filter-active-dot" />
+                                )}
+                              </button>
+                            </Tooltip>
+                          </div>
+                        </div>
+
+                        <div className="explorer-tokens-list"
+                          onMouseEnter={() => handleColumnHover(columnType)}
+                          onMouseLeave={handleColumnLeave}>
+                          {isLoading ? (
+                            Array.from({ length: 14 }).map((_, index) => (
+                              <div
+                                key={`skeleton-new-${index}`}
+                                className="explorer-token-row loading"
+                              >
+                                <div className="explorer-token-left">
+                                  <div className="explorer-token-image-container">
+                                    <div className="explorer-progress-spacer">
+                                      <div className="explorer-image-wrapper">
+                                        <img
+                                          className="explorer-token-image"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <span className="explorer-contract-address">
+                                    Loading...
+                                  </span>
+                                </div>
+                                <div className="explorer-token-details">
+                                  <div className="explorer-detail-section">
+                                    <div className="explorer-top-row">
+                                      <div className="explorer-token-info">
+                                        <h3 className="explorer-token-symbol">
+                                          LOAD
+                                        </h3>
+                                        <p className="explorer-token-name">
+                                          Loading Token
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="explorer-second-row">
+                                      <div className="explorer-stat-item">
+                                        <span className="explorer-stat-value">
+                                          0
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="explorer-holdings-section" />
+                                </div>
+                                <div className="explorer-third-row">
+                                  <div className="explorer-market-cap">
+                                    <span className="mc-label"></span>
+                                    <span className="mc-label"></span>
+                                  </div>
+                                  <div className="explorer-actions-section">
+                                    <button className="explorer-quick-buy-btn">
+                                      Loading
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : displayTokens.new.length ? (
+                            displayTokens.new.map((t) => (
+                              <TokenRow
+                                key={t.id}
+                                token={t}
+                                quickbuyAmount={quickAmounts.new}
+                                quickbuyAmountSecond={quickAmountsSecond.new}
+                                onHideToken={hideToken}
+                                onBlacklistToken={handleBlacklistToken}
+                                isLoadingPrimary={loading.has(`${t.id}-primary`)}
+                                isLoadingSecondary={loading.has(
+                                  `${t.id}-secondary`,
+                                )}
+                                hoveredToken={hoveredToken}
+                                hoveredImage={hoveredImage}
+                                onTokenHover={handleTokenHover}
+                                onTokenLeave={handleTokenLeave}
+                                onImageHover={handleImageHover}
+                                onImageLeave={handleImageLeave}
+                                onTokenClick={handleTokenClick}
+                                onQuickBuy={handleQuickBuy}
+                                onCopyToClipboard={copyToClipboard}
+                                displaySettings={displaySettings}
+                                isHidden={hidden.has(t.id)}
+                                isBlacklisted={(t as any).isBlacklisted || false}
+                                monUsdPrice={monUsdPrice}
+                                blacklistSettings={blacklistSettings}
+                                formatTimeAgo={formatTimeAgo}
+                              />
+                            ))
+                          ) : (
+                            <div className="no-tokens-message">
+                              <img src={empty} className="empty-icon" />
+                              No tokens match the current filters
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                    {columnType === 'graduating' && (
+                      <>
+                        <div className="explorer-column-header">
+                          <div className="explorer-column-title-section">
+                            <h2 className="explorer-column-title">Final Stretch</h2>
+                            <div className="explorer-mobile-display-settings-dropdown">
+                              <DisplayDropdown
+                                settings={displaySettings}
+                                onSettingsChange={setDisplaySettings}
+                                quickAmountsSecond={quickAmountsSecond}
+                                setQuickAmountSecond={setQuickAmountSecond}
+                                activePresetsSecond={activePresetsSecond}
+                                setActivePresetSecond={setActivePresetSecond}
+                              />
+                            </div>
+                          </div>
+                          <div className="explorer-column-title-right">
+                            <div
+                              className={`column-pause-icon ${pausedColumn === 'graduating' ? 'visible' : ''}`}
+                            >
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                              >
+                                <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                              </svg>
+                            </div>
+                            <div className="explorer-quickbuy-container">
+                              <img
+                                className="explorer-quick-buy-search-icon"
+                                src={lightning}
+                                alt=""
+                              />
+                              <input
+                                type="text"
+                                placeholder="0.0"
+                                value={quickAmounts.graduating}
+                                onChange={(e) =>
+                                  setQuickAmount('graduating', e.target.value)
+                                }
+                                onFocus={handleInputFocus}
+                                className="explorer-quickbuy-input"
+                              />
+                              <img
+                                className="quickbuy-monad-icon"
+                                src={monadicon}
+                              />
+                              <div className="explorer-preset-controls">
+                                {[1, 2, 3].map((p) => (
+                                  <Tooltip
+                                    key={p}
+                                    offset={35}
+                                    content={
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: '4px',
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                          }}
+                                        >
+                                          <img
+                                            src={slippage}
+                                            style={{
+                                              width: '14px',
+                                              height: '14px',
+                                            }}
+                                            alt="Slippage"
+                                          />
+                                          <span>
+                                            {buyPresets[p]?.slippage || '0'}%
+                                          </span>
+                                        </div>
+                                        <div
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                          }}
+                                        >
+                                          <img
+                                            src={gas}
+                                            style={{
+                                              width: '14px',
+                                              height: '14px',
+                                            }}
+                                            alt="Priority"
+                                          />
+                                          <span>
+                                            {buyPresets[p]?.priority || '0'}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    }
+                                  >
+                                    <button
+                                      className={`explorer-preset-pill ${activePresets.graduating === p ? 'active' : ''}`}
+                                      onClick={() =>
+                                        setActivePreset('graduating', p)
+                                      }
+                                    >
+                                      P{p}
+                                    </button>
+                                  </Tooltip>
+                                ))}
+                              </div>
+                            </div>
+                            {alertSettings.soundAlertsEnabled && (
+                              <Tooltip content="Alerts">
+
                                 <button
-                                  className={`explorer-preset-pill ${activePresets.graduating === p ? 'active' : ''}`}
-                                  onClick={() =>
-                                    setActivePreset('graduating', p)
-                                  }
+                                  className="alerts-popup-trigger"
+                                  onClick={() => setShowAlertsPopup(true)}
                                 >
-                                  P{p}
+                                  <Bell size={18} />
                                 </button>
                               </Tooltip>
-                            ))}
-                          </div>
-                        </div>
-                        {alertSettings.soundAlertsEnabled && (
-                          <Tooltip content="Alerts">
-
-                            <button
-                              className="alerts-popup-trigger"
-                              onClick={() => setShowAlertsPopup(true)}
-                            >
-                              <Bell size={18} />
-                            </button>
-                          </Tooltip>
-                        )}
-                        <Tooltip content="Filters">
-
-                          <button
-                            className={`column-filter-icon ${appliedFilters?.graduating ? 'active' : ''}`}
-                            onClick={() => onOpenFiltersForColumn('graduating')}
-                            title="Filter graduating tokens"
-                          >
-                            <img className="filter-icon" src={filter} />
-                            {appliedFilters?.graduating && (
-                              <span className="filter-active-dot" />
                             )}
-                          </button>
-                        </Tooltip>
-                      </div>
-                    </div>
+                            <Tooltip content="Filters">
 
-                    <div className="explorer-tokens-list"
-                      onMouseEnter={() => handleColumnHover(columnType)}
-                      onMouseLeave={handleColumnLeave}>
-                      {isLoading ? (
-                        Array.from({ length: 14 }).map((_, index) => (
-                          <div
-                            key={`skeleton-graduating-${index}`}
-                            className="explorer-token-row loading"
-                          >
-                            <div className="explorer-token-left">
-                              <div className="explorer-token-image-container">
-                                <div className="explorer-progress-spacer">
-                                  <div className="explorer-image-wrapper">
-                                    <img
-                                      className="explorer-token-image"
-                                      alt="loading"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                              <span className="explorer-contract-address">
-                                Loading...
-                              </span>
-                            </div>
-                            <div className="explorer-token-details">
-                              <div className="explorer-detail-section">
-                                <div className="explorer-top-row">
-                                  <div className="explorer-token-info">
-                                    <h3 className="explorer-token-symbol">
-                                      LOAD
-                                    </h3>
-                                    <p className="explorer-token-name">
-                                      Loading Token
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="explorer-second-row">
-                                  <div className="explorer-stat-item">
-                                    <span className="explorer-stat-value">
-                                      0
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="explorer-holdings-section" />
-                            </div>
-                            <div className="explorer-third-row">
-                              <div className="explorer-market-cap">
-                                <span className="mc-label"></span>
-                                <span className="mc-label"></span>
-                              </div>
-                              <div className="explorer-actions-section">
-                                <button className="explorer-quick-buy-btn">
-                                  Loading
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : displayTokens.graduating.length ? (
-                        displayTokens.graduating.map((t) => (
-                          <TokenRow
-                            key={t.id}
-                            token={t}
-                            quickbuyAmount={quickAmounts.graduating}
-                            quickbuyAmountSecond={quickAmountsSecond.new}
-                            onHideToken={hideToken}
-                            onBlacklistToken={handleBlacklistToken}
-                            isLoadingPrimary={loading.has(`${t.id}-primary`)}
-                            isLoadingSecondary={loading.has(
-                              `${t.id}-secondary`,
-                            )}
-                            hoveredToken={hoveredToken}
-                            hoveredImage={hoveredImage}
-                            onTokenHover={handleTokenHover}
-                            onTokenLeave={handleTokenLeave}
-                            onImageHover={handleImageHover}
-                            onImageLeave={handleImageLeave}
-                            onTokenClick={handleTokenClick}
-                            onQuickBuy={handleQuickBuy}
-                            onCopyToClipboard={copyToClipboard}
-                            displaySettings={displaySettings}
-                            isHidden={hidden.has(t.id)}
-                            isBlacklisted={(t as any).isBlacklisted || false}
-                            monUsdPrice={monUsdPrice}
-                            blacklistSettings={blacklistSettings}
-                            formatTimeAgo={formatTimeAgo}
-                          />
-                        ))
-                      ) : (
-                        <div className="no-tokens-message">
-                          <img src={empty} className="empty-icon" />
-                          No tokens match the current filters
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-                {columnType === 'graduated' && (
-                  <>
-                    <div className="explorer-column-header">
-                      <div className="explorer-column-title-section">
-                        <h2 className="explorer-column-title">Graduated</h2>
-                        <div className="explorer-mobile-display-settings-dropdown">
-                          <DisplayDropdown
-                            settings={displaySettings}
-                            onSettingsChange={setDisplaySettings}
-                            quickAmountsSecond={quickAmountsSecond}
-                            setQuickAmountSecond={setQuickAmountSecond}
-                            activePresetsSecond={activePresetsSecond}
-                            setActivePresetSecond={setActivePresetSecond}
-                          />
-                        </div>
-                      </div>
-                      <div className="explorer-column-title-right-final">
-                        <div
-                          className={`column-pause-icon ${pausedColumn === 'graduated' ? 'visible' : ''}`}
-                        >
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                          >
-                            <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
-                          </svg>
-                        </div>
-                        <div className="explorer-quickbuy-container">
-                          <img
-                            className="explorer-quick-buy-search-icon"
-                            src={lightning}
-                            alt=""
-                          />
-                          <input
-                            type="text"
-                            placeholder="0.0"
-                            value={quickAmounts.graduated}
-                            onChange={(e) =>
-                              setQuickAmount('graduated', e.target.value)
-                            }
-                            onFocus={handleInputFocus}
-                            className="explorer-quickbuy-input"
-                          />
-                          <img
-                            className="quickbuy-monad-icon"
-                            src={monadicon}
-                          />
-                          <div className="explorer-preset-controls">
-                            {[1, 2, 3].map((p) => (
-                              <Tooltip
-                                key={p}
-                                offset={35}
-                                content={
-                                  <div
-                                    style={{
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      gap: '4px',
-                                    }}
-                                  >
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                      }}
-                                    >
-                                      <img
-                                        src={slippage}
-                                        style={{
-                                          width: '14px',
-                                          height: '14px',
-                                        }}
-                                        alt="Slippage"
-                                      />
-                                      <span>
-                                        {buyPresets[p]?.slippage || '0'}%
-                                      </span>
-                                    </div>
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                      }}
-                                    >
-                                      <img
-                                        src={gas}
-                                        style={{
-                                          width: '14px',
-                                          height: '14px',
-                                        }}
-                                        alt="Priority"
-                                      />
-                                      <span>
-                                        {buyPresets[p]?.priority || '0'}{' '}
-                                      </span>
-                                    </div>
-                                  </div>
-                                }
+                              <button
+                                className={`column-filter-icon ${appliedFilters?.graduating ? 'active' : ''}`}
+                                onClick={() => onOpenFiltersForColumn('graduating')}
+                                title="Filter graduating tokens"
                               >
+                                <img className="filter-icon" src={filter} />
+                                {appliedFilters?.graduating && (
+                                  <span className="filter-active-dot" />
+                                )}
+                              </button>
+                            </Tooltip>
+                          </div>
+                        </div>
+
+                        <div className="explorer-tokens-list"
+                          onMouseEnter={() => handleColumnHover(columnType)}
+                          onMouseLeave={handleColumnLeave}>
+                          {isLoading ? (
+                            Array.from({ length: 14 }).map((_, index) => (
+                              <div
+                                key={`skeleton-graduating-${index}`}
+                                className="explorer-token-row loading"
+                              >
+                                <div className="explorer-token-left">
+                                  <div className="explorer-token-image-container">
+                                    <div className="explorer-progress-spacer">
+                                      <div className="explorer-image-wrapper">
+                                        <img
+                                          className="explorer-token-image"
+                                          alt="loading"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <span className="explorer-contract-address">
+                                    Loading...
+                                  </span>
+                                </div>
+                                <div className="explorer-token-details">
+                                  <div className="explorer-detail-section">
+                                    <div className="explorer-top-row">
+                                      <div className="explorer-token-info">
+                                        <h3 className="explorer-token-symbol">
+                                          LOAD
+                                        </h3>
+                                        <p className="explorer-token-name">
+                                          Loading Token
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="explorer-second-row">
+                                      <div className="explorer-stat-item">
+                                        <span className="explorer-stat-value">
+                                          0
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="explorer-holdings-section" />
+                                </div>
+                                <div className="explorer-third-row">
+                                  <div className="explorer-market-cap">
+                                    <span className="mc-label"></span>
+                                    <span className="mc-label"></span>
+                                  </div>
+                                  <div className="explorer-actions-section">
+                                    <button className="explorer-quick-buy-btn">
+                                      Loading
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : displayTokens.graduating.length ? (
+                            displayTokens.graduating.map((t) => (
+                              <TokenRow
+                                key={t.id}
+                                token={t}
+                                quickbuyAmount={quickAmounts.graduating}
+                                quickbuyAmountSecond={quickAmountsSecond.new}
+                                onHideToken={hideToken}
+                                onBlacklistToken={handleBlacklistToken}
+                                isLoadingPrimary={loading.has(`${t.id}-primary`)}
+                                isLoadingSecondary={loading.has(
+                                  `${t.id}-secondary`,
+                                )}
+                                hoveredToken={hoveredToken}
+                                hoveredImage={hoveredImage}
+                                onTokenHover={handleTokenHover}
+                                onTokenLeave={handleTokenLeave}
+                                onImageHover={handleImageHover}
+                                onImageLeave={handleImageLeave}
+                                onTokenClick={handleTokenClick}
+                                onQuickBuy={handleQuickBuy}
+                                onCopyToClipboard={copyToClipboard}
+                                displaySettings={displaySettings}
+                                isHidden={hidden.has(t.id)}
+                                isBlacklisted={(t as any).isBlacklisted || false}
+                                monUsdPrice={monUsdPrice}
+                                blacklistSettings={blacklistSettings}
+                                formatTimeAgo={formatTimeAgo}
+                              />
+                            ))
+                          ) : (
+                            <div className="no-tokens-message">
+                              <img src={empty} className="empty-icon" />
+                              No tokens match the current filters
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                    {columnType === 'graduated' && (
+                      <>
+                        <div className="explorer-column-header">
+                          <div className="explorer-column-title-section">
+                            <h2 className="explorer-column-title">Graduated</h2>
+                            <div className="explorer-mobile-display-settings-dropdown">
+                              <DisplayDropdown
+                                settings={displaySettings}
+                                onSettingsChange={setDisplaySettings}
+                                quickAmountsSecond={quickAmountsSecond}
+                                setQuickAmountSecond={setQuickAmountSecond}
+                                activePresetsSecond={activePresetsSecond}
+                                setActivePresetSecond={setActivePresetSecond}
+                              />
+                            </div>
+                          </div>
+                          <div className="explorer-column-title-right-final">
+                            <div
+                              className={`column-pause-icon ${pausedColumn === 'graduated' ? 'visible' : ''}`}
+                            >
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                              >
+                                <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                              </svg>
+                            </div>
+                            <div className="explorer-quickbuy-container">
+                              <img
+                                className="explorer-quick-buy-search-icon"
+                                src={lightning}
+                                alt=""
+                              />
+                              <input
+                                type="text"
+                                placeholder="0.0"
+                                value={quickAmounts.graduated}
+                                onChange={(e) =>
+                                  setQuickAmount('graduated', e.target.value)
+                                }
+                                onFocus={handleInputFocus}
+                                className="explorer-quickbuy-input"
+                              />
+                              <img
+                                className="quickbuy-monad-icon"
+                                src={monadicon}
+                              />
+                              <div className="explorer-preset-controls">
+                                {[1, 2, 3].map((p) => (
+                                  <Tooltip
+                                    key={p}
+                                    offset={35}
+                                    content={
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: '4px',
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                          }}
+                                        >
+                                          <img
+                                            src={slippage}
+                                            style={{
+                                              width: '14px',
+                                              height: '14px',
+                                            }}
+                                            alt="Slippage"
+                                          />
+                                          <span>
+                                            {buyPresets[p]?.slippage || '0'}%
+                                          </span>
+                                        </div>
+                                        <div
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                          }}
+                                        >
+                                          <img
+                                            src={gas}
+                                            style={{
+                                              width: '14px',
+                                              height: '14px',
+                                            }}
+                                            alt="Priority"
+                                          />
+                                          <span>
+                                            {buyPresets[p]?.priority || '0'}{' '}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    }
+                                  >
+                                    <button
+                                      className={`explorer-preset-pill ${activePresets.graduated === p ? 'active' : ''}`}
+                                      onClick={() =>
+                                        setActivePreset('graduated', p)
+                                      }
+                                    >
+                                      P{p}
+                                    </button>
+                                  </Tooltip>
+                                ))}
+                              </div>
+                            </div>
+                            {alertSettings.soundAlertsEnabled && (
+                              <Tooltip content="Alerts">
                                 <button
-                                  className={`explorer-preset-pill ${activePresets.graduated === p ? 'active' : ''}`}
-                                  onClick={() =>
-                                    setActivePreset('graduated', p)
-                                  }
+                                  className="alerts-popup-trigger"
+                                  onClick={() => setShowAlertsPopup(true)}
                                 >
-                                  P{p}
+                                  <Bell size={18} />
                                 </button>
                               </Tooltip>
-                            ))}
+                            )}
+                            <Tooltip content="Filters">
+
+                              <button
+                                className={`column-filter-icon ${appliedFilters?.graduated ? 'active' : ''}`}
+                                onClick={() => onOpenFiltersForColumn('graduated')}
+                                title="filter graduated tokens"
+                              >
+                                <img className="filter-icon" src={filter} />
+                                {appliedFilters?.graduated && (
+                                  <span className="filter-active-dot" />
+                                )}
+                              </button>
+                            </Tooltip>
                           </div>
                         </div>
-                        {alertSettings.soundAlertsEnabled && (
-                          <Tooltip content="Alerts">
-                            <button
-                              className="alerts-popup-trigger"
-                              onClick={() => setShowAlertsPopup(true)}
-                            >
-                              <Bell size={18} />
-                            </button>
-                          </Tooltip>
-                        )}
-                        <Tooltip content="Filters">
 
-                          <button
-                            className={`column-filter-icon ${appliedFilters?.graduated ? 'active' : ''}`}
-                            onClick={() => onOpenFiltersForColumn('graduated')}
-                            title="filter graduated tokens"
-                          >
-                            <img className="filter-icon" src={filter} />
-                            {appliedFilters?.graduated && (
-                              <span className="filter-active-dot" />
+                        <div className="explorer-tokens-list"
+                          onMouseEnter={() => handleColumnHover(columnType)}
+                          onMouseLeave={handleColumnLeave}>
+                          {isLoading ? (
+                            Array.from({ length: 14 }).map((_, index) => (
+                              <div
+                                key={`skeleton-graduated-${index}`}
+                                className="explorer-token-row loading"
+                              >
+                                <div className="explorer-token-left">
+                                  <div className="explorer-token-image-container">
+                                    <div className="explorer-progress-spacer">
+                                      <div className="explorer-image-wrapper">
+                                        <img
+                                          className="explorer-token-image"
+                                          alt="loading"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <span className="explorer-contract-address">
+                                    Loading...
+                                  </span>
+                                </div>
+                                <div className="explorer-token-details">
+                                  <div className="explorer-detail-section">
+                                    <div className="explorer-top-row">
+                                      <div className="explorer-token-info">
+                                        <h3 className="explorer-token-symbol">
+                                          LOAD
+                                        </h3>
+                                        <p className="explorer-token-name">
+                                          Loading Token
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="explorer-second-row">
+                                      <div className="explorer-stat-item">
+                                        <span className="explorer-stat-value">
+                                          0
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="explorer-holdings-section" />
+                                </div>
+                                <div className="explorer-third-row">
+                                  <div className="explorer-market-cap">
+                                    <span className="mc-label"></span>
+                                    <span className="mc-label"></span>
+                                  </div>
+                                  <div className="explorer-actions-section">
+                                    <button className="explorer-quick-buy-btn">
+                                      Loading
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                          ) : displayTokens.graduated.length ? (
+                            displayTokens.graduated.map((t) => (
+                              <TokenRow
+                                key={t.id}
+                                token={t}
+                                quickbuyAmount={quickAmounts.graduated}
+                                quickbuyAmountSecond={quickAmountsSecond.new}
+                                onHideToken={hideToken}
+                                onBlacklistToken={handleBlacklistToken}
+                                isLoadingPrimary={loading.has(`${t.id}-primary`)}
+                                isLoadingSecondary={loading.has(
+                                  `${t.id}-secondary`,
+                                )}
+                                hoveredToken={hoveredToken}
+                                hoveredImage={hoveredImage}
+                                onTokenHover={handleTokenHover}
+                                onTokenLeave={handleTokenLeave}
+                                onImageHover={handleImageHover}
+                                onImageLeave={handleImageLeave}
+                                onTokenClick={handleTokenClick}
+                                onQuickBuy={handleQuickBuy}
+                                onCopyToClipboard={copyToClipboard}
+                                displaySettings={displaySettings}
+                                isHidden={hidden.has(t.id)}
+                                isBlacklisted={(t as any).isBlacklisted || false}
+                                monUsdPrice={monUsdPrice}
+                                blacklistSettings={blacklistSettings}
+                                formatTimeAgo={formatTimeAgo}
+                              />
+                            ))
+                          ) : (
+                            <div className="no-tokens-message">
+                              <img src={empty} className="empty-icon" />
+                              No tokens match the current filters
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+            </div>
+          </>
+        ) : (
+          <div className="trending-container">
+            <div className="trending-header">
+              <div className="trending-header-cell pair-info-header">Pair Info</div>
+              <div className="trending-header-cell">Market Cap</div>
+              <div className="trending-header-cell">Liquidity</div>
+              <div className="trending-header-cell">Volume</div>
+              <div className="trending-header-cell">TXNS</div>
+              <div className="trending-header-cell">Token Info</div>
+              <div className="trending-header-cell action-cell">Action</div>
+            </div>
+
+            <div className="trending-list">
+              {isLoading ? (
+                Array.from({ length: 12 }).map((_, index) => (
+                  <div key={`skeleton-trending-${index}`} className="trending-row loading">
+                    <div className="trending-cell pair-info-cell">
+                      <div className="skeleton trending-image" />
+                      <div className="skeleton trending-name-text" />
+                    </div>
+                    <div className="trending-cell"><div className="skeleton trending-value-text" /></div>
+                    <div className="trending-cell"><div className="skeleton trending-value-text" /></div>
+                    <div className="trending-cell"><div className="skeleton trending-value-text" /></div>
+                    <div className="trending-cell"><div className="skeleton trending-value-text" /></div>
+                    <div className="trending-cell"><div className="skeleton trending-value-text" /></div>
+                    <div className="trending-cell"><div className="skeleton trending-button" /></div>
+                  </div>
+                ))
+              ) : trendingTokens.length ? (
+                trendingTokens.map((token) => (
+                  <div
+                    key={token.id}
+                    className={`trending-row ${hidden.has(token.id) ? 'hidden-token' : ''} ${token.isBlacklisted ? 'blacklisted-token' : ''}`}
+                    onClick={() => handleTokenClick(token)}
+                  >
+                    <div className="trending-cell pair-info-cell">
+                      <div className="trending-token-actions">
+                        <button
+                          className={`explorer-hide-button ${hidden.has(token.id) ? 'strikethrough' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            hideToken(token.id);
+                          }}
+                        >
+                          <Tooltip content={hidden.has(token.id) ? 'Show Token' : 'Hide Token'}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          </Tooltip>
+                        </button>
+                        <button
+                          className={`explorer-blacklist-button ${token.isBlacklisted ? 'strikethrough' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBlacklistToken(token);
+                            hideToken(token.id);
+                          }}
+                        >
+                          <Tooltip content={token.isBlacklisted ? 'Unblacklist Dev' : 'Blacklist Dev'}>
+                            <svg className="blacklist-dev-icon" width="16" height="16" viewBox="0 0 30 30" fill="currentColor">
+                              <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
+                            </svg>
+                          </Tooltip>
+                        </button>
+                      </div>
+                      <div
+                        className={`trending-token-image-container ${token.status === 'graduated' ? 'graduated' : ''} ${!displaySettings.squareImages ? 'circle-mode' : ''} ${!displaySettings.progressBar ? 'no-progress-ring' : ''} ${token.source === 'nadfun' ? 'nadfun-token' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(
+                            `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(token.image)}`,
+                            '_blank',
+                            'noopener,noreferrer',
+                          );
+                        }}
+                        style={
+                          token.status === 'graduated' || !displaySettings.progressBar
+                            ? { position: 'relative' }
+                            : {
+                              position: 'relative',
+                              '--progress-angle': `${(token.bondingPercentage * 100 / 100) * 360}deg`,
+                            } as React.CSSProperties & { '--progress-angle': string }
+                        }
+                      >
+                        <div className={`trending-progress-spacer ${!displaySettings.squareImages ? 'circle-mode' : ''}`}>
+                          <div className={`trending-image-wrapper ${!displaySettings.squareImages ? 'circle-mode' : ''}`}>
+                            {token.image && token.image.startsWith("https://storage.nadapp.net/coin/") ? (
+                              <img
+                                src={token.image}
+                                className={`trending-token-image ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+                                alt={token.symbol}
+                              />
+                            ) : (
+                              <div
+                                className={`trending-token-letter ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+                              >
+                                {token.symbol.slice(0, 2).toUpperCase()}
+                              </div>
                             )}
-                          </button>
-                        </Tooltip>
+                            <div
+                              className={`trending-image-overlay ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+                            >
+                              <img className="camera-icon" src={camera} />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="token-explorer-launchpad-logo-container">
+                          {token.source === 'nadfun' ? (
+                            <Tooltip content="nad.fun">
+                              <svg width="10" height="10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="token-explorer-launchpad-logo">
+                                <defs>
+                                  <linearGradient id="nadfun" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stopColor="#7C55FF" stopOpacity="1" />
+                                    <stop offset="100%" stopColor="#AD5FFB" stopOpacity="1" />
+                                  </linearGradient>
+                                </defs>
+                                <path fill="url(#nadfun)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
+                              </svg>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip content="crystal.fun">
+                              <img src={crystal} className="token-explorer-launchpad-logo crystal" />
+                            </Tooltip>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="trending-token-info">
+                        <div className="trending-token-name-row"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyToClipboard(token.id);
+                          }}>
+                          <span className="trending-token-symbol">{token.symbol}</span>
+                          <div className="trending-token-name-wrapper">
+                            <span className="trending-token-name">{token.name}</span>
+                            <button
+                              className="trending-copy-address-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(token.address);
+                              }}
+                            >
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                              >
+                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="trending-time-created" style={{
+                            color: (Math.floor(Date.now() / 1000) - token.created) > 21600
+                              ? '#f77f7d'
+                              : 'rgb(67, 254, 154)'
+                          }}>
+                            {formatTimeAgo(token.created)}
+                          </span>
+                          <div className="token-socials-row">
+                            {token.twitterHandle && (
+                              <Tooltip content="Twitter">
+                                <TwitterHover url={token.twitterHandle}>
+                                  <a
+                                    className="explorer-avatar-btn"
+                                    href={token.twitterHandle}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <img
+                                      src={
+                                        token.twitterHandle.includes('/i/communities/')
+                                          ? communities
+                                          : token.twitterHandle.includes('/status/')
+                                            ? tweet
+                                            : avatar
+                                      }
+                                      alt={
+                                        token.twitterHandle.includes('/i/communities/')
+                                          ? 'Community'
+                                          : 'Twitter'
+                                      }
+                                      className={
+                                        token.twitterHandle.includes('/i/communities/')
+                                          ? 'community-icon'
+                                          : token.twitterHandle.includes('/status/')
+                                            ? 'tweet-icon'
+                                            : 'avatar-icon'
+                                      }
+                                    />
+                                  </a>
+                                </TwitterHover>
+                              </Tooltip>
+                            )}
+                            {token.telegram && (
+                              <Tooltip content="Telegram">
+                                <a
+                                  href={token.telegram}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="token-social-link"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <img src={telegram} alt="Telegram" />
+                                </a>
+                              </Tooltip>
+                            )}
+                            {token.discord && (
+                              <Tooltip content="Discord">
+                                <a
+                                  href={token.discord}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="token-social-link"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <img src={discord} alt="Discord" />
+                                </a>
+                              </Tooltip>
+                            )}
+                            {token.website && (
+                              <Tooltip content="Website">
+                                <a
+                                  className="explorer-website-btn"
+                                  href={token.website}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Tooltip content={token.website}>
+                                    <svg
+                                      width="16"
+                                      height="16"
+                                      viewBox="0 0 24 24"
+                                      fill="currentColor"
+                                    >
+                                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                                    </svg>
+                                  </Tooltip>
+                                </a>
+                              </Tooltip>
+                            )}
+                            <Tooltip content="Search CA on Twitter">
+                              <a
+                                className="explorer-telegram-btn"
+                                href={`https://twitter.com/search?q=${token.id}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Search size={14} />
+                              </a>
+                            </Tooltip>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="explorer-tokens-list"
-                      onMouseEnter={() => handleColumnHover(columnType)}
-                      onMouseLeave={handleColumnLeave}>
-                      {isLoading ? (
-                        Array.from({ length: 14 }).map((_, index) => (
-                          <div
-                            key={`skeleton-graduated-${index}`}
-                            className="explorer-token-row loading"
-                          >
-                            <div className="explorer-token-left">
-                              <div className="explorer-token-image-container">
-                                <div className="explorer-progress-spacer">
-                                  <div className="explorer-image-wrapper">
-                                    <img
-                                      className="explorer-token-image"
-                                      alt="loading"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                              <span className="explorer-contract-address">
-                                Loading...
-                              </span>
-                            </div>
-                            <div className="explorer-token-details">
-                              <div className="explorer-detail-section">
-                                <div className="explorer-top-row">
-                                  <div className="explorer-token-info">
-                                    <h3 className="explorer-token-symbol">
-                                      LOAD
-                                    </h3>
-                                    <p className="explorer-token-name">
-                                      Loading Token
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="explorer-second-row">
-                                  <div className="explorer-stat-item">
-                                    <span className="explorer-stat-value">
-                                      0
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="explorer-holdings-section" />
-                            </div>
-                            <div className="explorer-third-row">
-                              <div className="explorer-market-cap">
-                                <span className="mc-label"></span>
-                                <span className="mc-label"></span>
-                              </div>
-                              <div className="explorer-actions-section">
-                                <button className="explorer-quick-buy-btn">
-                                  Loading
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : displayTokens.graduated.length ? (
-                        displayTokens.graduated.map((t) => (
-                          <TokenRow
-                            key={t.id}
-                            token={t}
-                            quickbuyAmount={quickAmounts.graduated}
-                            quickbuyAmountSecond={quickAmountsSecond.new}
-                            onHideToken={hideToken}
-                            onBlacklistToken={handleBlacklistToken}
-                            isLoadingPrimary={loading.has(`${t.id}-primary`)}
-                            isLoadingSecondary={loading.has(
-                              `${t.id}-secondary`,
-                            )}
-                            hoveredToken={hoveredToken}
-                            hoveredImage={hoveredImage}
-                            onTokenHover={handleTokenHover}
-                            onTokenLeave={handleTokenLeave}
-                            onImageHover={handleImageHover}
-                            onImageLeave={handleImageLeave}
-                            onTokenClick={handleTokenClick}
-                            onQuickBuy={handleQuickBuy}
-                            onCopyToClipboard={copyToClipboard}
-                            displaySettings={displaySettings}
-                            isHidden={hidden.has(t.id)}
-                            isBlacklisted={(t as any).isBlacklisted || false}
-                            monUsdPrice={monUsdPrice}
-                            blacklistSettings={blacklistSettings}
-                            formatTimeAgo={formatTimeAgo}
-                          />
-                        ))
-                      ) : (
-                        <div className="no-tokens-message">
-                          <img src={empty} className="empty-icon" />
-                          No tokens match the current filters
-                        </div>
-                      )}
+                    <div className="trending-cell">
+                      <div className="trending-market-cap-text">
+                        {formatPrice(token.marketCap * monUsdPrice, displaySettings.noDecimals)}
+                        <span className={`trending-change ${token.change24h >= 0 ? 'positive' : 'negative'}`}>
+                          {token.change24h >= 0 ? '+' : ''}{token.change24h.toFixed(2)}%
+                        </span>
+                      </div>
                     </div>
-                  </>
-                )}
-              </div>
-            ))}
-        </div>
+
+                    <div className="trending-cell">
+                      {formatPrice((token.marketCap * monUsdPrice) * 0.8, displaySettings.noDecimals)}
+                    </div>
+
+                    <div className="trending-cell">
+                      {formatPrice(token.volume24h * monUsdPrice, displaySettings.noDecimals)}
+                    </div>
+
+                    <div className="trending-cell">
+                      <div className="trending-txns">
+                        <div className="trending-txns-numbers">
+                          {(() => {
+                            const totalTx = token.buyTransactions + token.sellTransactions;
+                            return totalTx > 0 ? (
+                              <>
+                                <span className="trending-buy-count" style={{ color: '#28ed8a' }}>
+                                  {token.buyTransactions}
+                                </span>
+                                <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>/</span>
+                                <span className="trending-sell-count" style={{ color: '#f77f7d' }}>
+                                  {token.sellTransactions}
+                                </span>
+                              </>
+                            ) : (
+                              <span style={{ color: 'rgba(255, 255, 255, 0.3)' }}>0</span>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="trending-cell token-info-cell">
+                      <div className="trending-token-stats">
+                        {displaySettings.visibleRows.holders && (
+                          <Tooltip content="Holders">
+                            <div className="trending-stat-badge">
+                              <svg className="trending-stat-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
+                              </svg>
+                              <span>{token.holders}</span>
+                            </div>
+                          </Tooltip>
+                        )}
+
+                        {displaySettings.visibleRows.devHolding && (
+                          <Tooltip content="Dev Holding">
+                            <div className="trending-stat-badge" style={{
+                              color: token.devHolding * 100 > 25 ? '#eb7070ff' : 'rgb(67, 254, 154)'
+                            }}>
+                              <svg className="trending-stat-icon" width="14" height="14" viewBox="0 0 30 30" fill="currentColor" style={{
+                                color: token.sniperHolding > 20 ? '#eb7070ff' : 'rgb(67, 254, 154)'
+                              }}>
+                                <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
+                              </svg>
+                              <span>{(token.devHolding * 100).toFixed(1)}%</span>
+                            </div>
+                          </Tooltip>
+                        )}
+
+                        {displaySettings.visibleRows.snipers && (
+                          <Tooltip content="Sniper Holding">
+                            <div className="trending-stat-badge" style={{
+                              color: token.sniperHolding > 20 ? '#eb7070ff' : 'rgb(67, 254, 154)'
+                            }}>
+                              <svg className="trending-stat-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{
+                                color: token.sniperHolding > 20 ? '#eb7070ff' : 'rgb(67, 254, 154)'
+                              }}>
+                                <path d="M 11.244141 2.0019531 L 11.244141 2.7519531 L 11.244141 3.1542969 C 6.9115518 3.5321749 3.524065 6.919829 3.1445312 11.251953 L 2.7421875 11.251953 L 1.9921875 11.251953 L 1.9921875 12.751953 L 2.7421875 12.751953 L 3.1445312 12.751953 C 3.5225907 17.085781 6.9110367 20.473593 11.244141 20.851562 L 11.244141 21.253906 L 11.244141 22.003906 L 12.744141 22.003906 L 12.744141 21.253906 L 12.744141 20.851562 C 17.076343 20.47195 20.463928 17.083895 20.841797 12.751953 L 21.244141 12.751953 L 21.994141 12.751953 L 21.994141 11.251953 L 21.244141 11.251953 L 20.841797 11.251953 C 20.462285 6.9209126 17.074458 3.5337191 12.744141 3.1542969 L 12.744141 2.7519531 L 12.744141 2.0019531 L 11.244141 2.0019531 z M 11.244141 4.6523438 L 11.244141 8.0742188 C 9.6430468 8.3817751 8.3759724 9.6507475 8.0683594 11.251953 L 4.6425781 11.251953 C 5.0091295 7.7343248 7.7260437 5.0173387 11.244141 4.6523438 z M 12.744141 4.6523438 C 16.25959 5.0189905 18.975147 7.7358303 19.341797 11.251953 L 15.917969 11.251953 C 15.610766 9.6510551 14.344012 8.3831177 12.744141 8.0742188 L 12.744141 4.6523438 z M 11.992188 9.4980469 C 13.371637 9.4980469 14.481489 10.6041 14.492188 11.982422 L 14.492188 12.021484 C 14.481501 13.40006 13.372858 14.503906 11.992188 14.503906 C 10.606048 14.503906 9.4921875 13.389599 9.4921875 12.001953 C 9.4921875 10.614029 10.60482 9.4980469 11.992188 9.4980469 z M 4.6425781 12.751953 L 8.0683594 12.751953 C 8.3760866 14.352973 9.6433875 15.620527 11.244141 15.927734 L 11.244141 19.353516 C 7.7258668 18.988181 5.0077831 16.270941 4.6425781 12.751953 z M 15.917969 12.751953 L 19.34375 12.751953 C 18.97855 16.26893 16.261295 18.986659 12.744141 19.353516 L 12.744141 15.927734 C 14.344596 15.619809 15.610176 14.35218 15.917969 12.751953 z" />
+                              </svg>
+                              <span>{token.sniperHolding.toFixed(1)}%</span>
+                            </div>
+                          </Tooltip>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="trending-cell action-cell">
+                      <button
+                        className={`trending-buy-btn`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleQuickBuy(token, quickAmounts.new, 'primary');
+                        }}
+                        disabled={loading.has(`${token.id}-primary`)}
+                      >
+                        {loading.has(`${token.id}-primary`) ? (
+                          <div className="quickbuy-loading-spinner" />
+                        ) : (
+                          <>
+                            <img src={lightning} alt="" className="trending-buy-icon" />
+                            <span>{quickAmounts.new}</span>
+                            <span className="mon-text">MON</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="no-tokens-message">
+                  <img src={empty} className="empty-icon" />
+                  No trending tokens found
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       <AlertsPopup
         isOpen={showAlertsPopup}
