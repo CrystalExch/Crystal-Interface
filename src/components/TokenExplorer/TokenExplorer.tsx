@@ -2684,14 +2684,10 @@ const TokenRow = React.memo<{
     setBondingPopupPosition({ top, left });
   }, []);
 
-  useEffect(() => {
-    if (hoveredImage === token.id) {
-      const calculateAndShow = () => {
-        updatePreviewPosition();
-        setTimeout(() => setShowPreview(true), 10);
-      };
-
-      calculateAndShow();
+useEffect(() => {
+  if (hoveredImage === token.id) {
+    updatePreviewPosition();
+    setShowPreview(true);
 
       const handleResize = () => updatePreviewPosition();
       window.addEventListener('scroll', updatePreviewPosition);
@@ -2824,6 +2820,8 @@ const TokenRow = React.memo<{
                 ? { position: 'relative' }
                 : imageStyle
             }
+              onMouseEnter={() => onImageHover(token.id)}
+  onMouseLeave={onImageLeave}
           >
             <div
               className={`explorer-progress-spacer ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
@@ -2859,8 +2857,6 @@ const TokenRow = React.memo<{
                 )}
                 <div
                   className={`explorer-image-overlay ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
-                  onMouseEnter={() => onImageHover(token.id)}
-                  onMouseLeave={onImageLeave}
                 >
                   <img className="camera-icon" src={camera} />
                 </div>
@@ -3700,11 +3696,13 @@ const TokenRow = React.memo<{
     prevProps.isBlacklisted !== nextProps.isBlacklisted
   ) return false;
 
-  const wasHovered = prevProps.hoveredToken === prevProps.token.id ||
-    prevProps.hoveredImage === prevProps.token.id;
-  const isHovered = nextProps.hoveredToken === nextProps.token.id ||
-    nextProps.hoveredImage === nextProps.token.id;
-  if (wasHovered !== isHovered) return false;
+const wasTokenHovered = prevProps.hoveredToken === prevProps.token.id;
+  const isTokenHovered = nextProps.hoveredToken === nextProps.token.id;
+  if (wasTokenHovered !== isTokenHovered) return false;
+
+  const wasImageHovered = prevProps.hoveredImage === prevProps.token.id;
+  const isImageHovered = nextProps.hoveredImage === nextProps.token.id;
+  if (wasImageHovered !== isImageHovered) return false;
 
   if (
     prevProps.quickbuyAmount !== nextProps.quickbuyAmount ||

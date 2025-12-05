@@ -390,6 +390,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
     }
     return new Set();
   });
+
+  
   const trenchesDropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const crystal = '/CrystalLogo.png';
@@ -762,18 +764,136 @@ const Portfolio: React.FC<PortfolioProps> = ({
     setWalletToDelete(address);
     setShowDeleteConfirmation(true);
   };
-  const [internalIsSpectating, setInternalIsSpectating] = useState(false);
-  const [internalSpectatedAddress, setInternalSpectatedAddress] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [showDistributionModal, setShowDistributionModal] = useState(false);
-  const [privateKeyRevealed, setPrivateKeyRevealed] = useState(false);
-
-  const isSpectating = propIsSpectating !== undefined ? propIsSpectating : internalIsSpectating;
-  const spectatedAddress = propSpectatedAddress !== undefined ? propSpectatedAddress : internalSpectatedAddress;
-
+  const [privateKeyRevealed, setPrivateKeyRevealed] = useState(false)
   const getActiveAddress = () => {
     return isSpectating ? spectatedAddress : address;
   };
+
+
+
+const [spectatorPositions, setSpectatorPositions] = useState<Position[]>([]);
+  const [isSpectatorLoading, setIsSpectatorLoading] = useState(false);
+  const [spectatorTotalValue, setSpectatorTotalValue] = useState<number>(0);
+  const [internalIsSpectating, setInternalIsSpectating] = useState(false);
+  const [internalSpectatedAddress, setInternalSpectatedAddress] = useState('');
+  
+  const isSpectating = propIsSpectating !== undefined ? propIsSpectating : internalIsSpectating;
+  const spectatedAddress = propSpectatedAddress !== undefined ? propSpectatedAddress : internalSpectatedAddress;
+
+  useEffect(() => {
+    if (!isSpectating || !spectatedAddress) {
+      setSpectatorPositions([]);
+      setSpectatorTotalValue(0);
+      return;
+    }
+
+    let cancelled = false;
+    setIsSpectatorLoading(true);
+
+    const fetchData = async () => {
+      try {
+        const response = await fetch(
+          `https://api.crystal.exchange/user/${spectatedAddress}`,
+          {
+            method: 'GET',
+            headers: { 'content-type': 'application/json' },
+          }
+        );
+
+        if (!response.ok) throw new Error('Failed to fetch trader positions');
+
+        const payload = await response.json();
+        const rows: any[] = payload.positions ?? [];
+
+        if (cancelled) return;
+
+        const parsedPositions = rows.map((p) => {
+          const boughtTokens = Number(p.token_bought ?? 0) / 1e18;
+          const soldTokens = Number(p.token_sold ?? 0) / 1e18;
+          const spentNative = Number(p.native_spent ?? 0) / 1e18;
+          const receivedNative = Number(p.native_received ?? 0) / 1e18;
+          const balance = Number(p.balance_token ?? 0) / 1e18;
+          const balanceNative = Number(p.balance_native ?? 0) / 1e18;
+
+          const lastPrice = balance > 0 ? balanceNative / balance : 0;
+          const realized = receivedNative - spentNative;
+          const unrealized = balance * lastPrice;
+          const pnlNative = realized + unrealized;
+          const remainingPct = boughtTokens > 0 ? (balance / boughtTokens) * 100 : 100;
+
+          return {
+            tokenId: p.token,
+            symbol: p.symbol,
+            name: p.name,
+            metadataCID: p.metadata_cid,
+            imageUrl: p.metadata_cid || '',
+            boughtTokens,
+            soldTokens,
+            spentNative,
+            receivedNative,
+            remainingTokens: balance,
+            lastPrice,
+            remainingPct,
+            pnlNative,
+            source: 'nad.fun' 
+          };
+        });
+
+        const sorted = parsedPositions.sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0));
+        setSpectatorPositions(sorted);
+
+        try {
+            const { getBalance } = await import('@wagmi/core');
+            const { config } = await import('../../wagmi');
+
+            const balance = await getBalance(config, {
+              address: spectatedAddress as `0x${string}`,
+            });
+    
+            const monAmount = Number(balance.value) / 1e18;
+            
+            const positionsValue = sorted.reduce((sum, p) => {
+              return sum + (p.remainingTokens * (p.lastPrice || 0));
+            }, 0);
+    
+            const totalMonValue = monAmount + positionsValue;
+            const totalValueUsd = totalMonValue * monUsdPrice;
+    
+            setSpectatorTotalValue(totalValueUsd);
+
+        } catch (err) {
+            console.warn("Failed to fetch wagmi balance for spectator", err);
+             const positionsValue = sorted.reduce((sum, p) => {
+              return sum + (p.remainingTokens * (p.lastPrice || 0));
+            }, 0);
+            setSpectatorTotalValue(positionsValue * monUsdPrice);
+        }
+
+      } catch (error) {
+        console.error('Failed to fetch spectator data:', error);
+      } finally {
+        if (!cancelled) setIsSpectatorLoading(false);
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSpectating, spectatedAddress, monUsdPrice]);
+
+
+
+
+
+
+
+
+
+
 
   const getMainWalletBalance = () => {
     const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
@@ -2258,7 +2378,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
     );
   };
 
-  const handleConfirmSpectating = () => {
+const handleConfirmSpectating = () => {
     if (searchInput.trim() && isValidAddress(searchInput.trim())) {
       if (onStartSpectating) {
         onStartSpectating(searchInput.trim());
@@ -2270,10 +2390,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
       if (onSpectatingChange) {
         onSpectatingChange(true, searchInput.trim());
       }
-
       refetch(searchInput.trim());
     } else {
-      alert('Please enter a valid wallet address');
     }
   };
 
@@ -2370,7 +2488,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
     setTotalVolume(parseFloat(volume.toFixed(2)));
   }, [tradehistory, days]);
 
-  const activePositions = trenchesPositions || positions || [];
+const activePositions = isSpectating 
+    ? spectatorPositions 
+    : (trenchesPositions || positions || []);
 
   const totalUnrealizedPnl = activePositions.reduce((sum, p) => {
     return sum + (p.pnlNative || 0)
@@ -3457,12 +3577,20 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   <div className="trenches-balance-item">
                     <div className="trenches-balance-label">Total Value</div>
                     <div className={`trenches-balance-value ${isBlurred ? 'blurred' : ''}`}>
-                      <span className="wallet-dropdown-value">
-                        ${formatNumberWithCommas(
-                          subWallets.reduce((total, wallet) =>
-                            total + (getWalletBalance(wallet.address) * monUsdPrice),
-                            0
-                          ) + getWalletBalance(scaAddress) * monUsdPrice, 2)}
+                    <span className="wallet-dropdown-value">
+                        {isSpectating ? (
+                            isSpectatorLoading ? (
+                                <div className="port-loading" style={{ width: 100, height: 20 }} />
+                            ) : (
+                                `$${formatNumberWithCommas(spectatorTotalValue, 2)}`
+                            )
+                        ) : (
+                            `$${formatNumberWithCommas(
+                            subWallets.reduce((total, wallet) =>
+                                total + (getWalletBalance(wallet.address) * monUsdPrice),
+                                0
+                            ) + getWalletBalance(scaAddress) * monUsdPrice, 2)}`
+                        )}
                       </span>
                     </div>
                   </div>
@@ -4516,7 +4644,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
               <Search size={16} className="search-icon" />
               <input
                 type="text"
-                placeholder="Search vaults..."
+                placeholder="View read-only address"
                 className="portfolio-wallet-search-input"
                 value={searchInput}
                 onChange={handleSearchInputChange}

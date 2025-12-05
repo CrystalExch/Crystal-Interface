@@ -963,7 +963,10 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                               </div>
                               <span
                                 className="portfolio-meme-wallet-address portfolio-meme-clickable-token"
-                                onClick={() => navigate(`/meme/${p.tokenId}`)}
+                                onClick={() => {
+                                  navigate(`/meme/${p.tokenId}`);
+                                  onClose();
+                                }}
                               >
                                 <span className="meme-token-symbol-portfolio">
                                   {tokenShort}
