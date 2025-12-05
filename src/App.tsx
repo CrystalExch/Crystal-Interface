@@ -987,8 +987,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     marketSearchTerm: ''
   });
 
-  const createSubWallet = async (setMain: boolean = false) => {
+  const createSubWallet = async (setMain: boolean = false, isEnable: boolean = false) => {
     try {
+      if (isEnable) {
+        setOneCTSigner(subWallets[0].privateKey);
+        const signerKey = `crystal_active_wallet_private_key_${scaAddress?.toLowerCase() || 'default'}`;
+        localStorage.setItem(signerKey, subWallets[0].privateKey);
+        refetch();
+        return;
+      }
       if (subWallets.length > 9) return;
       let tempsig
 
@@ -6880,11 +6887,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // positions aggregated across all wallets
   useEffect(() => {
-    const allAddresses = [...new Set(
-      [scaAddress, ...subWallets.map(w => w.address)]
-        .filter(Boolean)
-        .map(a => a.toLowerCase())
-    )];
+    const allAddresses = validOneCT ? [...new Set(subWallets.map(w => w.address).filter(Boolean).map(a => a.toLowerCase()))] : [scaAddress];
 
     if (allAddresses.length === 0) return;
 
@@ -7010,7 +7013,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return () => {
       cancelled = true;
     };
-  }, [address, subWallets, token.id]);
+  }, [scaAddress, subWallets, token.id]);
 
   useEffect(() => {
     if (!trackedWalletTrades || trackedWalletTrades.length === 0 || trackedWallets.length === 0) {
@@ -28652,6 +28655,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 trenchesPositions={trenchesPositions}
                 trenchesLoading={trenchesLoading}
                 refreshTrenchesData={() => fetchTrenchesPositions(trenchesSelectedWallets)}
+                setOneCTSigner={setOneCTSigner}
+                activeWalletPrivateKey={oneCTSigner}
               />
             } />
           <Route path="/trackers"
@@ -28938,6 +28943,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         setpopup={setpopup}
         createSubWallet={createSubWallet}
         activeWalletPrivateKey={oneCTSigner}
+        setOneCTDepositAddress={setOneCTDepositAddress}
       />
     </div>
   );

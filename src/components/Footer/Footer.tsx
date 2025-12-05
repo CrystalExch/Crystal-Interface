@@ -45,8 +45,8 @@ interface FooterProps {
   onToggleWalletTrackerWidget?: any;
   setpopup: (value: number) => void;
   createSubWallet: any;
-  activeWalletPrivateKey?: string;
-
+  activeWalletPrivateKey: string;
+  setOneCTDepositAddress: any;
 }
 
 const Tooltip: React.FC<{
@@ -220,6 +220,7 @@ const Footer: React.FC<FooterProps> = ({
   setpopup,
   createSubWallet,
   activeWalletPrivateKey,
+  setOneCTDepositAddress
 }) => {
   const isWalletActive = (privateKey: string) => {
     return activeWalletPrivateKey === privateKey;
@@ -396,17 +397,15 @@ const Footer: React.FC<FooterProps> = ({
     const savedName = localStorage.getItem(`wallet_name_${address}`);
     return savedName || `Wallet ${index + 1}`;
   };
+
   const totalSelectedBalance = useMemo(() => {
-    if (subWallets.length === 0) {
-      return 0;
-    }
-    if (selectedWallets.size === 0) {
+    if (selectedWallets.size == 0 || !activeWalletPrivateKey) {
       return (Number(walletTokenBalances?.[userAddr]?.[settings.chainConfig[activechain]?.eth] ?? 0) / 10 ** Number(18))
     }
     return Array.from(selectedWallets).reduce((total, w) => {
       return total + getWalletBalance(w);
     }, 0);
-  }, [selectedWallets, getWalletBalance, subWallets.length]);
+  }, [selectedWallets, getWalletBalance]);
 
   return (
     <footer className="footer">
@@ -450,7 +449,7 @@ const Footer: React.FC<FooterProps> = ({
                     }}
                     alt="Wallet"
                   />
-                  {selectedWallets.size == 0 ?
+                  {selectedWallets.size == 0 || !activeWalletPrivateKey ?
                     <Tooltip content="Primary Wallet">
                       {(
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d8dcff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle' }}>
@@ -526,32 +525,34 @@ const Footer: React.FC<FooterProps> = ({
               </button>
 
               <div className={`footer-wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
-                <div className="footer-wallet-dropdown-header">
-                  <div className="footer-wallet-dropdown-actions">
-                    <button
-                      className="wallet-action-btn"
-                      onClick={
-                        selectedWallets.size === subWallets.length
-                          ? unselectAllWallets
-                          : selectAllWallets
-                      }
-                    >
-                      {selectedWallets.size === subWallets.length
-                        ? 'Unselect All'
-                        : 'Select All'}
-                    </button>
-                    <button
-                      className="wallet-action-btn"
-                      onClick={selectAllWithBalance}
-                    >
-                      Select All with Balance
-                    </button>
+                {subWallets.length > 0 && activeWalletPrivateKey && (
+                  <div className="footer-wallet-dropdown-header">
+                    <div className="footer-wallet-dropdown-actions">
+                      <button
+                        className="wallet-action-btn"
+                        onClick={
+                          selectedWallets.size === subWallets.length
+                            ? unselectAllWallets
+                            : selectAllWallets
+                        }
+                      >
+                        {selectedWallets.size === subWallets.length
+                          ? 'Unselect All'
+                          : 'Select All'}
+                      </button>
+                      <button
+                        className="wallet-action-btn"
+                        onClick={selectAllWithBalance}
+                      >
+                        Select All with Balance
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="wallet-dropdown-list" >
                   <div>
-                    {subWallets.map((wallet, index) => {
+                    {(!activeWalletPrivateKey ? [] : subWallets).map((wallet, index) => {
                       const balance = getWalletBalance(wallet.address);
                       const isSelected = selectedWallets.has(wallet.address);
                       const isActive = isWalletActive(wallet.privateKey);
@@ -650,11 +651,15 @@ const Footer: React.FC<FooterProps> = ({
                         </React.Fragment>
                       );
                     })}
-                    {subWallets.length < 10 && (
+                    {(subWallets.length < 10 || !activeWalletPrivateKey) && (
                       <div
                         className="quickbuy-add-wallet-button"
-                        onClick={() => {
-                          createSubWallet()
+                        onClick={async () => {
+                          let isSuccess = await createSubWallet(true, !activeWalletPrivateKey);
+                          if (isSuccess) {
+                            setOneCTDepositAddress(isSuccess);
+                            setpopup(25);
+                          }
                         }}
                       >
                         <svg
@@ -670,7 +675,7 @@ const Footer: React.FC<FooterProps> = ({
                           <line x1="12" y1="5" x2="12" y2="19"></line>
                           <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                        <span>Add Wallet</span>
+                        <span>{!activeWalletPrivateKey ? 'Enable 1CT' : 'Add Wallet'}</span>
                       </div>
                     )}
                   </div>
@@ -769,192 +774,6 @@ const Footer: React.FC<FooterProps> = ({
           </Tooltip>
         </div>
       </div>
-
-      {isDiscoverPopupOpen && createPortal(
-        <>
-          <div className="discover-popup-overlay" onClick={() => setIsDiscoverPopupOpen(false)} />
-          <div className="discover-popup">
-            {/* Header with tabs */}
-            <div className="discover-popup-header">
-              <div className="discover-tabs">
-                <button
-                  className={`discover-tab ${discoverActiveTab === 'trending' ? 'active' : ''}`}
-                  onClick={() => setDiscoverActiveTab('trending')}
-                >
-                  Trending
-                </button>
-                <button
-                  className={`discover-tab ${discoverActiveTab === 'dex' ? 'active' : ''}`}
-                  onClick={() => setDiscoverActiveTab('dex')}
-                >
-                  Dex
-                </button>
-                <button
-                  className={`discover-tab ${discoverActiveTab === 'surge' ? 'active' : ''}`}
-                  onClick={() => setDiscoverActiveTab('surge')}
-                >
-                  Surge
-                </button>
-                <button
-                  className={`discover-tab ${discoverActiveTab === 'live' ? 'active' : ''}`}
-                  onClick={() => setDiscoverActiveTab('live')}
-                >
-                  Live
-                </button>
-                <button
-                  className={`discover-tab ${discoverActiveTab === 'p1' ? 'active' : ''}`}
-                  onClick={() => setDiscoverActiveTab('p1')}
-                >
-                  P1
-                </button>
-              </div>
-              <div className="discover-header-right">
-                <div className="discover-balance-display">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                  </svg>
-                  0.0
-                </div>
-                <div className="discover-menu-button">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="3" y1="12" x2="21" y2="12" />
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <line x1="3" y1="18" x2="21" y2="18" />
-                  </svg>
-                </div>
-                <button className="discover-close-button" onClick={() => setIsDiscoverPopupOpen(false)}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Filters */}
-            <div className="discover-filters">
-              <button
-                className={`discover-filter-pill ${discoverActiveFilter === 'early' ? 'active' : ''}`}
-                onClick={() => setDiscoverActiveFilter('early')}
-              >
-                Early
-              </button>
-              <button
-                className={`discover-filter-pill ${discoverActiveFilter === 'surging' ? 'active' : ''}`}
-                onClick={() => setDiscoverActiveFilter('surging')}
-              >
-                Surging
-              </button>
-              <button className="discover-filter-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                </svg>
-              </button>
-              <button className="discover-filter-minus">−</button>
-              <div className="discover-mc-display">50K</div>
-              <button className="discover-filter-plus">+</button>
-            </div>
-
-            {/* Token List */}
-            <div className="discover-token-list">
-              {/* Sample token card matching the image */}
-              <div className="discover-token-card">
-                <div className="discover-token-header">
-                  <div className="discover-token-image-container">
-                    <div className="discover-token-image">K</div>
-                    <div className="discover-launchpad-badge">
-                      <img src={crystallogo} style={{ width: '10px', height: '10px' }} />
-                    </div>
-                  </div>
-                  <div className="discover-token-info">
-                    <div className="discover-token-name-row">
-                      <span className="discover-token-ticker">KIMIK2</span>
-                      <span className="discover-token-name">Kimi K2 Thinking</span>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="discover-copy-icon">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" strokeWidth="2" />
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" strokeWidth="2" />
-                      </svg>
-                    </div>
-                    <div className="discover-token-stats-row">
-                      <span className="discover-stat-label">MC</span>
-                      <span className="discover-stat-value blue">$12.5K</span>
-                      <div className="discover-progress-bar">
-                        <div className="discover-progress-fill" style={{ width: '60%' }} />
-                      </div>
-                      <div className="discover-token-price">
-                        <span className="discover-price-circle" />
-                        <span className="discover-price-value">$15.4K</span>
-                        <span className="discover-price-change positive">+22.88%</span>
-                      </div>
-                    </div>
-                    <div className="discover-token-wallet-info">
-                      <span className="discover-wallet-address">9w4Z...pump</span>
-                      <span className="discover-time-badge">35m</span>
-                      <div className="discover-icon-row">
-                        <svg width="14" height="14" className="discover-metric-icon"><use href="#icon-users" /></svg>
-                        <span>88</span>
-                        <svg width="14" height="14" className="discover-metric-icon"><use href="#icon-globe" /></svg>
-                        <span>62</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="discover-token-metrics">
-                    <div className="discover-ath-badge">
-                      <span className="discover-ath-label">ATH</span>
-                      <span className="discover-ath-value">$15.4K 1.23x</span>
-                    </div>
-                    <div className="discover-volume-row">
-                      <span className="discover-volume-label">V</span>
-                      <span className="discover-volume-value">$691.7</span>
-                      <span className="discover-liquidity-label">L</span>
-                      <span className="discover-liquidity-value">$5.92K</span>
-                      <svg width="14" height="14" className="discover-metric-icon"><use href="#icon-users" /></svg>
-                      <span>188</span>
-                      <svg width="14" height="14" className="discover-metric-icon"><use href="#icon-chart" /></svg>
-                      <span>62</span>
-                    </div>
-                  </div>
-                  <div className="discover-time-badge-top">2m</div>
-                </div>
-                <div className="discover-token-footer">
-                  <div className="discover-holder-stats">
-                    <div className="discover-stat-badge">
-                      <svg width="14" height="14" className="discover-icon-red"><use href="#icon-user" /></svg>
-                      <span>23%</span>
-                    </div>
-                    <div className="discover-stat-badge">
-                      <svg width="14" height="14" className="discover-icon-green"><use href="#icon-up" /></svg>
-                      <span>0%</span>
-                    </div>
-                    <div className="discover-stat-badge">
-                      <svg width="14" height="14" className="discover-icon-orange"><use href="#icon-diamond" /></svg>
-                      <span>0%</span>
-                    </div>
-                    <div className="discover-stat-badge">
-                      <svg width="14" height="14" className="discover-icon-teal"><use href="#icon-lock" /></svg>
-                      <span>0%</span>
-                    </div>
-                    <div className="discover-stat-badge">
-                      <svg width="14" height="14" className="discover-icon-pink"><use href="#icon-sniper" /></svg>
-                      <span>6%</span>
-                    </div>
-                    <div className="discover-paid-badge">
-                      <svg width="14" height="14"><use href="#icon-badge" /></svg>
-                      <span>Paid</span>
-                    </div>
-                  </div>
-                  <button className="discover-quick-buy-button">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>,
-        document.body
-      )}
     </footer>
   );
 };

@@ -5197,7 +5197,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}
               >
                 {subWallets.length > 0 && activeWalletPrivateKey &&
-                  (<>
+                  (
                     <div className="footer-wallet-dropdown-header">
                       <div className="footer-wallet-dropdown-actions">
                         <button
@@ -5231,7 +5231,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                         />
                       </button>
                     </div>
-                  </>)
+                  )
                 }
                 <div className="wallet-dropdown-list" style={{ position: 'relative' }}>
                   <div>
@@ -5338,7 +5338,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                       <div
                         className="quickbuy-add-wallet-button"
                         onClick={async () => {
-                          let isSuccess = await createSubWallet(true);
+                          let isSuccess = await createSubWallet(true, !activeWalletPrivateKey);
                           if (isSuccess) {
                             setOneCTDepositAddress(isSuccess);
                             setpopup(25);

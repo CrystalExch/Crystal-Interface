@@ -3868,98 +3868,100 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
               return (
                 <>
-                  <div className="meme-wallet-dropdown-header">
-                    <div className="meme-wallet-dropdown-actions">
-                      {hasTokenHolders ? (
-                        <>
-                          <Tooltip
-                            content={
-                              allSelected
-                                ? 'Unselect all wallets'
-                                : 'Select all wallets'
-                            }
-                          >
-                            <button
-                              className="meme-wallet-action-btn select-all"
-                              onClick={
+                  {subWallets.length > 0 && activeWalletPrivateKey && (
+                    <div className="meme-wallet-dropdown-header">
+                      <div className="meme-wallet-dropdown-actions">
+                        {hasTokenHolders ? (
+                          <>
+                            <Tooltip
+                              content={
                                 allSelected
-                                  ? unselectAllWallets
-                                  : selectAllWallets
+                                  ? 'Unselect all wallets'
+                                  : 'Select all wallets'
                               }
                             >
-                              {allSelected ? 'Unselect All' : 'Select All'}
-                            </button>
-                          </Tooltip>
-                          <div className="cs-container">
-                            <Tooltip content="Consolidate all tokens to the selected wallet">
                               <button
-                                className="meme-wallet-merge-btn consolidate"
-                                onClick={handleConsolidateTokens}
-                                disabled={
-                                  !hasExactlyOneSelected ||
-                                  !hasSourceWallets ||
-                                  isConsolidating
+                                className="meme-wallet-action-btn select-all"
+                                onClick={
+                                  allSelected
+                                    ? unselectAllWallets
+                                    : selectAllWallets
                                 }
                               >
-                                <img src={merge} className="merge-icon" alt="Consolidate" />
-                                Consolidate
+                                {allSelected ? 'Unselect All' : 'Select All'}
                               </button>
                             </Tooltip>
-                            <Tooltip content="Split tokens across selected wallets with 20% variance">
-                              <button
-                                className="meme-wallet-merge-btn split"
-                                onClick={handleSplitTokens}
-                                disabled={selectedWallets.size < 2 || isSplitting}
-                              >
-                                <img src={merge} className="merge-icon" alt="Split" />
-                                Split Tokens
-                              </button>
-                            </Tooltip>
-                          </div>
-                        </>
-                      ) : !activeWalletPrivateKey ? <></> : (
-                        <>
-                          <Tooltip
-                            content={
-                              allSelected
-                                ? 'Unselect all wallets'
-                                : 'Select all wallets'
-                            }
-                          >
-                            <button
-                              className="meme-wallet-action-btn select-all"
-                              onClick={
+                            <div className="cs-container">
+                              <Tooltip content="Consolidate all tokens to the selected wallet">
+                                <button
+                                  className="meme-wallet-merge-btn consolidate"
+                                  onClick={handleConsolidateTokens}
+                                  disabled={
+                                    !hasExactlyOneSelected ||
+                                    !hasSourceWallets ||
+                                    isConsolidating
+                                  }
+                                >
+                                  <img src={merge} className="merge-icon" alt="Consolidate" />
+                                  Consolidate
+                                </button>
+                              </Tooltip>
+                              <Tooltip content="Split tokens across selected wallets with 20% variance">
+                                <button
+                                  className="meme-wallet-merge-btn split"
+                                  onClick={handleSplitTokens}
+                                  disabled={selectedWallets.size < 2 || isSplitting}
+                                >
+                                  <img src={merge} className="merge-icon" alt="Split" />
+                                  Split Tokens
+                                </button>
+                              </Tooltip>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Tooltip
+                              content={
                                 allSelected
-                                  ? unselectAllWallets
-                                  : selectAllWallets
+                                  ? 'Unselect all wallets'
+                                  : 'Select all wallets'
                               }
                             >
-                              {allSelected ? 'Unselect All' : 'Select All'}
-                            </button>
-                          </Tooltip>
+                              <button
+                                className="meme-wallet-action-btn select-all"
+                                onClick={
+                                  allSelected
+                                    ? unselectAllWallets
+                                    : selectAllWallets
+                                }
+                              >
+                                {allSelected ? 'Unselect All' : 'Select All'}
+                              </button>
+                            </Tooltip>
 
-                          <Tooltip content="Select wallets with MON balance">
-                            <button
-                              className="meme-wallet-action-btn select-all"
-                              onClick={selectAllWithBalance}
-                            >
-                              Select All With Balance
-                            </button>
-                          </Tooltip>
-                        </>
-                      )}
+                            <Tooltip content="Select wallets with MON balance">
+                              <button
+                                className="meme-wallet-action-btn select-all"
+                                onClick={selectAllWithBalance}
+                              >
+                                Select All With Balance
+                              </button>
+                            </Tooltip>
+                          </>
+                        )}
+                      </div>
+                      <button
+                        className="meme-wallet-dropdown-close"
+                        onClick={() => setIsWalletDropdownOpen(false)}
+                      >
+                        <img
+                          src={closebutton}
+                          className="meme-wallet-dropdown-close-icon"
+                          alt="Close"
+                        />
+                      </button>
                     </div>
-                    <button
-                      className="meme-wallet-dropdown-close"
-                      onClick={() => setIsWalletDropdownOpen(false)}
-                    >
-                      <img
-                        src={closebutton}
-                        className="meme-wallet-dropdown-close-icon"
-                        alt="Close"
-                      />
-                    </button>
-                  </div>
+                  )}
 
                   <div className="meme-wallet-dropdown-list">
                     <>
@@ -4218,7 +4220,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         <div
                           className="quickbuy-add-wallet-button"
                           onClick={async () => {
-                            let isSuccess = await createSubWallet(true);
+                            let isSuccess = await createSubWallet(true, !activeWalletPrivateKey);
                             if (isSuccess) {
                               setOneCTDepositAddress(isSuccess);
                               setpopup(25);
@@ -6180,7 +6182,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         <div
                           className="quickbuy-add-wallet-button"
                           onClick={async () => {
-                            let isSuccess = await createSubWallet(true);
+                            let isSuccess = await createSubWallet(true, !activeWalletPrivateKey);
                             if (isSuccess) {
                               setOneCTDepositAddress(isSuccess);
                               setpopup(25);

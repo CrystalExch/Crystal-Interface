@@ -291,6 +291,8 @@ interface PortfolioProps {
   trenchesPositions?: Position[];
   trenchesLoading?: boolean;
   refreshTrenchesData?: () => void;
+  setOneCTSigner: any;
+  activeWalletPrivateKey: any;
 }
 
 type PortfolioTab = 'spot' | 'Perpetuals' | 'wallets' | 'trenches';
@@ -366,6 +368,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
   trenchesPositions,
   trenchesLoading,
   refreshTrenchesData,
+  setOneCTSigner,
+  activeWalletPrivateKey,
 }) => {
   const formatBalanceCompact = (value: number): string => {
     if (value >= 1_000_000_000) {
@@ -390,11 +394,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
     }
     return new Set();
   });
-
-  
   const trenchesDropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const crystal = '/CrystalLogo.png';
   const [trenchesSearchQuery, setTrenchesSearchQuery] = useState<string>('');
   const fmt = (v: number, d = 2): string => {
     if (!Number.isFinite(v)) return String(v);
@@ -516,20 +517,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     column: 'balance',
     direction: 'desc',
   });
-
-  const [enabledWallets, setEnabledWallets] = useState<Set<string>>(() => {
-    const storedEnabledWallets = localStorage.getItem('crystal_enabled_wallets');
-    if (storedEnabledWallets) {
-      try {
-        return (new Set(JSON.parse(storedEnabledWallets)));
-      } catch (error) {
-        return (new Set());
-      }
-    }
-    else {
-      return (new Set());
-    }
-  });
   const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(() => {
     const stored = localStorage.getItem('crystal_wallet_names');
     if (stored) {
@@ -554,9 +541,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const [isSliderDragging, setIsSliderDragging] = useState(false);
   const sliderRef = useRef<HTMLInputElement>(null);
   const sliderPopupRef = useRef<HTMLDivElement>(null);
-  const [depositTargetWallet, setDepositTargetWallet] = useState<string>('');
-  const [depositAmount, setDepositAmount] = useState<string>('');
-
   const [showImportModal, setShowImportModal] = useState(false);
   const [importPrivateKey, setImportPrivateKey] = useState<string>('');
   const [importError, setImportError] = useState<string>('');
@@ -592,26 +576,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
       });
     }
   }, []);
-  const showDepositSuccess = useCallback((amount: string, targetWallet: string) => {
-    const txId = `deposit-${Date.now()}`;
-    if (showLoadingPopup) {
-      showLoadingPopup(txId, {
-        title: 'Deposit Complete',
-        subtitle: `Deposited ${amount} MON to ${targetWallet.slice(0, 6)}...${targetWallet.slice(-4)}`,
-        amount: amount,
-        amountUnit: 'MON'
-      });
-    }
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: 'Deposit Complete',
-        subtitle: `Deposited ${amount} MON to ${targetWallet.slice(0, 6)}...${targetWallet.slice(-4)}`,
-        variant: 'success',
-        confirmed: true,
-        isLoading: false
-      });
-    }
-  }, []);
   const showWalletImported = useCallback((walletAddress: string) => {
     const txId = `wallet-imported-${Date.now()}`;
     if (showLoadingPopup) {
@@ -630,8 +594,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
       });
     }
   }, []);
-
-
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 1020);
     if (window.innerHeight > 1080) {
@@ -646,19 +608,12 @@ const Portfolio: React.FC<PortfolioProps> = ({
       setOrderCenterHeight(198.78);
     }
   };
-
   useEffect(() => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   useEffect(() => {
     localStorage.setItem('crystal_trenches_selected_wallets', JSON.stringify(Array.from(trenchesSelectedWallets)));
-  }, [trenchesSelectedWallets]);
-  useEffect(() => {
-    localStorage.setItem('crystal_trenches_selected_wallets', JSON.stringify(Array.from(trenchesSelectedWallets)));
-  }, [trenchesSelectedWallets]);
-
-  useEffect(() => {
     if (onTrenchesWalletsChange) {
       onTrenchesWalletsChange(Array.from(trenchesSelectedWallets));
     }
@@ -740,14 +695,14 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
   const deleteWallet = (address: string) => {
     const walletToDelete = subWallets.find(w => w.address === address);
-
+    if (walletToDelete.privateKey == activeWalletPrivateKey) {
+      setOneCTSigner(subWallets[0].privateKey)
+    }
+    if (selectedWallets.has(address)) {
+      setSelectedWallets(new Set([...selectedWallets].filter(w => w !== address)));
+    }
     const updatedWallets = subWallets.filter(w => w.address !== address);
     setSubWallets(updatedWallets);
-
-    const newEnabledWallets = new Set(enabledWallets);
-    newEnabledWallets.delete(address);
-    setEnabledWallets(newEnabledWallets);
-    localStorage.setItem('crystal_enabled_wallets', JSON.stringify(Array.from(newEnabledWallets)));
     const newWalletNames = { ...walletNames };
     delete newWalletNames[address];
     setWalletNames(newWalletNames);
@@ -770,10 +725,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const getActiveAddress = () => {
     return isSpectating ? spectatedAddress : address;
   };
-
-
-
-const [spectatorPositions, setSpectatorPositions] = useState<Position[]>([]);
+  const [spectatorPositions, setSpectatorPositions] = useState<Position[]>([]);
   const [isSpectatorLoading, setIsSpectatorLoading] = useState(false);
   const [spectatorTotalValue, setSpectatorTotalValue] = useState<number>(0);
   const [internalIsSpectating, setInternalIsSpectating] = useState(false);
@@ -884,25 +836,6 @@ const [spectatorPositions, setSpectatorPositions] = useState<Position[]>([]);
       cancelled = true;
     };
   }, [isSpectating, spectatedAddress, monUsdPrice]);
-
-
-
-
-
-
-
-
-
-
-
-  const getMainWalletBalance = () => {
-    const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
-
-    if (ethToken && tokenBalances[ethToken.address]) {
-      return Number(tokenBalances[ethToken.address]) / 10 ** Number(ethToken.decimals);
-    }
-    return 0;
-  };
 
   const isValidAddress = (addr: string) => {
     return /^0x[a-fA-F0-9]{40}$/.test(addr);
@@ -2129,7 +2062,7 @@ const [spectatorPositions, setSpectatorPositions] = useState<Position[]>([]);
         )}
 
         <div className="wallet-active-checkbox-container">
-          <Tooltip content={selectedWallets.has(wallet.address) ? "Active Wallet" : "Set as Active Wallet"}>
+          <Tooltip content={selectedWallets.has(wallet.address) ? "Active Wallet" : "Select as Active Wallet"}>
             <input
               type="checkbox"
               className="wallet-active-checkbox"
