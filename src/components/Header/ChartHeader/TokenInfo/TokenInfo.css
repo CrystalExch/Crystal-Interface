@@ -1438,24 +1438,6 @@
 }
 
 
-@media (max-width: 768px) {
-  .perps-interface-token-header-info {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-    height: auto;
-    padding: 8px 5px;
-  }
-  
-  .perps-interface-token-metrics {
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  
-  .perps-interface-token-metric {
-    min-width: calc(50% - 5px);
-  }
-}
 .perps-interface-token-icon-container {
   position: relative;
   flex-shrink: 0;

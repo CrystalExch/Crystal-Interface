@@ -15,6 +15,11 @@
 }
 
 
+@media (max-width:1020px) {
+    .perps-trade-modal {
+        display: none;
+    }
+}
 @media (width>=1320px) {
     .perps-trade-modal {
         min-width: 300px;
@@ -1557,4 +1562,134 @@ display: flex;
 .perps-size-unit-option:hover {
     background: rgba(179, 184, 249, 0.1);
     color: rgba(255, 255, 255, 1);
+}
+
+
+.perps-mobile-bottom-bar {
+    display: none;
+}
+
+@media (max-width: 1020px) {
+    .perps-mobile-bottom-bar {
+        display: flex;
+        position: fixed;
+        bottom: 53px;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        gap: 8px;
+        padding: 12px;
+        background: rgb(6, 6, 6);
+        border-top: 1px solid rgba(179, 184, 249, 0.1);
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .perps-mobile-trade-button {
+        flex: 1;
+        padding: 7px;
+        border-radius: 4px;
+        font-size: .9rem;
+        letter-spacing: -0.3px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .perps-mobile-trade-button.long {
+        border: 1.5px solid rgba(67, 254, 154, 0.7);
+        color: rgb(67, 254, 154);
+    }
+
+    .perps-mobile-trade-button.long:active {
+        background: rgba(67, 254, 154, 0.25);
+    }
+
+    .perps-mobile-trade-button.short {
+        border: 1.5px solid rgba(235, 112, 112, 0.5);
+        color: rgb(235, 112, 112);
+    }
+
+    .perps-mobile-trade-button.short:active {
+        background: rgba(235, 112, 112, 0.25);
+    }
+
+    .perps-mobile-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 200;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    .perps-mobile-modal-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-height: 90vh;
+        background: rgb(6, 6, 6);
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+        z-index: 201;
+        animation: slideUp 0.3s ease;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(100%);
+        }
+        to {
+            transform: translateY(0);
+        }
+    }
+
+    .perps-mobile-modal-header {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 16px 20px 8px 20px;
+        border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+    }
+
+    .perps-mobile-modal-close {
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+    }
+
+    .perps-mobile-modal-close:active {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .perps-mobile-modal-content {
+        overflow-y: auto;
+        padding-bottom: 20px;
+        flex: 1;
+    }
+
 }

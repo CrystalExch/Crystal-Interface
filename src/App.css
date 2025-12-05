@@ -361,6 +361,8 @@ html {
   flex-direction: column;
 }
 
+
+
 .send-popup-background {
   height: min(325px, 90vh);
   padding-top: 5px;
@@ -1924,6 +1926,10 @@ body {
 @media(max-width:1020px) {
   .main-content-wrapper {
     background: none;
+  }
+  .chartandorderbook{
+    margin-top: 55px !important;
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
   }
 }
 
