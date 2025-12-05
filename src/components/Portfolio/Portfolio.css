@@ -3983,11 +3983,27 @@
 .trenches-estimate-negative {
   color: rgb(235, 112, 112);
 }
-
+@media(max-width: 600px) {
+  .trenches-second-row{
+    flex-direction: column;
+    min-height: 80px !important;
+    justify-content: center !important;
+    gap: 8px;
+  }
+  .trenches-search-input{
+    display: none;
+  }
+}
 @media (max-width: 1020px) {
   .trenches-top-section {
     flex-direction: column;
     height: auto;
+  }
+
+  .trenches-pnl-section{
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+    min-height: 250px;
   }
 
   .trenches-balance-section,
@@ -4384,7 +4400,6 @@
   }
 
   .trenches-pnl-header {
-    flex-direction: column;
     gap: 12px;
     align-items: flex-start;
   }
@@ -4857,7 +4872,6 @@
   .trenches-activity-feed {
     width: 100%;
     border-right: none;
-    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   }
 }
 
