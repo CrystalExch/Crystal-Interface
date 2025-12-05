@@ -4030,7 +4030,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const selectedSet = useMemo(() => new Set<string>(), []);
 
   const totalSelectedBalance = useMemo(() => {
-    if (selectedWallets.size == 0) {
+    if (selectedWallets.size == 0 || !activeWalletPrivateKey) {
       return (Number(walletTokenBalances?.[account.address ?? '']?.[settings.chainConfig[activechain]?.eth] ?? 0) / 10 ** Number(18))
     }
     let total = 0;
@@ -4200,6 +4200,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const [pausedColumn, setPausedColumn] = useState<Token['status'] | null>(
     null,
   );
+
   const handleTokenHover = useCallback((id: string) => setHoveredToken(id), []);
   const handleTokenLeave = useCallback(() => setHoveredToken(null), []);
   const handleImageHover = useCallback((id: string) => setHoveredImage(id), []);
@@ -4317,7 +4318,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         const plan: { addr: string; amount: bigint }[] = [];
         const transferPromises = [];
 
-        if (targets.length > 0) {
+        if (targets.length > 0 || !activeWalletPrivateKey) {
           for (const addr of targets) {
             const maxWei = getMaxSpendableWei(addr);
             const fairShare = val / BigInt(targets.length);
@@ -4712,6 +4713,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       }, 100);
     }
   }, [blacklistSettings]);
+
   const applyFilters = useCallback((list: Token[], fil: any) => {
     if (!fil) return list;
     return list.filter((t) => {
@@ -4825,6 +4827,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       return true;
     });
   }, []);
+
   const { blacklistedDevs, blacklistedCAs } = useMemo(() => {
     const devs = new Set<string>();
     const cas = new Set<string>();
@@ -4837,6 +4840,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
     return { blacklistedDevs: devs, blacklistedCAs: cas };
   }, [blacklistSettings.items]);
+
   const visibleTokens = useMemo(() => {
     const processTokens = (tokens: Token[], status: Token['status']) => {
       const hideHidden = displaySettings.hideHiddenTokens;
@@ -4882,9 +4886,11 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     blacklistedDevs,
     blacklistedCAs
   ]);
+
   const newTokens = visibleTokens.new;
   const graduatingTokens = visibleTokens.graduating;
   const graduatedTokens = visibleTokens.graduated;
+
   const handleColumnHover = useCallback((columnType: Token['status']) => {
     if (isLoading) return;
 
@@ -4899,6 +4905,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       currentTokens.map(t => t.id)
     );
   }, [newTokens, graduatingTokens, graduatedTokens, isLoading]);
+
   useEffect(() => {
     if (!isLoading && pausedColumn) {
       const currentTokens = pausedColumn === 'new' ? newTokens
@@ -4912,6 +4919,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       }
     }
   }, [isLoading, pausedColumn, newTokens, graduatingTokens, graduatedTokens]);
+
   const handleColumnLeave = useCallback(() => {
     const wasPaused = pausedColumnRef.current;
     pausedColumnRef.current = null;
@@ -4921,6 +4929,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       pausedTokenSnapshotRef.current[wasPaused as Token['status']].clear();
     }
   }, []);
+
   const displayTokens = useMemo(() => {
     if (!pausedColumn) {
       return { new: newTokens, graduating: graduatingTokens, graduated: graduatedTokens };
@@ -4940,6 +4949,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         : graduatedTokens
     };
   }, [pausedColumn, newTokens, graduatingTokens, graduatedTokens]);
+
   const trendingTokens = useMemo(() => {
     const allTokens = [
       ...tokensByStatus.new,
@@ -4975,6 +4985,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     blacklistedCAs,
     monUsdPrice
   ]);
+
   const tokenCounts = useMemo(
     () => ({
       new: newTokens.length,
@@ -5137,7 +5148,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                   <span
                     className={`wallet-count ${selectedSet.size ? 'has-active' : ''}`}
                   >
-                    {selectedWallets.size == 0 ?
+                    {selectedWallets.size == 0 || !activeWalletPrivateKey ?
                       <Tooltip content="Primary Wallet">
                         {(
                           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d8dcff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ verticalAlign: 'middle' }}>
@@ -5187,7 +5198,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               <div
                 className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}
               >
-                {subWallets.length > 0 &&
+                {subWallets.length > 0 && activeWalletPrivateKey &&
                   (<>
                     <div className="footer-wallet-dropdown-header">
                       <div className="footer-wallet-dropdown-actions">
@@ -5226,7 +5237,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 }
                 <div className="wallet-dropdown-list" style={{ position: 'relative' }}>
                   <div>
-                    {subWallets.map((wallet: any, index: any) => {
+                    {(!activeWalletPrivateKey ? [] : subWallets).map((wallet: any, index: any) => {
                       const balance = getWalletBalance(wallet.address);
                       const isActive = isWalletActive(wallet.privateKey);
                       const isSelected = selectedWallets.has(wallet.address);
@@ -5325,7 +5336,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                         </div>
                       );
                     })}
-                    {subWallets.length < 10 && (
+                    {(subWallets.length < 10 || !activeWalletPrivateKey) && (
                       <div
                         className="quickbuy-add-wallet-button"
                         onClick={async () => {
@@ -5349,7 +5360,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           <line x1="12" y1="5" x2="12" y2="19"></line>
                           <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                        <span>Add Wallet</span>
+                        <span>{!activeWalletPrivateKey ? 'Enable 1CT' : 'Add Wallet'}</span>
                       </div>
                     )}
                   </div>

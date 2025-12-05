@@ -4617,7 +4617,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [sellToken, setSellToken] = useState<any>({});
   const memeSelectedIntervalRef = useRef<string>(memeSelectedInterval);
   const uniSubRef = useRef<string>('');
-  const transferSubRef = useRef<string>('');
   const processedTradeIds = useRef<Set<string>>(new Set());
 
   const [page, _setPage] = useState(0);
@@ -4769,40 +4768,40 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
       explorerWsRef.current.onopen = () => {
         setWsReady(true);
-        const subscriptionMessages = [
-          // JSON.stringify({
-          //   jsonrpc: '2.0',
-          //   id: 'sub1',
-          //   method: 'eth_subscribe',
-          //   params: [
-          //     'monadLogs',
-          //     {
-          //       address: settings.chainConfig[activechain].router,
-          //       topics: [[CRYSTAL_EVENTS.Trade, CRYSTAL_EVENTS.MarketCreated, CRYSTAL_EVENTS.LaunchpadTrade, CRYSTAL_EVENTS.Graduation]],
-          //     },
-          //   ],
-          // }),
-          JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'sub_nadfun',
-            method: 'eth_subscribe',
-            params: [
-              'monadLogs',
-              {
-                address: nadFunBondingCurve,
-                topics: [
-                  [
-                    NAD_FUN_EVENTS.CurveCreate,
-                    NAD_FUN_EVENTS.CurveBuy,
-                    NAD_FUN_EVENTS.CurveSell,
-                    NAD_FUN_EVENTS.CurveSync,
-                    NAD_FUN_EVENTS.CurveGraduate,
-                  ]
-                ],
-              },
-            ],
-          }),
-        ];
+        // const subscriptionMessages = [
+        //   JSON.stringify({
+        //     jsonrpc: '2.0',
+        //     id: 'sub1',
+        //     method: 'eth_subscribe',
+        //     params: [
+        //       'monadLogs',
+        //       {
+        //         address: settings.chainConfig[activechain].router,
+        //         topics: [[CRYSTAL_EVENTS.Trade, CRYSTAL_EVENTS.MarketCreated, CRYSTAL_EVENTS.LaunchpadTrade, CRYSTAL_EVENTS.Graduation]],
+        //       },
+        //     ],
+        //   }),
+        //   JSON.stringify({
+        //     jsonrpc: '2.0',
+        //     id: 'sub_nadfun',
+        //     method: 'eth_subscribe',
+        //     params: [
+        //       'monadLogs',
+        //       {
+        //         address: nadFunBondingCurve,
+        //         topics: [
+        //           [
+        //             NAD_FUN_EVENTS.CurveCreate,
+        //             NAD_FUN_EVENTS.CurveBuy,
+        //             NAD_FUN_EVENTS.CurveSell,
+        //             NAD_FUN_EVENTS.CurveSync,
+        //             NAD_FUN_EVENTS.CurveGraduate,
+        //           ]
+        //         ],
+        //       },
+        //     ],
+        //   }),
+        // ];
 
         explorerPingIntervalRef.current = setInterval(() => {
           if (explorerWsRef.current?.readyState === WebSocket.OPEN) {
@@ -4814,9 +4813,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
         }, 15000);
 
-        subscriptionMessages.forEach((message) => {
-          explorerWsRef.current?.send(message);
-        });
+        // subscriptionMessages.forEach((message) => {
+        //   explorerWsRef.current?.send(message);
+        // });
       };
 
       explorerWsRef.current.onmessage = ({ data }) => {
@@ -4825,9 +4824,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           if (msg.method !== 'eth_subscription' || !msg.params?.result) {
             if (msg?.id == "sub_uni_update") {
               uniSubRef.current = msg?.result;
-            }
-            else if (msg?.id == "sub_transfers") {
-              transferSubRef.current = msg?.result;
             }
             return;
           }
@@ -6491,7 +6487,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const pools = graduated
       .map((t: any) => t.market?.toLowerCase())
       .filter(Boolean);
-    pools.push(token?.market);
+    if (token?.market) {
+      pools.push(token.market);
+    }
+    if (token?.id) {
+      pools.push(token.id);
+    }
+    pools.push(nadFunBondingCurve);
 
     const sub = JSON.stringify({
       jsonrpc: "2.0",
@@ -6499,7 +6501,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       method: "eth_subscribe",
       params: [
         "monadLogs",
-        { address: pools, topics: [[UNIV3_EVENTS.Swap]] }
+        { address: pools, topics: [[
+          CRYSTAL_EVENTS.Transfer,
+          UNIV3_EVENTS.Swap,
+          NAD_FUN_EVENTS.CurveCreate,
+          NAD_FUN_EVENTS.CurveBuy,
+          NAD_FUN_EVENTS.CurveSell,
+          NAD_FUN_EVENTS.CurveSync,
+          NAD_FUN_EVENTS.CurveGraduate,
+        ]]}
       ]
     });
     explorerWsRef.current.send(sub);
@@ -6513,34 +6523,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       });
       explorerWsRef.current.send(unsub);
     }
-  }, [token?.market, tokensByStatus?.graduated?.[0]?.market, wsReady]);
-
-  useEffect(() => {
-    if (!explorerWsRef.current) return;
-    if (explorerWsRef.current.readyState !== WebSocket.OPEN) return;
-
-    if (token.id) {
-      const sub = JSON.stringify({
-        jsonrpc: "2.0",
-        id: "sub_transfer",
-        method: "eth_subscribe",
-        params: [
-          "monadLogs",
-          { address: token.id, topics: [[CRYSTAL_EVENTS.Transfer]] }
-        ]
-      });
-      explorerWsRef.current.send(sub);
-    }
-    if (transferSubRef.current) {
-      const unsub = JSON.stringify({
-        jsonrpc: "2.0",
-        id: "unsub_transfer",
-        method: "eth_unsubscribe",
-        params: [transferSubRef.current]
-      });
-      explorerWsRef.current.send(unsub);
-    }
-  }, [token.id, wsReady]);
+  }, [token?.market, token.id, tokensByStatus?.graduated?.[0]?.market, wsReady]);
 
   // metadata n klines
   useEffect(() => {
@@ -6716,11 +6699,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           telegramHandle: telegram ?? "",
           launchedTokens: m.creator?.tokensLaunched ?? "",
           graduatedTokens: m.creator?.tokensGraduated ?? "",
-          holders: (m.totalHolders ?? 0) - 1,
+          holders: (m.totalHolders ?? 0),
           devHolding: Number(m.devHoldingAmount ?? 0) / 1e27,
           trades: m.trades,
           bondingPercentage: m.graduationPercentageBps,
           source: "nadfun",
+          market: m.market ?? null
         };
 
         setTokenData(tempTokenData);
@@ -7132,7 +7116,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       let gasEstimate: bigint = 0n;
       const tokenAddresses = [
         ...Object.values(tokendict).map(t => t.address),
-        ...(token.id ? [token.id] : [])
+        ...(token.id ? [token.id] : []),
+        ...(sellToken?.tokenId ? [sellToken?.tokenId] : [])
       ];
 
       if (address && (['board', 'spectra', 'meme'].includes(location.pathname.split('/')[1]))) {

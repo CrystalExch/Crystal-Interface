@@ -262,7 +262,7 @@ interface Props {
   trackedWallets: any;
   onFilterSet: any;
   positions: any[];
-  onSellPosition?: (position: Position, monAmount: string) => void;
+  onSellPosition?: (position: Position, monAmount: string, isPercent: boolean) => void;
   onShareDataSelected?: (shareData: any) => void;
 }
 

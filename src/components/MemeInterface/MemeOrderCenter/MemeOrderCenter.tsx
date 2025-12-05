@@ -95,7 +95,7 @@ interface MemeOrderCenterProps {
   pageSize?: number;
   currentPrice?: number;
   monUsdPrice?: number;
-  onSellPosition?: (position: Position, monAmount: string) => void;
+  onSellPosition?: (position: Position, monAmount: string, isPercent: boolean) => void;
   trackedAddresses?: string[];
   onToggleTrackedAddress?: (addr: string) => void;
   token: any;
@@ -138,13 +138,6 @@ const fmt = (v: number, d = 2): string => {
   if (d <= 0) return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
 
   const abs = Math.abs(v);
-  const threshold = Math.pow(10, -d);
-  const thresholdStr = '0.' + '0'.repeat(d - 1) + '1';
-
-  if (abs < threshold) {
-    return v > 0 ? `<${thresholdStr}` : `>-${thresholdStr}`;
-  }
-
   if (abs >= 1e9) return (v / 1e9).toFixed(2) + 'B';
   if (abs >= 1e6) return (v / 1e6).toFixed(2) + 'M';
   if (abs >= 1e3) return (v / 1e3).toFixed(2) + 'K';
@@ -177,11 +170,13 @@ const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
   }
   return `${fmt(v)}`;
 };
+
 interface TransactionFilters {
   makerAddress: string;
   minUSD: string;
   maxUSD: string;
 }
+
 interface SellPopupProps {
   showSellPopup: boolean;
   selectedPosition: Position;
@@ -199,6 +194,7 @@ interface SellPopupProps {
   walletTokenBalances: { [address: string]: any };
   tokendict: { [key: string]: any };
 }
+
 const Tooltip: React.FC<{
   content: string;
   children: React.ReactNode;
@@ -350,6 +346,7 @@ const Tooltip: React.FC<{
     </div>
   );
 };
+
 const SellPopup: React.FC<SellPopupProps> = ({
   showSellPopup,
   selectedPosition,
@@ -847,16 +844,19 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       }
     }
   };
+  
   const [transactionFilters, setTransactionFilters] =
     useState<TransactionFilters>({
       makerAddress: '',
       minUSD: '',
       maxUSD: '',
     });
+
   const hasActiveFilters =
     transactionFilters.makerAddress.trim() !== '' ||
     transactionFilters.minUSD.trim() !== '' ||
     transactionFilters.maxUSD.trim() !== '';
+
   useEffect(() => {
     const isMobileView = window.innerWidth <= 1020;
     updateIndicatorPosition(isMobileView, activeSection);
@@ -906,7 +906,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       onSellPosition
     ) {
       try {
-        await onSellPosition(selectedPosition, sellAmount);
+        await onSellPosition(selectedPosition, sellAmount, false);
         setShowSellPopup(false);
         setSelectedPosition(null);
         setSellAmount('');

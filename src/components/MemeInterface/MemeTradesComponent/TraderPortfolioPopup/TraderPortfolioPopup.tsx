@@ -39,7 +39,7 @@ interface TraderPortfolioPopupProps {
   setSendTokenIn?: (token: any) => void;
   setpopup?: (value: number) => void;
   positions?: Position[];
-  onSellPosition?: (position: Position, monAmount: string) => void;
+  onSellPosition?: (position: Position, monAmount: string, isPercent: boolean) => void;
   monUsdPrice: number;
   trackedWallets?: any[];
   onAddTrackedWallet?: (wallet: { address: string; name: string; emoji: string }) => void;

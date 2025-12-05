@@ -280,6 +280,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   volume,
   formatNumberWithCommas
 }) => {
+  if (!isOpen || window.innerWidth < 1020 || !activeWalletPrivateKey) return null;
+
   const playTradeSound = useCallback((isBuy: boolean) => {
     if (!transactionSounds) return;
 
@@ -294,7 +296,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       console.log('Error playing trade sound:', err);
     }
   }, [transactionSounds, buySound, sellSound, volume]);
-  if (window.innerWidth < 1020) return (<></>)
+
   const [position, setPosition] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_widget_position');
@@ -315,7 +317,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   });
   const [isDragging, setIsDragging] = useState(false);
   const [pendingSpend, setPendingSpend] = useState<Map<string, bigint>>(new Map());
-
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(
     {},
@@ -435,8 +436,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   const widgetRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const currentTokenBalance =
-    walletTokenBalances?.[account?.address || '']?.[token.id || ''] ?? 0n;
   const currentSellValues =
     sellMode === 'percent' ? sellPercents : sellMONAmounts;
 
@@ -2014,8 +2013,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     }
     return true;
   };
-
-  if (!isOpen) return null;
 
   return (
     <>

@@ -2281,7 +2281,7 @@
 
 .stats-blur-backdrop {
   backdrop-filter: blur(4px);
-  background: rgba(6, 6, 6, 0.5);
+  background: rgba(6, 6, 6, 0.7);
   bottom: 0;
   left: 0;
   position: absolute;
@@ -2321,7 +2321,7 @@
 }
 
 .timeframe-toggle:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.03);
   border-color: rgba(179, 184, 249, 0.2);
 }
 
