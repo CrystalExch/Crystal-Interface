@@ -32,7 +32,9 @@ import {
   toggleWalletNotifications,
   setWalletNotificationPreferences
 } from '../MemeTransactionPopup/MemeTransactionPopupManager';
-
+import { zeroXActionsAbi } from '../../abis/zeroXActionsAbi.ts';
+import { zeroXAbi } from '../../abis/zeroXAbi.ts';
+import { loadBuyPresets } from '../../utils/presetManager';
 interface GqlPosition {
   tokenId: string;
   symbol: string;
@@ -349,6 +351,24 @@ const Tracker: React.FC<TrackerProps> = ({
   positions = [],
   trackedWalletsRef,
 }) => {
+  const [buyPresets, setBuyPresets] = useState(() => loadBuyPresets());
+type TradeStatus = 'new' | 'graduating' | 'graduated';
+
+const [activePresets, setActivePresets] = useState<Record<TradeStatus, number>>(() => ({
+  new: parseInt(localStorage.getItem('tracker-preset-new') ?? '1'),
+  graduating: parseInt(localStorage.getItem('tracker-preset-graduating') ?? '1'),
+  graduated: parseInt(localStorage.getItem('tracker-preset-graduated') ?? '1'),
+}));
+
+useEffect(() => {
+  const handleBuyPresetsUpdate = (event: CustomEvent) => {
+    setBuyPresets(event.detail);
+  };
+  window.addEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+  return () => {
+    window.removeEventListener('buyPresetsUpdated', handleBuyPresetsUpdate as EventListener);
+  };
+}, []);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiPickerPosition, setEmojiPickerPosition] = useState<{
     top: number;
@@ -512,236 +532,438 @@ const Tracker: React.FC<TrackerProps> = ({
 
   const chainCfg = chainCfgOf(activechain, settings);
 
-  const getMaxSpendableWei = useCallback(
-    (addr: string): bigint => {
-      const balances = walletTokenBalances[addr];
-      if (!balances) return 0n;
+const getMaxSpendableWei = useCallback(
+  (addr: string): bigint => {
+    const balances = walletTokenBalances[addr];
+    if (!balances) return 0n;
 
-      const ethToken = tokenList?.find(
-        (t: any) => t.address === chainCfg?.eth,
-      );
-      if (!ethToken || !balances[ethToken.address]) return 0n;
+    const ethAddress = appSettings.chainConfig[activechain]?.eth;
+    if (!ethAddress || !balances[ethAddress]) return 0n;
 
-      let raw = balances[ethToken.address];
-      if (raw <= 0n) return 0n;
+    let raw = balances[ethAddress];
+    if (raw <= 0n) return 0n;
 
-      const gasReserve = BigInt(chainCfg?.gasamount ?? 0);
-      const safe = raw > gasReserve ? raw - gasReserve : 0n;
+    const gasReserve = BigInt(appSettings.chainConfig[activechain]?.gasamount ?? 0);
+    const safe = raw > gasReserve ? raw - gasReserve : 0n;
 
-      return safe;
-    },
-    [walletTokenBalances, tokenList, chainCfg],
-  );
+    return safe;
+  },
+  [walletTokenBalances, activechain],
+);
 
-  const handleTradeQuickBuy = useCallback(
-    async (trade: any, quickAmount: string) => {
-      const val = BigInt(Math.floor(parseFloat(quickAmount) * 1e18));
-      if (val === 0n || !trade.tokenAddress) return;
+const handleTradeQuickBuy = useCallback(
+  async (trade: any, quickAmount: string) => {
+    const val = BigInt(Math.floor(parseFloat(quickAmount) * 1e18));
+    if (val === 0n || !trade.tokenAddress) return;
 
-      const targets: string[] = Array.from(selectedWallets || new Set());
-      const txId = `quickbuy-trade-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const targets: string[] = Array.from(selectedWallets || new Set());
+    const txId = `quickbuy-trade-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-      setBuyingTrade(trade.id);
+    setBuyingTrade(trade.id);
 
-      try {
-        if (showLoadingPopup) {
-          showLoadingPopup(txId, {
-            title: 'Sending batch buy...',
-            subtitle: `Buying ${quickAmount} MON of ${trade.tokenName || trade.token} across ${targets.length || 1} wallet${targets.length > 1 ? 's' : ''}`,
-            amount: quickAmount,
-            amountUnit: 'MON',
-            tokenImage: trade.tokenIcon,
-          });
-        }
-
-        const isNadFun = trade.launchpad === 'nadfun';
-        const contractAddress = isNadFun
-          ? appSettings.chainConfig[activechain].nadFunRouter
-          : appSettings.chainConfig[activechain].launchpadRouter;
-
-        let remaining = val;
-        const plan: { addr: string; amount: bigint }[] = [];
-        const transferPromises = [];
-
-        if (targets.length > 0) {
-          for (const addr of targets) {
-            const maxWei = getMaxSpendableWei(addr);
-            const fairShare = val / BigInt(targets.length);
-            const allocation = fairShare > maxWei ? maxWei : fairShare;
-            if (allocation > 0n) {
-              plan.push({ addr, amount: allocation });
-              remaining -= allocation;
-            } else {
-              plan.push({ addr, amount: 0n });
-            }
-          }
-
-          for (const entry of plan) {
-            if (remaining <= 0n) break;
-            const maxWei = getMaxSpendableWei(entry.addr);
-            const room = maxWei - entry.amount;
-            if (room > 0n) {
-              const add = remaining > room ? room : remaining;
-              entry.amount += add;
-              remaining -= add;
-            }
-          }
-
-          if (remaining > 0n) {
-            if (updatePopup) {
-              updatePopup(txId, {
-                title: 'Batch buy failed',
-                subtitle: 'Not enough MON balance across selected wallets',
-                variant: 'error',
-                isLoading: false,
-              });
-            }
-            setBuyingTrade(null);
-            return;
-          }
-
-          for (const { addr, amount: partWei } of plan) {
-            if (partWei <= 0n) continue;
-
-            const wally = subWallets?.find((w: any) => w.address === addr);
-            const pk = wally?.privateKey ?? activeWalletPrivateKey;
-            if (!pk) continue;
-
-            let uo;
-
-            if (isNadFun) {
-              uo = {
-                target: contractAddress as `0x${string}`,
-                data: encodeFunctionData({
-                  abi: NadFunAbi,
-                  functionName: 'buy',
-                  args: [{
-                    amountOutMin: 0n,
-                    token: trade.devAddress as `0x${string}`,
-                    to: account?.address as `0x${string}`,
-                    deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
-                  }],
-                }),
-                value: partWei,
-              };
-            } else {
-              uo = {
-                target: contractAddress as `0x${string}`,
-                data: encodeFunctionData({
-                  abi: CrystalRouterAbi,
-                  functionName: 'buy',
-                  args: [true, trade.tokenAddress as `0x${string}`, partWei, 0n],
-                }),
-                value: partWei,
-              };
-            }
-
-            const wallet = nonces?.current.get(addr);
-            const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce];
-            if (wallet) wallet.nonce += 1;
-            wallet?.pendingtxs.push(params);
-
-            const transferPromise = sendUserOperationAsync(...params)
-              .then(() => {
-                if (wallet)
-                  wallet.pendingtxs = wallet.pendingtxs.filter(
-                    (p: any) => p[5] != params[5],
-                  );
-                return true;
-              })
-              .catch(() => {
-                if (wallet)
-                  wallet.pendingtxs = wallet.pendingtxs.filter(
-                    (p: any) => p[5] != params[5],
-                  );
-                return false;
-              });
-            transferPromises.push(transferPromise);
-          }
-        } else {
-          if (account?.address) {
-            let uo;
-
-            if (isNadFun) {
-              uo = {
-                target: contractAddress as `0x${string}`,
-                data: encodeFunctionData({
-                  abi: NadFunAbi,
-                  functionName: 'buy',
-                  args: [{
-                    amountOutMin: 0n,
-                    token: trade.devAddress as `0x${string}`,
-                    to: account.address as `0x${string}`,
-                    deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
-                  }],
-                }),
-                value: val,
-              };
-            } else {
-              uo = {
-                target: contractAddress as `0x${string}`,
-                data: encodeFunctionData({
-                  abi: CrystalRouterAbi,
-                  functionName: 'buy',
-                  args: [true, trade.tokenAddress as `0x${string}`, val, 0n],
-                }),
-                value: val,
-              };
-            }
-
-            const transferPromise = sendUserOperationAsync({ uo });
-            transferPromises.push(transferPromise);
-          }
-        }
-
-        const results = await Promise.allSettled(transferPromises);
-        const successfulTransfers = results.filter(
-          (result) => result.status === 'fulfilled' && result.value === true,
-        ).length;
-
-        if (terminalRefetch) terminalRefetch();
-
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: `Bought ${quickAmount} MON Worth`,
-            subtitle: `Distributed across ${successfulTransfers} wallet${successfulTransfers !== 1 ? 's' : ''}`,
-            variant: 'success',
-            confirmed: true,
-            isLoading: false,
-            tokenImage: trade.tokenIcon,
-          });
-        }
-      } catch (e: any) {
-        console.error('Quick buy failed', e);
-        const msg = String(e?.message ?? '');
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: msg.toLowerCase().includes('insufficient')
-              ? 'Insufficient Balance'
-              : 'Buy Failed',
-            subtitle: msg || 'Transaction failed',
-            variant: 'error',
-            confirmed: true,
-            isLoading: false,
-            tokenImage: trade.tokenIcon,
-          });
-        }
-      } finally {
-        setBuyingTrade(null);
+    try {
+      if (showLoadingPopup) {
+        showLoadingPopup(txId, {
+          title: 'Sending batch buy...',
+          subtitle: `Buying ${quickAmount} MON of ${trade.tokenName || trade.token} across ${targets.length || 1} wallet${targets.length > 1 ? 's' : ''}`,
+          amount: quickAmount,
+          amountUnit: 'MON',
+          tokenImage: trade.tokenIcon,
+        });
       }
-    },
-    [
-      selectedWallets,
-      subWallets,
-      activeWalletPrivateKey,
-      getMaxSpendableWei,
-      account,
-      nonces,
-      terminalRefetch,
-      activechain,
-      sendUserOperationAsync,
-    ],
-  );
+
+      const isNadFun = trade.launchpad === 'nadfun';
+      const isGraduated = trade.status === 'graduated';
+      
+      // Determine correct contract address
+      const contractAddress = isNadFun
+        ? (isGraduated 
+            ? appSettings.chainConfig[activechain].nadFunDexRouter 
+            : appSettings.chainConfig[activechain].nadFunRouter)
+        : appSettings.chainConfig[activechain].router;
+
+      let remaining = val;
+      const plan: { addr: string; amount: bigint }[] = [];
+      const transferPromises = [];
+
+      if (targets.length > 0) {
+        // Step 1: Initial allocation - split evenly
+        for (const addr of targets) {
+          const maxWei = getMaxSpendableWei(addr);
+          const fairShare = val / BigInt(targets.length);
+          const allocation = fairShare > maxWei ? maxWei : fairShare;
+          if (allocation > 0n) {
+            plan.push({ addr, amount: allocation });
+            remaining -= allocation;
+          } else {
+            plan.push({ addr, amount: 0n });
+          }
+        }
+
+        // Step 2: Redistribute remaining amount to wallets with capacity
+        for (const entry of plan) {
+          if (remaining <= 0n) break;
+          const maxWei = getMaxSpendableWei(entry.addr);
+          const room = maxWei - entry.amount;
+          if (room > 0n) {
+            const add = remaining > room ? room : remaining;
+            entry.amount += add;
+            remaining -= add;
+          }
+        }
+
+        // Step 3: Check if we have enough balance
+        if (remaining > 0n) {
+          if (updatePopup) {
+            updatePopup(txId, {
+              title: 'Batch buy failed',
+              subtitle: 'Not enough MON balance across selected wallets',
+              variant: 'error',
+              isLoading: false,
+            });
+          }
+          setBuyingTrade(null);
+          return;
+        }
+
+        // Step 4: Execute transactions
+        for (const { addr, amount: partWei } of plan) {
+          if (partWei <= 0n) continue;
+
+          const wally = subWallets?.find((w: any) => w.address === addr);
+          const pk = wally?.privateKey ?? activeWalletPrivateKey;
+          if (!pk) continue;
+
+          let uo;
+
+          if (isNadFun) {
+            if (isGraduated) {
+              // nad.fun graduated token - use zeroX
+              const minOutput = BigInt(
+                Number(partWei) / trade.price * 
+                (1 - Number(buyPresets[activePresets.graduated]?.slippage || 0) / 100)
+              );
+              
+              const actions: any = [];
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: [
+                  appSettings.chainConfig[activechain].eth,
+                  9900n,
+                  contractAddress,
+                  100n,
+                  encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'buy',
+                    args: [{
+                      amountOutMin: BigInt(minOutput === 0n ? 1n : minOutput),
+                      token: trade.tokenAddress as `0x${string}`,
+                      to: addr as `0x${string}`,
+                      deadline: 0n,
+                    }],
+                  })
+                ],
+              }));
+              
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: [
+                  appSettings.chainConfig[activechain].eth,
+                  10000n,
+                  appSettings.chainConfig[activechain].feeAddress,
+                  0n,
+                  '0x'
+                ],
+              }));
+
+              uo = {
+                target: appSettings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: zeroXAbi,
+                  functionName: 'execute',
+                  args: [{
+                    recipient: addr as `0x${string}`,
+                    buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                    minAmountOut: BigInt(0n),
+                  }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                }),
+                value: partWei,
+              };
+            } else {
+              // nad.fun bonding curve token - use zeroX
+              const minOutput = BigInt(
+                Number(partWei) / trade.price * 
+                (1 - Number(buyPresets[activePresets.new]?.slippage || 0) / 100)
+              );
+
+              const actions: any = [];
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: [
+                  appSettings.chainConfig[activechain].eth,
+                  9900n,
+                  contractAddress,
+                  100n,
+                  encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'buy',
+                    args: [{
+                      amountOutMin: BigInt(minOutput),
+                      token: trade.tokenAddress as `0x${string}`,
+                      to: addr as `0x${string}`,
+                      deadline: 0n,
+                    }],
+                  })
+                ],
+              }));
+              
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: [
+                  appSettings.chainConfig[activechain].eth,
+                  10000n,
+                  appSettings.chainConfig[activechain].feeAddress,
+                  0n,
+                  '0x'
+                ],
+              }));
+
+              uo = {
+                target: appSettings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: zeroXAbi,
+                  functionName: 'execute',
+                  args: [{
+                    recipient: addr as `0x${string}`,
+                    buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                    minAmountOut: BigInt(0n),
+                  }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                }),
+                value: partWei,
+              };
+            }
+          } else {
+            // Crystal.fun token - use CrystalRouter
+            uo = {
+              target: contractAddress as `0x${string}`,
+              data: encodeFunctionData({
+                abi: CrystalRouterAbi,
+                functionName: 'buy',
+                args: [true, trade.tokenAddress as `0x${string}`, partWei, 0n],
+              }),
+              value: partWei,
+            };
+          }
+
+          const wallet = nonces?.current.get(addr);
+          
+          // Use 10-parameter format
+          const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, false, false, 1, addr];
+          
+          if (wallet) wallet.nonce += 1;
+          wallet?.pendingtxs.push(params);
+
+          const transferPromise = sendUserOperationAsync(...params)
+            .then(() => {
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p[5] !== params[5],
+                );
+              return true;
+            })
+            .catch(() => {
+              if (wallet)
+                wallet.pendingtxs = wallet.pendingtxs.filter(
+                  (p: any) => p[5] !== params[5],
+                );
+              return false;
+            });
+          transferPromises.push(transferPromise);
+        }
+      } else {
+        // Single wallet transaction (main account)
+        if (account?.address) {
+          let uo;
+
+          if (isNadFun) {
+            if (isGraduated) {
+              const minOutput = BigInt(
+                Number(val) / trade.price * 
+                (1 - Number(buyPresets[activePresets.graduated]?.slippage || 0) / 100)
+              );
+              
+              const actions: any = [];
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: [
+                  appSettings.chainConfig[activechain].eth,
+                  9900n,
+                  contractAddress,
+                  100n,
+                  encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'buy',
+                    args: [{
+                      amountOutMin: BigInt(minOutput === 0n ? 1n : minOutput),
+                      token: trade.tokenAddress as `0x${string}`,
+                      to: account.address as `0x${string}`,
+                      deadline: 0n,
+                    }],
+                  })
+                ],
+              }));
+              
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: [
+                  appSettings.chainConfig[activechain].eth,
+                  10000n,
+                  appSettings.chainConfig[activechain].feeAddress,
+                  0n,
+                  '0x'
+                ],
+              }));
+
+              uo = {
+                target: appSettings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: zeroXAbi,
+                  functionName: 'execute',
+                  args: [{
+                    recipient: account.address as `0x${string}`,
+                    buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                    minAmountOut: BigInt(0n),
+                  }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                }),
+                value: val,
+              };
+            } else {
+              const minOutput = BigInt(
+                Number(val) / trade.price * 
+                (1 - Number(buyPresets[activePresets.new]?.slippage || 0) / 100)
+              );
+
+              const actions: any = [];
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: [
+                  appSettings.chainConfig[activechain].eth,
+                  9900n,
+                  contractAddress,
+                  100n,
+                  encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'buy',
+                    args: [{
+                      amountOutMin: BigInt(minOutput),
+                      token: trade.tokenAddress as `0x${string}`,
+                      to: account.address as `0x${string}`,
+                      deadline: 0n,
+                    }],
+                  })
+                ],
+              }));
+              
+              actions.push(encodeFunctionData({
+                abi: zeroXActionsAbi,
+                functionName: 'BASIC',
+                args: [
+                  appSettings.chainConfig[activechain].eth,
+                  10000n,
+                  appSettings.chainConfig[activechain].feeAddress,
+                  0n,
+                  '0x'
+                ],
+              }));
+
+              uo = {
+                target: appSettings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: zeroXAbi,
+                  functionName: 'execute',
+                  args: [{
+                    recipient: account.address as `0x${string}`,
+                    buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                    minAmountOut: BigInt(0n),
+                  }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                }),
+                value: val,
+              };
+            }
+          } else {
+            uo = {
+              target: contractAddress as `0x${string}`,
+              data: encodeFunctionData({
+                abi: CrystalRouterAbi,
+                functionName: 'buy',
+                args: [true, trade.tokenAddress as `0x${string}`, val, 0n],
+              }),
+              value: val,
+            };
+          }
+
+          const transferPromise = sendUserOperationAsync({ uo }).then(() => true).catch(() => false);
+          transferPromises.push(transferPromise);
+        }
+      }
+
+      const results = await Promise.allSettled(transferPromises);
+      const successfulTransfers = results.filter(
+        (result) => result.status === 'fulfilled' && result.value === true,
+      ).length;
+
+      if (terminalRefetch) terminalRefetch();
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: `Bought ${quickAmount} MON Worth`,
+          subtitle: `Distributed across ${successfulTransfers} wallet${successfulTransfers !== 1 ? 's' : ''}`,
+          variant: 'success',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: trade.tokenIcon,
+        });
+      }
+    } catch (e: any) {
+      console.error('Quick buy failed', e);
+      const msg = String(e?.message ?? '');
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: msg.toLowerCase().includes('insufficient')
+            ? 'Insufficient Balance'
+            : 'Buy Failed',
+          subtitle: msg || 'Transaction failed',
+          variant: 'error',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: trade.tokenIcon,
+        });
+      }
+    } finally {
+      setBuyingTrade(null);
+    }
+  },
+  [
+    selectedWallets,
+    subWallets,
+    activeWalletPrivateKey,
+    getMaxSpendableWei,
+    account,
+    nonces,
+    terminalRefetch,
+    activechain,
+    sendUserOperationAsync,
+    buyPresets,
+    activePresets,
+  ],
+);
 
   useEffect(() => {
     const walletAddresses = localWallets.map(w => w.address.toLowerCase());

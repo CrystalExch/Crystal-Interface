@@ -3888,16 +3888,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     ),
   }));
 
-  const currentTime = useMemo(() => Math.floor(Date.now() / 1000), []);
-  const formatTimeAgo = useMemo(() => {
-    const cache = new Map<number, string>();
-    return (timestamp: number) => {
-      if (cache.has(timestamp)) return cache.get(timestamp)!;
-      const result = formatTimeAgoStatic(timestamp, currentTime);
-      cache.set(timestamp, result);
-      return result;
-    };
-  }, [currentTime]);
+
 
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [walletNames, setWalletNames] = useState<{ [address: string]: string }>(
@@ -4131,7 +4122,15 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const [buyPresets, setBuyPresets] = useState(() => loadBuyPresets());
 
   const [currentTimestamp, setCurrentTimestamp] = useState(() => Math.floor(Date.now() / 1000));
-
+const formatTimeAgo = useMemo(() => {
+  const cache = new Map<number, string>();
+  return (timestamp: number) => {
+    if (cache.has(timestamp)) return cache.get(timestamp)!;
+    const result = formatTimeAgoStatic(timestamp, currentTimestamp);
+    cache.set(timestamp, result);
+    return result;
+  };
+}, [currentTimestamp]);
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTimestamp(Math.floor(Date.now() / 1000));
