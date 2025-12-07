@@ -28271,24 +28271,24 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         onSharePNL={handleSharePNL}
         client={client}
       />
-      <div className="app-container" style={{
-        marginLeft: (() => {
-          let total = 0;
-          if (trackerWidgetSnap === 'left') total += trackerWidgetWidth;
-          if (spectraWidgetSnap === 'left') total += spectraWidgetWidth;
-          if (pnlWidgetSnap === 'left') total += pnlWidgetWidth;
-          if (walletTrackerWidgetSnap === 'left') total += walletTrackerWidgetWidth;
-          return total > 0 ? `${total}px` : '';
-        })(),
-        marginRight: (() => {
-          let total = 0;
-          if (trackerWidgetSnap === 'right') total += trackerWidgetWidth;
-          if (spectraWidgetSnap === 'right') total += spectraWidgetWidth;
-          if (pnlWidgetSnap === 'right') total += pnlWidgetWidth;
-          if (walletTrackerWidgetSnap === 'right') total += walletTrackerWidgetWidth;
-          return total > 0 ? `${total}px` : '';
-        })(),
-      }}>
+<div className="app-container" style={{
+  marginLeft: (() => {
+    let total = 0;
+    if (trackerWidgetSnap === 'left') total += trackerWidgetWidth;
+    if (spectraWidgetSnap === 'left') total += spectraWidgetWidth;
+    if (pnlWidgetSnap === 'left') total += pnlWidgetWidth;
+    if (walletTrackerWidgetSnap === 'left') total += walletTrackerWidgetWidth;
+    return total > 0 ? `${total}px` : '0px';
+  })(),
+  marginRight: (() => {
+    let total = 0;
+    if (trackerWidgetSnap === 'right') total += trackerWidgetWidth;
+    if (spectraWidgetSnap === 'right') total += spectraWidgetWidth;
+    if (pnlWidgetSnap === 'right') total += pnlWidgetWidth;
+    if (walletTrackerWidgetSnap === 'right') total += walletTrackerWidgetWidth;
+    return total > 0 ? `${total}px` : '0px';
+  })(),
+}}>
         <Routes>
           <Route path="/" element={<Navigate to="/spectra" replace />} />
           <Route path="*" element={<Navigate to="/spectra" replace />} />

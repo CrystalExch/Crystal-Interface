@@ -647,23 +647,45 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
     }
 
     if (isSnapped && presnapState.current) {
+      const clickOffsetX = e.clientX - position.x;
+      const clickOffsetY = e.clientY - position.y;
+
+      const restoredSize = presnapState.current.size;
+      const proportionalY = clickOffsetY / size.height;
+      const newOffsetY = proportionalY * restoredSize.height;
+
+      let newX = e.clientX - clickOffsetX;
+      let newY = e.clientY - newOffsetY;
+
+      const maxX = window.innerWidth - restoredSize.width;
+      const maxY = window.innerHeight - restoredSize.height;
+      newX = Math.max(SIDEBAR_WIDTH, Math.min(newX, maxX));
+      newY = Math.max(HEADER_HEIGHT, Math.min(newY, maxY));
+
       setIsSnapped(null);
-      setPosition(presnapState.current.position);
-      setSize(presnapState.current.size);
+
+      if (onSnapChange) {
+        onSnapChange(null, 0);
+      }
+
+      setPosition({ x: newX, y: newY });
+      setSize(restoredSize);
+
       dragStartPos.current = {
-        x: e.clientX - presnapState.current.position.x,
-        y: e.clientY - presnapState.current.position.y,
+        x: clickOffsetX,
+        y: newOffsetY,
       };
+
       presnapState.current = null;
+      setIsDragging(true);
     } else {
       dragStartPos.current = {
         x: e.clientX - position.x,
         y: e.clientY - position.y,
       };
+      setIsDragging(true);
     }
-
-    setIsDragging(true);
-  }, [position, isSnapped]);
+  }, [position, size, isSnapped, onSnapChange]);
   const getMaxSpendableWei = useCallback(
     (addr: string): bigint => {
       const balances = walletTokenBalances[addr];
@@ -707,7 +729,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
         const isNadFun = trade.launchpad === 'nadfun';
         const isGraduated = trade.status === 'graduated';
 
-        // Determine correct contract address
         const contractAddress = isNadFun
           ? (isGraduated
             ? appSettings.chainConfig[activechain].nadFunDexRouter
@@ -719,7 +740,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
         const transferPromises = [];
 
         if (targets.length > 0) {
-          // Step 1: Initial allocation - split evenly
           for (const addr of targets) {
             const maxWei = getMaxSpendableWei(addr);
             const fairShare = val / BigInt(targets.length);
@@ -732,7 +752,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
             }
           }
 
-          // Step 2: Redistribute remaining amount to wallets with capacity
           for (const entry of plan) {
             if (remaining <= 0n) break;
             const maxWei = getMaxSpendableWei(entry.addr);
@@ -744,7 +763,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
             }
           }
 
-          // Step 3: Check if we have enough balance
           if (remaining > 0n) {
             if (updatePopup) {
               updatePopup(txId, {
@@ -758,7 +776,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
             return;
           }
 
-          // Step 4: Execute transactions
           for (const { addr, amount: partWei } of plan) {
             if (partWei <= 0n) continue;
 
@@ -770,7 +787,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
             if (isNadFun) {
               if (isGraduated) {
-                // nad.fun graduated token - use zeroX
                 const minOutput = BigInt(
                   Number(partWei) / trade.price *
                   (1 - Number(buyPresets[activePresets.graduated]?.slippage || 0) / 100)
@@ -824,7 +840,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                   value: partWei,
                 };
               } else {
-                // nad.fun bonding curve token - use zeroX
                 const minOutput = BigInt(
                   Number(partWei) / trade.price *
                   (1 - Number(buyPresets[activePresets.new]?.slippage || 0) / 100)
@@ -879,7 +894,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
                 };
               }
             } else {
-              // Crystal.fun token - use CrystalRouter
               uo = {
                 target: contractAddress as `0x${string}`,
                 data: encodeFunctionData({
@@ -893,7 +907,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
 
             const wallet = nonces?.current.get(addr);
 
-            // Use 10-parameter format
             const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, false, false, 1, addr];
 
             if (wallet) wallet.nonce += 1;
@@ -917,7 +930,6 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
             transferPromises.push(transferPromise);
           }
         } else {
-          // Single wallet transaction (main account)
           if (account?.address) {
             let uo;
 
@@ -1109,10 +1121,32 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
   );
 
   useEffect(() => {
-    if (onSnapChange) {
-      onSnapChange(isSnapped, size.width);
+    if (!isOpen && isSnapped) {
+      if (onSnapChange) {
+        onSnapChange(null, 0);
+      }
     }
-  }, [isSnapped, size.width, onSnapChange]);
+  }, [isOpen, isSnapped, onSnapChange]);
+
+  useEffect(() => {
+    if (isOpen && savedState.isSnapped && !isSnapped) {
+      const snapSide = savedState.isSnapped;
+      const snapWidth = savedState.size?.width ?? 600;
+
+      setIsSnapped(snapSide);
+      if (snapSide === 'left') {
+        setPosition({ x: SIDEBAR_WIDTH, y: HEADER_HEIGHT });
+        setSize({ width: snapWidth, height: window.innerHeight - HEADER_HEIGHT });
+      } else if (snapSide === 'right') {
+        setPosition({ x: window.innerWidth - snapWidth, y: HEADER_HEIGHT });
+        setSize({ width: snapWidth, height: window.innerHeight - HEADER_HEIGHT });
+      }
+
+      if (onSnapChange) {
+        onSnapChange(snapSide, snapWidth);
+      }
+    }
+  }, [isOpen]);
   useEffect(() => {
     const handleBuyPresetsUpdate = (event: CustomEvent) => {
       setBuyPresets(event.detail);
@@ -1245,28 +1279,42 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
           if (!snapHoverTimeout.current) {
             setSnapZoneHover('left');
             snapHoverTimeout.current = setTimeout(() => {
-              presnapState.current = { position: { x: newX, y: newY }, size };
+              presnapState.current = { position: { x: newX, y: newY }, size: { ...size } };
+
+              const snappedWidth = Math.min(size.width, window.innerWidth - SIDEBAR_WIDTH - 200);
 
               setIsSnapped('left');
-              const snappedWidth = Math.min(size.width, window.innerWidth - SIDEBAR_WIDTH - 200);
               setPosition({ x: SIDEBAR_WIDTH, y: HEADER_HEIGHT });
               setSize({ width: snappedWidth, height: window.innerHeight - HEADER_HEIGHT });
               setSnapZoneHover(null);
               snapHoverTimeout.current = null;
+
+              setTimeout(() => {
+                if (onSnapChange) {
+                  onSnapChange('left', snappedWidth);
+                }
+              }, 0);
             }, SNAP_HOVER_TIME);
           }
         } else if (distanceFromRight <= SNAP_THRESHOLD) {
           if (!snapHoverTimeout.current) {
             setSnapZoneHover('right');
             snapHoverTimeout.current = setTimeout(() => {
-              presnapState.current = { position: { x: newX, y: newY }, size };
+              presnapState.current = { position: { x: newX, y: newY }, size: { ...size } };
+
+              const snappedWidth = Math.min(size.width, window.innerWidth - SIDEBAR_WIDTH - 200);
 
               setIsSnapped('right');
-              const snappedWidth = Math.min(size.width, window.innerWidth - SIDEBAR_WIDTH - 200);
               setPosition({ x: window.innerWidth - snappedWidth, y: HEADER_HEIGHT });
               setSize({ width: snappedWidth, height: window.innerHeight - HEADER_HEIGHT });
               setSnapZoneHover(null);
               snapHoverTimeout.current = null;
+
+              setTimeout(() => {
+                if (onSnapChange) {
+                  onSnapChange('right', snappedWidth);
+                }
+              }, 0);
             }, SNAP_HOVER_TIME);
           }
         } else {
@@ -1285,30 +1333,48 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
         let newX = resizeStartPosition.current.x;
         let newY = resizeStartPosition.current.y;
 
+        const maxAllowedWidth = window.innerWidth - SIDEBAR_WIDTH - 200;
+        const minWidth = 520;
+        const minHeight = 150;
+
         if (isSnapped === 'left' && resizeDirection === 'right') {
-          newWidth = Math.max(200, Math.min(resizeStartSize.current.width + deltaX, window.innerWidth - SIDEBAR_WIDTH));
+          newWidth = Math.max(minWidth, Math.min(resizeStartSize.current.width + deltaX, maxAllowedWidth));
         } else if (isSnapped === 'right' && resizeDirection === 'left') {
-          newWidth = Math.max(200, Math.min(resizeStartSize.current.width - deltaX, window.innerWidth));
+          newWidth = Math.max(minWidth, Math.min(resizeStartSize.current.width - deltaX, maxAllowedWidth));
           newX = window.innerWidth - newWidth;
         } else if (!isSnapped) {
+
           if (resizeDirection.includes('right')) {
-            newWidth = Math.max(200, Math.min(resizeStartSize.current.width + deltaX, window.innerWidth - newX));
+            const maxWidthFromRight = window.innerWidth - newX - 50;
+            newWidth = Math.max(minWidth, Math.min(resizeStartSize.current.width + deltaX, maxWidthFromRight, maxAllowedWidth));
           }
+
           if (resizeDirection.includes('left')) {
-            const maxWidthIncrease = newX - SIDEBAR_WIDTH;
-            newWidth = Math.max(200, Math.min(resizeStartSize.current.width - deltaX, resizeStartSize.current.width + maxWidthIncrease));
-            if (newWidth > 200) {
-              newX = Math.max(SIDEBAR_WIDTH, resizeStartPosition.current.x + deltaX);
+            const maxWidthIncrease = resizeStartPosition.current.x - SIDEBAR_WIDTH;
+            const potentialWidth = resizeStartSize.current.width - deltaX;
+            const constrainedWidth = Math.max(minWidth, Math.min(potentialWidth, resizeStartSize.current.width + maxWidthIncrease, maxAllowedWidth));
+
+            if (constrainedWidth !== resizeStartSize.current.width) {
+              newWidth = constrainedWidth;
+              const widthDiff = newWidth - resizeStartSize.current.width;
+              newX = Math.max(SIDEBAR_WIDTH, resizeStartPosition.current.x - widthDiff);
             }
           }
+
           if (resizeDirection.includes('bottom')) {
-            newHeight = Math.max(150, Math.min(resizeStartSize.current.height + deltaY, window.innerHeight - newY));
+            const maxHeightFromBottom = window.innerHeight - newY;
+            newHeight = Math.max(minHeight, Math.min(resizeStartSize.current.height + deltaY, maxHeightFromBottom));
           }
+
           if (resizeDirection.includes('top')) {
-            const maxHeightIncrease = newY - HEADER_HEIGHT;
-            newHeight = Math.max(150, Math.min(resizeStartSize.current.height - deltaY, resizeStartSize.current.height + maxHeightIncrease));
-            if (newHeight > 150) {
-              newY = Math.max(HEADER_HEIGHT, resizeStartPosition.current.y + deltaY);
+            const maxHeightIncrease = resizeStartPosition.current.y - HEADER_HEIGHT;
+            const potentialHeight = resizeStartSize.current.height - deltaY;
+            const constrainedHeight = Math.max(minHeight, Math.min(potentialHeight, resizeStartSize.current.height + maxHeightIncrease));
+
+            if (constrainedHeight !== resizeStartSize.current.height) {
+              newHeight = constrainedHeight;
+              const heightDiff = newHeight - resizeStartSize.current.height;
+              newY = Math.max(HEADER_HEIGHT, resizeStartPosition.current.y - heightDiff);
             }
           }
         }
@@ -1849,8 +1915,16 @@ const WalletTrackerWidget: React.FC<WalletTrackerWidgetProps> = ({
       </div>
     );
   };
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (!isOpen) {
+      if (onSnapChange) {
+        onSnapChange(null, 0);
+      }
+      setIsSnapped(null);
+    }
+  }, [isOpen, onSnapChange]);
 
+  if (!isOpen) return null;
   return (
     <>
       {(isDragging || isResizing) && (
