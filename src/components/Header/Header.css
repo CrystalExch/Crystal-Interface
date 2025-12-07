@@ -1036,3 +1036,65 @@
 
 
 
+
+
+.copied-token-display {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: rgba(179, 184, 249, 0.05);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 8px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.copied-token-display:hover {
+  background: rgba(179, 184, 249, 0.08);
+}
+
+.copied-token-icon {
+  width: 17px;
+  height: 17px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.copied-token-name {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.copied-token-close {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.2s ease;
+  margin-left: 4px;
+}
+
+.copied-token-close:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.copied-token-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+
+
+.header-clipboard-icon{
+  color: #d8dcff;
+}

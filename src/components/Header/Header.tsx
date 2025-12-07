@@ -309,6 +309,30 @@ const Header: React.FC<HeaderProps> = ({
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
       await navigator.clipboard.writeText(text);
+      
+      const normalizedText = text.toLowerCase();
+      let foundToken = null;
+      
+      if (tokenList && tokenList.length > 0) {
+        foundToken = tokenList.find(token => 
+          token.address?.toLowerCase() === normalizedText ||
+          token.id?.toLowerCase() === normalizedText
+        );
+      }
+      
+      if (!foundToken && tokendict) {
+        const tokenEntry = Object.entries(tokendict).find(([addr, _]) => 
+          addr.toLowerCase() === normalizedText
+        );
+        if (tokenEntry) {
+          foundToken = tokenEntry[1];
+        }
+      }
+      
+      if (foundToken) {
+        setCopiedToken(foundToken);
+      }
+      
       if (showLoadingPopup && updatePopup) {
         showLoadingPopup(txId, {
           title: label,
@@ -333,6 +357,30 @@ const Header: React.FC<HeaderProps> = ({
       ta.select();
       try {
         document.execCommand('copy');
+        
+        const normalizedText = text.toLowerCase();
+        let foundToken = null;
+        
+        if (tokenList && tokenList.length > 0) {
+          foundToken = tokenList.find(token => 
+            token.address?.toLowerCase() === normalizedText ||
+            token.id?.toLowerCase() === normalizedText
+          );
+        }
+        
+        if (!foundToken && tokendict) {
+          const tokenEntry = Object.entries(tokendict).find(([addr, _]) => 
+            addr.toLowerCase() === normalizedText
+          );
+          if (tokenEntry) {
+            foundToken = tokenEntry[1];
+          }
+        }
+        
+        if (foundToken) {
+          setCopiedToken(foundToken);
+        }
+        
         if (showLoadingPopup && updatePopup) {
           showLoadingPopup(txId, {
             title: label,
@@ -517,7 +565,154 @@ const Header: React.FC<HeaderProps> = ({
     }
   }, [isWalletDropdownOpen]);
 
+  useEffect(() => {
+    const requestClipboardPermission = async () => {
+      try {
+        if (navigator.clipboard) {
+          await navigator.clipboard.readText();
+          setClipboardPermission(true);
+          
+          if (navigator.permissions) {
+            const permissionStatus = await navigator.permissions.query({ name: 'clipboard-read' as PermissionName });
+            permissionStatus.onchange = () => {
+              setClipboardPermission(permissionStatus.state === 'granted');
+            };
+          }
+        }
+      } catch (error) {
+        console.log('Clipboard permission not granted or not supported');
+        setClipboardPermission(false);
+      }
+    };
+
+    requestClipboardPermission();
+  }, []);
+  const [lastClipboardText, setLastClipboardText] = useState<string>('');
+
+  useEffect(() => {
+    const BACKEND_BASE_URL = 'https://api.crystal.exchange';
+    const TOTAL_SUPPLY = 1e9;
+
+    const mapBackendTokenToUi = (m: any): any => {
+      const marketCapNativeRaw = Number(m.marketcap_native_raw ?? 0);
+      const price = marketCapNativeRaw / TOTAL_SUPPLY || 0;
+
+      let createdTimestamp = Number(m.created_ts ?? 0);
+      if (createdTimestamp > 1e10) {
+        createdTimestamp = Math.floor(createdTimestamp / 1000);
+      }
+
+      const socials = [m.social1, m.social2, m.social3, m.social4]
+        .map((s: string) => (s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s))
+        .filter(Boolean);
+
+      const twitter = socials.find(
+        (s: string) => s?.startsWith('https://x.com') || s?.startsWith('https://twitter.com'),
+      );
+      const telegram = socials.find((s: string) => s?.startsWith('https://t.me'));
+      const discord = socials.find(
+        (s: string) => s?.startsWith('https://discord.gg') || s?.startsWith('https://discord.com'),
+      );
+      const website = socials.find(
+        (s: string) => !s?.includes('x.com') && !s?.includes('twitter.com') && !s?.includes('t.me') && !s?.includes('discord'),
+      ) || '';
+
+      return {
+        id: (m.token as string).toLowerCase(),
+        address: (m.token as string).toLowerCase(),
+        symbol: (m.symbol as string) || '',
+        name: (m.name as string) || '',
+        image: m.metadata_cid || '',
+        price,
+        marketCap: Number(m.marketcap_usd ?? 0),
+        volume24h: Number(m.volume_usd ?? 0),
+        created: createdTimestamp,
+        twitterHandle: twitter || '',
+        website: website || '',
+        telegramHandle: telegram || '',
+        discordHandle: discord || '',
+        source: m.source === 1 ? 'nadfun' : 'crystal',
+      };
+    };
+
+    const fetchTokenFromBackend = async (address: string) => {
+      try {
+        const url = `${BACKEND_BASE_URL}/search/query?query=${encodeURIComponent(address)}&limit=1`;
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'content-type': 'application/json',
+          },
+        });
+
+        if (!res.ok) return null;
+
+        const json = await res.json();
+        const rows = json?.tokens ?? json?.results ?? json ?? [];
+
+        if (Array.isArray(rows) && rows.length > 0) {
+          return mapBackendTokenToUi(rows[0]);
+        }
+        return null;
+      } catch (error) {
+        console.error('Failed to fetch token from backend:', error);
+        return null;
+      }
+    };
+
+    const checkClipboard = async () => {
+      try {
+        if (!navigator.clipboard) return;
+        
+        const text = await navigator.clipboard.readText();
+        
+        if (text && text !== lastClipboardText && text.startsWith('0x') && text.length >= 40) {
+          setLastClipboardText(text);
+          
+          const normalizedText = text.toLowerCase().trim();
+          let foundToken = null;
+         if (tokenList && tokenList.length > 0) {
+            foundToken = tokenList.find(token => 
+              token.address?.toLowerCase() === normalizedText ||
+              token.id?.toLowerCase() === normalizedText
+            );
+          }
+          
+          if (!foundToken && tokendict) {
+            const tokenEntry = Object.entries(tokendict).find(([addr, _]) => 
+              addr.toLowerCase() === normalizedText
+            );
+            if (tokenEntry) {
+              foundToken = tokenEntry[1];
+            }
+          }
+
+          if (!foundToken) {
+            foundToken = await fetchTokenFromBackend(normalizedText);
+          }
+          
+          if (foundToken) {
+            setCopiedToken(foundToken);
+          }
+        }
+      } catch (error) {
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Clipboard read failed:', error);
+        }
+      }
+    };
+
+    const interval = setInterval(checkClipboard, 2000);
+    
+    checkClipboard();
+
+    return () => clearInterval(interval);
+  }, [tokenList, tokendict, lastClipboardText]);
+
   const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
+  const [copiedToken, setCopiedToken] = useState<any>(null);
+  const [clipboardPermission, setClipboardPermission] = useState<boolean>(false);
   const memeTokenData = isMemeTokenPage && tokenData ? tokenData : undefined;
   const isPerpsRoute = location.pathname.startsWith('/perps')
   const currentperpsActiveMarketKey = isPerpsRoute ? perpsActiveMarketKey : undefined;
@@ -684,7 +879,39 @@ const Header: React.FC<HeaderProps> = ({
           />
         </div>
         <div className={rightHeaderClass}>
-                    {shouldShowSpecialButton && (
+          {copiedToken && (
+            <div className="copied-token-display" onClick={() => {
+              if (copiedToken.id) {
+                handleTokenClick(copiedToken);
+              }
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="header-clipboard-icon"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+              <img 
+                src={copiedToken.image || copiedToken.icon} 
+                alt={copiedToken.symbol} 
+                className="copied-token-icon"
+                onError={(e) => {
+                  e.currentTarget.src = monadicon;
+                }}
+              />
+              <span className="copied-token-name">
+                {copiedToken.symbol || copiedToken.name}
+              </span>
+              <button 
+                className="copied-token-close"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCopiedToken(null);
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          )}
+          {shouldShowSpecialButton && (
 
           <button
             type="button"
