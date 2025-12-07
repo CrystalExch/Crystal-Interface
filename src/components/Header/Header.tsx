@@ -756,12 +756,13 @@ const Header: React.FC<HeaderProps> = ({
                   'Connect Wallet'
                 ) : (
                   <span className="transparent-button-container">
-                    <img
-                      src={walleticon}
-                      className="img-wallet-icon"
-                    />
-                    <span className={`wallet-count ${subWallets.length ? 'has-active' : ''}`}>
-                      {subWallets.length}
+                    <span className="wallet-total-balance-header">
+                      <img src={monadicon} className="wallet-total-balance-icon" />
+                      {formatNumberWithCommas(
+                        subWallets.reduce((total, wallet) =>
+                          total + getWalletBalance(wallet.address),
+                          0
+                        ) + getWalletBalance(scaAddress), 2)}
                     </span>
                     <span className="wallet-separator"></span>
                     <img

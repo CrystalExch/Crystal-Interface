@@ -977,3 +977,19 @@
 .open-wallets-dropdown-arrow.rotated svg {
   transform: rotate(0deg);
 }
+
+.wallet-total-balance-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 6px;
+  font-size: 0.95rem;
+  letter-spacing: -0.3px;
+  color: #eaeaf2;
+}
+
+.wallet-total-balance-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
