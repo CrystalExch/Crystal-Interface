@@ -25,6 +25,10 @@ import edgeX from '../../assets/edgeX.svg';
 import swapicon from '../../assets/swap_icon.png';
 import './Header.css';
 import { createPortal } from 'react-dom';
+import { NadFunAbi } from '../../abis/NadFun.ts';
+import { zeroXActionsAbi } from '../../abis/zeroXActionsAbi.ts';
+import { zeroXAbi } from '../../abis/zeroXAbi.ts';
+import { settings as appSettings } from '../../settings';
 
 interface Language {
   code: string;
@@ -96,9 +100,11 @@ interface HeaderProps {
     valueNet: number;
   };
   lastNonceGroupFetch: any;
-  scaAddress: any;
   onSharePNL?: (shareData: any) => void;
   client: any;
+  selectedWallets: Set<string>;
+  nonces: React.MutableRefObject<Map<string, any>>;
+  scaAddress: string;
 }
 
 const Tooltip: React.FC<{
@@ -303,36 +309,57 @@ const Header: React.FC<HeaderProps> = ({
   lastNonceGroupFetch,
   scaAddress,
   onSharePNL,
-  client
+  client,
+  selectedWallets,
+  nonces
 }) => {
+  const getMaxSpendableWei = useCallback(
+    (addr: string): bigint => {
+      const balances = walletTokenBalances[addr];
+      if (!balances) return 0n;
+
+      if (!settings.chainConfig[activechain].eth || !balances[settings.chainConfig[activechain].eth]) return 0n;
+
+      let raw = balances[settings.chainConfig[activechain].eth];
+      if (raw <= 0n) return 0n;
+
+      const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+      const safe = raw > gasReserve ? raw - gasReserve : 0n;
+
+      return safe;
+    },
+    [walletTokenBalances, activechain],
+  );
+  const [copiedTokenBuyAmount, setCopiedTokenBuyAmount] = useState('1');
+  const [isEditingCopiedAmount, setIsEditingCopiedAmount] = useState(false);
   const copyToClipboard = async (text: string, label = 'Address copied') => {
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
       await navigator.clipboard.writeText(text);
-      
+
       const normalizedText = text.toLowerCase();
       let foundToken = null;
-      
+
       if (tokenList && tokenList.length > 0) {
-        foundToken = tokenList.find(token => 
+        foundToken = tokenList.find(token =>
           token.address?.toLowerCase() === normalizedText ||
           token.id?.toLowerCase() === normalizedText
         );
       }
-      
+
       if (!foundToken && tokendict) {
-        const tokenEntry = Object.entries(tokendict).find(([addr, _]) => 
+        const tokenEntry = Object.entries(tokendict).find(([addr, _]) =>
           addr.toLowerCase() === normalizedText
         );
         if (tokenEntry) {
           foundToken = tokenEntry[1];
         }
       }
-      
+
       if (foundToken) {
         setCopiedToken(foundToken);
       }
-      
+
       if (showLoadingPopup && updatePopup) {
         showLoadingPopup(txId, {
           title: label,
@@ -357,30 +384,30 @@ const Header: React.FC<HeaderProps> = ({
       ta.select();
       try {
         document.execCommand('copy');
-        
+
         const normalizedText = text.toLowerCase();
         let foundToken = null;
-        
+
         if (tokenList && tokenList.length > 0) {
-          foundToken = tokenList.find(token => 
+          foundToken = tokenList.find(token =>
             token.address?.toLowerCase() === normalizedText ||
             token.id?.toLowerCase() === normalizedText
           );
         }
-        
+
         if (!foundToken && tokendict) {
-          const tokenEntry = Object.entries(tokendict).find(([addr, _]) => 
+          const tokenEntry = Object.entries(tokendict).find(([addr, _]) =>
             addr.toLowerCase() === normalizedText
           );
           if (tokenEntry) {
             foundToken = tokenEntry[1];
           }
         }
-        
+
         if (foundToken) {
           setCopiedToken(foundToken);
         }
-        
+
         if (showLoadingPopup && updatePopup) {
           showLoadingPopup(txId, {
             title: label,
@@ -431,80 +458,330 @@ const Header: React.FC<HeaderProps> = ({
     setIsMemeSearchOpen(false);
   };
 
-  const handleQuickBuy = useCallback(async (token: any, amt: string) => {
-    const val = BigInt(amt || '0') * 10n ** 18n;
-    if (val === 0n) return;
+const handleQuickBuy = useCallback(async (token: any, amt: string) => {
+  const val = BigInt(parseFloat(amt) * 10 ** 18 || 0);
+  if (val === 0n) return;
 
-    const routerAddress = settings.chainConfig[activechain]?.launchpadRouter?.toLowerCase();
-    if (!routerAddress) {
-      console.error('Router address not found');
-      return;
+  const targets: string[] = Array.from(selectedWallets);
+  const txId = `quickbuy-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  try {
+    if (showLoadingPopup) {
+      showLoadingPopup(txId, {
+        title: 'Sending batch buy...',
+        subtitle: `Buying ${amt} MON of ${token.symbol} across ${targets.length == 0 ? 1 : targets.length} wallet${targets.length > 1 ? 's' : ''}`,
+        amount: amt,
+        amountUnit: 'MON',
+        tokenImage: token.image,
+      });
     }
 
-    const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const isNadFun = token.source === 'nadfun';
+    const contractAddress = isNadFun
+      ? token.status == 'graduated' ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
+      : appSettings.chainConfig[activechain].router;
 
-    try {
-      if (showLoadingPopup) {
-        showLoadingPopup(txId, {
-          title: 'Sending transaction...',
-          subtitle: `${amt} MON worth of ${token.symbol}`,
-          amount: amt,
-          amountUnit: 'MON',
-          tokenImage: token.image
-        });
+    let remaining = val;
+    const plan: { addr: string; amount: bigint }[] = [];
+    const transferPromises = [];
+
+    if (targets.length > 0) {
+      for (const addr of targets) {
+        const maxWei = getMaxSpendableWei(addr);
+        const fairShare = val / BigInt(targets.length);
+        const allocation = fairShare > maxWei ? maxWei : fairShare;
+        if (allocation > 0n) {
+          plan.push({ addr, amount: allocation });
+          remaining -= allocation;
+        } else {
+          plan.push({ addr, amount: 0n });
+        }
       }
-
-      const uo = {
-        target: routerAddress,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: 'buy',
-          args: [true, token.id as `0x${string}`, val, 0n]
-        }),
-        value: val,
-      };
-
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Confirming transaction...',
-          subtitle: `${amt} MON worth of ${token.symbol}`,
-          variant: 'info',
-          tokenImage: token.image
-        });
+      for (const entry of plan) {
+        if (remaining <= 0n) break;
+        const maxWei = getMaxSpendableWei(entry.addr);
+        const room = maxWei - entry.amount;
+        if (room > 0n) {
+          const add = remaining > room ? room : remaining;
+          entry.amount += add;
+          remaining -= add;
+        }
       }
-
-      await sendUserOperationAsync({ uo });
-
-      if (terminalRefetch) {
-        terminalRefetch();
+      if (remaining > 0n) {
+        if (updatePopup) {
+          updatePopup(txId, {
+            title: 'Batch buy failed',
+            subtitle: 'Not enough MON balance across selected wallets',
+            variant: 'error',
+            isLoading: false,
+          });
+        }
+        return;
       }
+      for (const { addr, amount: partWei } of plan) {
+        if (partWei <= 0n) continue;
+        const wally = subWallets.find((w) => w.address === addr);
+        const pk = wally?.privateKey ?? activeWalletPrivateKey;
+        if (!pk) continue;
 
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Quick Buy Complete',
-          subtitle: `Successfully bought ${token.symbol} with ${amt} MON`,
-          variant: 'success',
-          confirmed: true,
-          isLoading: false,
-          tokenImage: token.image
-        });
+        let uo;
+        if (isNadFun) {
+          if (token.status == 'graduated') {
+            let minOutput = BigInt(Number(partWei) / token.price * (1 - Number(buyPresets?.[activePresets?.graduated || 1]?.slippage || 0) / 100))
+            const actions: any = []
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                abi: NadFunAbi,
+                functionName: 'buy',
+                args: [{
+                  amountOutMin: BigInt(minOutput == 0n ? 1n : minOutput),
+                  token: token.id as `0x${string}`,
+                  to: addr as `0x${string}`,
+                  deadline: 0n,
+                }],
+              })],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
+            }))
+            uo = {
+              target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+              data: encodeFunctionData({
+                abi: zeroXAbi,
+                functionName: 'execute',
+                args: [{
+                  recipient: addr as `0x${string}`,
+                  buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                  minAmountOut: BigInt(0n),
+                }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+              }),
+              value: partWei,
+            };
+          } else {
+            const status = token.status || 'new';
+            const presetKey = activePresets?.[status] || 1;
+            let minOutput = BigInt(Number(partWei) / token.price * (1 - Number(buyPresets?.[presetKey]?.slippage || 0) / 100))
+
+            const actions: any = []
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                abi: NadFunAbi,
+                functionName: 'buy',
+                args: [{
+                  amountOutMin: BigInt(minOutput),
+                  token: token.id as `0x${string}`,
+                  to: addr as `0x${string}`,
+                  deadline: 0n,
+                }],
+              })],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
+            }))
+            uo = {
+              target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+              data: encodeFunctionData({
+                abi: zeroXAbi,
+                functionName: 'execute',
+                args: [{
+                  recipient: addr as `0x${string}`,
+                  buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                  minAmountOut: BigInt(0n),
+                }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+              }),
+              value: partWei,
+            };
+          }
+        } else {
+          uo = {
+            target: contractAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalRouterAbi,
+              functionName: 'buy',
+              args: [true, token.id as `0x${string}`, partWei, BigInt(0)],
+            }),
+            value: partWei,
+          };
+        }
+
+        const wallet = nonces.current.get(addr);
+        const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, false, false, 1, addr];
+        if (wallet) wallet.nonce += 1;
+        wallet?.pendingtxs.push(params);
+        const transferPromise = sendUserOperationAsync(...params)
+          .then(() => {
+            if (wallet)
+              wallet.pendingtxs = wallet.pendingtxs.filter(
+                (p: any) => p[5] != params[5],
+              );
+            return true;
+          })
+          .catch(() => {
+            if (wallet)
+              wallet.pendingtxs = wallet.pendingtxs.filter(
+                (p: any) => p[5] != params[5],
+              );
+            return false;
+          });
+        transferPromises.push(transferPromise);
       }
-    } catch (e: any) {
-      console.error('Quick buy failed', e);
-      const msg = String(e?.message ?? '');
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
-          subtitle: msg || 'Please try again.',
-          variant: 'error',
-          confirmed: true,
-          isLoading: false,
-          tokenImage: token.image
-        });
+    } else {
+      if (account?.address && !activeWalletPrivateKey) {
+        let uo;
+
+        if (isNadFun) {
+          if (token.status == 'graduated') {
+            let minOutput = BigInt(Number(val) / token.price * (1 - Number(buyPresets?.[activePresets?.graduated || 1]?.slippage || 0) / 100))
+            const actions: any = []
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                abi: NadFunAbi,
+                functionName: 'buy',
+                args: [{
+                  amountOutMin: BigInt(minOutput == 0n ? 1n : minOutput),
+                  token: token.id as `0x${string}`,
+                  to: account.address as `0x${string}`,
+                  deadline: 0n,
+                }],
+              })],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
+            }))
+            uo = {
+              target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+              data: encodeFunctionData({
+                abi: zeroXAbi,
+                functionName: 'execute',
+                args: [{
+                  recipient: account.address as `0x${string}`,
+                  buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                  minAmountOut: BigInt(0n),
+                }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+              }),
+              value: val,
+            };
+          } else {
+            const status = token.status || 'new';
+            const presetKey = activePresets?.[status] || 1;
+            let minOutput = BigInt(Number(val) / token.price * (1 - Number(buyPresets?.[presetKey]?.slippage || 0) / 100))
+
+            const actions: any = []
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                abi: NadFunAbi,
+                functionName: 'buy',
+                args: [{
+                  amountOutMin: BigInt(minOutput),
+                  token: token.id as `0x${string}`,
+                  to: account.address as `0x${string}`,
+                  deadline: 0n,
+                }],
+              })],
+            }))
+            actions.push(encodeFunctionData({
+              abi: zeroXActionsAbi,
+              functionName: 'BASIC',
+              args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
+            }))
+            uo = {
+              target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+              data: encodeFunctionData({
+                abi: zeroXAbi,
+                functionName: 'execute',
+                args: [{
+                  recipient: account.address as `0x${string}`,
+                  buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                  minAmountOut: BigInt(0n),
+                }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+              }),
+              value: val,
+            };
+          }
+        } else {
+          uo = {
+            target: contractAddress as `0x${string}`,
+            data: encodeFunctionData({
+              abi: CrystalRouterAbi,
+              functionName: 'buy',
+              args: [true, token.id as `0x${string}`, val, 0n],
+            }),
+            value: val,
+          };
+        }
+
+        const transferPromise = sendUserOperationAsync({ uo });
+        transferPromises.push(transferPromise.then(() => {
+          return true;
+        })
+          .catch(() => {
+            return false;
+          }));
       }
     }
-  }, [sendUserOperationAsync, activechain, terminalRefetch]);
 
+    const results = await Promise.allSettled(transferPromises);
+    const successfulTransfers = results.filter(
+      (result) => result.status === 'fulfilled' && result.value === true,
+    ).length;
+
+    if (terminalRefetch) {
+      terminalRefetch();
+    }
+
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: `Bought ${amt} MON Worth`,
+        subtitle: `Distributed across ${successfulTransfers} wallet${successfulTransfers !== 1 ? 's' : ''}`,
+        variant: 'success',
+        confirmed: true,
+        isLoading: false,
+        tokenImage: token.image,
+      });
+    }
+  } catch (e: any) {
+    console.error('Quick buy failed', e);
+    const msg = String(e?.message ?? '');
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: msg.toLowerCase().includes('insufficient')
+          ? 'Insufficient Balance'
+          : 'Buy Failed',
+        subtitle: msg || 'Transaction failed',
+        variant: 'error',
+        confirmed: true,
+        isLoading: false,
+        tokenImage: token.image,
+      });
+    }
+  }
+}, [
+  sendUserOperationAsync,
+  selectedWallets,
+  subWallets,
+  activeWalletPrivateKey,
+  getMaxSpendableWei,
+  account,
+  nonces,
+  activechain,
+  buyPresets,
+  activePresets,
+  terminalRefetch,
+]);
   const [pendingNotifs, setPendingNotifs] = useState(0);
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
@@ -571,7 +848,7 @@ const Header: React.FC<HeaderProps> = ({
         if (navigator.clipboard) {
           await navigator.clipboard.readText();
           setClipboardPermission(true);
-          
+
           if (navigator.permissions) {
             const permissionStatus = await navigator.permissions.query({ name: 'clipboard-read' as PermissionName });
             permissionStatus.onchange = () => {
@@ -663,23 +940,23 @@ const Header: React.FC<HeaderProps> = ({
     const checkClipboard = async () => {
       try {
         if (!navigator.clipboard) return;
-        
+
         const text = await navigator.clipboard.readText();
-        
+
         if (text && text !== lastClipboardText && text.startsWith('0x') && text.length >= 40) {
           setLastClipboardText(text);
-          
+
           const normalizedText = text.toLowerCase().trim();
           let foundToken = null;
-         if (tokenList && tokenList.length > 0) {
-            foundToken = tokenList.find(token => 
+          if (tokenList && tokenList.length > 0) {
+            foundToken = tokenList.find(token =>
               token.address?.toLowerCase() === normalizedText ||
               token.id?.toLowerCase() === normalizedText
             );
           }
-          
+
           if (!foundToken && tokendict) {
-            const tokenEntry = Object.entries(tokendict).find(([addr, _]) => 
+            const tokenEntry = Object.entries(tokendict).find(([addr, _]) =>
               addr.toLowerCase() === normalizedText
             );
             if (tokenEntry) {
@@ -690,7 +967,7 @@ const Header: React.FC<HeaderProps> = ({
           if (!foundToken) {
             foundToken = await fetchTokenFromBackend(normalizedText);
           }
-          
+
           if (foundToken) {
             setCopiedToken(foundToken);
           }
@@ -704,7 +981,7 @@ const Header: React.FC<HeaderProps> = ({
     };
 
     const interval = setInterval(checkClipboard, 2000);
-    
+
     checkClipboard();
 
     return () => clearInterval(interval);
@@ -881,14 +1158,17 @@ const Header: React.FC<HeaderProps> = ({
         <div className={rightHeaderClass}>
           {copiedToken && (
             <div className="copied-token-display" onClick={() => {
-              if (copiedToken.id) {
+              if (!isEditingCopiedAmount && copiedToken.id) {
                 handleTokenClick(copiedToken);
               }
             }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="header-clipboard-icon"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
-              <img 
-                src={copiedToken.image || copiedToken.icon} 
-                alt={copiedToken.symbol} 
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="header-clipboard-icon">
+                <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+              </svg>
+              <img
+                src={copiedToken.image || copiedToken.icon}
+                alt={copiedToken.symbol}
                 className="copied-token-icon"
                 onError={(e) => {
                   e.currentTarget.src = monadicon;
@@ -897,35 +1177,79 @@ const Header: React.FC<HeaderProps> = ({
               <span className="copied-token-name">
                 {copiedToken.symbol || copiedToken.name}
               </span>
-              <button 
-                className="copied-token-close"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCopiedToken(null);
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
+
+              <div className="copied-token-actions">
+                {isEditingCopiedAmount ? (
+                  <div className="copied-token-amount-edit" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="text"
+                      value={copiedTokenBuyAmount}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/[^0-9.]/g, '');
+                        setCopiedTokenBuyAmount(value);
+                      }}
+                      onBlur={() => setIsEditingCopiedAmount(false)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          setIsEditingCopiedAmount(false);
+                        }
+                      }}
+                      className="copied-token-amount-input"
+                      autoFocus
+                    />
+                    <img src={monadicon} className="copied-token-mon-icon" alt="MON" />
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      className="copied-token-edit-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsEditingCopiedAmount(true);
+                      }}
+                      title="Edit amount"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                  </>
+                )}
+
+                <button
+                  className="copied-token-buy-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleQuickBuy(copiedToken, copiedTokenBuyAmount);
+                  }}
+                  title="Quick buy"
+                >
+                  <svg width="25" height="25" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13 10h5l-6 8v-6H7l6-8z" />
+                  </svg>
+                  <span className="copied-token-amount">
+                      {copiedTokenBuyAmount}
+                    </span>
+                </button>
+              </div>
             </div>
           )}
           {shouldShowSpecialButton && (
 
-          <button
-            type="button"
-            className="meme-search-button"
-            onClick={() => setpopup(36)}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="meme-button-search-icon"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></svg>
-            <span className="meme-search-placeholder">
-            Search by token or CA...
-            </span>
-            <span className="meme-search-keybind">/</span>
+            <button
+              type="button"
+              className="meme-search-button"
+              onClick={() => setpopup(36)}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="meme-button-search-icon"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></svg>
+              <span className="meme-search-placeholder">
+                Search by token or CA...
+              </span>
+              <span className="meme-search-keybind">/</span>
 
-          </button>
-                    )}
+            </button>
+          )}
           {/* <button
             type="button"
             className="history-button"

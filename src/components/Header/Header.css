@@ -1042,7 +1042,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 12px;
+  padding: 0px 12px;
   background: rgba(179, 184, 249, 0.05);
   border-radius: 20px;
   cursor: pointer;
@@ -1097,4 +1097,90 @@
 
 .header-clipboard-icon{
   color: #d8dcff;
+}
+
+.copied-token-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.copied-token-amount {
+  font-size: 1rem;
+  color: rgba(255, 255, 255);
+  white-space: nowrap;
+}
+
+.copied-token-amount-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.copied-token-amount-input {
+  width: 60px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 0.85rem;
+  outline: none;
+  padding: 2px 4px;
+}
+
+.copied-token-mon-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.copied-token-edit-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.copied-token-edit-btn:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.copied-token-buy-btn {
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border-left: 1.5px solid rgba(255, 255, 255, 0.05);
+}
+
+
+.copied-token-buy-btn:active {
+  transform: scale(0.98);
+}
+
+.copied-token-close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.copied-token-close:hover {
+  color: rgba(255, 255, 255, 0.9);
 }
