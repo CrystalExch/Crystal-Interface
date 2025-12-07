@@ -4315,7 +4315,7 @@ const formatTimeAgo = useMemo(() => {
         const plan: { addr: string; amount: bigint }[] = [];
         const transferPromises = [];
 
-        if (targets.length > 0 || !activeWalletPrivateKey) {
+        if (targets.length > 0) {
           for (const addr of targets) {
             const maxWei = getMaxSpendableWei(addr);
             const fairShare = val / BigInt(targets.length);
@@ -4481,7 +4481,7 @@ const formatTimeAgo = useMemo(() => {
             transferPromises.push(transferPromise);
           }
         } else {
-          if (account?.address) {
+          if (account?.address && !activeWalletPrivateKey) {
             let uo;
 
             if (isNadFun) {

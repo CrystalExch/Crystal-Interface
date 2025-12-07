@@ -461,7 +461,6 @@ const Header: React.FC<HeaderProps> = ({
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
   const walletDropdownRef = useRef<HTMLDivElement>(null);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   const languageOptions: Language[] = [
     { code: 'EN', name: 'English' },
@@ -480,16 +479,6 @@ const Header: React.FC<HeaderProps> = ({
   const backgroundlesslogo = '/CrystalLogo.png';
 
   const isMemeTokenPage = location.pathname.startsWith('/meme/');
-
-  // Track window width for responsive button display
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   useEffect(() => {
     const storedWalletNames = localStorage.getItem('crystal_wallet_names');
@@ -638,7 +627,7 @@ const Header: React.FC<HeaderProps> = ({
   const currentWallet = getCurrentWalletInfo();
   const displayAddress = currentWallet ? currentWallet.address : account.address;
 
-  const shouldShowSpecialButton = isMemeTokenPage || isPerpsRoute || windowWidth < 1020;
+  const shouldShowSpecialButton = isMemeTokenPage || isPerpsRoute || window.innerWidth < 1020;
 
   return (
     <>

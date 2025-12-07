@@ -252,6 +252,7 @@ interface Token {
   bondingPercentage: number;
   source?: 'crystal' | 'nadfun';
   market?: string;
+  circulatingSupply: number;
 }
 
 type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
@@ -4242,12 +4243,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               trader = '',
               ...rest
             } = action.updates;
+
+            const bondingPercentage = status == 'graduated' ? 1 : Number(buyTransactions > 0 ? t.circulatingSupply + otherVolumeDelta : t.circulatingSupply - otherVolumeDelta) / Number(t.source == 'crystal' ? 12500 : 793100000)
             status = s == 'graduated'
               ? 'graduated'
-              : (rest?.price ?? t?.price) * TOTAL_SUPPLY > (t.source == 'crystal' ? 12500 : 1290000)
+              : bondingPercentage > .5
                 ? 'graduating'
                 : 'new'
-            const bondingPercentage = status == 'graduated' ? 1 : (rest?.price ?? t?.price) * TOTAL_SUPPLY / (t.source == 'crystal' ? 12500 : 1290000);
 
             if (status != s) {
               movedToken = {
@@ -4256,6 +4258,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 volume24h: t.volume24h + volumeDelta,
                 buyTransactions: t.buyTransactions + buyTransactions,
                 sellTransactions: t.sellTransactions + sellTransactions,
+                circulatingSupply: buyTransactions > 0 ? t.circulatingSupply + otherVolumeDelta : t.circulatingSupply - otherVolumeDelta,
                 status: status,
                 bondingPercentage: bondingPercentage,
                 devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + (otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - (otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
@@ -4268,6 +4271,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               volume24h: t.volume24h + volumeDelta,
               buyTransactions: t.buyTransactions + buyTransactions,
               sellTransactions: t.sellTransactions + sellTransactions,
+              circulatingSupply: buyTransactions > 0 ? t.circulatingSupply + otherVolumeDelta : t.circulatingSupply - otherVolumeDelta,
               status: status,
               bondingPercentage: bondingPercentage,
               devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + (otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - (otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
@@ -4723,6 +4727,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 s?.startsWith("https://discord.com"),
             );
             if (discord) socials.splice(socials.indexOf(discord), 1);
+
             const website = socials[0];
             const token: Token = {
               ...defaultMetrics,
@@ -4745,7 +4750,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               holders: holdersRaw,
               devHolding: devHoldingRaw / 1e27,
               top10Holding: top10HoldingRaw / 1e25,
-              bondingPercentage: m.graduationPercentageBps,
+              bondingPercentage: Number(m.circulating_supply) / Number(793100000),
               source: launchpad,
               market: m.market,
               discordHandle: discord ?? "",
@@ -4753,6 +4758,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               twitterHandle: twitter ?? "",
               website: website ?? "",
               sniperHolding: Number(m.snipers?.holdingShare / 1e16),
+              circulatingSupply: Number(m.circulating_supply),
             };
 
             tokens.push(token);
@@ -5583,6 +5589,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 graduatedTokens: 0,
                 launchedTokens: 0,
                 bondingPercentage: 0,
+                circulatingSupply: 0,
                 source: 'nadfun',
                 market: poolAddress,
               };
@@ -5827,6 +5834,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   buyTransactions: (p?.buyTransactions || 0) + (isBuy ? 1 : 0),
                   sellTransactions: (p?.sellTransactions || 0) + (isBuy ? 0 : 1),
                   volume24h: (p?.volume24h || 0) + (isBuy ? amountIn : amountOut),
+                  bondingPercentage: Number(isBuy ? (p?.circulatingSupply || 0) + (isBuy ? amountOut : amountIn) : (p?.circulatingSupply || 0) - (isBuy ? amountOut : amountIn)) / Number(793100000),
+                  circulatingSupply: isBuy ? (p?.circulatingSupply || 0) + (isBuy ? amountOut : amountIn) : (p?.circulatingSupply || 0) - (isBuy ? amountOut : amountIn),
                 }));
 
                 setMemeTrades(prev => [
@@ -6470,6 +6479,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       graduatedTokens: 0,
       launchedTokens: 0,
       bondingPercentage: 0,
+      circulatingSupply: 0,
       source: "nadfun"
     };
 
@@ -6709,9 +6719,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           holders: (m.totalHolders ?? 0),
           devHolding: Number(m.devHoldingAmount ?? 0) / 1e27,
           trades: m.trades,
-          bondingPercentage: m.graduationPercentageBps,
+          bondingPercentage: Number(m.circulating_supply) / Number(793100000),
           source: "nadfun",
-          market: m.market ?? null
+          market: m.market ?? null,
+          circulatingSupply: Number(m.circulating_supply)
         };
 
         setTokenData(tempTokenData);
@@ -11655,7 +11666,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return key;
   };
 
-  const handleCancelTopOrder = useCallback(async () => {
+  /* const handleCancelTopOrder = useCallback(async () => {
     if (!connected || userchain !== activechain || orders.length === 0 || isSigning) {
       return;
     }
@@ -11767,7 +11778,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
         break;
     }
-  }, [popup, location.pathname, swapButtonDisabled, displayValuesLoading, isSigning, connected, userchain, activechain, limitButtonDisabled, sendButtonDisabled, scaleButtonDisabled]);
+  }, [popup, location.pathname, swapButtonDisabled, displayValuesLoading, isSigning, connected, userchain, activechain, limitButtonDisabled, sendButtonDisabled, scaleButtonDisabled]); */
 
   /* useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -12060,7 +12071,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [popup, scaAddress]);
 
   // input tokenlist
-  const TokenList1 = (
+  /* const TokenList1 = (
     <div className="tokenlistcontainer">
       <ul className="tokenlist">
         {Object.values(tokendict).filter(
@@ -13389,7 +13400,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         )}
       </ul>
     </div>
-  );
+  ); */
 
   // input tokenlist
   const tempTokenList1 = (
@@ -28271,24 +28282,24 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         onSharePNL={handleSharePNL}
         client={client}
       />
-<div className="app-container" style={{
-  marginLeft: (() => {
-    let total = 0;
-    if (trackerWidgetSnap === 'left') total += trackerWidgetWidth;
-    if (spectraWidgetSnap === 'left') total += spectraWidgetWidth;
-    if (pnlWidgetSnap === 'left') total += pnlWidgetWidth;
-    if (walletTrackerWidgetSnap === 'left') total += walletTrackerWidgetWidth;
-    return total > 0 ? `${total}px` : '0px';
-  })(),
-  marginRight: (() => {
-    let total = 0;
-    if (trackerWidgetSnap === 'right') total += trackerWidgetWidth;
-    if (spectraWidgetSnap === 'right') total += spectraWidgetWidth;
-    if (pnlWidgetSnap === 'right') total += pnlWidgetWidth;
-    if (walletTrackerWidgetSnap === 'right') total += walletTrackerWidgetWidth;
-    return total > 0 ? `${total}px` : '0px';
-  })(),
-}}>
+        <div className="app-container" style={{
+          marginLeft: (() => {
+            let total = 0;
+            if (trackerWidgetSnap === 'left') total += trackerWidgetWidth;
+            if (spectraWidgetSnap === 'left') total += spectraWidgetWidth;
+            if (pnlWidgetSnap === 'left') total += pnlWidgetWidth;
+            if (walletTrackerWidgetSnap === 'left') total += walletTrackerWidgetWidth;
+            return total > 0 ? `${total}px` : '0px';
+          })(),
+          marginRight: (() => {
+            let total = 0;
+            if (trackerWidgetSnap === 'right') total += trackerWidgetWidth;
+            if (spectraWidgetSnap === 'right') total += spectraWidgetWidth;
+            if (pnlWidgetSnap === 'right') total += pnlWidgetWidth;
+            if (walletTrackerWidgetSnap === 'right') total += walletTrackerWidgetWidth;
+            return total > 0 ? `${total}px` : '0px';
+          })(),
+        }}>
         <Routes>
           <Route path="/" element={<Navigate to="/spectra" replace />} />
           <Route path="*" element={<Navigate to="/spectra" replace />} />

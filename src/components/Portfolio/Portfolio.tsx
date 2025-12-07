@@ -695,7 +695,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
   const deleteWallet = (address: string) => {
     const walletToDelete = subWallets.find(w => w.address === address);
-    if (walletToDelete.privateKey == activeWalletPrivateKey) {
+    if (walletToDelete && walletToDelete.privateKey == activeWalletPrivateKey) {
       setOneCTSigner(subWallets[0].privateKey)
     }
     if (selectedWallets.has(address)) {
@@ -2444,9 +2444,9 @@ const activePositions = isSpectating
     if (!activePositions || activePositions.length === 0) {
       return [
         { label: '>500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
-        { label: '200% ~ 500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
-        { label: '0% ~ 200%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
-        { label: '0% ~ -50%', count: 0, color: 'rgb(247, 127, 125, 0.25)' },
+        { label: '200% - 500%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
+        { label: '0% - 200%', count: 0, color: 'rgb(67, 254, 154, 0.25)' },
+        { label: '-50% - 0%', count: 0, color: 'rgb(247, 127, 125, 0.25)' },
         { label: '<-50%', count: 0, color: 'rgb(247, 127, 125, 0.25)' }
       ];
     }
@@ -2479,9 +2479,9 @@ const activePositions = isSpectating
 
     return [
       { label: '>500%', count: ranges.above500, color: 'rgb(67, 254, 154, 0.25)' },
-      { label: '200% ~ 500%', count: ranges.range200to500, color: 'rgb(67, 254, 154, 0.25)' },
-      { label: '0% ~ 200%', count: ranges.range0to200, color: 'rgb(67, 254, 154, 0.25)' },
-      { label: '0% ~ -50%', count: ranges.range0toNeg50, color: 'rgb(247, 127, 125, 0.25)' },
+      { label: '200% - 500%', count: ranges.range200to500, color: 'rgb(67, 254, 154, 0.25)' },
+      { label: '0% - 200%', count: ranges.range0to200, color: 'rgb(67, 254, 154, 0.25)' },
+      { label: '-50% - 0%', count: ranges.range0toNeg50, color: 'rgb(247, 127, 125, 0.25)' },
       { label: '<-50%', count: ranges.belowNeg50, color: 'rgb(247, 127, 125, 0.25)' }
     ];
   };

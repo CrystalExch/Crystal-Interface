@@ -452,7 +452,7 @@
 }
 
 .perps-tpsl-section {
-    margin: 12px;
+    margin: 6px 12px 12px 12px;
 }
 
 .perps-tpsl-header {
@@ -650,7 +650,7 @@
     outline: none;
     transition: border-color 0.2s ease;
     width: 100%;
-      direction: rtl;
+    text-align: right;
 }
 
 
@@ -671,8 +671,8 @@
     display: flex;
     font-size: 0.75rem;
     justify-content: space-between;
-    margin-bottom: 2px;
     width: 100%;
+    padding-bottom: 2px;
 }
 
 .perps-current-position-container {
@@ -698,7 +698,7 @@
     color: rgba(255, 255, 255, 0.9);
     outline: none;
     transition: border-color 0.2s ease;
-    direction: rtl;
+    text-align: right;
 }
 
 .perps-tpsl-percent-input:focus {
@@ -797,16 +797,16 @@
 }
 
 .perps-amount-section {
-    padding: 9px 13px 0 13px;
+    padding: 6px 13px 0 13px;
 }
 
 .perps-trade-input-wrapper {
     display: flex;
     border: 1.5px solid rgba(179, 184, 249, 0.12);
     width: 100%;
-    padding: 5px 10px;
+    padding: 5px 4px 5px 10px;
     border-radius: 4px;
-    margin-top: 4px;
+    margin: 4px 0px 2px 0px;
     font-size: 0.85rem;
     color: grey;
 }
@@ -816,7 +816,7 @@
     color: white;
     text-align: right;
     width: 100%;
-    padding-right: 5px;
+    padding-right: 6px;
     font-size: 0.85rem;
 }
 
@@ -875,6 +875,7 @@
 .perps-mid-button {
     color: #aaaecf;
     cursor: pointer;
+    margin-right: 6px;
 }
 
 .perps-info-rectangle {
@@ -1505,7 +1506,7 @@ display: flex;
 .perps-size-unit-button {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     cursor: pointer;
     transition: all 0.2s ease;
     color: rgba(255, 255, 255, 0.9);

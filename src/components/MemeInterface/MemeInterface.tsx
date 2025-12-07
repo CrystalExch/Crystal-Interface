@@ -5369,7 +5369,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         </span>
                       </Tooltip>
                     </div>
-                    <Tooltip content="View on Monad Explorer">
+                    <Tooltip content="View on explorer">
                       <svg
                         className="meme-address-link"
                         xmlns="http://www.w3.org/2000/svg"
@@ -5401,7 +5401,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         </span>
                       </Tooltip>
                     </div>
-                    <Tooltip content="View on Monad Explorer">
+                    <Tooltip content="View on explorer">
                       <svg
                         className="meme-address-link"
                         xmlns="http://www.w3.org/2000/svg"
@@ -5418,7 +5418,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   </div>
                   <div className="dev-address-bottom">
                     <div className="dev-address-bottom-left">
-                      <Tooltip content="View funding wallet on Monad Explorer">
+                      <Tooltip content="View funding wallet on explorer">
                         <div
                           className="funding-location"
                           onClick={() =>
@@ -5444,7 +5444,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                             <path d="m5 12 7-7 7 7" />
                             <path d="M12 19V5" />
                           </svg>
-                          {token.id.slice(0, 6)}...{token.id.slice(-4)}
+                          {token.dev.slice(0, 6)}...{token.dev.slice(-4)}
                         </div>
                       </Tooltip>
                       <Tooltip content={`$${(4.0 * monUsdPrice).toFixed(2)}`}>

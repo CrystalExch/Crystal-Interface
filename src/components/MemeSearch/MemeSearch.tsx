@@ -1117,11 +1117,11 @@ const abortRef = useRef<AbortController | null>(null);
                                 className={`meme-search-sort-button ${sortType === 'time' ? 'active' : ''}`}
                                 onClick={() => handleSortChange('time')}
                             >
-                                <Clock size={18} />
+                                <Clock size={14} />
                                 {sortType === 'time' && (
                                     sortDirection === 'desc' ?
-                                    <ChevronDown size={14} className="sort-direction-icon" /> :
-                                    <ChevronUp size={14} className="sort-direction-icon" />
+                                    <ChevronDown size={11} className="sort-direction-icon" /> :
+                                    <ChevronUp size={11} className="sort-direction-icon" />
                                 )}
                             </button>
                         </Tooltip>
@@ -1130,11 +1130,11 @@ const abortRef = useRef<AbortController | null>(null);
                                 className={`meme-search-sort-button ${sortType === 'marketCap' ? 'active' : ''}`}
                                 onClick={() => handleSortChange('marketCap')}
                             >
-                                <TrendingUp size={18} />
+                                <TrendingUp size={14} />
                                 {sortType === 'marketCap' && (
                                     sortDirection === 'desc' ?
-                                    <ChevronDown size={14} className="sort-direction-icon" /> :
-                                    <ChevronUp size={14} className="sort-direction-icon" />
+                                    <ChevronDown size={11} className="sort-direction-icon" /> :
+                                    <ChevronUp size={11} className="sort-direction-icon" />
                                 )}
                             </button>
                         </Tooltip>
@@ -1143,11 +1143,11 @@ const abortRef = useRef<AbortController | null>(null);
                                 className={`meme-search-sort-button ${sortType === 'volume' ? 'active' : ''}`}
                                 onClick={() => handleSortChange('volume')}
                             >
-                                <BarChart3 size={18} />
+                                <BarChart3 size={14} />
                                 {sortType === 'volume' && (
                                     sortDirection === 'desc' ?
-                                    <ChevronDown size={14} className="sort-direction-icon" /> :
-                                    <ChevronUp size={14} className="sort-direction-icon" />
+                                    <ChevronDown size={11} className="sort-direction-icon" /> :
+                                    <ChevronUp size={11} className="sort-direction-icon" />
                                 )}
                             </button>
                         </Tooltip>
@@ -1156,11 +1156,11 @@ const abortRef = useRef<AbortController | null>(null);
                                 className={`meme-search-sort-button ${sortType === 'holders' ? 'active' : ''}`}
                                 onClick={() => handleSortChange('holders')}
                             >
-                                <Users size={18} />
+                                <Users size={14} />
                                 {sortType === 'holders' && (
                                     sortDirection === 'desc' ?
-                                    <ChevronDown size={14} className="sort-direction-icon" /> :
-                                    <ChevronUp size={14} className="sort-direction-icon" />
+                                    <ChevronDown size={11} className="sort-direction-icon" /> :
+                                    <ChevronUp size={11} className="sort-direction-icon" />
                                 )}
                             </button>
                         </Tooltip>

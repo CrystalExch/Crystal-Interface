@@ -773,9 +773,9 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
               <div className="trenches-performance-ranges">
                 {[
                   { label: '>500%', count: pnlRanges.over500, color: 'rgb(67, 254, 154)' },
-                  { label: '200% ~ 500%', count: pnlRanges.range200to500, color: 'rgb(67, 254, 154)' },
-                  { label: '0% ~ 200%', count: pnlRanges.range0to200, color: 'rgb(67, 254, 154)' },
-                  { label: '0% ~ -50%', count: pnlRanges.range0toNeg50, color: 'rgb(247, 127, 125)' },
+                  { label: '200% - 500%', count: pnlRanges.range200to500, color: 'rgb(67, 254, 154)' },
+                  { label: '0% - 200%', count: pnlRanges.range0to200, color: 'rgb(67, 254, 154)' },
+                  { label: '-50% - 0%', count: pnlRanges.range0toNeg50, color: 'rgb(247, 127, 125)' },
                   { label: '<-50%', count: pnlRanges.underNeg50, color: 'rgb(247, 127, 125)' }
                 ].map((range, index) => (
                   <div key={index} className="trenches-performance-range">

@@ -1283,7 +1283,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                                   </svg>
                                 </Tooltip>
                               )}
-                            <Tooltip content="View Transaction on Monadscan">
+                            <Tooltip content="View address on explorer">
                               <svg
                                 className="wallet-address-link"
                                 xmlns="http://www.w3.org/2000/svg"
@@ -1520,7 +1520,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                                   </svg>
                                 </Tooltip>
                               )}
-                            <Tooltip content="View Transaction on Monadscan">
+                            <Tooltip content="View address on explorer">
 
                               <svg
                                 className="wallet-address-link"
@@ -2030,7 +2030,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                               </svg>
                             </Tooltip>
                           )}
-                          <Tooltip content="View Transaction on Monadscan">
+                          <Tooltip content="View trade on explorer">
                             <svg
                               className="wallet-address-link"
                               xmlns="http://www.w3.org/2000/svg"

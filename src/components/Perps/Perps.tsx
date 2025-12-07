@@ -1371,7 +1371,7 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
           ethAddress: address,
           l2Key: signer.publicKey,
           l2KeyYCoordinate: signer.publicKeyY,
-          onlySignOn: "https://crystal.exchange",
+          onlySignOn: "https://pro.edgex.exchange",
           signature: signer.signature
         }
         const regts = Date.now().toString()
@@ -1698,7 +1698,7 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
               {formatCommas(Number(currentPosition?.size ?? 0).toFixed(activeMarket?.stepSize ? (activeMarket?.stepSize.split('.')[1] || '').length : 2)) + (activeMarket?.baseAsset ? ' ' + activeMarket.baseAsset : '')}
             </div>
           </div>
-          <div className="perps-available-to-trade" style={{ marginTop: '5px' }}>
+          <div className="perps-available-to-trade">
             <div className="perps-balance-container">
               <img className="perps-wallet-icon" src={walleticon} />
               <div className="balance-value-container">
@@ -2200,8 +2200,8 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
                 setpopup(4)
               }
               else if (Object.keys(signer).length == 0) {
-                const signature = await signMessageAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://crystal.exchange\nclientAccountId: main" })
-                const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://crystal.exchange" })
+                const signature = await signMessageAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
+                const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
                 const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
                 const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
                 localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
@@ -2211,7 +2211,7 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
                 await handleTrade();
               }
             }}
-            disabled={true || address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0 || (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize)) || Number(inputString) > (Number(availableBalance) * Number(leverage)))}
+            disabled={address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0 || (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize)) || Number(inputString) > (Number(availableBalance) * Number(leverage)))}
           >
             {isSigning ? (
               <div className="perps-button-spinner"></div>
@@ -2379,8 +2379,8 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
                 setpopup(4)
               }
               else if (Object.keys(signer).length == 0) {
-                const signature = await signMessageAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://crystal.exchange\nclientAccountId: main" })
-                const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://crystal.exchange" })
+                const signature = await signMessageAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
+                const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
                 const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
                 const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
                 localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
@@ -2402,8 +2402,8 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
                 setpopup(4)
               }
               else if (Object.keys(signer).length == 0) {
-                const signature = await signMessageAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://crystal.exchange\nclientAccountId: main" })
-                const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://crystal.exchange" })
+                const signature = await signMessageAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
+                const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
                 const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
                 const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
                 localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
@@ -2475,815 +2475,812 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
     </div>
   )
 
-return (
-  <div className="main-content-wrapper">
-    {layoutSettings === 'alternative' && (
-      tradeModal
-    )}
-    
-    {/* Mobile Bottom Trade Buttons */}
-    <div className="perps-mobile-bottom-bar">
-      <button
-        className="perps-mobile-trade-button long"
-        onClick={() => {
-          setActiveTradeType("long");
-          setMobileTradeType("long");
-          setIsMobileTradeModalOpen(true);
-        }}
-      >
-        Long
-      </button>
-      <button
-        className="perps-mobile-trade-button short"
-        onClick={() => {
-          setActiveTradeType("short");
-          setMobileTradeType("short");
-          setIsMobileTradeModalOpen(true);
-        }}
-      >
-        Short
-      </button>
-    </div>
-    {isMobileTradeModalOpen && (
-      <>
-        <div 
-          className="perps-mobile-modal-overlay"
-          onClick={() => setIsMobileTradeModalOpen(false)}
-        />
-        <div className="perps-mobile-modal-container">
-          <div className="perps-mobile-modal-content">
-            <div className="perps-order-types-wrapper">
-              <div className="perps-order-types" ref={orderTypesContainerRef}>
+  return (
+    <div className="main-content-wrapper">
+      {layoutSettings === 'alternative' && (
+        tradeModal
+      )}
+      <div className="perps-mobile-bottom-bar">
+        <button
+          className="perps-mobile-trade-button long"
+          onClick={() => {
+            setActiveTradeType("long");
+            setMobileTradeType("long");
+            setIsMobileTradeModalOpen(true);
+          }}
+        >
+          Long
+        </button>
+        <button
+          className="perps-mobile-trade-button short"
+          onClick={() => {
+            setActiveTradeType("short");
+            setMobileTradeType("short");
+            setIsMobileTradeModalOpen(true);
+          }}
+        >
+          Short
+        </button>
+      </div>
+      {isMobileTradeModalOpen && (
+        <>
+          <div 
+            className="perps-mobile-modal-overlay"
+            onClick={() => setIsMobileTradeModalOpen(false)}
+          />
+          <div className="perps-mobile-modal-container">
+            <div className="perps-mobile-modal-content">
+              <div className="perps-buy-sell-container">
                 <button
-                  ref={marketButtonRef}
-                  className={`perps-order-type-button ${activeOrderType === "Market" ? "active" : "inactive"}`}
-                  onClick={() => setActiveOrderType("Market")}
+                  className={`perps-long-button ${activeTradeType === "long" ? "active" : "inactive"}`}
+                  onClick={() => setActiveTradeType("long")}
                 >
-                  Market
+                  Long
                 </button>
                 <button
-                  ref={limitButtonRef}
-                  className={`perps-order-type-button ${activeOrderType === "Limit" ? "active" : "inactive"}`}
-                  onClick={() => setActiveOrderType("Limit")}
+                  className={`perps-short-button ${activeTradeType === "short" ? "active" : "inactive"}`}
+                  onClick={() => setActiveTradeType("short")}
                 >
-                  Limit
+                  Short
                 </button>
-                <div
-                  className="perps-pro-button-wrapper"
-                  tabIndex={-1}
-                  onBlur={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                      setIsProDropdownOpen(false);
-                    }
-                  }}
-                >
+              </div>
+              <div className="perps-order-types-wrapper">
+                <div className="perps-order-types" ref={orderTypesContainerRef}>
                   <button
-                    ref={proButtonRef}
-                    className={`perps-order-type-button ${(activeOrderType === "Scale" || activeOrderType === "Stop" || activeOrderType === "TP/SL" || activeOrderType === "Pro") ? "active" : "inactive"}`}
-                    onClick={() => setIsProDropdownOpen(!isProDropdownOpen)}
+                    ref={marketButtonRef}
+                    className={`perps-order-type-button ${activeOrderType === "Market" ? "active" : "inactive"}`}
+                    onClick={() => setActiveOrderType("Market")}
                   >
-                    {(activeOrderType === "Scale" || activeOrderType === "Stop" || activeOrderType === "TP/SL") ? activeOrderType : "Pro"}
-                    <svg
-                      className={`perps-pro-dropdown-arrow ${isProDropdownOpen ? 'open' : ''}`}
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      width="12"
-                      height="12"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
+                    Market
                   </button>
-                  {isProDropdownOpen && (
-                    <div className="perps-pro-dropdown-menu">
-                      {['Scale', 'Stop'].map((option) => (
-                        <div
-                          key={option}
-                          className="perps-pro-option"
-                          onClick={() => {
-                            const typedOption = option as "TP/SL" | "Scale" | "Stop";
-                            setSelectedProOption(typedOption);
-                            setActiveOrderType(typedOption);
-                            setIsProDropdownOpen(false);
-                          }}
+                  <button
+                    ref={limitButtonRef}
+                    className={`perps-order-type-button ${activeOrderType === "Limit" ? "active" : "inactive"}`}
+                    onClick={() => setActiveOrderType("Limit")}
+                  >
+                    Limit
+                  </button>
+                  <div
+                    className="perps-pro-button-wrapper"
+                    tabIndex={-1}
+                    onBlur={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                        setIsProDropdownOpen(false);
+                      }
+                    }}
+                  >
+                    <button
+                      ref={proButtonRef}
+                      className={`perps-order-type-button ${(activeOrderType === "Scale" || activeOrderType === "Stop" || activeOrderType === "TP/SL" || activeOrderType === "Pro") ? "active" : "inactive"}`}
+                      onClick={() => setIsProDropdownOpen(!isProDropdownOpen)}
+                    >
+                      {(activeOrderType === "Scale" || activeOrderType === "Stop" || activeOrderType === "TP/SL") ? activeOrderType : "Pro"}
+                      <svg
+                        className={`perps-pro-dropdown-arrow ${isProDropdownOpen ? 'open' : ''}`}
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        width="12"
+                        height="12"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </button>
+                    {isProDropdownOpen && (
+                      <div className="perps-pro-dropdown-menu">
+                        {['Scale', 'Stop'].map((option) => (
+                          <div
+                            key={option}
+                            className="perps-pro-option"
+                            onClick={() => {
+                              const typedOption = option as "TP/SL" | "Scale" | "Stop";
+                              setSelectedProOption(typedOption);
+                              setActiveOrderType(typedOption);
+                              setIsProDropdownOpen(false);
+                            }}
+                          >
+                            {option}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    className="perps-sliding-tab-indicator"
+                    style={{
+                      width: `${indicatorStyle.width}px`,
+                      transform: `translateX(${indicatorStyle.left}px)`
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="perps-amount-section">
+                <div className="perps-available-to-trade">
+                  <div className="label-container">
+                    <div className="perps-current-position-container">{t('Current Position')}</div>
+                  </div>
+                  <div className={`value-container ${Number(currentPosition?.size) > 0 ? 'positive' : Number(currentPosition?.size) < 0 ? 'negative' : 0}`}>
+                    {formatCommas(Number(currentPosition?.size ?? 0).toFixed(activeMarket?.stepSize ? (activeMarket?.stepSize.split('.')[1] || '').length : 2)) + (activeMarket?.baseAsset ? ' ' + activeMarket.baseAsset : '')}
+                  </div>
+                </div>
+                <div className="perps-available-to-trade">
+                  <div className="perps-balance-container">
+                    <img className="perps-wallet-icon" src={walleticon} />
+                    <div className="balance-value-container">
+                      {formatCommas(availableBalance.toFixed(2))}
+                    </div>
+                  </div>
+                  <button
+                    className="leverage-button"
+                    onClick={() => setpopup(35)}
+                  >
+                    {leverage}x
+                    <img className="leverage-button-icon" src={editicon} />
+                  </button>
+                </div>
+                {activeOrderType === "Limit" && (
+                  <div className="perps-trade-input-wrapper">
+                    Price
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={limitPriceString}
+                      onFocus={() => setIsLimitEditing(true)}
+                      onBlur={() => setIsLimitEditing(false)}
+                      onChange={(e) => {
+                        if (new RegExp(
+                          `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(1 / activeMarket.tickSize)))}}$`
+                        ).test(e.target.value)) {
+                          setPerpsLimitChase(false)
+                          setlimitPriceString(e.target.value)
+                        }
+                      }}
+                      className="perps-trade-input"
+                    />
+                    <span className="perps-mid-button" onClick={(e) => {
+                      if (activeMarket?.bestBidPrice) {
+                        setPerpsLimitChase(true)
+                        const tick = Number(activeMarket.tickSize)
+                        const precision = Math.floor(Math.log10(1 / tick))
+                        const mid = (Number(activeMarket.bestBidPrice) + Number(activeMarket.bestAskPrice)) / 2
+                        setlimitPriceString((activeTradeType == 'long' ? Math.floor(mid / tick) * tick : Math.ceil(mid / tick) * tick).toFixed(precision))
+                      }
+                    }}>
+                      Mid
+                    </span>
+                  </div>
+                )}
+                {activeOrderType === "Stop" && (
+                  <>
+                    <div className="perps-trade-input-wrapper">
+                      <span style={{ whiteSpace: 'nowrap' }}>Stop Price</span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0.00"
+                        value={limitPriceString}
+                        onFocus={() => setIsLimitEditing(true)}
+                        onBlur={() => setIsLimitEditing(false)}
+                        onChange={(e) => {
+                          if (new RegExp(
+                            `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(1 / activeMarket.tickSize)))}}$`
+                          ).test(e.target.value)) {
+                            setPerpsLimitChase(false)
+                            setlimitPriceString(e.target.value)
+                          }
+                        }}
+                        className="perps-trade-input"
+                      />
+                      <span className="perps-mid-button" onClick={(e) => {
+                        if (activeMarket?.bestBidPrice) {
+                          setPerpsLimitChase(true)
+                          const tick = Number(activeMarket.tickSize)
+                          const precision = Math.floor(Math.log10(1 / tick))
+                          const mid = (Number(activeMarket.bestBidPrice) + Number(activeMarket.bestAskPrice)) / 2
+                          setlimitPriceString((activeTradeType == 'long' ? Math.floor(mid / tick) * tick : Math.ceil(mid / tick) * tick).toFixed(precision))
+                        }
+                      }}>
+                        Mid
+                      </span>
+                    </div>
+                  </>
+                )}
+                <div className="perps-trade-input-wrapper">
+                  <span style={{ whiteSpace: 'nowrap' }}>Size</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={inputString}
+                    disabled={!perpsIsLoaded || !leverageIsLoaded}
+                    onChange={(e) => {
+                      if (!/^\d*\.?\d{0,18}$/.test(e.target.value)) return;
+                      setInputString(e.target.value)
+                      const percentage =
+                        Number(availableBalance) == 0
+                          ? Number(e.target.value) > 0 ? 100 : 0
+                          : Math.min(
+                            100,
+                            Math.floor(
+                              Number(e.target.value) * 100 / (Number(availableBalance) * Number(leverage))
+                            ),
+                          );
+                      setSliderPercent(percentage);
+                      const slider = document.querySelector(
+                        '.perps-balance-amount-slider',
+                      );
+                      const popup = document.querySelector(
+                        '.perps-slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                          }px`;
+                      }
+                    }}
+                    className="perps-trade-input"
+                    autoFocus
+                  />
+                  <div
+                    className="perps-size-unit-dropdown"
+                    tabIndex={-1}
+                    onBlur={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                        setIsSizeUnitDropdownOpen(false);
+                      }
+                    }}
+                  >
+                    <div
+                      className="perps-size-unit-button"
+                      onClick={() => setIsSizeUnitDropdownOpen(!isSizeUnitDropdownOpen)}
+                    >
+                      <span className="perps-size-unit-value">{sizeUnit}</span>
+                      <svg
+                        className={`perps-size-unit-arrow ${isSizeUnitDropdownOpen ? 'open' : ''}`}
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </div>
+                    {isSizeUnitDropdownOpen && (
+                      <div className="perps-size-unit-dropdown-menu">
+                        {['USD', activeMarket?.baseAsset || 'BTC'].map((option) => (
+                          <div
+                            key={option}
+                            className="perps-size-unit-option"
+                            onClick={() => {
+                              setSizeUnit(option);
+                              setIsSizeUnitDropdownOpen(false);
+                            }}
+                          >
+                            {option}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="perps-balance-slider-wrapper">
+                  <div className="perps-slider-container perps-slider-mode">
+                    <input
+                      ref={sliderRef}
+                      type="range"
+                      disabled={!perpsIsLoaded || !leverageIsLoaded}
+                      className={`perps-balance-amount-slider ${isDragging ? "dragging" : ""}`}
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={sliderPercent}
+                      onChange={(e) => {
+                        const percent = parseInt(e.target.value);
+                        handleSliderChange(percent);
+                      }}
+                      onMouseDown={() => {
+                        setIsDragging(true);
+                        positionPopup(sliderPercent);
+                      }}
+                      onMouseUp={() => setIsDragging(false)}
+                      style={{
+                        background: `linear-gradient(to right, ${activeTradeType === 'long' ? '#aaaecf' : '#aaaecf'
+                          } ${sliderPercent}%, rgb(21 21 27) ${sliderPercent}%)`,
+                      }}
+                    />
+                    <div
+                      ref={popupRef}
+                      className={`perps-slider-percentage-popup ${isDragging ? "visible" : ""}`}
+                    >
+                      {sliderPercent}%
+                    </div>
+
+                    <div className="perps-balance-slider-marks">
+                      {[0, 25, 50, 75, 100].map((markPercent) => (
+                        <span
+                          key={markPercent}
+                          className={`perps-balance-slider-mark ${activeTradeType}`}
+                          data-active={sliderPercent >= markPercent}
+                          data-percentage={markPercent}
+                          onClick={() => { if (perpsIsLoaded && leverageIsLoaded) handleSliderChange(markPercent) }}
                         >
-                          {option}
-                        </div>
+                          {markPercent}%
+                        </span>
                       ))}
                     </div>
-                  )}
+                  </div>
                 </div>
-                <div
-                  className="perps-sliding-tab-indicator"
-                  style={{
-                    width: `${indicatorStyle.width}px`,
-                    transform: `translateX(${indicatorStyle.left}px)`
-                  }}
-                />
-              </div>
-            </div>
-            <div className="perps-buy-sell-container">
-              <button
-                className={`perps-long-button ${activeTradeType === "long" ? "active" : "inactive"}`}
-                onClick={() => setActiveTradeType("long")}
-              >
-                Long
-              </button>
-              <button
-                className={`perps-short-button ${activeTradeType === "short" ? "active" : "inactive"}`}
-                onClick={() => setActiveTradeType("short")}
-              >
-                Short
-              </button>
-            </div>
-                  <div className="perps-amount-section">
-          <div className="perps-available-to-trade">
-            <div className="label-container">
-              <div className="perps-current-position-container">{t('Current Position')}</div>
-            </div>
-            <div className={`value-container ${Number(currentPosition?.size) > 0 ? 'positive' : Number(currentPosition?.size) < 0 ? 'negative' : 0}`}>
-              {formatCommas(Number(currentPosition?.size ?? 0).toFixed(activeMarket?.stepSize ? (activeMarket?.stepSize.split('.')[1] || '').length : 2)) + (activeMarket?.baseAsset ? ' ' + activeMarket.baseAsset : '')}
-            </div>
-          </div>
-          <div className="perps-available-to-trade" style={{ marginTop: '5px' }}>
-            <div className="perps-balance-container">
-              <img className="perps-wallet-icon" src={walleticon} />
-              <div className="balance-value-container">
-                {formatCommas(availableBalance.toFixed(2))}
-              </div>
-            </div>
-            <button
-              className="leverage-button"
-              onClick={() => setpopup(35)}
-            >
-              {leverage}x
-              <img className="leverage-button-icon" src={editicon} />
-            </button>
-          </div>
-          {activeOrderType === "Limit" && (
-            <div className="perps-trade-input-wrapper">
-              Price
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="0.00"
-                value={limitPriceString}
-                onFocus={() => setIsLimitEditing(true)}
-                onBlur={() => setIsLimitEditing(false)}
-                onChange={(e) => {
-                  if (new RegExp(
-                    `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(1 / activeMarket.tickSize)))}}$`
-                  ).test(e.target.value)) {
-                    setPerpsLimitChase(false)
-                    setlimitPriceString(e.target.value)
-                  }
-                }}
-                className="perps-trade-input"
-              />
-              <span className="perps-mid-button" onClick={(e) => {
-                if (activeMarket?.bestBidPrice) {
-                  setPerpsLimitChase(true)
-                  const tick = Number(activeMarket.tickSize)
-                  const precision = Math.floor(Math.log10(1 / tick))
-                  const mid = (Number(activeMarket.bestBidPrice) + Number(activeMarket.bestAskPrice)) / 2
-                  setlimitPriceString((activeTradeType == 'long' ? Math.floor(mid / tick) * tick : Math.ceil(mid / tick) * tick).toFixed(precision))
-                }
-              }}>
-                Mid
-              </span>
-            </div>
-          )}
-          {activeOrderType === "Stop" && (
-            <>
-              <div className="perps-trade-input-wrapper">
-                <span style={{ whiteSpace: 'nowrap' }}>Stop Price</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  value={limitPriceString}
-                  onFocus={() => setIsLimitEditing(true)}
-                  onBlur={() => setIsLimitEditing(false)}
-                  onChange={(e) => {
-                    if (new RegExp(
-                      `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(1 / activeMarket.tickSize)))}}$`
-                    ).test(e.target.value)) {
-                      setPerpsLimitChase(false)
-                      setlimitPriceString(e.target.value)
-                    }
-                  }}
-                  className="perps-trade-input"
-                />
-                <span className="perps-mid-button" onClick={(e) => {
-                  if (activeMarket?.bestBidPrice) {
-                    setPerpsLimitChase(true)
-                    const tick = Number(activeMarket.tickSize)
-                    const precision = Math.floor(Math.log10(1 / tick))
-                    const mid = (Number(activeMarket.bestBidPrice) + Number(activeMarket.bestAskPrice)) / 2
-                    setlimitPriceString((activeTradeType == 'long' ? Math.floor(mid / tick) * tick : Math.ceil(mid / tick) * tick).toFixed(precision))
-                  }
-                }}>
-                  Mid
-                </span>
-              </div>
-            </>
-          )}
-          <div className="perps-trade-input-wrapper">
-            <span style={{ whiteSpace: 'nowrap' }}>Size</span>
-            <input
-              type="text"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={inputString}
-              disabled={!perpsIsLoaded || !leverageIsLoaded}
-              onChange={(e) => {
-                if (!/^\d*\.?\d{0,18}$/.test(e.target.value)) return;
-                setInputString(e.target.value)
-                const percentage =
-                  Number(availableBalance) == 0
-                    ? Number(e.target.value) > 0 ? 100 : 0
-                    : Math.min(
-                      100,
-                      Math.floor(
-                        Number(e.target.value) * 100 / (Number(availableBalance) * Number(leverage))
-                      ),
-                    );
-                setSliderPercent(percentage);
-                const slider = document.querySelector(
-                  '.perps-balance-amount-slider',
-                );
-                const popup = document.querySelector(
-                  '.perps-slider-percentage-popup',
-                );
-                if (slider && popup) {
-                  const rect = slider.getBoundingClientRect();
-                  (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
-                    }px`;
-                }
-              }}
-              className="perps-trade-input"
-              autoFocus
-            />
-            <div
-              className="perps-size-unit-dropdown"
-              tabIndex={-1}
-              onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                  setIsSizeUnitDropdownOpen(false);
-                }
-              }}
-            >
-              <div
-                className="perps-size-unit-button"
-                onClick={() => setIsSizeUnitDropdownOpen(!isSizeUnitDropdownOpen)}
-              >
-                <span className="perps-size-unit-value">{sizeUnit}</span>
-                <svg
-                  className={`perps-size-unit-arrow ${isSizeUnitDropdownOpen ? 'open' : ''}`}
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </div>
-              {isSizeUnitDropdownOpen && (
-                <div className="perps-size-unit-dropdown-menu">
-                  {['USD', activeMarket?.baseAsset || 'BTC'].map((option) => (
-                    <div
-                      key={option}
-                      className="perps-size-unit-option"
-                      onClick={() => {
-                        setSizeUnit(option);
-                        setIsSizeUnitDropdownOpen(false);
-                      }}
-                    >
-                      {option}
+                {activeOrderType === "Scale" && (
+                  <div>
+                    <div className="perps-scale-start-end-container">
+                      <div
+                        className="scalebgtop"
+                      >
+                        <div className="scalepricecontainer">
+                          <span className="scale-order-start-label">{t('start')}</span>
+                          <input
+                            inputMode="decimal"
+                            className="scale-input"
+                            placeholder="0.00"
+                            value={''}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className="scalebgtop"
+                      >
+                        <div className="scalepricecontainer">
+                          <span className="scale-order-end-label">{t('end')}</span>
+                          <input
+                            inputMode="decimal"
+                            className="scale-input"
+                            placeholder="0.00"
+                            value={''}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="perps-balance-slider-wrapper">
-            <div className="perps-slider-container perps-slider-mode">
-              <input
-                ref={sliderRef}
-                type="range"
-                disabled={!perpsIsLoaded || !leverageIsLoaded}
-                className={`perps-balance-amount-slider ${isDragging ? "dragging" : ""}`}
-                min="0"
-                max="100"
-                step="1"
-                value={sliderPercent}
-                onChange={(e) => {
-                  const percent = parseInt(e.target.value);
-                  handleSliderChange(percent);
-                }}
-                onMouseDown={() => {
-                  setIsDragging(true);
-                  positionPopup(sliderPercent);
-                }}
-                onMouseUp={() => setIsDragging(false)}
-                style={{
-                  background: `linear-gradient(to right, ${activeTradeType === 'long' ? '#aaaecf' : '#aaaecf'
-                    } ${sliderPercent}%, rgb(21 21 27) ${sliderPercent}%)`,
-                }}
-              />
-              <div
-                ref={popupRef}
-                className={`perps-slider-percentage-popup ${isDragging ? "visible" : ""}`}
-              >
-                {sliderPercent}%
-              </div>
-
-              <div className="perps-balance-slider-marks">
-                {[0, 25, 50, 75, 100].map((markPercent) => (
-                  <span
-                    key={markPercent}
-                    className={`perps-balance-slider-mark ${activeTradeType}`}
-                    data-active={sliderPercent >= markPercent}
-                    data-percentage={markPercent}
-                    onClick={() => { if (perpsIsLoaded && leverageIsLoaded) handleSliderChange(markPercent) }}
-                  >
-                    {markPercent}%
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-          {activeOrderType === "Scale" && (
-            <div>
-              <div className="perps-scale-start-end-container">
-                <div
-                  className="scalebgtop"
-                >
-                  <div className="scalepricecontainer">
-                    <span className="scale-order-start-label">{t('start')}</span>
-                    <input
-                      inputMode="decimal"
-                      className="scale-input"
-                      placeholder="0.00"
-                      value={''}
-                    />
+                    <div className="perps-scale-size-skew">
+                      <div
+                        className="scalebottombg"
+                      >
+                        <div className="scalebottomcontainer">
+                          <span className="scale-order-total-label">{t('orders')}</span>
+                          <input
+                            inputMode="numeric" pattern="[0-9]*"
+                            className="scale-bottom-input"
+                            placeholder="0"
+                            value={''}
+                          />
+                        </div>
+                      </div>
+                      <div
+                        className={`scalebottombg`}
+                      >
+                        <div className="scalebottomcontainer">
+                          <span className="scale-order-size-label">{t('skew')}</span>
+                          <input
+                            inputMode="decimal"
+                            className={`scale-bottom-input`}
+                            placeholder="0.00"
+                            value={''}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div
-                  className="scalebgtop"
-                >
-                  <div className="scalepricecontainer">
-                    <span className="scale-order-end-label">{t('end')}</span>
-                    <input
-                      inputMode="decimal"
-                      className="scale-input"
-                      placeholder="0.00"
-                      value={''}
-                    />
-                  </div>
-                </div>
+                )}
               </div>
-              <div className="perps-scale-size-skew">
-                <div
-                  className="scalebottombg"
-                >
-                  <div className="scalebottomcontainer">
-                    <span className="scale-order-total-label">{t('orders')}</span>
-                    <input
-                      inputMode="numeric" pattern="[0-9]*"
-                      className="scale-bottom-input"
-                      placeholder="0"
-                      value={''}
-                    />
+              <div className="perps-tpsl-section">
+                <div className="perps-tpsl-header">
+                  <div>
+                    <label className="perps-tpsl-checkbox-wrapper">
+                      <input
+                        type="checkbox"
+                        checked={isReduceOnly}
+                        onChange={(e) => setIsReduceOnly(e.target.checked)}
+                        className="perps-tpsl-checkbox"
+                      />
+                      <span className="perps-tpsl-label">Reduce Only</span>
+                    </label>
+                    <label className="perps-tpsl-checkbox-wrapper">
+                      <input
+                        type="checkbox"
+                        checked={isTpSlEnabled}
+                        onChange={(e) => setIsTpSlEnabled(e.target.checked)}
+                        className="perps-tpsl-checkbox"
+                      />
+                      <span className="perps-tpsl-label">TP/SL</span>
+                    </label>
                   </div>
-                </div>
-                <div
-                  className={`scalebottombg`}
-                >
-                  <div className="scalebottomcontainer">
-                    <span className="scale-order-size-label">{t('skew')}</span>
-                    <input
-                      inputMode="decimal"
-                      className={`scale-bottom-input`}
-                      placeholder="0.00"
-                      value={''}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="perps-tpsl-section">
-          <div className="perps-tpsl-header">
-            <div>
-              <label className="perps-tpsl-checkbox-wrapper">
-                <input
-                  type="checkbox"
-                  checked={isReduceOnly}
-                  onChange={(e) => setIsReduceOnly(e.target.checked)}
-                  className="perps-tpsl-checkbox"
-                />
-                <span className="perps-tpsl-label">Reduce Only</span>
-              </label>
-              <label className="perps-tpsl-checkbox-wrapper">
-                <input
-                  type="checkbox"
-                  checked={isTpSlEnabled}
-                  onChange={(e) => setIsTpSlEnabled(e.target.checked)}
-                  className="perps-tpsl-checkbox"
-                />
-                <span className="perps-tpsl-label">TP/SL</span>
-              </label>
-            </div>
-            <div
-              className="perps-tif-dropdown"
-              tabIndex={-1}
-              onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                  setIsTifDropdownOpen(false);
-                }
-              }}
-            >
-              <div
-                className="perps-tif-button"
-              >
-                <span className="perps-tif-label">TIF</span>
-                <div className="perps-tif-inner" onClick={() => setIsTifDropdownOpen(!isTifDropdownOpen)}>
-                  <span className="perps-tif-value">{timeInForce}</span>
-                  <svg
-                    className={`perps-tif-button-arrow ${isTifDropdownOpen ? 'open' : ''}`}
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    width="16"
-                    height="16"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </div>
-              </div>
-
-              {isTifDropdownOpen && (
-                <div className="perps-tif-dropdown-menu">
-                  {['GTC', 'IOC', 'ALO'].map((option) => (
-                    <div
-                      key={option}
-                      className="perps-tif-option"
-                      onClick={() => {
-                        setTimeInForce(option);
+                  <div
+                    className="perps-tif-dropdown"
+                    tabIndex={-1}
+                    onBlur={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                         setIsTifDropdownOpen(false);
-                      }}
-                    >
-                      {option}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {isTpSlEnabled && (
-            <div className="perps-tpsl-content">
-              <div className="perps-tpsl-row">
-                <div className="perps-tpsl-label-section">
-                  <span className="perps-tpsl-row-label">TP Price</span>
-                  <input
-                    type="text"
-                    placeholder="0"
-                    value={tpPrice}
-                    onChange={(e) => setTpPrice(e.target.value)}
-                    className="perps-tpsl-price-input"
-                  />
-                </div>
-                <div className="perps-tpsl-input-section">
-                  <div className="perps-tpsl-percentage">
-                    <span className="perps-tpsl-row-label">Gain</span>
-                    <input
-                      type="text"
-                      value={tpPercent}
-                      onChange={(e) => setTpPercent(e.target.value)}
-                      className="perps-tpsl-percent-input"
-                      placeholder='0'
-                    />
-                  </div>
-                  <div
-                    className="perps-tpsl-unit-dropdown"
-                    tabIndex={-1}
-                    onBlur={(e) => {
-                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                        setIsTpUnitDropdownOpen(false);
                       }
                     }}
                   >
                     <div
-                      className="perps-tpsl-unit-button"
-                      onClick={() => setIsTpUnitDropdownOpen(!isTpUnitDropdownOpen)}
+                      className="perps-tif-button"
                     >
-                      <span className="perps-tpsl-unit-value">{tpUnit}</span>
-                      <svg
-                        className={`perps-tpsl-unit-arrow ${isTpUnitDropdownOpen ? 'open' : ''}`}
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                      </svg>
+                      <span className="perps-tif-label">TIF</span>
+                      <div className="perps-tif-inner" onClick={() => setIsTifDropdownOpen(!isTifDropdownOpen)}>
+                        <span className="perps-tif-value">{timeInForce}</span>
+                        <svg
+                          className={`perps-tif-button-arrow ${isTifDropdownOpen ? 'open' : ''}`}
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          width="16"
+                          height="16"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </div>
                     </div>
-                    {isTpUnitDropdownOpen && (
-                      <div className="perps-tpsl-unit-dropdown-menu">
-                        {['%', '$'].map((option) => (
+
+                    {isTifDropdownOpen && (
+                      <div className="perps-tif-dropdown-menu">
+                        {['GTC', 'IOC', 'ALO'].map((option) => (
                           <div
                             key={option}
-                            className="perps-tpsl-unit-option"
+                            className="perps-tif-option"
                             onClick={() => {
-                              setTpUnit(option as "%" | "$");
+                              setTimeInForce(option);
+                              setIsTifDropdownOpen(false);
+                            }}
+                          >
+                            {option}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {isTpSlEnabled && (
+                  <div className="perps-tpsl-content">
+                    <div className="perps-tpsl-row">
+                      <div className="perps-tpsl-label-section">
+                        <span className="perps-tpsl-row-label">TP Price</span>
+                        <input
+                          type="text"
+                          placeholder="0"
+                          value={tpPrice}
+                          onChange={(e) => setTpPrice(e.target.value)}
+                          className="perps-tpsl-price-input"
+                        />
+                      </div>
+                      <div className="perps-tpsl-input-section">
+                        <div className="perps-tpsl-percentage">
+                          <span className="perps-tpsl-row-label">Gain</span>
+                          <input
+                            type="text"
+                            value={tpPercent}
+                            onChange={(e) => setTpPercent(e.target.value)}
+                            className="perps-tpsl-percent-input"
+                            placeholder='0'
+                          />
+                        </div>
+                        <div
+                          className="perps-tpsl-unit-dropdown"
+                          tabIndex={-1}
+                          onBlur={(e) => {
+                            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                               setIsTpUnitDropdownOpen(false);
-                            }}
-                          >
-                            {option}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="perps-tpsl-row">
-                <div className="perps-tpsl-label-section">
-                  <span className="perps-tpsl-row-label">SL Price</span>
-                  <input
-                    type="text"
-                    placeholder="0"
-                    value={slPrice}
-                    onChange={(e) => setSlPrice(e.target.value)}
-                    className="perps-tpsl-price-input"
-                  />
-                </div>
-                <div className="perps-tpsl-input-section">
-                  <div className="perps-tpsl-percentage">
-                    <span className="perps-tpsl-row-label">Loss</span>
-                    <input
-                      type="text"
-                      value={slPercent}
-                      onChange={(e) => setSlPercent(e.target.value)}
-                      className="perps-tpsl-percent-input"
-                      placeholder='0'
-                    />
-                  </div>
-                  <div
-                    className="perps-tpsl-unit-dropdown"
-                    tabIndex={-1}
-                    onBlur={(e) => {
-                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                        setIsSlUnitDropdownOpen(false);
-                      }
-                    }}
-                  >
-                    <div
-                      className="perps-tpsl-unit-button"
-                      onClick={() => setIsSlUnitDropdownOpen(!isSlUnitDropdownOpen)}
-                    >
-                      <span className="perps-tpsl-unit-value">{slUnit}</span>
-                      <svg
-                        className={`perps-tpsl-unit-arrow ${isSlUnitDropdownOpen ? 'open' : ''}`}
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                      </svg>
-                    </div>
-                    {isSlUnitDropdownOpen && (
-                      <div className="perps-tpsl-unit-dropdown-menu">
-                        {['%', '$'].map((option) => (
+                            }
+                          }}
+                        >
                           <div
-                            key={option}
-                            className="perps-tpsl-unit-option"
-                            onClick={() => {
-                              setSlUnit(option as "%" | "$");
-                              setIsSlUnitDropdownOpen(false);
-                            }}
+                            className="perps-tpsl-unit-button"
+                            onClick={() => setIsTpUnitDropdownOpen(!isTpUnitDropdownOpen)}
                           >
-                            {option}
+                            <span className="perps-tpsl-unit-value">{tpUnit}</span>
+                            <svg
+                              className={`perps-tpsl-unit-arrow ${isTpUnitDropdownOpen ? 'open' : ''}`}
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              width="16"
+                              height="16"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
                           </div>
-                        ))}
+                          {isTpUnitDropdownOpen && (
+                            <div className="perps-tpsl-unit-dropdown-menu">
+                              {['%', '$'].map((option) => (
+                                <div
+                                  key={option}
+                                  className="perps-tpsl-unit-option"
+                                  onClick={() => {
+                                    setTpUnit(option as "%" | "$");
+                                    setIsTpUnitDropdownOpen(false);
+                                  }}
+                                >
+                                  {option}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    </div>
+
+                    <div className="perps-tpsl-row">
+                      <div className="perps-tpsl-label-section">
+                        <span className="perps-tpsl-row-label">SL Price</span>
+                        <input
+                          type="text"
+                          placeholder="0"
+                          value={slPrice}
+                          onChange={(e) => setSlPrice(e.target.value)}
+                          className="perps-tpsl-price-input"
+                        />
+                      </div>
+                      <div className="perps-tpsl-input-section">
+                        <div className="perps-tpsl-percentage">
+                          <span className="perps-tpsl-row-label">Loss</span>
+                          <input
+                            type="text"
+                            value={slPercent}
+                            onChange={(e) => setSlPercent(e.target.value)}
+                            className="perps-tpsl-percent-input"
+                            placeholder='0'
+                          />
+                        </div>
+                        <div
+                          className="perps-tpsl-unit-dropdown"
+                          tabIndex={-1}
+                          onBlur={(e) => {
+                            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                              setIsSlUnitDropdownOpen(false);
+                            }
+                          }}
+                        >
+                          <div
+                            className="perps-tpsl-unit-button"
+                            onClick={() => setIsSlUnitDropdownOpen(!isSlUnitDropdownOpen)}
+                          >
+                            <span className="perps-tpsl-unit-value">{slUnit}</span>
+                            <svg
+                              className={`perps-tpsl-unit-arrow ${isSlUnitDropdownOpen ? 'open' : ''}`}
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              width="16"
+                              height="16"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                          </div>
+                          {isSlUnitDropdownOpen && (
+                            <div className="perps-tpsl-unit-dropdown-menu">
+                              {['%', '$'].map((option) => (
+                                <div
+                                  key={option}
+                                  className="perps-tpsl-unit-option"
+                                  onClick={() => {
+                                    setSlUnit(option as "%" | "$");
+                                    setIsSlUnitDropdownOpen(false);
+                                  }}
+                                >
+                                  {option}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="perps-trade-details-section">
+                <button
+                  className={`perps-trade-action-button ${activeTradeType}`}
+                  onClick={async () => {
+                    if (!address) {
+                      setpopup(4)
+                    }
+                    else if (Object.keys(signer).length == 0) {
+                      const signature = await signMessageAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://pro.edgex.exchange\nclientAccountId: main" })
+                      const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
+                      const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
+                      const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
+                      localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
+                      setSigner(tempsigner)
+                    }
+                    else {
+                      await handleTrade();
+                    }
+                  }}
+                  disabled={true || address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0 || (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize)) || Number(inputString) > (Number(availableBalance) * Number(leverage)))}
+                >
+                  {isSigning ? (
+                    <div className="perps-button-spinner"></div>
+                  ) : (address ? (Object.keys(signer).length == 0 ? 'Coming Soon!' : (inputString && (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize))) ? `Order size must be >${activeMarket?.minOrderSize} ${activeMarket?.baseAsset}` :
+                    Number(inputString) > (Number(availableBalance) * Number(leverage)) ? 'Insufficient Margin' : activeOrderType === "Market"
+                      ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
+                      : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`) : 'Connect Wallet'
+                  )}
+                </button>
+                <div className="perps-info-rectangle">
+                  <div className="price-impact">
+                    <div className="label-container">
+                      <TooltipLabel
+                        label={t('Liquidation Price')}
+                        tooltipText={
+                          <div>
+                            <div className="tooltip-description">
+                              {t('priceImpactHelp')}
+                            </div>
+                          </div>
+                        }
+                        className="impact-label"
+                      />
+                    </div>
+                    <div className="value-container">
+                      {calculateLiquidation()}
+                    </div>
+                  </div>
+                  <div className="price-impact">
+                    <div className="label-container">
+                      <TooltipLabel
+                        label={t('Order Value')}
+                        tooltipText={
+                          <div>
+                            <div className="tooltip-description">
+                              {t('The total notional value of your position including leverage. This represents the full exposure of your trade in the market.')}
+                            </div>
+                          </div>
+                        }
+                        className="impact-label"
+                      />
+                    </div>
+                    <div className="value-container">
+                      ${formatCommas((Number(inputString) / (1 + Number(userFees[0]))).toFixed(2))}
+                    </div>
+                  </div>
+                  <div className="price-impact">
+                    <div className="label-container">
+                      <TooltipLabel
+                        label={t('Margin Required')}
+                        tooltipText={
+                          <div>
+                            <div className="tooltip-description">
+                              {t('        The amount of collateral needed to open this position. Calculated as Order Value divided by Leverage. This is the actual amount that will be reserved from your account balance.')}
+                            </div>
+                          </div>
+                        }
+                        className="impact-label"
+                      />
+                    </div>
+                    <div className="value-container">
+                      ${formatCommas((Number(inputString) / (1 + Number(userFees[0])) / Number(leverage)).toFixed(2))}
+                    </div>
+                  </div>
+                  <div className="price-impact">
+                    <div className="label-container">
+                      <TooltipLabel
+                        label={t('Slippage')}
+                        tooltipText={
+                          <div>
+                            <div className="tooltip-description">
+                              {t('slippageHelp')}
+                            </div>
+                          </div>
+                        }
+                        className="impact-label"
+                      />
+                    </div>
+                    <div className="slippage-input-container">
+                      <input
+                        inputMode="decimal"
+                        className={`slippage-inline-input ${parseFloat(slippageString) > 5 ? 'red' : ''
+                          }`}
+                        type="text"
+                        value={slippageString}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            (e.target as HTMLInputElement).blur()
+                            e.stopPropagation()
+                          };
+                        }}
+                        onChange={(e) => {
+                          const value = e.target.value;
+
+                          if (
+                            /^(?!0{2})\d*\.?\d{0,2}$/.test(value) &&
+                            !/^\d{2}\.\d{2}$/.test(value)
+                          ) {
+                            if (value === '') {
+                              setSlippageString('');
+                              setSlippage(BigInt(9900));
+                              localStorage.setItem('crystal_slippage_string', '1');
+                              localStorage.setItem('crystal_slippage', '9900');
+                            } else if (parseFloat(value) <= 50) {
+                              setSlippageString(value);
+                              localStorage.setItem('crystal_slippage_string', value);
+
+                              const newSlippage = BigInt(
+                                10000 - parseFloat(value) * 100,
+                              );
+                              setSlippage(newSlippage);
+                              localStorage.setItem(
+                                'crystal_slippage',
+                                newSlippage.toString(),
+                              );
+                            }
+                          }
+                        }}
+                        onBlur={() => {
+                          if (slippageString === '') {
+                            setSlippageString('1');
+                            localStorage.setItem('crystal_slippage_string', '1');
+
+                            setSlippage(BigInt(9900));
+                            localStorage.setItem('crystal_slippage', '9900');
+                          }
+                        }}
+                      />
+                      <span
+                        className={`slippage-symbol ${parseFloat(slippageString) > 5 ? 'red' : ''
+                          }`}
+                      >
+                        %
+                      </span>
+                    </div>
+                  </div>
+                  <div className="price-impact">
+                    <div className="label-container">
+                      <TooltipLabel
+                        label={t('Fees')}
+                        tooltipText={
+                          <div>
+                            <div className="tooltip-description">
+                              {t('takerfeeexplanation')}
+                            </div>
+                          </div>
+                        }
+                        className="impact-label"
+                      />
+                    </div>
+                    <div className="value-container">
+                      {Number(userFees[0]) * 100}% / {Number(userFees[1]) * 100}%
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="perps-trade-details-section">
-          <button
-            className={`perps-trade-action-button ${activeTradeType}`}
-            onClick={async () => {
-              if (!address) {
-                setpopup(4)
-              }
-              else if (Object.keys(signer).length == 0) {
-                const signature = await signMessageAsync({ message: "name: edgeX\nenvId: mainnet\naction: L2 Key\nonlySignOn: https://crystal.exchange\nclientAccountId: main" })
-                const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://crystal.exchange" })
-                const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
-                const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
-                localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
-                setSigner(tempsigner)
-              }
-              else {
-                await handleTrade();
-              }
-            }}
-            disabled={true || address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0 || (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize)) || Number(inputString) > (Number(availableBalance) * Number(leverage)))}
-          >
-            {isSigning ? (
-              <div className="perps-button-spinner"></div>
-            ) : (address ? (Object.keys(signer).length == 0 ? 'Coming Soon!' : (inputString && (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize))) ? `Order size must be >${activeMarket?.minOrderSize} ${activeMarket?.baseAsset}` :
-              Number(inputString) > (Number(availableBalance) * Number(leverage)) ? 'Insufficient Margin' : activeOrderType === "Market"
-                ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
-                : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`) : 'Connect Wallet'
-            )}
-          </button>
-          <div className="perps-info-rectangle">
-            <div className="price-impact">
-              <div className="label-container">
-                <TooltipLabel
-                  label={t('Liquidation Price')}
-                  tooltipText={
-                    <div>
-                      <div className="tooltip-description">
-                        {t('priceImpactHelp')}
-                      </div>
-                    </div>
-                  }
-                  className="impact-label"
-                />
-              </div>
-              <div className="value-container">
-                {calculateLiquidation()}
-              </div>
-            </div>
-            <div className="price-impact">
-              <div className="label-container">
-                <TooltipLabel
-                  label={t('Order Value')}
-                  tooltipText={
-                    <div>
-                      <div className="tooltip-description">
-                        {t('The total notional value of your position including leverage. This represents the full exposure of your trade in the market.')}
-                      </div>
-                    </div>
-                  }
-                  className="impact-label"
-                />
-              </div>
-              <div className="value-container">
-                ${formatCommas((Number(inputString) / (1 + Number(userFees[0]))).toFixed(2))}
-              </div>
-            </div>
-            <div className="price-impact">
-              <div className="label-container">
-                <TooltipLabel
-                  label={t('Margin Required')}
-                  tooltipText={
-                    <div>
-                      <div className="tooltip-description">
-                        {t('        The amount of collateral needed to open this position. Calculated as Order Value divided by Leverage. This is the actual amount that will be reserved from your account balance.')}
-                      </div>
-                    </div>
-                  }
-                  className="impact-label"
-                />
-              </div>
-              <div className="value-container">
-                ${formatCommas((Number(inputString) / (1 + Number(userFees[0])) / Number(leverage)).toFixed(2))}
-              </div>
-            </div>
-            <div className="price-impact">
-              <div className="label-container">
-                <TooltipLabel
-                  label={t('Slippage')}
-                  tooltipText={
-                    <div>
-                      <div className="tooltip-description">
-                        {t('slippageHelp')}
-                      </div>
-                    </div>
-                  }
-                  className="impact-label"
-                />
-              </div>
-              <div className="slippage-input-container">
-                <input
-                  inputMode="decimal"
-                  className={`slippage-inline-input ${parseFloat(slippageString) > 5 ? 'red' : ''
-                    }`}
-                  type="text"
-                  value={slippageString}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      (e.target as HTMLInputElement).blur()
-                      e.stopPropagation()
-                    };
-                  }}
-                  onChange={(e) => {
-                    const value = e.target.value;
 
-                    if (
-                      /^(?!0{2})\d*\.?\d{0,2}$/.test(value) &&
-                      !/^\d{2}\.\d{2}$/.test(value)
-                    ) {
-                      if (value === '') {
-                        setSlippageString('');
-                        setSlippage(BigInt(9900));
-                        localStorage.setItem('crystal_slippage_string', '1');
-                        localStorage.setItem('crystal_slippage', '9900');
-                      } else if (parseFloat(value) <= 50) {
-                        setSlippageString(value);
-                        localStorage.setItem('crystal_slippage_string', value);
-
-                        const newSlippage = BigInt(
-                          10000 - parseFloat(value) * 100,
-                        );
-                        setSlippage(newSlippage);
-                        localStorage.setItem(
-                          'crystal_slippage',
-                          newSlippage.toString(),
-                        );
-                      }
-                    }
-                  }}
-                  onBlur={() => {
-                    if (slippageString === '') {
-                      setSlippageString('1');
-                      localStorage.setItem('crystal_slippage_string', '1');
-
-                      setSlippage(BigInt(9900));
-                      localStorage.setItem('crystal_slippage', '9900');
-                    }
-                  }}
-                />
-                <span
-                  className={`slippage-symbol ${parseFloat(slippageString) > 5 ? 'red' : ''
-                    }`}
-                >
-                  %
-                </span>
-              </div>
-            </div>
-            <div className="price-impact">
-              <div className="label-container">
-                <TooltipLabel
-                  label={t('Fees')}
-                  tooltipText={
-                    <div>
-                      <div className="tooltip-description">
-                        {t('takerfeeexplanation')}
-                      </div>
-                    </div>
-                  }
-                  className="impact-label"
-                />
-              </div>
-              <div className="value-container">
-                {Number(userFees[0]) * 100}% / {Number(userFees[1]) * 100}%
               </div>
             </div>
           </div>
-
-        </div>
-          </div>
-        </div>
-      </>
-    )}
+        </>
+      )}
       <div className="chartandorderbookandordercenter">
         <div className="chartandorderbook">
           <ChartOrderbookPanel
