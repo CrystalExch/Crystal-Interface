@@ -30,6 +30,7 @@ import { zeroXAbi } from '../../../abis/zeroXAbi';
 import { zeroXActionsAbi } from '../../../abis/zeroXActionsAbi';
 import { CrystalDataHelperAbi } from '../../../abis/CrystalDataHelperAbi';
 import { TokenAbi } from '../../../abis/TokenAbi';
+import { loadBuyPresets } from '../../../utils/presetManager';
 
 import './QuickBuyWidget.css';
 
@@ -84,10 +85,11 @@ interface QuickBuyWidgetProps {
 }
 
 const Tooltip: React.FC<{
-  content: string;
+  content: string | React.ReactNode;
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
-}> = ({ content, children, position = 'top' }) => {
+  offset?: number;
+}> = ({ content, children, position = 'top', offset = 10 }) => {
   const [shouldRender, setShouldRender] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -109,20 +111,20 @@ const Tooltip: React.FC<{
 
     switch (position) {
       case 'top':
-        top = rect.top + scrollY - tooltipRect.height - 10;
+        top = rect.top + scrollY - tooltipRect.height - offset - 15;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'bottom':
-        top = rect.bottom + scrollY + 10;
+        top = rect.top + scrollY - tooltipRect.height - offset;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'left':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.left + scrollX - tooltipRect.width - 10;
+        left = rect.left + scrollX - tooltipRect.width - offset;
         break;
       case 'right':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.right + scrollX + 10;
+        left = rect.right + scrollX + offset;
         break;
     }
 
@@ -143,7 +145,7 @@ const Tooltip: React.FC<{
     }
 
     setTooltipPosition({ top, left });
-  }, [position]);
+  }, [position, offset]);
 
   const handleMouseEnter = useCallback(() => {
     if (fadeTimeoutRef.current) {
@@ -211,7 +213,7 @@ const Tooltip: React.FC<{
             className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
             style={{
               position: 'absolute',
-              top: `${tooltipPosition.top - 20}px`,
+              top: `${tooltipPosition.top}px`,
               left: `${tooltipPosition.left}px`,
               transform: `${position === 'top' || position === 'bottom'
                 ? 'translateX(-50%)'
@@ -281,6 +283,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   formatNumberWithCommas
 }) => {
   if (!isOpen || window.innerWidth < 1020 || !activeWalletPrivateKey) return null;
+  const [buyPresets, setBuyPresets] = useState(() => loadBuyPresets());
 
   const playTradeSound = useCallback((isBuy: boolean) => {
     if (!transactionSounds) return;
@@ -451,7 +454,23 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   }, [position, widgetDimensions]);
 
   const isPanelLeft = walletsPosition.x < position.x;
+  useEffect(() => {
+    const handleBuyPresetsUpdate = (event: CustomEvent) => {
+      setBuyPresets(event.detail);
+    };
 
+    window.addEventListener(
+      'buyPresetsUpdated',
+      handleBuyPresetsUpdate as EventListener,
+    );
+
+    return () => {
+      window.removeEventListener(
+        'buyPresetsUpdated',
+        handleBuyPresetsUpdate as EventListener,
+      );
+    };
+  }, []);
   useEffect(() => {
     try {
       const settings = {
@@ -1990,7 +2009,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     if (!token.id) return 'notoken';
     if (token.source == 'nadfun' && token.status != 'migrated' && !token.reserveQuote) return 'loading';
     if (selectedWallets.size > 0) {
-      const totalSelectedBalance = [...selectedWallets].reduce((t,a)=>t+(walletTokenBalances[a]?.[settings.chainConfig[activechain].eth]??0n),0n);
+      const totalSelectedBalance = [...selectedWallets].reduce((t, a) => t + (walletTokenBalances[a]?.[settings.chainConfig[activechain].eth] ?? 0n), 0n);
       if (Number(totalSelectedBalance) < parseFloat(value) * 1e18) {
         return 'nobalance'
       }
@@ -2053,30 +2072,63 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 </button>
               </Tooltip>
               <div className="quickbuy-preset-controls">
-                <Tooltip content="Preset 1">
-                  <button
-                    className={`quickbuy-preset-pill ${quickBuyPreset === 1 ? 'active' : ''}`}
-                    onClick={() => setQuickBuyPreset(1)}
+                {[1, 2, 3].map((p) => (
+                  <Tooltip
+                    key={p}
+                    offset={35}
+                    content={
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}
+                        >
+                          <img
+                            src={slippage}
+                            style={{
+                              width: '14px',
+                              height: '14px',
+                            }}
+                            alt="Slippage"
+                          />
+                          <span>{buyPresets[p]?.slippage || '0'}%</span>
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}
+                        >
+                          <img
+                            src={gas}
+                            style={{
+                              width: '14px',
+                              height: '14px',
+                            }}
+                            alt="Priority"
+                          />
+                          <span>{buyPresets[p]?.priority || '0'}</span>
+                        </div>
+                      </div>
+                    }
                   >
-                    P1
-                  </button>
-                </Tooltip>
-                <Tooltip content="Preset 2">
-                  <button
-                    className={`quickbuy-preset-pill ${quickBuyPreset === 2 ? 'active' : ''}`}
-                    onClick={() => setQuickBuyPreset(2)}
-                  >
-                    P2
-                  </button>
-                </Tooltip>
-                <Tooltip content="Preset 3">
-                  <button
-                    className={`quickbuy-preset-pill ${quickBuyPreset === 3 ? 'active' : ''}`}
-                    onClick={() => setQuickBuyPreset(3)}
-                  >
-                    P3
-                  </button>
-                </Tooltip>
+                    <button
+                      className={`quickbuy-preset-pill ${quickBuyPreset === p ? 'active' : ''}`}
+                      onClick={() => setQuickBuyPreset(p)}
+                    >
+                      P{p}
+                    </button>
+                  </Tooltip>
+                ))}
               </div>
               <Tooltip content="Edit Mode">
                 <img

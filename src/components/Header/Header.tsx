@@ -461,6 +461,7 @@ const Header: React.FC<HeaderProps> = ({
   const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
   const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
   const walletDropdownRef = useRef<HTMLDivElement>(null);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   const languageOptions: Language[] = [
     { code: 'EN', name: 'English' },
@@ -479,6 +480,16 @@ const Header: React.FC<HeaderProps> = ({
   const backgroundlesslogo = '/CrystalLogo.png';
 
   const isMemeTokenPage = location.pathname.startsWith('/meme/');
+
+  // Track window width for responsive button display
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const storedWalletNames = localStorage.getItem('crystal_wallet_names');
@@ -627,6 +638,8 @@ const Header: React.FC<HeaderProps> = ({
   const currentWallet = getCurrentWalletInfo();
   const displayAddress = currentWallet ? currentWallet.address : account.address;
 
+  const shouldShowSpecialButton = isMemeTokenPage || isPerpsRoute || windowWidth < 1020;
+
   return (
     <>
       <header className="app-header">
@@ -682,16 +695,21 @@ const Header: React.FC<HeaderProps> = ({
           />
         </div>
         <div className={rightHeaderClass}>
-          {/* <button
+                    {shouldShowSpecialButton && (
+
+          <button
             type="button"
             className="meme-search-button"
-            onClick={() => setIsMemeSearchOpen(true)}
+            onClick={() => setpopup(36)}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="meme-button-search-icon"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></svg>
+            <span className="meme-search-placeholder">
             Search by token or CA...
+            </span>
             <span className="meme-search-keybind">/</span>
 
-          </button> */}
+          </button>
+                    )}
           {/* <button
             type="button"
             className="history-button"
@@ -744,6 +762,8 @@ const Header: React.FC<HeaderProps> = ({
               onMarketSelect={onMarketSelect}
             /> */}
           </div>
+
+
 
           <div className="wallet-dropdown-container" ref={walletDropdownRef}>
             <button

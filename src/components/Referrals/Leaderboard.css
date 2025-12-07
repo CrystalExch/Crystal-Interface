@@ -273,3 +273,23 @@
     font-size: 0.75rem;
   }
 }
+
+
+@media (max-width: 1020px) {
+  .pagination-btn,
+  .leaderboard-table tbody tr {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .pagination-btn:active {
+    transform: scale(0.95);
+  }
+
+  .leaderboard-table tbody tr:active {
+    transform: scale(0.995);
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}

@@ -2472,3 +2472,132 @@
     font-size: 0.75rem;
   }
 }
+
+
+@media (max-width: 1020px) {
+  .claim-button,
+  .action-button,
+  .referral-share-button,
+  .ref-icon-container,
+  .referral-cta-button,
+  .pagination-btn,
+  .faq-question,
+  .qr-button,
+  .qr-close-button,
+  .date-range-button,
+  .blacklist-delete-all-btn,
+  .blacklist-import-btn,
+  .blacklist-export-btn,
+  .import-button,
+  .export-button,
+  .reset-button,
+  .apply-button,
+  .status-tab,
+  .section-tab,
+  .filter-checkbox,
+  .resource-card,
+  .resource-button-disabled,
+  .benefit-card,
+  .step-card,
+  .commission-card,
+  .sound-selector,
+  .sound-action-btn,
+  .alerts-continue-btn,
+  .alerts-close-button,
+  .blacklist-close-button,
+  .filters-close-button,
+  .blacklist-tab,
+  .blacklist-copy-btn,
+  .blacklist-remove-btn,
+  .blacklist-add-btn,
+  .display-tab,
+  .toggle-switch,
+  .row-toggle,
+  .mobile-tab {
+    transition: all 0.1s ease, transform 0.1s ease;
+  }
+
+  .claim-button:active:not(:disabled),
+  .referral-cta-button:active,
+  .qr-close-button:active,
+  .blacklist-add-btn:active,
+  .alerts-continue-btn:active,
+  .apply-button:active {
+    transform: scale(0.93);
+  }
+
+  .action-button:active,
+  .referral-share-button:active,
+  .ref-icon-container:active,
+  .pagination-btn:active,
+  .date-range-button:active,
+  .blacklist-delete-all-btn:active,
+  .blacklist-import-btn:active,
+  .blacklist-export-btn:active,
+  .import-button:active,
+  .export-button:active,
+  .reset-button:active,
+  .status-tab:active,
+  .section-tab:active,
+  .blacklist-tab:active,
+  .blacklist-remove-btn:active,
+  .display-tab:active,
+  .row-toggle:active,
+  .mobile-tab:active,
+  .sound-action-btn:active {
+    transform: scale(0.95);
+  }
+
+  .faq-question:active {
+    transform: scale(0.99);
+  }
+
+  .qr-button:active,
+  .benefit-card:active,
+  .step-card:active,
+  .commission-card:active,
+  .resource-card:active {
+    transform: scale(0.97);
+  }
+
+  .alerts-close-button:active,
+  .blacklist-close-button:active,
+  .filters-close-button:active,
+  .blacklist-copy-btn:active {
+    transform: scale(0.85);
+  }
+
+  .filter-checkbox:active,
+  .toggle-switch:active {
+    transform: scale(0.9);
+  }
+
+  .sound-selector:active {
+    transform: scale(0.98);
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  @keyframes scaleBack {
+    0% {
+      transform: scale(0.95);
+    }
+    50% {
+      transform: scale(1.02);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .claim-button,
+  .referral-cta-button,
+  .alerts-continue-btn,
+  .apply-button,
+  .blacklist-add-btn {
+    animation-duration: 0.3s;
+    animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
