@@ -158,7 +158,7 @@ const OrderList: React.FC<OrderListProps> = ({
         {roundedOrders.map((order, index) => {
           return (
             <OrderItem
-              key={`order-${index}-${order.price}-${order.size}-${order.isPhantom === true ? 'phantom' : 'real'}`}
+              key={index}
               ref={(el) => (orderRefs.current[index] = el)}
               price={order.price}
               size={order.size}

@@ -1025,6 +1025,20 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
   }, [orderdata, amountsQuote])
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      setRoundedBuyOrders(prev =>
+        prev ? { ...prev, orders: prev.orders.map(o => ({ ...o, shouldFlash: false })) } : prev
+      )
+  
+      setRoundedSellOrders(prev =>
+        prev ? { ...prev, orders: prev.orders.map(o => ({ ...o, shouldFlash: false })) } : prev
+      )
+    }, 300)
+  
+    return () => clearInterval(interval)
+  }, [])
+  
+  useEffect(() => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN || !activeMarket?.contractId) return
     setPerpsIsLoaded(true)
     setInputString('')

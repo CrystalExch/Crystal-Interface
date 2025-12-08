@@ -55,6 +55,15 @@ const OrderItem = React.forwardRef<HTMLLIElement, OrderItemProps>(
       }
     }, [flash]);
 
+    useEffect(() => {
+      if (shouldFlash) {
+        setFlash(false)
+        queueMicrotask(() => {
+          setFlash(true)
+        })
+      }
+    }, [shouldFlash])
+
     const totalSizeBarStyle = {
       width: `${width}%`,
       backgroundColor: color,
