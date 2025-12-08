@@ -1009,6 +1009,7 @@ export default function MemeTradesComponent({
             localStorage.setItem('tracked_wallets_data', JSON.stringify(trackedWallets));
             setTrackedWalletsVersion(prev => prev + 1);
           }}
+          logout={() => {}}
         />
       )}
 

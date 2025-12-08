@@ -576,6 +576,9 @@
 }
 
 .trader-wallet-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   color: #ffffff;
   font-size: 0.9rem;
   cursor: pointer;
@@ -686,4 +689,9 @@
   gap: 15px;
   grid-template-columns: 1.3fr 1fr 1fr 1fr 100px !important;
   min-width: 700px;
+}
+
+.trader-portfolio-popup-actions{
+  display: flex;
+  align-items: center;
 }

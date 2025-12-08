@@ -599,7 +599,7 @@ html {
 .popup-disconnect-button {
   align-items: center;
   background: none;
-  border: 1px solid rgba(179, 184, 249, 0.15);
+  /* border: 1px solid rgba(179, 184, 249, 0.15); */
   border-radius: 4px;
   color: #fff;
   cursor: pointer;
@@ -613,7 +613,7 @@ html {
 .eye-button:hover .eye-icon,
 .popup-deposit-button:hover .deposit-icon,
 .popup-disconnect-button:hover .disconnect-icon {
-  opacity: 0.5;
+  opacity: 0.8;
 }
 
 .wallet-info {
