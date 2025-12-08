@@ -1607,7 +1607,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 {(() => {
                   const liquidityValue = Number(memeTokenData?.reserveQuote || 0) * 2 * monUsdPrice / 10 ** 18;
                   const isLowLiquidity = liquidityValue < 8000;
-
                   const liquidityContent = (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
                       <span

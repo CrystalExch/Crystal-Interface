@@ -4696,11 +4696,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             const marketCapNativeRaw = Number(m.marketcap_native_raw ?? 0);
             const price = marketCapNativeRaw / TOTAL_SUPPLY || defaultMetrics.price;
 
-            let createdTimestamp = Number(m.created_ts ?? 0);
-            if (createdTimestamp > 1e10) {
-              createdTimestamp = Math.floor(createdTimestamp / 1000);
-            }
-
+            let createdTimestamp = Number(m.migrated_at ?? m.created_ts ?? 0);
             const volume = Number(m.native_volume / 1e18);
             const holdersRaw = Number(m.holders ?? 0);
             const devHoldingRaw = Number(m.developer_holding ?? 0);
@@ -4842,7 +4838,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
           const log = msg.params?.result;
           if (!log?.topics?.length || msg?.params?.result?.commitState != "Proposed") return;
-
           setProcessedLogs(prev => {
             let tempset = new Set(prev);
             const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
@@ -6548,7 +6543,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     let isCancelled = false;
 
     const id = (token.id || "").toLowerCase();
-    let tempTokenData: any = {};
     let price = 0;
 
     setIsLoadingTrades(true);
@@ -6688,8 +6682,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           }
         }
 
-        tempTokenData = {
-          ...tokenData,
+        setTokenData(p => ({
+          ...p,
           ...m,
           id: m.id.toLowerCase(),
           dev: m.creator?.id?.toLowerCase() ?? "",
@@ -6723,9 +6717,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           source: "nadfun",
           market: m.market ?? null,
           circulatingSupply: Number(m.circulating_supply)
-        };
-
-        setTokenData(tempTokenData);
+        }))
+        
         if (Array.isArray(m.holders)) {
           const mappedHolders: Holder[] = m.holders.slice(0, 50)
             .filter(
