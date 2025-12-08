@@ -1656,23 +1656,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 functionName: 'BASIC',
                 args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
                   abi: zeroXActionsAbi,
-                  functionName: 'transferFrom',
-                  args: [settings.chainConfig[activechain].zeroXAllowanceHolder, sellToken, walletAddr as `0x${string}`, settler, amountTokenWei],
-                })],
-              }))
-              actions.push(encodeFunctionData({
-                abi: zeroXActionsAbi,
-                functionName: 'BASIC',
-                args: [position.tokenId, 10000n, sellContractAddress, 4n, encodeFunctionData({
-                  abi: NadFunAbi,
-                  functionName: 'sell',
-                  args: [{
-                    amountIn: 0n,
-                    amountOutMin: inputAmountWei,
-                    token: position.tokenId as `0x${string}`,
-                    to: settler as `0x${string}`,
-                    deadline: deadline,
-                  }],
+                  functionName: 'nadFunExactInSell',
+                  args: [settings.chainConfig[activechain].zeroXAllowanceHolder, walletAddr as `0x${string}`, sellContractAddress, amountTokenWei, inputAmountWei, sellToken, settler, deadline],
                 })],
               }))
               actions.push(encodeFunctionData({
@@ -1965,23 +1950,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             functionName: 'BASIC',
             args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
               abi: zeroXActionsAbi,
-              functionName: 'transferFrom',
-              args: [settings.chainConfig[activechain].zeroXAllowanceHolder, sellToken, account.address as `0x${string}`, settler, amountTokenWei],
-            })],
-          }))
-          actions.push(encodeFunctionData({
-            abi: zeroXActionsAbi,
-            functionName: 'BASIC',
-            args: [position.tokenId, 10000n, sellContractAddress, 4n, encodeFunctionData({
-              abi: NadFunAbi,
-              functionName: 'sell',
-              args: [{
-                amountIn: 0n,
-                amountOutMin: inputAmountWei,
-                token: position.tokenId as `0x${string}`,
-                to: settler as `0x${string}`,
-                deadline: deadline,
-              }],
+              functionName: 'nadFunExactInSell',
+              args: [settings.chainConfig[activechain].zeroXAllowanceHolder, account.address as `0x${string}`, sellContractAddress, amountTokenWei, inputAmountWei, sellToken, settler, deadline],
             })],
           }))
           actions.push(encodeFunctionData({
@@ -2971,23 +2941,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   functionName: 'BASIC',
                   args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
                     abi: zeroXActionsAbi,
-                    functionName: 'transferFrom',
-                    args: [settings.chainConfig[activechain].zeroXAllowanceHolder, sellToken, walletAddr as `0x${string}`, settler, amountTokenWei],
-                  })],
-                }))
-                actions.push(encodeFunctionData({
-                  abi: zeroXActionsAbi,
-                  functionName: 'BASIC',
-                  args: [token.id, 10000n, sellContractAddress, 4n, encodeFunctionData({
-                    abi: NadFunAbi,
-                    functionName: 'sell',
-                    args: [{
-                      amountIn: 0n,
-                      amountOutMin: inputAmountWei,
-                      token: token.id as `0x${string}`,
-                      to: settler as `0x${string}`,
-                      deadline: deadline,
-                    }],
+                    functionName: 'nadFunExactInSell',
+                    args: [settings.chainConfig[activechain].zeroXAllowanceHolder, walletAddr as `0x${string}`, sellContractAddress, amountTokenWei, inputAmountWei, sellToken, settler, deadline],
                   })],
                 }))
                 actions.push(encodeFunctionData({
@@ -3280,23 +3235,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               functionName: 'BASIC',
               args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
                 abi: zeroXActionsAbi,
-                functionName: 'transferFrom',
-                args: [settings.chainConfig[activechain].zeroXAllowanceHolder, sellToken, account.address as `0x${string}`, settler, amountTokenWei],
-              })],
-            }))
-            actions.push(encodeFunctionData({
-              abi: zeroXActionsAbi,
-              functionName: 'BASIC',
-              args: [token.id, 10000n, sellContractAddress, 4n, encodeFunctionData({
-                abi: NadFunAbi,
-                functionName: 'sell',
-                args: [{
-                  amountIn: 0n,
-                  amountOutMin: inputAmountWei,
-                  token: token.id as `0x${string}`,
-                  to: settler as `0x${string}`,
-                  deadline: deadline,
-                }],
+                functionName: 'nadFunExactInSell',
+                args: [settings.chainConfig[activechain].zeroXAllowanceHolder, account.address as `0x${string}`, sellContractAddress, amountTokenWei, inputAmountWei, sellToken, settler, deadline],
               })],
             }))
             actions.push(encodeFunctionData({

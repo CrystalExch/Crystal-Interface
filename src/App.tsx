@@ -5178,7 +5178,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setMemeDevTokens(prev => {
                   const updated = prev.map(t => {
                     if ((t.id || '').toLowerCase() !== tokenAddrFromMarket) return t;
-                    return { ...t, endPrice, marketCap: endPrice * TOTAL_SUPPLY, timestamp: Math.floor(Date.now() / 1000) };
+                    return { ...t, endPrice, marketCap: endPrice * TOTAL_SUPPLY};
                   });
                   memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
                   return updated;
@@ -5493,7 +5493,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   setMemeDevTokens(prev => {
                     const updated = prev.map(t => {
                       if ((t.id || '').toLowerCase() !== tokenAddr) return t;
-                      return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Math.floor(Date.now() / 1000) };
+                      return { ...t, price, marketCap: price * TOTAL_SUPPLY};
                     });
                     memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
                     return updated;
@@ -5981,7 +5981,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   setMemeDevTokens(prev => {
                     const updated = prev.map(t => {
                       if ((t.id || '').toLowerCase() !== tokenAddr) return t;
-                      return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Math.floor(Date.now() / 1000) };
+                      return { ...t, price, marketCap: price * TOTAL_SUPPLY };
                     });
                     memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
                     return updated;
@@ -6388,7 +6388,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   setMemeDevTokens(prev => {
                     const updated = prev.map(t => {
                       if ((t.id || '').toLowerCase() !== tokenAddr) return t;
-                      return { ...t, price, marketCap: price * TOTAL_SUPPLY, timestamp: Math.floor(Date.now() / 1000) };
+                      return { ...t, price, marketCap: price * TOTAL_SUPPLY };
                     });
                     memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
                     return updated;

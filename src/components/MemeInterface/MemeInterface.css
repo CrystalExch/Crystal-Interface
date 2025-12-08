@@ -914,8 +914,9 @@
 }
 
 .meme-settings-icon1 {
-  height: 12px;
-  width: 12px;
+  height: 14px;
+  width: 14px;
+  margin-right: -1px;
 }
 
 .meme-settings-icon2 {
@@ -2332,6 +2333,7 @@
 .tf-percentage {
   color: #f77f7d;
   font-size: 0.8rem;
+  margin-top: -2px;
 }
 
 .age-dropdown-wrapper {

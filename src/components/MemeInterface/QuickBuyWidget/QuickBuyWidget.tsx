@@ -1500,23 +1500,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
               functionName: 'BASIC',
               args: ['0x0000000000000000000000000000000000000000', 0n, settings.chainConfig[activechain].balancegetter, 0n, encodeFunctionData({
                 abi: zeroXActionsAbi,
-                functionName: 'transferFrom',
-                args: [settings.chainConfig[activechain].zeroXAllowanceHolder, sellToken, addr as `0x${string}`, settler, amountWei],
-              })],
-            }))
-            actions.push(encodeFunctionData({
-              abi: zeroXActionsAbi,
-              functionName: 'BASIC',
-              args: [token.id, 10000n, sellContractAddress, 4n, encodeFunctionData({
-                abi: NadFunAbi,
-                functionName: 'sell',
-                args: [{
-                  amountIn: 0n,
-                  amountOutMin: inputAmountWei,
-                  token: token.id as `0x${string}`,
-                  to: settler as `0x${string}`,
-                  deadline: deadline,
-                }],
+                functionName: 'nadFunExactInSell',
+                args: [settings.chainConfig[activechain].zeroXAllowanceHolder, addr as `0x${string}`, sellContractAddress, amountWei, inputAmountWei, sellToken, settler, deadline],
               })],
             }))
             actions.push(encodeFunctionData({

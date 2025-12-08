@@ -1911,6 +1911,22 @@ export const zeroXActionsAbi = [
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
+	  },
+	  {
+		"inputs": [
+		  { "internalType": "address", "name": "allowanceHolder", "type": "address" },
+		  { "internalType": "address", "name": "from", "type": "address" },
+		  { "internalType": "address", "name": "router", "type": "address" },
+		  { "internalType": "uint256", "name": "amountIn", "type": "uint256" },
+		  { "internalType": "uint256", "name": "amountOutMin", "type": "uint256" },
+		  { "internalType": "address", "name": "token", "type": "address" },
+		  { "internalType": "address", "name": "to", "type": "address" },
+		  { "internalType": "uint256", "name": "deadline", "type": "uint256" }
+		],
+		"name": "nadFunExactInSell",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	  }
 	  
 ] as const;

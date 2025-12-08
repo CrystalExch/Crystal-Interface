@@ -45,9 +45,9 @@ interface TraderPortfolioPopupProps {
   onAddTrackedWallet?: (wallet: { address: string; name: string; emoji: string }) => void;
   subWallets?: Array<{ address: string; privateKey: string }>;
   walletNames?: { [address: string]: string };
-  logout: () => void;
-
+  logout?: () => void;
 }
+
 const Tooltip: React.FC<{
   content: string | React.ReactNode;
   children: React.ReactNode;
@@ -747,7 +747,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                 <button
                   className="popup-disconnect-button"
                   onClick={() => {
-                    logout()
+                    logout?.()
                   }}
                 >
                   <svg

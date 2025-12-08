@@ -1057,7 +1057,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                               <img
                                 className="meme-ordercenter-monad-icon"
                                 src={monadicon}
-                                alt="MONAD"
                               />
                             )}
                             <span className="meme-usd-amount buy">
@@ -1080,7 +1079,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                               <img
                                 className="meme-ordercenter-monad-icon"
                                 src={monadicon}
-                                alt="MONAD"
                               />
                             )}
                             <span className="meme-usd-amount sell">
@@ -1307,18 +1305,24 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         </div>
                       </div>
                       <div className="meme-oc-cell">
-                        {!showTokenBalance && (
-                          <img
-                            src={monadicon}
-                            className="meme-oc-monad-icon"
-                            alt="MONAD"
-                          />
-                        )}
-                        <span className="meme-mon-balance">
-                          {showTokenBalance
-                            ? fmt(row.balance, 3)
-                            : fmt(row.balance * currentPrice, 3)}
-                        </span>
+                        <div className="meme-trade-info">
+                          <div className="meme-ordercenter-info">
+                            {!showTokenBalance && (
+                              <img
+                                src={monadicon}
+                                className="meme-oc-monad-icon"
+                              />
+                            )}
+                            <span className="meme-mon-balance">
+                              {showTokenBalance
+                                ? fmt(row.balance, 3)
+                                : fmt(row.balance * currentPrice, 3)}
+                            </span>
+                          </div>
+                          <span className="meme-token-amount">
+                            {(row.balance / 1e9 * 100).toFixed(2) + '%'}
+                          </span>
+                        </div>
                       </div>
                       <div className="meme-oc-cell">
                         <div className="meme-trade-info">
@@ -1464,7 +1468,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                   const remainingPct =
                     row.amountBought === 0
                       ? 100
-                      : (row.balance / Math.max(row.amountBought, 1e-9)) * 100;
+                      : Math.min((row.balance / Math.max(row.amountBought, 1e-9)) * 100, 100);
                   const pnl = row.valueNet;
                   const avgBuyUSD =
                     (row.valueBought * monUsdPrice) / (row.amountBought || 1);
@@ -1544,22 +1548,26 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                           </div>
                         </div>
                       </div>
-
                       <div className="meme-oc-cell">
-                        {!showTokenBalance && (
-                          <img
-                            src={monadicon}
-                            className="meme-oc-monad-icon"
-                            alt="MONAD"
-                          />
-                        )}
-                        <span className="meme-mon-balance">
-                          {showTokenBalance
-                            ? `${fmt(row.balance, 3)} ${token.symbol}`
-                            : fmt(row.balance * currentPrice, 3)}
-                        </span>
+                        <div className="meme-trade-info">
+                          <div className="meme-ordercenter-info">
+                            {!showTokenBalance && (
+                              <img
+                                src={monadicon}
+                                className="meme-oc-monad-icon"
+                              />
+                            )}
+                            <span className="meme-mon-balance">
+                              {showTokenBalance
+                                ? fmt(row.balance, 3)
+                                : fmt(row.balance * currentPrice, 3)}
+                            </span>
+                          </div>
+                          <span className="meme-token-amount">
+                            {(row.balance / 1e9 * 100).toFixed(2) + '%'}
+                          </span>
+                        </div>
                       </div>
-
                       <div className="meme-oc-cell">
                         <div className="meme-trade-info">
                           <div className="meme-avg-buy-info">
@@ -1839,18 +1847,33 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                   </div>
                   <div className="meme-oc-migration-item non-migrated">
                     <span className="meme-oc-migration-indicator"></span>
-                    <span>Non Migrated: {devTokensToShow.length - (token.graduatedTokens || 0)}</span>
+                    <span>Not Migrated: {devTokensToShow.length - (token.graduatedTokens || 0)}</span>
                   </div>
                 </div>
                 <div className="meme-oc-dev-stats-highlights">
                   <h4>Highlights</h4>
                   <div className="meme-oc-highlight-item">
                     <span>Top MCAP</span>
-                    <span>
-                      {devTokensToShow.length > 0
-                        ? `${devTokensToShow[0].symbol} ($${fmt(Math.max(...devTokensToShow.map(t => Number(t.marketCap || 0))))})`
-                        : '—'}
-                    </span>
+                    <div className="meme-ordercenter-info">
+                      {amountMode === 'MON' ? <>
+                        <img
+                          className="meme-ordercenter-monad-icon"
+                          src={monadicon}
+                          alt="MONAD"
+                        />
+                        <span className="meme-usd-amount">
+                          {Math.max(...devTokensToShow.map(t => Number(t.marketCap || 0))) > 0 ? fmt(Math.max(...devTokensToShow.map(t => Number(t.marketCap || 0))), 2) : '—'}
+                        </span>
+                      </> : <>
+                        <span className="meme-usd-amount">
+                          {Math.max(...devTokensToShow.map(t => Number(t.marketCap || 0))) > 0 ? fmtAmount(
+                            Math.max(...devTokensToShow.map(t => Number(t.marketCap || 0))),
+                            amountMode,
+                            monUsdPrice,
+                          ) : '—'}
+                        </span>
+                      </>}
+                    </div>
                   </div>
                   <div className="meme-oc-highlight-item">
                     <span>Last Token Launched:</span>
