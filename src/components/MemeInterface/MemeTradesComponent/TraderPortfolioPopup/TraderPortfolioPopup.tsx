@@ -43,6 +43,10 @@ interface TraderPortfolioPopupProps {
   monUsdPrice: number;
   trackedWallets?: any[];
   onAddTrackedWallet?: (wallet: { address: string; name: string; emoji: string }) => void;
+  subWallets?: Array<{ address: string; privateKey: string }>;
+  walletNames?: { [address: string]: string };
+  logout: () => void;
+
 }
 const Tooltip: React.FC<{
   content: string | React.ReactNode;
@@ -273,8 +277,47 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
   monUsdPrice,
   trackedWallets,
   onAddTrackedWallet,
+  subWallets = [],
+  walletNames = {},
+  logout,
 }) => {
+  const getWalletDisplayName = useCallback(() => {
+    const tracked = trackedWallets?.find(
+      (w: any) => w.address.toLowerCase() === traderAddress.toLowerCase()
+    );
+    if (tracked && tracked.name) {
+      return { name: tracked.name, emoji: tracked.emoji || '🎯', isTracked: true };
+    }
 
+    const subWalletIndex = subWallets.findIndex(
+      (w) => w.address.toLowerCase() === traderAddress.toLowerCase()
+    );
+
+    if (subWalletIndex !== -1) {
+      const subWallet = subWallets[subWalletIndex];
+      const name = walletNames[subWallet.address] || `Wallet ${subWalletIndex + 1}`;
+      return { name, emoji: '💼', isSubWallet: true };
+    }
+
+    return null;
+  }, [traderAddress, trackedWallets, subWallets, walletNames]);
+
+  const walletInfo = getWalletDisplayName();
+
+  useEffect(() => {
+    if (trackedWallets) {
+      const tracked = trackedWallets.find(
+        (w: any) => w.address.toLowerCase() === traderAddress.toLowerCase()
+      );
+      if (tracked) {
+        setWalletName(tracked.name || '');
+        setSelectedEmoji(tracked.emoji || '🎯');
+      } else if (walletInfo?.isSubWallet) {
+        setWalletName(walletInfo.name);
+        setSelectedEmoji(walletInfo.emoji);
+      }
+    }
+  }, [traderAddress, trackedWallets, walletInfo]);
   const [traderPositions, setTraderPositions] = useState<Position[]>([]);
   const [isLoadingPositions, setIsLoadingPositions] = useState(false);
   const [walletName, setWalletName] = useState('');
@@ -632,11 +675,13 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                     autoFocus
                   />
                 </div>
-              ) : walletName ? (
+              ) : walletName || walletInfo ? (
                 <div className="trader-name-display">
                   <button
                     className="trader-emoji-button"
                     onClick={(e) => {
+                      if (walletInfo?.isSubWallet) return;
+
                       if (!showEmojiPicker) {
                         const rect = e.currentTarget.getBoundingClientRect();
                         setEmojiPickerPosition({
@@ -646,14 +691,22 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                       }
                       setShowEmojiPicker(!showEmojiPicker);
                     }}
+                    disabled={walletInfo?.isSubWallet}
                   >
-                    {selectedEmoji}
+                    {walletInfo?.emoji || selectedEmoji}
                   </button>
                   <span
                     className="trader-wallet-name"
-                    onClick={() => setIsEditingName(true)}
+                    onClick={() => {
+                      if (!walletInfo?.isSubWallet) {
+                        setIsEditingName(true);
+                      }
+                    }}
+                    style={{
+                      cursor: walletInfo?.isSubWallet ? 'default' : 'pointer'
+                    }}
                   >
-                    {walletName}
+                    {walletInfo?.name || walletName}
                   </span>
                 </div>
               ) : (
@@ -688,9 +741,36 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
               </span>
             </div>
           </div>
-          <button className="trader-popup-close" onClick={onClose}>
-            <img src={closebutton} className="close-button-icon" alt="Close" />
-          </button>
+          <div className="trader-portfolio-popup-actions">
+            {walletInfo?.isSubWallet && (
+              <Tooltip content="Disconnect">
+                <button
+                  className="popup-disconnect-button"
+                  onClick={() => {
+                    logout()
+                  }}
+                >
+                  <svg
+                    className="disconnect-icon"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                </button>
+              </Tooltip>
+            )}
+
+            <button className="trader-popup-close" onClick={onClose}>
+              <img src={closebutton} className="close-button-icon" alt="Close" />
+            </button>
+          </div>
         </div>
 
         <div className="trader-popup-content">
