@@ -138,7 +138,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       : [];
   }, [subWalletAddresses]);
 
-  // Create a memoized map for quick lookup of tracked wallet emojis
   const trackedWalletsMap = useMemo(() => {
     const map = new Map<string, { name: string; emoji: string }>();
     trackedWallets.forEach((wallet: any) => {

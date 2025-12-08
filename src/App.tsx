@@ -515,7 +515,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const presets = loadBuyPresets();
     return presets[1]?.slippage || '20';
   });
-  
+
   const [buyPriorityFee, setBuyPriorityFee] = useState(() => {
     const presets = loadBuyPresets();
     return presets[1]?.priority || '0.01';
@@ -570,14 +570,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       trackedWalletsRef.current = [];
       setTrackedWallets([]);
     }
-  
+
     const walletEvt = (e: CustomEvent) => {
       if (e.detail?.wallets) {
         trackedWalletsRef.current = e.detail.wallets;
         setTrackedWallets(e.detail.wallets);
       }
     };
-  
+
     const storageEvt = (e: StorageEvent) => {
       if (e.key === 'tracked_wallets_data') {
         try {
@@ -590,15 +590,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
       }
     };
-  
+
     window.addEventListener('wallets-updated', walletEvt as EventListener);
     window.addEventListener('storage', storageEvt);
-  
+
     return () => {
       window.removeEventListener('wallets-updated', walletEvt as EventListener);
       window.removeEventListener('storage', storageEvt);
     };
-  }, []);  
+  }, []);
 
   useEffect(() => {
     const handleBuyPresetsUpdate = (event: CustomEvent) => {
@@ -6176,7 +6176,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 }
                 return copy;
               });
-              
+
               if (trackedWalletsRef.current.some((w: any) => w.address.toLowerCase() === callerAddr.toLowerCase())) {
                 const tradeId = `${log.transactionHash}-${log.logIndex}`;
 
@@ -6513,15 +6513,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       method: "eth_subscribe",
       params: [
         "monadLogs",
-        { address: pools, topics: [[
-          CRYSTAL_EVENTS.Transfer,
-          UNIV3_EVENTS.Swap,
-          NAD_FUN_EVENTS.CurveCreate,
-          NAD_FUN_EVENTS.CurveBuy,
-          NAD_FUN_EVENTS.CurveSell,
-          NAD_FUN_EVENTS.CurveSync,
-          NAD_FUN_EVENTS.CurveGraduate,
-        ]]}
+        {
+          address: pools, topics: [[
+            CRYSTAL_EVENTS.Transfer,
+            UNIV3_EVENTS.Swap,
+            NAD_FUN_EVENTS.CurveCreate,
+            NAD_FUN_EVENTS.CurveBuy,
+            NAD_FUN_EVENTS.CurveSell,
+            NAD_FUN_EVENTS.CurveSync,
+            NAD_FUN_EVENTS.CurveGraduate,
+          ]]
+        }
       ]
     });
     explorerWsRef.current.send(sub);
@@ -12014,16 +12016,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   useEffect(() => {
     if (popup != 30 && popup != 31) return;
-  
+
     let disposed = false;
     let inFlight: AbortController | null = null;
-  
+
     const tick = async () => {
       if (disposed) return;
       try {
         inFlight?.abort();
         inFlight = new AbortController();
-  
+
         const rpc = "https://arb1.arbitrum.io/rpc";
         const usdc = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
         const spender = "0x81144d6E7084928830f9694a201E8c1ce6eD0cb2";
@@ -12032,34 +12034,34 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const allowanceData = "0xdd62ed3e"
           + scaAddress.toLowerCase().replace("0x", "").padStart(64, "0")
           + spender.replace("0x", "").padStart(64, "0");
-  
+
         const body = JSON.stringify([
           { jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to: usdc, data: balData }, "latest"] },
           { jsonrpc: "2.0", id: 2, method: "eth_call", params: [{ to: usdc, data: allowanceData }, "latest"] }
         ]);
-  
+
         const res = await fetch(rpc, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: inFlight.signal,
           body
         });
-  
+
         if (!res.ok) return;
-  
+
         const replies = await res.json();
-  
+
         const bal = replies[0]?.result ? BigInt(replies[0].result) : 0n;
         const allowance = replies[1]?.result ? BigInt(replies[1].result) : 0n;
-  
+
         setarbUSDCBalance(bal);
         setarbUSDCAllowance(allowance);
-      } catch {}
+      } catch { }
     };
-  
+
     const handle = setInterval(tick, 3000);
     tick();
-  
+
     return () => { disposed = true; inFlight?.abort(); clearInterval(handle); };
   }, [popup, scaAddress]);
 
@@ -28271,28 +28273,30 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         perpsFilterOptions={perpsFilterOptions}
         externalUserStats={memeUserStats}
         lastNonceGroupFetch={lastNonceGroupFetch}
-        scaAddress={scaAddress}
         onSharePNL={handleSharePNL}
         client={client}
+        selectedWallets={selectedWallets}
+        nonces={nonces}
+        scaAddress={scaAddress}
       />
-        <div className="app-container" style={{
-          marginLeft: (() => {
-            let total = 0;
-            if (trackerWidgetSnap === 'left') total += trackerWidgetWidth;
-            if (spectraWidgetSnap === 'left') total += spectraWidgetWidth;
-            if (pnlWidgetSnap === 'left') total += pnlWidgetWidth;
-            if (walletTrackerWidgetSnap === 'left') total += walletTrackerWidgetWidth;
-            return total > 0 ? `${total}px` : '0px';
-          })(),
-          marginRight: (() => {
-            let total = 0;
-            if (trackerWidgetSnap === 'right') total += trackerWidgetWidth;
-            if (spectraWidgetSnap === 'right') total += spectraWidgetWidth;
-            if (pnlWidgetSnap === 'right') total += pnlWidgetWidth;
-            if (walletTrackerWidgetSnap === 'right') total += walletTrackerWidgetWidth;
-            return total > 0 ? `${total}px` : '0px';
-          })(),
-        }}>
+      <div className="app-container" style={{
+        marginLeft: (() => {
+          let total = 0;
+          if (trackerWidgetSnap === 'left') total += trackerWidgetWidth;
+          if (spectraWidgetSnap === 'left') total += spectraWidgetWidth;
+          if (pnlWidgetSnap === 'left') total += pnlWidgetWidth;
+          if (walletTrackerWidgetSnap === 'left') total += walletTrackerWidgetWidth;
+          return total > 0 ? `${total}px` : '0px';
+        })(),
+        marginRight: (() => {
+          let total = 0;
+          if (trackerWidgetSnap === 'right') total += trackerWidgetWidth;
+          if (spectraWidgetSnap === 'right') total += spectraWidgetWidth;
+          if (pnlWidgetSnap === 'right') total += pnlWidgetWidth;
+          if (walletTrackerWidgetSnap === 'right') total += walletTrackerWidgetWidth;
+          return total > 0 ? `${total}px` : '0px';
+        })(),
+      }}>
         <Routes>
           <Route path="/" element={<Navigate to="/spectra" replace />} />
           <Route path="*" element={<Navigate to="/spectra" replace />} />
