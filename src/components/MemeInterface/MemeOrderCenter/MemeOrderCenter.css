@@ -626,7 +626,11 @@
 .meme-oc-section-content[data-section="positions"] .meme-oc-header-cell:last-child,
 .meme-oc-section-content[data-section="positions"] .meme-oc-cell:last-child,
 .meme-oc-section-content[data-section="trades"] .meme-oc-header-cell:last-child,
-.meme-oc-section-content[data-section="trades"] .meme-oc-cell:last-child {
+.meme-oc-section-content[data-section="trades"] .meme-oc-cell:last-child,
+.meme-oc-section-content[data-section="top100"] .meme-oc-header-cell:last-child,
+.meme-oc-section-content[data-section="top100"] .meme-oc-cell:last-child,
+.meme-oc-section-content[data-section="history"] .meme-oc-header-cell:last-child,
+.meme-oc-section-content[data-section="history"] .meme-oc-cell:last-child {
   justify-content: flex-end;
   text-align: right;
 }

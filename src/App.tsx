@@ -1398,12 +1398,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       const positionsPromises = walletAddresses.map(async (address) => {
         const response = await fetch(`https://api.crystal.exchange/user/${address}`);
         const data = await response.json();
-        console.log(data)
         return data.positions || [];
       });
 
       const allPositionsArrays = await Promise.all(positionsPromises);
-
       const combinedPositions = allPositionsArrays.flat();
 
       const positionsMap = new Map<string, Position>();
@@ -1412,18 +1410,60 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const existing = positionsMap.get(position.token);
 
         if (existing) {
-          existing.boughtTokens += position.token_bought;
-          existing.soldTokens += position.token_sold;
-          existing.spentNative += position.native_spent;
-          existing.receivedNative += position.native_recieved;
-          existing.remainingTokens += position.balance_token;
-          existing.pnlNative = existing.receivedNative + (existing.remainingTokens * (existing.lastPrice || 0)) - existing.spentNative;
-          existing.remainingPct = existing.boughtTokens > 0 ? (existing.remainingTokens / existing.boughtTokens) * 100 : 0;
+          const boughtTokens = existing.boughtTokens + (Number(position.token_bought ?? 0) / 1e18);
+          const soldTokens = existing.soldTokens + (Number(position.token_sold ?? 0) / 1e18);
+          const spentNative = existing.spentNative + (Number(position.native_spent ?? 0) / 1e18);
+          const receivedNative = existing.receivedNative + (Number(position.native_received ?? 0) / 1e18);
+          const balance = existing.remainingTokens + (Number(position.balance_token ?? 0) / 1e18);
+          const balanceNative = (Number(position.balance_native ?? 0) / 1e18);
+
+          const lastPrice = balance > 0 ? balanceNative / balance : existing.lastPrice || 0;
+          const realized = receivedNative - spentNative;
+          const unrealized = balance * lastPrice;
+          const pnlNative = realized + unrealized;
+          const remainingPct = boughtTokens > 0 ? (balance / boughtTokens) * 100 : 100;
+
+          existing.boughtTokens = boughtTokens;
+          existing.soldTokens = soldTokens;
+          existing.spentNative = spentNative;
+          existing.receivedNative = receivedNative;
+          existing.remainingTokens = balance;
+          existing.lastPrice = lastPrice;
+          existing.pnlNative = pnlNative;
+          existing.remainingPct = remainingPct;
         } else {
-          positionsMap.set(position.token, { ...position });
+          const boughtTokens = Number(position.token_bought ?? 0) / 1e18;
+          const soldTokens = Number(position.token_sold ?? 0) / 1e18;
+          const spentNative = Number(position.native_spent ?? 0) / 1e18;
+          const receivedNative = Number(position.native_received ?? 0) / 1e18;
+          const balance = Number(position.balance_token ?? 0) / 1e18;
+          const balanceNative = Number(position.balance_native ?? 0) / 1e18;
+
+          const lastPrice = balance > 0 ? balanceNative / balance : 0;
+          const realized = receivedNative - spentNative;
+          const unrealized = balance * lastPrice;
+          const pnlNative = realized + unrealized;
+          const remainingPct = boughtTokens > 0 ? (balance / boughtTokens) * 100 : 100;
+
+          positionsMap.set(position.token, {
+            tokenId: position.token,
+            symbol: position.symbol,
+            name: position.name,
+            metadataCID: position.metadata_cid,
+            imageUrl: position.metadata_cid || '',
+            boughtTokens,
+            soldTokens,
+            spentNative,
+            receivedNative,
+            remainingTokens: balance,
+            lastPrice,
+            remainingPct,
+            pnlNative,
+            source: 'nadfun'
+          });
         }
       });
-      console.log(positionsMap)
+
       setTrenchesPositions(Array.from(positionsMap.values()));
     } catch (error) {
       console.error('Error fetching trenches positions:', error);
@@ -5178,7 +5218,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setMemeDevTokens(prev => {
                   const updated = prev.map(t => {
                     if ((t.id || '').toLowerCase() !== tokenAddrFromMarket) return t;
-                    return { ...t, endPrice, marketCap: endPrice * TOTAL_SUPPLY};
+                    return { ...t, endPrice, marketCap: endPrice * TOTAL_SUPPLY };
                   });
                   memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
                   return updated;
@@ -5493,7 +5533,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   setMemeDevTokens(prev => {
                     const updated = prev.map(t => {
                       if ((t.id || '').toLowerCase() !== tokenAddr) return t;
-                      return { ...t, price, marketCap: price * TOTAL_SUPPLY};
+                      return { ...t, price, marketCap: price * TOTAL_SUPPLY };
                     });
                     memeDevTokenIdsRef.current = new Set(updated.map(t => (t.id || '').toLowerCase()));
                     return updated;
@@ -6720,7 +6760,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           market: m.market ?? null,
           circulatingSupply: Number(m.circulating_supply)
         }))
-        
+
         if (Array.isArray(m.holders)) {
           const mappedHolders: Holder[] = m.holders.slice(0, 50)
             .filter(

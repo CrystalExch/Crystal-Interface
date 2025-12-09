@@ -844,7 +844,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       }
     }
   };
-  
+
   const [transactionFilters, setTransactionFilters] =
     useState<TransactionFilters>({
       makerAddress: '',
@@ -1098,11 +1098,14 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         <div className="meme-remaining-info">
                           <div className="meme-remaining-container">
                             <span className="meme-remaining">
-                              <img
-                                src={monadicon}
-                                className="meme-ordercenter-monad-icon"
-                              />
-                              {fmt(p.remainingTokens * (p.lastPrice ?? currentPrice))}
+                              {amountMode === 'MON' && (
+                                <img src={monadicon} alt="" className="meme-oc-monad-icon" />
+                              )}
+                              {fmtAmount(
+                                p.remainingTokens * (p.lastPrice ?? currentPrice),
+                                amountMode,
+                                monUsdPrice
+                              )}
                             </span>
                             <span className="meme-remaining-percentage">
                               {p.remainingPct.toFixed(0)}%
@@ -1307,17 +1310,25 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       <div className="meme-oc-cell">
                         <div className="meme-trade-info">
                           <div className="meme-ordercenter-info">
-                            {!showTokenBalance && (
-                              <img
-                                src={monadicon}
-                                className="meme-oc-monad-icon"
-                              />
+                            {showTokenBalance ? (
+                              <>
+                                <span className="meme-mon-balance">
+                                  {fmt(row.balance, 3)}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                {amountMode === 'MON' && (
+                                  <img
+                                    src={monadicon}
+                                    className="meme-oc-monad-icon"
+                                  />
+                                )}
+                                <span className="meme-mon-balance">
+                                  {fmtAmount(row.balance * currentPrice, amountMode, monUsdPrice)}
+                                </span>
+                              </>
                             )}
-                            <span className="meme-mon-balance">
-                              {showTokenBalance
-                                ? fmt(row.balance, 3)
-                                : fmt(row.balance * currentPrice, 3)}
-                            </span>
                           </div>
                           <span className="meme-token-amount">
                             {(row.balance / 1e9 * 100).toFixed(2) + '%'}
@@ -1551,17 +1562,25 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       <div className="meme-oc-cell">
                         <div className="meme-trade-info">
                           <div className="meme-ordercenter-info">
-                            {!showTokenBalance && (
-                              <img
-                                src={monadicon}
-                                className="meme-oc-monad-icon"
-                              />
+                            {showTokenBalance ? (
+                              <>
+                                <span className="meme-mon-balance">
+                                  {fmt(row.balance, 3)}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                {amountMode === 'MON' && (
+                                  <img
+                                    src={monadicon}
+                                    className="meme-oc-monad-icon"
+                                  />
+                                )}
+                                <span className="meme-mon-balance">
+                                  {fmtAmount(row.balance * currentPrice, amountMode, monUsdPrice)}
+                                </span>
+                              </>
                             )}
-                            <span className="meme-mon-balance">
-                              {showTokenBalance
-                                ? fmt(row.balance, 3)
-                                : fmt(row.balance * currentPrice, 3)}
-                            </span>
                           </div>
                           <span className="meme-token-amount">
                             {(row.balance / 1e9 * 100).toFixed(2) + '%'}
