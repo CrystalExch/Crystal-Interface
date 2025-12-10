@@ -446,7 +446,7 @@ const SellPopup: React.FC<SellPopupProps> = ({
                 <div className="meme-balance-display">
                   <img src={walleticon} className="meme-wallet-icon" />
                   {(() => {
-                    const totalTokenBalance = selectedPosition.remainingTokens;
+                    const totalTokenBalance = Number(selectedPosition.remainingTokens) / 1e18;
                     return (
                       totalTokenBalance *
                       (selectedPosition.lastPrice || currentPrice)
@@ -658,7 +658,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
   const handleSellMaxClick = useCallback(() => {
     if (selectedPosition) {
-      const totalTokenBalance = selectedPosition.remainingTokens;
+      const totalTokenBalance = Number(selectedPosition.remainingTokens) / 1e18;
       const maxMonAmount =
         totalTokenBalance * (selectedPosition.lastPrice || currentPrice);
       setSellAmount(maxMonAmount.toFixed(2));
@@ -790,7 +790,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
   const availableTabs = [
     ...(isTradesTabVisible ? [{ key: 'trades', label: `Trades` }] : []),
-    { key: 'positions', label: `Positions (${positions.filter(p => p.remainingTokens > 0).length})` },
+    { key: 'positions', label: `Positions (${positions.filter(p => p.remainingTokens > 0n).length})` },
     // { key: 'orders', label: `Orders (${mockOrders.length})` },
     { key: 'holders', label: `Holders (${token.holders})` },
     { key: 'topTraders', label: `Top Traders (${topTraderRows.length})` },
@@ -921,7 +921,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     const percent = parseInt(e.target.value);
     setSellSliderPercent(percent);
     if (selectedPosition) {
-      const totalTokenBalance = selectedPosition.remainingTokens;
+      const totalTokenBalance = Number(selectedPosition.remainingTokens) / 1e18;
       const maxMonAmount =
         totalTokenBalance *
         (selectedPosition.lastPrice || currentPrice);
@@ -934,7 +934,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     const value = e.target.value;
     setSellAmount(value);
     if (selectedPosition) {
-      const totalTokenBalance = selectedPosition.remainingTokens;
+      const totalTokenBalance = Number(selectedPosition.remainingTokens) / 1e18;
       const maxMonAmount =
         totalTokenBalance *
         (selectedPosition.lastPrice || currentPrice);
@@ -994,7 +994,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             </div>
             <div className="meme-oc-items">
               {[...(positions?.length ? positions : [])]
-                .sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0)).filter(p => p.remainingTokens > 0)
+                .sort((a, b) => (b.pnlNative ?? 0) - (a.pnlNative ?? 0)).filter(p => p.remainingTokens > 0n)
                 .map((p, _) => {
                   const tokenShort =
                     p.symbol ||
@@ -1102,7 +1102,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                                 <img src={monadicon} alt="" className="meme-oc-monad-icon" />
                               )}
                               {fmtAmount(
-                                p.remainingTokens * (p.lastPrice ?? currentPrice),
+                                (Number(p.remainingTokens) / 1e18) * (p.lastPrice ?? currentPrice),
                                 amountMode,
                                 monUsdPrice
                               )}

@@ -36,11 +36,19 @@ function formatMemePrice(price: number): string {
   const abs = Math.abs(price);
 
   if (abs >= 1_000_000_000)
-    return neg + (abs / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
-  if (abs >= 1_000_000)
+    return neg + (abs / 1_000_000_000).toFixed(2).replace(/\.0$/, '') + 'B';
+  if (abs >= 100_000_000)
+    return neg + (abs / 1_000_000).toFixed(0).replace(/\.0$/, '') + 'M';
+  if (abs >= 10_000_000)
     return neg + (abs / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (abs >= 1_000)
+  if (abs >= 1_000_000)
+    return neg + (abs / 1_000_000).toFixed(2).replace(/\.0$/, '') + 'M';
+  if (abs >= 100_000)
+    return neg + (abs / 1_000).toFixed(0).replace(/\.0$/, '') + 'K';
+  if (abs >= 10_000)
     return neg + (abs / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  if (abs >= 1_000)
+    return neg + (abs / 1_000).toFixed(2).replace(/\.0$/, '') + 'K';
 
   if (abs >= 100) return neg + abs.toFixed(0).replace(/\.00$/, '');
   if (abs >= 10) return neg + abs.toFixed(1).replace(/\.00$/, '');

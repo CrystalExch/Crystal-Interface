@@ -5166,7 +5166,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     soldTokens: 0,
                     spentNative: 0,
                     receivedNative: 0,
-                    remainingTokens: 0,
+                    remainingTokens: 0n,
                     remainingPct: 0,
                     pnlNative: 0,
                     lastPrice: endPrice,
@@ -5181,18 +5181,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   if (isBuy) {
                     pos.boughtTokens += amountOut;
                     pos.spentNative += amountIn;
-                    pos.remainingTokens = (pos.remainingTokens || 0) + amountOut;
+                    pos.remainingTokens = (pos.remainingTokens || 0n) + amountOutWei;
                   } else {
                     pos.soldTokens += amountIn;
                     pos.receivedNative += amountOut;
-                    pos.remainingTokens = Math.max(0, (pos.remainingTokens || 0) - amountIn);
+                    pos.remainingTokens = (pos.remainingTokens || 0n) - amountInWei;
                   }
                 }
+                const balance = Math.max(0, Number(pos.remainingTokens ?? 0) / 1e18);
                 pos.remainingPct = pos.boughtTokens > 0
-                  ? (pos.remainingTokens / pos.boughtTokens) * 100
-                  : 0;
-
-                const balance = Math.max(0, pos.remainingTokens);
+                ? (balance / pos.boughtTokens) * 100
+                : 0;
                 const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
                 const unrealized = balance * (pos.lastPrice || 0);
                 pos.pnlNative = realized + unrealized;
@@ -5483,7 +5482,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       soldTokens: 0,
                       spentNative: 0,
                       receivedNative: 0,
-                      remainingTokens: 0,
+                      remainingTokens: 0n,
                       remainingPct: 0,
                       pnlNative: 0,
                       lastPrice: price,
@@ -5498,16 +5497,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     if (isBuy) {
                       pos.boughtTokens += amountOut;
                       pos.spentNative += amountIn;
-                      pos.remainingTokens += amountOut;
+                      pos.remainingTokens += outputAmountWei;
                     } else {
                       pos.soldTokens += amountIn;
                       pos.receivedNative += amountOut;
-                      pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
+                      pos.remainingTokens = pos.remainingTokens - inputAmountWei;
                     }
                   }
-                  pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
-
-                  const balance = Math.max(0, pos.remainingTokens);
+                  const balance = Math.max(0, Number(pos.remainingTokens ?? 0) / 1e18);
+                  pos.remainingPct = pos.boughtTokens > 0 ? (balance / pos.boughtTokens) * 100 : 0;
                   const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
                   const unrealized = balance * (pos.lastPrice || 0);
                   pos.pnlNative = realized + unrealized;
@@ -5668,7 +5666,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             }
             else if (log.topics?.[0] == NAD_FUN_EVENTS.CurveBuy || log.topics?.[0] == NAD_FUN_EVENTS.CurveSell) {
               const isBuy = log.topics?.[0] == NAD_FUN_EVENTS.CurveBuy;
-              const callerAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+              let callerAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
               const tokenAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
               let transferEvents;
               if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
@@ -5688,6 +5686,63 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 else {
                   transferEvents = transferPendingLogsRef.current.get(log.transactionHash);
                   transferPendingLogsRef.current.delete(log.transactionHash);
+                  if (transferEvents?.transfers.length > 0) {
+                    const zero = "0x" + "0".repeat(40);
+                    const pool = settings.chainConfig[activechain].nadFunBondingCurve.toLowerCase();
+                  
+                    const transfers = transferEvents.transfers.map((ev: any) => ({
+                      from: "0x" + ev.topics[1].slice(26).toLowerCase(),
+                      to: "0x" + ev.topics[2].slice(26).toLowerCase(),
+                      amount: BigInt(ev.data),
+                      logIndex: Number(ev.logIndex),
+                    })).sort((a: any, b: any) => a.logIndex - b.logIndex);
+                  
+                    const reverse = new Map<string, Set<string>>();
+                    for (const t of transfers) {
+                      if (!reverse.has(t.to)) reverse.set(t.to, new Set());
+                      reverse.get(t.to)!.add(t.from);
+                    }
+                  
+                    const reachable = new Set<string>();
+                    const queue = [pool];
+                    while (queue.length) {
+                      const cur = queue.pop()!;
+                      const prevSet = reverse.get(cur);
+                      if (!prevSet) continue;
+                  
+                      for (const prev of prevSet) {
+                        if (!reachable.has(prev)) {
+                          reachable.add(prev);
+                          queue.push(prev);
+                        }
+                      }
+                    }
+                  
+                    const pathTransfers = transfers.filter(
+                      (t: any) => reachable.has(t.from) && t.from !== pool && t.from !== zero
+                    );
+                  
+                    const amountBySource = new Map<string, bigint>();
+                    for (const t of pathTransfers) {
+                      amountBySource.set(
+                        t.from,
+                        (amountBySource.get(t.from) ?? 0n) + t.amount
+                      );
+                    }
+                  
+                    let best: string | null = null;
+                    let bestAmt = 0n;
+                    for (const [addr, amt] of amountBySource) {
+                      if (amt > bestAmt) {
+                        bestAmt = amt;
+                        best = addr;
+                      }
+                    }
+                  
+                    if (best) {
+                      callerAddr = best;
+                    }
+                  }
                 }
               }
               const syncEvent = wsPendingLogsRef.current.get(log.transactionHash);
@@ -5756,7 +5811,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       soldTokens: 0,
                       spentNative: 0,
                       receivedNative: 0,
-                      remainingTokens: 0,
+                      remainingTokens: 0n,
                       remainingPct: 0,
                       pnlNative: 0,
                       lastPrice: price,
@@ -5772,20 +5827,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   if (isBuy) {
                     pos.boughtTokens += amountOut;
                     pos.spentNative += amountIn;
-                    pos.remainingTokens += amountOut;
+                    pos.remainingTokens += BigInt('0x' + words[1]);
                   } else {
                     pos.soldTokens += amountIn;
                     pos.receivedNative += amountOut;
-                    pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
+                    pos.remainingTokens = pos.remainingTokens - BigInt('0x' + words[0]);
                   }
                 }
-                pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
-
-                const balance = Math.max(0, pos.remainingTokens);
+                const balance = Math.max(0, Number(pos.remainingTokens ?? 0) / 1e18);
+                pos.remainingPct = pos.boughtTokens > 0 ? (balance / pos.boughtTokens) * 100 : 0;
                 const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
                 const unrealized = balance * (pos.lastPrice || 0);
                 pos.pnlNative = realized + unrealized;
-
                 copy[idx] = pos;
 
                 if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
@@ -6053,9 +6106,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               }));
             }
             else if (log.topics?.[0] == UNIV3_EVENTS.Swap) {
-              const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
+              let callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
               const pool = log.address.toLowerCase();
-
               const hex = log.data.replace(/^0x/, '');
               const words = [];
               for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
@@ -6110,7 +6162,82 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               }
 
               const isBuy = nativeDelta > 0n;
-
+              let transferEvents;
+              if (memeRef.current.id && pool === memeRef.current.market.toLowerCase()) {
+                if (isBuy) {
+                  while (transferPendingLogsRef.current.size > 3000) {
+                    const oldestKey = transferPendingLogsRef.current.keys().next().value;
+                    if (!oldestKey) break;
+                    transferPendingLogsRef.current.delete(oldestKey);
+                  }
+                  let entry = transferPendingLogsRef.current.get(log.transactionHash);
+                  if (!entry) {
+                    entry = { swap: undefined, transfers: [] };
+                    transferPendingLogsRef.current.set(log.transactionHash, entry);
+                  }
+                  entry.swap = log;
+                }
+                else {
+                  transferEvents = transferPendingLogsRef.current.get(log.transactionHash);
+                  transferPendingLogsRef.current.delete(log.transactionHash);
+                  if (transferEvents?.transfers.length > 0) {
+                    const zero = "0x" + "0".repeat(40);
+                  
+                    const transfers = transferEvents.transfers.map((ev: any) => ({
+                      from: "0x" + ev.topics[1].slice(26).toLowerCase(),
+                      to: "0x" + ev.topics[2].slice(26).toLowerCase(),
+                      amount: BigInt(ev.data),
+                      logIndex: Number(ev.logIndex),
+                    })).sort((a: any, b: any) => a.logIndex - b.logIndex);
+                  
+                    const reverse = new Map<string, Set<string>>();
+                    for (const t of transfers) {
+                      if (!reverse.has(t.to)) reverse.set(t.to, new Set());
+                      reverse.get(t.to)!.add(t.from);
+                    }
+                  
+                    const reachable = new Set<string>();
+                    const queue = [pool];
+                    while (queue.length) {
+                      const cur = queue.pop()!;
+                      const prevSet = reverse.get(cur);
+                      if (!prevSet) continue;
+                  
+                      for (const prev of prevSet) {
+                        if (!reachable.has(prev)) {
+                          reachable.add(prev);
+                          queue.push(prev);
+                        }
+                      }
+                    }
+                  
+                    const pathTransfers = transfers.filter(
+                      (t: any) => reachable.has(t.from) && t.from !== pool && t.from !== zero
+                    );
+                  
+                    const amountBySource = new Map<string, bigint>();
+                    for (const t of pathTransfers) {
+                      amountBySource.set(
+                        t.from,
+                        (amountBySource.get(t.from) ?? 0n) + t.amount
+                      );
+                    }
+                  
+                    let best: string | null = null;
+                    let bestAmt = 0n;
+                    for (const [addr, amt] of amountBySource) {
+                      if (amt > bestAmt) {
+                        bestAmt = amt;
+                        best = addr;
+                      }
+                    }
+                  
+                    if (best) {
+                      callerAddr = best;
+                    }
+                  }
+                }
+              }
               const nativeAbs = nativeDelta >= 0n ? nativeDelta : -nativeDelta;
               const tokenAbs = tokenDelta >= 0n ? tokenDelta : -tokenDelta;
 
@@ -6170,7 +6297,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       soldTokens: 0,
                       spentNative: 0,
                       receivedNative: 0,
-                      remainingTokens: 0,
+                      remainingTokens: 0n,
                       remainingPct: 0,
                       pnlNative: 0,
                       lastPrice: price,
@@ -6186,16 +6313,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   if (isBuy) {
                     pos.boughtTokens += amountOut;
                     pos.spentNative += amountIn;
-                    pos.remainingTokens += amountOut;
+                    pos.remainingTokens += (isBuy ? tokenAbs : nativeAbs);
                   } else {
                     pos.soldTokens += amountIn;
                     pos.receivedNative += amountOut;
-                    pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
+                    pos.remainingTokens = pos.remainingTokens - (isBuy ? nativeAbs : tokenAbs);
                   }
                 }
-                pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
-
-                const balance = Math.max(0, pos.remainingTokens);
+                const balance = Math.max(0, Number(pos.remainingTokens ?? 0) / 1e18);
+                pos.remainingPct = pos.boughtTokens > 0 ? (balance / pos.boughtTokens) * 100 : 0;
                 const realized = (pos.receivedNative || 0) - (pos.spentNative || 0);
                 const unrealized = balance * (pos.lastPrice || 0);
                 pos.pnlNative = realized + unrealized;
@@ -6858,6 +6984,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               timestamp: Number(t.timestamp ?? 0),
               status: t.migrated,
               holders: t.holders,
+              market: t.market,
             };
           });
 
@@ -6996,8 +7123,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 soldTokens: 0,
                 spentNative: 0,
                 receivedNative: 0,
-                remainingTokens: 0,
+                remainingTokens: 0n,
                 lastPrice: 0,
+                market: p.market ?? '',
               });
             }
 
@@ -7006,7 +7134,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             existing.soldTokens += soldTokens;
             existing.spentNative += spentNative;
             existing.receivedNative += receivedNative;
-            existing.remainingTokens += balance;
+            existing.remainingTokens += BigInt(p.balance_token ?? 0);
             if (lastPrice) existing.lastPrice = lastPrice;
 
             if (tokenId === (token.id || '').toLowerCase()) {
@@ -7024,11 +7152,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         const all = Array.from(aggregatedMap.values()).map((pos) => {
           const realized = pos.receivedNative - pos.spentNative;
-          const unrealized = pos.remainingTokens * pos.lastPrice;
+          const unrealized = Number(pos.remainingTokens ?? 0) / 1e18 * pos.lastPrice;
           const pnlNative = realized + unrealized;
           const remainingPct =
             pos.boughtTokens > 0
-              ? (pos.remainingTokens / pos.boughtTokens) * 100
+              ? ((Number(pos.remainingTokens ?? 0) / 1e18) / pos.boughtTokens) * 100
               : 100;
 
           return {
@@ -7041,7 +7169,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const markToMarket = totals.balance * (totals.lastPriceNative || 0);
         const totalPnL = totals.valueSold + markToMarket - totals.valueBought;
 
-        const sorted = all.sort((a, b) => b.remainingTokens - a.remainingTokens);
+        const sorted = all.sort((a, b) => Number(b.remainingTokens - a.remainingTokens));
         setMemePositions(sorted);
         setMemeUserStats({
           balance: totals.balance,
@@ -7059,7 +7187,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return () => {
       cancelled = true;
     };
-  }, [scaAddress, subWallets, token.id]);
+  }, [scaAddress, subWallets, validOneCT, token.id]);
 
   useEffect(() => {
     if (!trackedWalletTrades || trackedWalletTrades.length === 0 || trackedWallets.length === 0) {

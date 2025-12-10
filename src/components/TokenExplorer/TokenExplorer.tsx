@@ -95,6 +95,7 @@ interface Token {
 }
 
 type ColumnKey = 'new' | 'graduating' | 'graduated';
+
 const InteractiveTooltip: React.FC<{
   content: React.ReactNode;
   children: React.ReactNode;
@@ -261,6 +262,7 @@ const InteractiveTooltip: React.FC<{
     </div>
   );
 };
+
 const Tooltip: React.FC<{
   content: string | React.ReactNode;
   children: React.ReactNode;
@@ -2456,6 +2458,7 @@ const MobileTabSelector: React.FC<{
     </div>
   );
 };
+
 const useMetricColorClasses = (
   token: Token | undefined,
   display: DisplaySettings | undefined,
@@ -2522,6 +2525,7 @@ const useMetricColorClasses = (
     monUsdPrice,
   ]);
 };
+
 const TokenRow = React.memo<{
   token: Token;
   quickbuyAmount: string;
@@ -2573,6 +2577,20 @@ const TokenRow = React.memo<{
     monUsdPrice,
     formatTimeAgo,
   } = props;
+
+  const [, forceRerender] = useReducer(x => x + 1, 0);
+
+  useEffect(() => {
+    const age = Math.floor(Date.now() / 1000) - token.created;
+  
+    if (age > 21600) return;
+  
+    const tickMs = age < 3600 ? 1000 : 60000;
+  
+    const interval = setInterval(forceRerender, tickMs);
+    return () => clearInterval(interval);
+  }, [token.created]);
+
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
   const tokenRowRef = useRef<HTMLDivElement>(null);
@@ -2684,7 +2702,7 @@ const TokenRow = React.memo<{
     setBondingPopupPosition({ top, left });
   }, []);
 
-useEffect(() => {
+  useEffect(() => {
   if (hoveredImage === token.id) {
     updatePreviewPosition();
     setShowPreview(true);
@@ -2821,7 +2839,7 @@ useEffect(() => {
                 : imageStyle
             }
               onMouseEnter={() => onImageHover(token.id)}
-  onMouseLeave={onImageLeave}
+              onMouseLeave={onImageLeave}
           >
             <div
               className={`explorer-progress-spacer ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
@@ -3723,6 +3741,7 @@ const wasTokenHovered = prevProps.hoveredToken === prevProps.token.id;
 
   return true;
 });
+
 interface TokenExplorerProps {
   setpopup: (popup: number) => void;
   appliedFilters?: TabFilters;
@@ -3769,21 +3788,7 @@ interface TokenExplorerProps {
   createSubWallet: any;
   setOneCTDepositAddress: any;
 }
-const formatTimeAgoStatic = (createdTimestamp: number, now: number) => {
-  const ageSec = now - createdTimestamp;
 
-  if (ageSec < 60) {
-    return `${Math.ceil(ageSec)}s`;
-  } else if (ageSec < 3600) {
-    return `${Math.floor(ageSec / 60)}m`;
-  } else if (ageSec < 86400) {
-    return `${Math.floor(ageSec / 3600)}h`;
-  } else if (ageSec < 604800) {
-    return `${Math.floor(ageSec / 86400)}d`;
-  } else {
-    return `${Math.floor(ageSec / 604800)}w`;
-  }
-};
 const TokenExplorer: React.FC<TokenExplorerProps> = ({
   appliedFilters,
   // activeFilterTab,
@@ -4121,24 +4126,24 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
   const [buyPresets, setBuyPresets] = useState(() => loadBuyPresets());
 
-  const [currentTimestamp, setCurrentTimestamp] = useState(() => Math.floor(Date.now() / 1000));
-const formatTimeAgo = useMemo(() => {
-  const cache = new Map<number, string>();
-  return (timestamp: number) => {
-    if (cache.has(timestamp)) return cache.get(timestamp)!;
-    const result = formatTimeAgoStatic(timestamp, currentTimestamp);
-    cache.set(timestamp, result);
-    return result;
-  };
-}, [currentTimestamp]);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTimestamp(Math.floor(Date.now() / 1000));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
+  const formatTimeAgo = (timestamp: number) => {
+    const formatTimeAgoStatic = (createdTimestamp: number, now: number) => {
+      const ageSec = now - createdTimestamp;
+    
+      if (ageSec < 60) {
+        return `${Math.ceil(ageSec)}s`;
+      } else if (ageSec < 3600) {
+        return `${Math.floor(ageSec / 60)}m`;
+      } else if (ageSec < 86400) {
+        return `${Math.floor(ageSec / 3600)}h`;
+      } else if (ageSec < 604800) {
+        return `${Math.floor(ageSec / 86400)}d`;
+      } else {
+        return `${Math.floor(ageSec / 604800)}w`;
+      }
+    };
+    return formatTimeAgoStatic(timestamp, Math.floor(Date.now() / 1000));
+  }
 
   useEffect(() => {
     localStorage.setItem(
