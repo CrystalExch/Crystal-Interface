@@ -1131,6 +1131,7 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
                         <div className="meme-oc-cell">
                           <button
                             className="share-pnl-btn"
+                            disabled
                             onClick={() => {
                               const shareData = {
                                 tokenAddress: p.tokenId,

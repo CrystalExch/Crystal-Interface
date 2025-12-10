@@ -3819,6 +3819,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                 <div className="meme-oc-cell">
                                   <button
                                     className="meme-action-btn"
+                                    disabled
                                     onClick={() => {
                                       if (onSellPosition) {
                                         onSellPosition(p, (p.remainingTokens * (p.lastPrice || 0)).toString());
@@ -3992,6 +3993,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                 <div className="meme-oc-cell">
                                   <button
                                     className="share-pnl-btn"
+                                    disabled
                                     onClick={() => {
                                       const shareData = {
                                         tokenAddress: p.tokenId,

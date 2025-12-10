@@ -2225,7 +2225,7 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
                 await handleTrade();
               }
             }}
-            disabled={address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0 || (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize)) || Number(inputString) > (Number(availableBalance) * Number(leverage)))}
+            disabled={true || address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0 || (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize)) || Number(inputString) > (Number(availableBalance) * Number(leverage)))}
           >
             {isSigning ? (
               <div className="perps-button-spinner"></div>

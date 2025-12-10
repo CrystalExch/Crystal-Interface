@@ -4763,20 +4763,14 @@
 .meme-oc-section-content[data-section="positions"] .meme-oc-header,
 .meme-oc-section-content[data-section="positions"] .meme-portfolio-oc-item {
   gap: 15px;
-  grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr 100px;
-  min-width: 800px;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr 1.4fr 60px;
 }
-
-
 
 .meme-oc-section-content[data-section="history"] .meme-oc-header,
 .meme-oc-section-content[data-section="history"] .meme-portfolio-oc-item {
   gap: 15px;
-  grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr 100px;
-  min-width: 800px;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr 1.4fr 60px;
 }
-
-
 
 .meme-portfolio-token-icon-container {
   position: relative;
