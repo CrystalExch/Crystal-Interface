@@ -564,7 +564,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             );
             setTimeout(() => {
               if (bars && bars.length) {
-                onHistoryCallback(bars, { nextTime, noData: false });
+                onHistoryCallback(bars, { noData: false });
               } else {
                 onHistoryCallback([], { nextTime, noData: false });
               }

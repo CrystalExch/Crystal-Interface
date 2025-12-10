@@ -1788,7 +1788,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         let sellUo;
         if (isNadFun && !isPercent) {
           const actions: any = []
-          let inputAmountWei = BigInt(Math.floor(Number(amountTokenWei) / (position.price || 1) * (1 + Number(sellSlippageValue) / 100)))
+          let inputAmountWei = BigInt(Math.floor(Number(amountTokenWei) / (position.lastPrice || 1) * (1 + Number(sellSlippageValue) / 100)))
           const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
           const sellToken = position.tokenId as `0x${string}`
           const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
@@ -1886,7 +1886,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         }
         else if (isNadFun) {
           const actions: any = []
-          let inputAmountWei = BigInt(Math.floor(Number(amountTokenWei) * position.price * (1 - Number(sellSlippageValue) / 100)))
+          let inputAmountWei = BigInt(Math.floor(Number(amountTokenWei) * position.lastPrice * (1 - Number(sellSlippageValue) / 100)))
           const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
           const sellToken = position.tokenId as `0x${string}`
           const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)

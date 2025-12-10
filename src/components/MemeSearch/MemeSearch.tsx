@@ -961,8 +961,7 @@ const abortRef = useRef<AbortController | null>(null);
             setIsSearching(true);
 
             const searchQuery = searchTerm.trim();
-            const url = `${BACKEND_BASE_URL}/search/query?query=${encodeURIComponent(searchQuery)}&limit=10`;
-
+            const url = `${BACKEND_BASE_URL}/search/query?query=${encodeURIComponent(searchQuery)}&sort=${encodeURIComponent('volume_24h')}`;
             const res = await fetch(url, {
                 method: 'GET',
                 headers: {
