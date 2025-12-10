@@ -5152,9 +5152,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       height="16"
                       viewBox="0 0 32 32"
                       fill={
-                        token.devHolding > 50
+                        token.devHolding > .5
                           ? '#eb7070ff'
-                          : token.devHolding > 30
+                          : token.devHolding > .3
                             ? '#eb7070ff'
                             : 'rgb(67 254 154)'
                       }
@@ -5166,14 +5166,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       className="meme-token-info-value"
                       style={{
                         color:
-                          token.devHolding > 50
+                          token.devHolding > .5
                             ? '#eb7070ff'
-                            : token.devHolding > 30
+                            : token.devHolding > .3
                               ? '#eb7070ff'
                               : 'rgb(67 254 154)',
                       }}
                     >
-                      {token.devHolding.toFixed(2)}%
+                      {(token.devHolding*100).toFixed(2)}%
                     </span>
                   </div>
                   <span className="meme-token-info-label">Dev H.</span>
@@ -5186,7 +5186,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       height="16"
                       viewBox="0 0 24 24"
                       fill={
-                        token.sniperHolding > 5
+                        token.sniperHolding > .5
                           ? '#eb7070ff'
                           : 'rgb(67, 254, 154)'
                       }
@@ -5198,14 +5198,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       className="meme-token-info-value"
                       style={{
                         color:
-                          token.sniperHolding > 50
+                          token.sniperHolding > .5
                             ? '#eb7070ff'
-                            : token.sniperHolding > 30
+                            : token.sniperHolding > .3
                               ? '#eb7070ff'
                               : 'rgb(67 254 154)',
                       }}
                     >
-                      {token.sniperHolding.toFixed(2)}%
+                      {(token.sniperHolding * 100).toFixed(2)}%
                     </span>
                   </div>
                   <span className="meme-token-info-label">Sniper H.</span>
@@ -5355,7 +5355,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       </svg>
                     </Tooltip>
                   </div>
-                  <div className="dev-address-bottom">
+                  {/* <div className="dev-address-bottom">
                     <div className="dev-address-bottom-left">
                       <Tooltip content="View funding wallet on explorer">
                         <div
@@ -5414,7 +5414,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       </svg>
                       <span>3 mo</span>
                     </div>
-                  </div>
+                  </div> */}
                 </span>
               </div>
             </div>

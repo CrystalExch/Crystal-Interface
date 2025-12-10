@@ -255,6 +255,25 @@ interface Token {
   circulatingSupply: number;
 }
 
+interface Position {
+  tokenId: string;
+  symbol?: string;
+  name?: string;
+  metadataCID?: string;
+  imageUrl?: string;
+  boughtTokens: number;
+  soldTokens: number;
+  spentNative: number;
+  receivedNative: number;
+  remainingTokens: number;
+  remainingPct: number;
+  pnlNative: number;
+  lastPrice?: number;
+  source?: 'nadfun' | 'crystal' | string;
+  status?: 'new' | 'graduating' | 'graduated';
+  bondingPercentage?: number;
+}
+
 type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
 
 interface AudioGroupSettings {
@@ -301,7 +320,6 @@ interface TrackedWallet {
 }
 
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
-const crystal = '/CrystalLogo.png';
 
 const Loader = () => {
   const [ready, setReady] = useState(false);
@@ -461,29 +479,12 @@ const Loader = () => {
 
   return (
     <>
-      {/* {<FullScreenOverlay isVisible={(stateloading || addressinfoloading)} />} */}
+      {<FullScreenOverlay isVisible={(stateloading || addressinfoloading)} />}
       {ready && <App stateloading={stateloading} setstateloading={setstateloading} addressinfoloading={addressinfoloading} setaddressinfoloading={setaddressinfoloading} />}
     </>
   );
 }
-interface Position {
-  tokenId: string;
-  symbol?: string;
-  name?: string;
-  metadataCID?: string;
-  imageUrl?: string;
-  boughtTokens: number;
-  soldTokens: number;
-  spentNative: number;
-  receivedNative: number;
-  remainingTokens: number;
-  remainingPct: number;
-  pnlNative: number;
-  lastPrice?: number;
-  source?: 'nadfun' | 'crystal' | string;
-  status?: 'new' | 'graduating' | 'graduated';
-  bondingPercentage?: number;
-}
+
 function App({ stateloading, setstateloading, addressinfoloading, setaddressinfoloading }: { stateloading: any, setstateloading: any, addressinfoloading: any, setaddressinfoloading: any }) {
   const [trackedWallets, setTrackedWallets] = useState<TrackedWallet[]>([]);
   const lastProcessedTradeId = useRef<string | null>(null);
@@ -1353,7 +1354,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [usedRefAddress, setUsedRefAddress] = useState(
     '0x0000000000000000000000000000000000000000' as `0x${string}`,
   );
-  const [simpleView, setSimpleView] = useState(false);
+  const [simpleView, setSimpleView] = useState(true);
   const [hideNotificationPopups, setHideNotificationPopups] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_hide_notification_popups') || 'false');
   });
@@ -4301,7 +4302,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 circulatingSupply: buyTransactions > 0 ? t.circulatingSupply + otherVolumeDelta : t.circulatingSupply - otherVolumeDelta,
                 status: status,
                 bondingPercentage: bondingPercentage,
-                devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + (otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - (otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
+                devHolding: Math.max(0, trader == t.dev ? (buyTransactions > 0 ? t.devHolding + (otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - (otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding),
               }
               return []
             }
@@ -4314,7 +4315,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               circulatingSupply: buyTransactions > 0 ? t.circulatingSupply + otherVolumeDelta : t.circulatingSupply - otherVolumeDelta,
               status: status,
               bondingPercentage: bondingPercentage,
-              devHolding: trader == t.dev ? (buyTransactions > 0 ? t.devHolding + (otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - (otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding,
+              devHolding: Math.max(0, trader == t.dev ? (buyTransactions > 0 ? t.devHolding + (otherVolumeDelta / TOTAL_SUPPLY) : t.devHolding - (otherVolumeDelta / TOTAL_SUPPLY)) : t.devHolding),
             }];
           });
         });
@@ -4708,6 +4709,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [!['board', 'spectra', 'meme', 'launchpad', 'trackers'].includes(location.pathname.split('/')[1])]);
 
   useEffect(() => {
+    if (!['board', 'spectra', 'meme', 'portfolio', 'trackers', ''].includes(location.pathname.split('/')[1])) {
+      setstateloading(false)
+      setaddressinfoloading(false)
+      return;
+    };
     let cancelled = false;
 
     (async () => {
@@ -4763,7 +4769,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 s?.startsWith("https://discord.com"),
             );
             if (discord) socials.splice(socials.indexOf(discord), 1);
-
             const website = socials[0];
             const token: Token = {
               ...defaultMetrics,
@@ -4793,7 +4798,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               telegramHandle: telegram ?? "",
               twitterHandle: twitter ?? "",
               website: website ?? "",
-              sniperHolding: Number(m.snipers?.holdingShare / 1e16),
+              sniperHolding: Number(m.snipers?.holdingShare / 1e18),
               circulatingSupply: Number(m.circulating_supply),
             };
 
@@ -6835,7 +6840,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         const website = socials[0];
         const imageUrl = m.metadataCID || "";
-
         let change24h = 0;
         if (typeof m.change24h === "number") {
           change24h = m.change24h;
@@ -6880,7 +6884,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           bondingPercentage: Number(m.circulating_supply) / Number(793100000),
           source: "nadfun",
           market: m.market ?? null,
-          circulatingSupply: Number(m.circulating_supply)
+          circulatingSupply: Number(m.circulating_supply),
+          sniperHolding: Number(m.snipers?.holdingShare / 1e18),
         }))
 
         if (Array.isArray(m.holders)) {
