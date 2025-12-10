@@ -5152,7 +5152,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 const copy = Array.isArray(prev) ? [...prev] : [];
                 const allUserAddresses = subwalletsRef.current;
                 const isUserTrade = allUserAddresses.includes(callerAddr);
-                if (!isUserTrade) return prev;
                 let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddrFromMarket);
 
                 if (idx == -1 && isUserTrade) {
@@ -5468,7 +5467,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   const copy = Array.isArray(prev) ? [...prev] : [];
                   const allUserAddresses = subwalletsRef.current;
                   const isUserTrade = allUserAddresses.includes(callerAddr);
-                  if (!isUserTrade) return prev;
                   let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddr);
 
                   if (idx == -1 && isUserTrade) {
@@ -5786,7 +5784,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 const copy = Array.isArray(prev) ? [...prev] : [];
                 const allUserAddresses = subwalletsRef.current;
                 const isUserTrade = allUserAddresses.includes(callerAddr);
-                if (!isUserTrade) return prev;
                 let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddr);
 
                 if (idx == -1 && isUserTrade) {
@@ -6163,7 +6160,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
               const isBuy = nativeDelta > 0n;
               let transferEvents;
-              if (memeRef.current.id && pool === memeRef.current.market.toLowerCase()) {
+              if (memeRef.current.id && tokenAddr === memeRef.current.id.toLowerCase()) {
                 if (isBuy) {
                   while (transferPendingLogsRef.current.size > 3000) {
                     const oldestKey = transferPendingLogsRef.current.keys().next().value;
@@ -6272,7 +6269,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 const copy = Array.isArray(prev) ? [...prev] : [];
                 const allUserAddresses = subwalletsRef.current;
                 const isUserTrade = allUserAddresses.includes(callerAddr);
-                if (!isUserTrade) return prev;
                 let idx = copy.findIndex(r => r.tokenId.toLowerCase() === tokenAddr);
 
                 if (idx == -1 && isUserTrade) {
@@ -6985,6 +6981,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               status: t.migrated,
               holders: t.holders,
               market: t.market,
+              volumeNative1h: t.volumeNative1h
             };
           });
 

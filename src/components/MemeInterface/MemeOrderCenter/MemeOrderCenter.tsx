@@ -130,6 +130,7 @@ interface DevToken {
   timestamp: number;
   status: boolean;
   holders: number;
+  volumeNative1h: string;
 }
 
 const fmt = (v: number, d = 2): string => {
@@ -747,6 +748,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           timestamp: mt.timestamp,
           status: mt.migrated,
           holders: mt.holders,
+          volumeNative1h: '0',
         }));
 
     const seen = new Set<string>();
@@ -1709,7 +1711,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                 <div className="meme-oc-header-cell">Token</div>
                 <div className="meme-oc-header-cell">Market Cap {amountMode === 'MON' ? '(MON)' : ''}</div>
                 <div className="meme-oc-header-cell">Migrated</div>
-                <div className="meme-oc-header-cell">Liquidity</div>
+                <div className="meme-oc-header-cell">1h Volume</div>
                 <div className="meme-oc-header-cell">Holders</div>
               </div>
 
@@ -1830,7 +1832,26 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                           )}
                         </div>
                         <div className="meme-oc-cell">
-                          $0
+                          <div className="meme-ordercenter-info">
+                            {amountMode === 'MON' ? <>
+                              <img
+                                className="meme-ordercenter-monad-icon"
+                                src={monadicon}
+                                alt="MONAD"
+                              />
+                              <span className="meme-usd-amount">
+                                {(Number(t.volumeNative1h ?? 0) / 1e18) > 0 ? fmt((Number(t.volumeNative1h ?? 0) / 1e18), 2) : '—'}
+                              </span>
+                            </> : <>
+                              <span className="meme-usd-amount">
+                                {fmtAmount(
+                                  (Number(t.volumeNative1h ?? 0) / 1e18),
+                                  amountMode,
+                                  monUsdPrice,
+                                )}
+                              </span>
+                            </>}
+                          </div>
                         </div>
                         <div className="meme-oc-cell">
                           <span>{t.holders}</span>

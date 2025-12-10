@@ -383,17 +383,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
     }
   };
   const [isTrenchesWalletDropdownOpen, setIsTrenchesWalletDropdownOpen] = useState(false);
-  const [trenchesSelectedWallets, setTrenchesSelectedWallets] = useState<Set<string>>(() => {
-    const stored = localStorage.getItem('crystal_trenches_selected_wallets');
-    if (stored) {
-      try {
-        return new Set(JSON.parse(stored));
-      } catch (error) {
-        return new Set();
-      }
-    }
-    return new Set();
-  });
+  const trenchesSelectedWallets = selectedWallets as Set<string>;
+  const setTrenchesSelectedWallets = setSelectedWallets as any;
   const trenchesDropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [trenchesSearchQuery, setTrenchesSearchQuery] = useState<string>('');
@@ -648,7 +639,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   );
 
   const selectAllTrenchesWallets = useCallback(() => {
-    const allAddresses = new Set([scaAddress, ...subWallets.map((w) => w.address)]);
+    const allAddresses = new Set([...subWallets.map((w) => w.address)]);
     setTrenchesSelectedWallets(allAddresses);
   }, [subWallets, scaAddress]);
 
@@ -657,7 +648,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   }, []);
 
   const selectAllTrenchesWithBalance = useCallback(() => {
-    const walletsWithBalance = [scaAddress, ...subWallets]
+    const walletsWithBalance = [...subWallets]
       .map(w => typeof w === 'string' ? w : w.address)
       .filter((address) => {
         const balance = getWalletBalance(address);
@@ -2423,12 +2414,10 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
   const activePositions = isSpectating
     ? spectatorPositions
-    : (activeTab === 'trenches' && trenchesSelectedWallets.size > 0 && trenchesPositions?.length
+    : (activeTab === 'trenches' && trenchesSelectedWallets.size < 0 && trenchesPositions?.length
       ? trenchesPositions
       : positions || []);
-  console.log('trenchesPositions:', trenchesPositions);
-  console.log('positions:', positions);
-  console.log('selected wallets:', Array.from(trenchesSelectedWallets));
+
   const totalUnrealizedPnl = activePositions.reduce((sum, p) => {
     return sum + (p.pnlNative || 0)
   }, 0)
@@ -3258,6 +3247,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   <button
                     className="footer-transparent-button"
                     style={{ height: '30px' }}
+                    disabled={!activeWalletPrivateKey}
                     onClick={() => setIsTrenchesWalletDropdownOpen(!isTrenchesWalletDropdownOpen)}
                   >
                     <span
@@ -3269,7 +3259,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                       }}
                     >
                       <span style={{ fontSize: '0.85rem', fontWeight: '300' }}>
-                        {trenchesSelectedWallets.size} {trenchesSelectedWallets.size === 1 ? 'wallet' : 'wallets'}
+                        {!activeWalletPrivateKey ? 'Main' : trenchesSelectedWallets.size} {!activeWalletPrivateKey || trenchesSelectedWallets.size === 1 ? 'wallet' : 'wallets'}
                       </span>
                       <svg
                         className={`footer-wallet-dropdown-arrow ${isTrenchesWalletDropdownOpen ? 'open' : ''}`}
@@ -3286,7 +3276,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   </button>
 
                   <div className={`wallet-dropdown-panel ${isTrenchesWalletDropdownOpen ? 'visible' : ''}`} style={{ right: 'auto' }}>
-                    <div className="footer-wallet-dropdown-header">
+                    {activeWalletPrivateKey && (<div className="footer-wallet-dropdown-header">
                       <div className="footer-wallet-dropdown-actions">
                         <button
                           className="wallet-action-btn"
@@ -3307,88 +3297,11 @@ const Portfolio: React.FC<PortfolioProps> = ({
                           Select All with Balance
                         </button>
                       </div>
-                    </div>
+                    </div>)}
 
                     <div className="wallet-dropdown-list">
                       <div>
-                        <div
-                          className={`footer-wallet-item ${trenchesSelectedWallets.has(scaAddress) ? 'selected' : ''}`}
-                          onClick={() => toggleTrenchesWalletSelection(scaAddress)}
-                        >
-                          <div className="quickbuy-wallet-checkbox-container">
-                            <input
-                              type="checkbox"
-                              className="quickbuy-wallet-checkbox selection"
-                              checked={trenchesSelectedWallets.has(scaAddress)}
-                              readOnly
-                            />
-                          </div>
-                          <div className="wallet-dropdown-info">
-                            <div className="quickbuy-wallet-name">
-                              Main Wallet
-                            </div>
-                            <div
-                              className="wallet-dropdown-address"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyToClipboard(scaAddress, 'Wallet address copied');
-                              }}
-                              style={{ cursor: 'pointer' }}
-                            >
-                              {scaAddress?.slice(0, 6)}...{scaAddress?.slice(-4)}
-                              <svg
-                                className="wallet-dropdown-address-copy-icon"
-                                width="11"
-                                height="11"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                                style={{ marginLeft: '2px' }}
-                              >
-                                <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                              </svg>
-                            </div>
-                          </div>
-                          <div className="wallet-dropdown-balance">
-                            {(() => {
-                              const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
-                              const balanceWei = walletTokenBalances[scaAddress]?.[
-                                settings.chainConfig[activechain]?.eth
-                              ] || 0n;
-                              const hasInsufficientGas = balanceWei > 0n && balanceWei <= gasReserve;
-                              const balance = getWalletBalance(scaAddress);
-
-                              return (
-                                <Tooltip content={hasInsufficientGas ? "Not enough for gas, transactions will revert" : "MON Balance"}>
-                                  <div
-                                    className={`wallet-dropdown-balance-amount ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
-                                  >
-                                    <img
-                                      src={monadicon}
-                                      className="wallet-dropdown-mon-icon"
-                                      alt="MON"
-                                    />
-                                    {formatBalanceCompact(balance)}
-                                  </div>
-                                </Tooltip>
-                              );
-                            })()}
-                          </div>
-                          <div className="wallet-drag-tokens">
-                            <div className="wallet-token-count">
-                              <div className="wallet-token-structure-icons">
-                                <div className="token1"></div>
-                                <div className="token2"></div>
-                                <div className="token3"></div>
-                              </div>
-                              <span className="wallet-total-tokens">
-                                {getWalletTokenCount(scaAddress)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Sub Wallets */}
-                        {subWallets.map((wallet, index) => {
+                        {(activeWalletPrivateKey ? subWallets : []).map((wallet, index) => {
                           const balance = getWalletBalance(wallet.address);
                           const isSelected = trenchesSelectedWallets.has(wallet.address);
                           return (
@@ -3857,7 +3770,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                           src={monadicon}
                                           className="meme-portfolio-monad-icon"
                                         />
-                                        {fmt(p.remainingTokens * (p.lastPrice || 0))}
+                                        {fmt(Number(p.remainingTokens ?? 0) / 1e18 * (p.lastPrice || 0))}
                                       </span>
                                       <span className="meme-remaining-percentage">
                                         {p.remainingPct.toFixed(0)}%
@@ -3934,14 +3847,14 @@ const Portfolio: React.FC<PortfolioProps> = ({
                       <div className="meme-oc-header-cell">Actions</div>
                     </div>
                     <div className="portfolio-meme-oc-items">
-                      {activePositions.filter(p => p.remainingTokens === 0).length === 0 ? (
+                      {activePositions.filter(p => p.remainingTokens == 0).length === 0 ? (
                         <div className="meme-oc-empty">
                           No trading history
                         </div>
                       ) : (
                         (() => {
                           const filteredHistory = [...activePositions
-                            .filter(p => p.remainingTokens === 0)]
+                            .filter(p => p.remainingTokens == 0)]
                             .filter(p => {
                               if (!trenchesSearchQuery.trim()) return true;
 
