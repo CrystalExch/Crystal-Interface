@@ -4636,7 +4636,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: 50%;
+  width: 55%;
   background-color: rgb(6, 6, 6);
   border-top: 1px solid rgba(179, 184, 249, 0.1);
   border-right: 1px solid rgba(179, 184, 249, 0.1);
@@ -4646,7 +4646,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  width: 50%;
+  width: 45%;
   background-color: rgb(6, 6, 6);
   border-top: 1px solid rgba(179, 184, 249, 0.1);
 }
@@ -4739,13 +4739,15 @@
 
 .trenches-time-controls {
   display: flex;
-  gap: 35px;
+  align-items: center;
+  gap: 30px;
 }
 
 .trenches-time-button {
   font-size: 0.9rem;
   color: white;
   cursor: pointer;
+  letter-spacing: -0.5px
 }
 
 .trenches-time-button-active {
@@ -5169,4 +5171,14 @@
 .unhide-token-btn {
   color: #cfcfde;
 
+}
+
+.trenches-icon-buttons{
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.meme-portfolio-search-icon{
+  color: #bcbccaff;
 }
