@@ -4763,13 +4763,13 @@
 .meme-oc-section-content[data-section="positions"] .meme-oc-header,
 .meme-oc-section-content[data-section="positions"] .meme-portfolio-oc-item {
   gap: 15px;
-  grid-template-columns: 1.3fr 1fr 1fr 1fr 1.4fr 60px;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr 1.4fr 80px;
 }
 
 .meme-oc-section-content[data-section="history"] .meme-oc-header,
 .meme-oc-section-content[data-section="history"] .meme-portfolio-oc-item {
   gap: 15px;
-  grid-template-columns: 1.3fr 1fr 1fr 1fr 1.4fr 60px;
+  grid-template-columns: 1.3fr 1fr 1fr 1fr 1.4fr 80px;
 }
 
 .meme-portfolio-token-icon-container {
@@ -5128,4 +5128,41 @@
   max-height: calc(100% - 55px);
   flex: 1 1 0%;
   min-height: 150px;
+}
+
+
+.trenches-show-hidden-button{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: #d8dcff;
+  letter-spacing: -0.3px;
+}
+
+
+.meme-portfolio-actions{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.meme-portfolio-action-btn{
+    border-radius: 4px;
+  color: #ef7878;
+  cursor: pointer;
+  font-size: 0.85rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.share-pnl-btn{
+  color: #cfcfde;
+}
+
+
+.hide-token-btn,
+.unhide-token-btn{
+    color: #cfcfde;
+
 }

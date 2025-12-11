@@ -382,6 +382,19 @@ const Portfolio: React.FC<PortfolioProps> = ({
       return value.toFixed(2);
     }
   };
+
+  const [hiddenTokens, setHiddenTokens] = useState<Set<string>>(() => {
+    const stored = localStorage.getItem('crystal_hidden_tokens');
+    if (stored) {
+      try {
+        return new Set(JSON.parse(stored));
+      } catch {
+        return new Set();
+      }
+    }
+    return new Set();
+  });
+  const [showHiddenTokens, setShowHiddenTokens] = useState(false);
   const [isTrenchesWalletDropdownOpen, setIsTrenchesWalletDropdownOpen] = useState(false);
   const trenchesSelectedWallets = selectedWallets as Set<string>;
   const setTrenchesSelectedWallets = setSelectedWallets as any;
@@ -503,6 +516,22 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
     return () => window.removeEventListener('resize', handleTabOnResize);
   }, [activeTab]);
+
+  useEffect(() => {
+    localStorage.setItem('crystal_hidden_tokens', JSON.stringify(Array.from(hiddenTokens)));
+  }, [hiddenTokens]);
+
+  const toggleHideToken = useCallback((tokenId: string) => {
+    setHiddenTokens(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(tokenId)) {
+        newSet.delete(tokenId);
+      } else {
+        newSet.add(tokenId);
+      }
+      return newSet;
+    });
+  }, []);
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     column: 'balance',
@@ -3582,6 +3611,28 @@ const Portfolio: React.FC<PortfolioProps> = ({
                     ))}
                   </div>
                   <div className="trenches-activity-filters">
+                    <button
+                      className={`trenches-show-hidden-button ${showHiddenTokens ? 'active' : ''}`}
+                      onClick={() => setShowHiddenTokens(!showHiddenTokens)}
+                    >
+                      {showHiddenTokens ? (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                          Show Hidden
+                        </>
+                      ) : (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                          </svg>
+                          Hide Hidden
+                        </>
+                      )}
+                    </button>
                     <input
                       type="text"
                       placeholder="Search by name or address"
@@ -3642,14 +3693,22 @@ const Portfolio: React.FC<PortfolioProps> = ({
                               </div>
                             );
                           }
-
                           return filteredPositions.map((p) => {
                             const tokenShort =
                               p.symbol ||
                               (p.tokenId ? `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}` : 'Unknown');
                             const tokenImageUrl = p.imageUrl || null;
+                            const isHidden = hiddenTokens.has(p.tokenId);
+                            const shouldShow = showHiddenTokens || !isHidden;
+
+                            if (!shouldShow) return null;
+
                             return (
-                              <div key={p.tokenId} className="meme-portfolio-oc-item">
+                              <div
+                                key={p.tokenId}
+                                className={`meme-portfolio-oc-item ${isHidden ? 'hidden-token' : ''}`}
+                                style={{ opacity: isHidden && showHiddenTokens ? 0.6 : 1 }}
+                              >
                                 <div className="meme-oc-cell">
                                   <div className="oc-meme-wallet-info">
                                     <div
@@ -3685,8 +3744,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                           </div>
                                         )}
 
-                                        <div className={`portfolio-launchpad-indicator ${p.source === 'nadfun' ? 'nadfun' : ''}`
-                                        }>
+                                        <div className={`portfolio-launchpad-indicator ${p.source === 'nadfun' ? 'nadfun' : ''}`}>
                                           <Tooltip content="nad.fun">
                                             <svg width="10" height="10" viewBox="0 0 32 32" className="header-launchpad-logo" fill="none" xmlns="http://www.w3.org/2000/svg">
                                               <defs>
@@ -3716,6 +3774,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                     </div>
                                   </div>
                                 </div>
+
                                 <div className="meme-oc-cell">
                                   <div className="meme-trade-info">
                                     <div className="meme-ordercenter-info">
@@ -3739,6 +3798,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                     </span>
                                   </div>
                                 </div>
+
                                 <div className="meme-oc-cell">
                                   <div className="meme-trade-info">
                                     <div className="meme-ordercenter-info">
@@ -3762,6 +3822,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                     </span>
                                   </div>
                                 </div>
+
                                 <div className="meme-oc-cell">
                                   <div className="meme-remaining-info">
                                     <div className="meme-remaining-container">
@@ -3786,6 +3847,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                     </div>
                                   </div>
                                 </div>
+
                                 <div className="meme-oc-cell">
                                   <div className="meme-ordercenter-info">
                                     {amountMode === 'MON' && (
@@ -3807,31 +3869,93 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                         )}{' '}
                                         (
                                         {p.spentNative > 0
-                                          ? ((p.pnlNative / p.spentNative) * 100).toFixed(
-                                            1,
-                                          )
+                                          ? ((p.pnlNative / p.spentNative) * 100).toFixed(1)
                                           : '0.0'}
                                         %)
                                       </span>
                                     </div>
                                   </div>
                                 </div>
+
                                 <div className="meme-oc-cell">
-                                  <button
-                                    className="meme-action-btn"
-                                    disabled
-                                    onClick={() => {
-                                      if (onSellPosition) {
-                                        onSellPosition(p, (p.remainingTokens * (p.lastPrice || 0)).toString());
-                                      }
-                                    }}
-                                  >
-                                    Sell
-                                  </button>
+                                  <div className="meme-portfolio-actions">
+                                    <Tooltip content="Sell Token">
+                                      <button
+                                        className="meme-portfolio-action-btn"
+                                        disabled
+                                        onClick={() => {
+                                          if (onSellPosition) {
+                                            onSellPosition(p, (p.remainingTokens * (p.lastPrice || 0)).toString());
+                                          }
+                                        }}
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></svg>
+                                      </button>
+                                    </Tooltip>
+                                    <Tooltip content="Share PnL">
+                                      <button
+                                        className="share-pnl-btn"
+                                        onClick={() => {
+                                          const shareData = {
+                                            tokenAddress: p.tokenId,
+                                            tokenSymbol: p.symbol || 'Unknown',
+                                            tokenName: p.name || 'Unknown Token',
+                                            userAddress: address,
+                                            externalUserStats: {
+                                              balance: p.remainingTokens,
+                                              amountBought: p.boughtTokens,
+                                              amountSold: p.soldTokens,
+                                              valueBought: p.spentNative,
+                                              valueSold: p.receivedNative,
+                                              valueNet: p.pnlNative,
+                                            },
+                                            currentPrice: p.lastPrice || 0,
+                                          };
+
+                                          if (onMarketSelect) {
+                                            onMarketSelect(shareData);
+                                          }
+
+                                          if (setpopup) {
+                                            setpopup(27);
+                                          }
+                                        }}
+                                      >
+                                        <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="14" height="14">
+                                          <path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" />
+                                        </svg>
+                                      </button>
+                                    </Tooltip>
+                                    {isHidden && showHiddenTokens ? (
+                                      <Tooltip content="Unhide Token">
+                                        <button
+                                          className="unhide-token-btn"
+                                          onClick={() => toggleHideToken(p.tokenId)}
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                            <circle cx="12" cy="12" r="3" />
+                                          </svg>
+                                        </button>
+                                      </Tooltip>
+                                    ) : !isHidden ? (
+                                      <Tooltip content="Hide Token">
+                                        <button
+                                          className="hide-token-btn"
+                                          onClick={() => toggleHideToken(p.tokenId)}
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                            <line x1="1" y1="1" x2="23" y2="23" />
+                                          </svg>
+                                        </button>
+                                      </Tooltip>
+                                    ) : null}
+                                  </div>
                                 </div>
                               </div>
                             );
-                          });
+                          }).filter(Boolean);
                         })()
 
                       )}
@@ -3883,8 +4007,17 @@ const Portfolio: React.FC<PortfolioProps> = ({
                               p.symbol ||
                               (p.tokenId ? `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}` : 'Unknown');
                             const tokenImageUrl = p.imageUrl || null;
+                            const isHidden = hiddenTokens.has(p.tokenId);
+                            const shouldShow = showHiddenTokens || !isHidden;
+
+                            if (!shouldShow) return null;
+
                             return (
-                              <div key={p.tokenId} className="meme-portfolio-oc-item meme-portfolio-oc-item-5-col">
+                              <div
+                                key={p.tokenId}
+                                className={`meme-portfolio-oc-item meme-portfolio-oc-item-5-col ${isHidden ? 'hidden-token' : ''}`}
+                                style={{ opacity: isHidden && showHiddenTokens ? 0.6 : 1 }}
+                              >
                                 <div className="meme-oc-cell">
                                   <div className="oc-meme-wallet-info">
                                     <div className="meme-portfolio-token-info">
@@ -3991,43 +4124,71 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                   </div>
                                 </div>
                                 <div className="meme-oc-cell">
-                                  <button
-                                    className="share-pnl-btn"
-                                    disabled
-                                    onClick={() => {
-                                      const shareData = {
-                                        tokenAddress: p.tokenId,
-                                        tokenSymbol: p.symbol || 'Unknown',
-                                        tokenName: p.name || 'Unknown Token',
-                                        userAddress: address,
-                                        externalUserStats: {
-                                          balance: p.remainingTokens,
-                                          amountBought: p.boughtTokens,
-                                          amountSold: p.soldTokens,
-                                          valueBought: p.spentNative,
-                                          valueSold: p.receivedNative,
-                                          valueNet: p.pnlNative,
-                                        },
-                                        currentPrice: p.lastPrice || 0,
-                                      };
+                                  <div className="meme-portfolio-actions">
+                                    <Tooltip content="Share PnL">
+                                      <button
+                                        className="share-pnl-btn"
+                                        onClick={() => {
+                                          const shareData = {
+                                            tokenAddress: p.tokenId,
+                                            tokenSymbol: p.symbol || 'Unknown',
+                                            tokenName: p.name || 'Unknown Token',
+                                            userAddress: address,
+                                            externalUserStats: {
+                                              balance: p.remainingTokens,
+                                              amountBought: p.boughtTokens,
+                                              amountSold: p.soldTokens,
+                                              valueBought: p.spentNative,
+                                              valueSold: p.receivedNative,
+                                              valueNet: p.pnlNative,
+                                            },
+                                            currentPrice: p.lastPrice || 0,
+                                          };
 
-                                      if (onMarketSelect) {
-                                        onMarketSelect(shareData);
-                                      }
+                                          if (onMarketSelect) {
+                                            onMarketSelect(shareData);
+                                          }
 
-                                      if (setpopup) {
-                                        setpopup(27);
-                                      }
-                                    }}
-                                  >
-                                    <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
-                                      <path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" />
-                                    </svg>
-                                  </button>
+                                          if (setpopup) {
+                                            setpopup(27);
+                                          }
+                                        }}
+                                      >
+                                        <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="14" height="14">
+                                          <path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" />
+                                        </svg>
+                                      </button>
+                                    </Tooltip>
+                                    {isHidden && showHiddenTokens ? (
+                                      <Tooltip content="Unhide Token">
+                                        <button
+                                          className="unhide-token-btn"
+                                          onClick={() => toggleHideToken(p.tokenId)}
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                            <circle cx="12" cy="12" r="3" />
+                                          </svg>
+                                        </button>
+                                      </Tooltip>
+                                    ) : !isHidden ? (
+                                      <Tooltip content="Hide Token">
+                                        <button
+                                          className="hide-token-btn"
+                                          onClick={() => toggleHideToken(p.tokenId)}
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                            <line x1="1" y1="1" x2="23" y2="23" />
+                                          </svg>
+                                        </button>
+                                      </Tooltip>
+                                    ) : null}
+                                  </div>
                                 </div>
                               </div>
                             );
-                          });
+                          }).filter(Boolean);
                         })()
                       )}
                     </div>
@@ -4073,13 +4234,19 @@ const Portfolio: React.FC<PortfolioProps> = ({
                         }
 
                         return top100Positions.map((p, index) => {
-                          const tokenShort =
-                            p.symbol ||
-                            (p.tokenId ? `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}` : 'Unknown');
+                          const tokenShort = p.symbol || (p.tokenId ? `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}` : 'Unknown');
                           const tokenImageUrl = p.imageUrl || null;
+                          const isHidden = hiddenTokens.has(p.tokenId);
+                          const shouldShow = showHiddenTokens || !isHidden;
+
+                          if (!shouldShow) return null;
 
                           return (
-                            <div key={p.tokenId} className={`meme-portfolio-oc-item meme-portfolio-oc-item-5-col`}>
+                            <div
+                              key={p.tokenId}
+                              className={`meme-portfolio-oc-item meme-portfolio-oc-item-5-col ${isHidden ? 'hidden-token' : ''}`}
+                              style={{ opacity: isHidden && showHiddenTokens ? 0.6 : 1 }}
+                            >
                               <div className="meme-oc-cell">
                                 <div className="oc-meme-wallet-info">
                                   <div className="meme-portfolio-token-info">
@@ -4186,42 +4353,72 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                 </div>
                               </div>
                               <div className="meme-oc-cell">
-                                <button
-                                  className="share-pnl-btn"
-                                  onClick={() => {
-                                    const shareData = {
-                                      tokenAddress: p.tokenId,
-                                      tokenSymbol: p.symbol || 'Unknown',
-                                      tokenName: p.name || 'Unknown Token',
-                                      userAddress: address,
-                                      externalUserStats: {
-                                        balance: p.remainingTokens,
-                                        amountBought: p.boughtTokens,
-                                        amountSold: p.soldTokens,
-                                        valueBought: p.spentNative,
-                                        valueSold: p.receivedNative,
-                                        valueNet: p.pnlNative,
-                                      },
-                                      currentPrice: p.lastPrice || 0,
-                                    };
+                                <div className="meme-portfolio-actions">
+                                  <Tooltip content="Share PnL">
+                                    <button
+                                      className="share-pnl-btn"
+                                      onClick={() => {
+                                        const shareData = {
+                                          tokenAddress: p.tokenId,
+                                          tokenSymbol: p.symbol || 'Unknown',
+                                          tokenName: p.name || 'Unknown Token',
+                                          userAddress: address,
+                                          externalUserStats: {
+                                            balance: p.remainingTokens,
+                                            amountBought: p.boughtTokens,
+                                            amountSold: p.soldTokens,
+                                            valueBought: p.spentNative,
+                                            valueSold: p.receivedNative,
+                                            valueNet: p.pnlNative,
+                                          },
+                                          currentPrice: p.lastPrice || 0,
+                                        };
 
-                                    if (onMarketSelect) {
-                                      onMarketSelect(shareData);
-                                    }
+                                        if (onMarketSelect) {
+                                          onMarketSelect(shareData);
+                                        }
 
-                                    if (setpopup) {
-                                      setpopup(27);
-                                    }
-                                  }}
-                                >
-                                  <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
-                                    <path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" />
-                                  </svg>
-                                </button>
+                                        if (setpopup) {
+                                          setpopup(27);
+                                        }
+                                      }}
+                                    >
+                                      <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16">
+                                        <path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" />
+                                      </svg>
+                                    </button>
+                                  </Tooltip>
+                                  {isHidden && showHiddenTokens ? (
+                                    <Tooltip content="Unhide Token">
+                                      <button
+                                        className="unhide-token-btn"
+                                        onClick={() => toggleHideToken(p.tokenId)}
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                          <circle cx="12" cy="12" r="3" />
+                                        </svg>
+                                      </button>
+                                    </Tooltip>
+                                  ) : !isHidden ? (
+                                    <Tooltip content="Hide Token">
+                                      <button
+                                        className="hide-token-btn"
+                                        onClick={() => toggleHideToken(p.tokenId)}
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                          <line x1="1" y1="1" x2="23" y2="23" />
+                                        </svg>
+                                      </button>
+                                    </Tooltip>
+                                  ) : null}
+                                </div>
                               </div>
+
                             </div>
                           );
-                        });
+                        }).filter(Boolean);
                       })()}
                     </div>
                   </div>
