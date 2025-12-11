@@ -398,6 +398,22 @@ const Portfolio: React.FC<PortfolioProps> = ({
     }
     return new Set();
   });
+  const getWalletWithMostMon = () => {
+    if (subWallets.length === 0) return null;
+
+    let maxBalance = 0;
+    let topWallet = subWallets[0]?.address || null;
+
+    subWallets.forEach(wallet => {
+      const balance = getWalletBalance(wallet.address);
+      if (balance > maxBalance) {
+        maxBalance = balance;
+        topWallet = wallet.address;
+      }
+    });
+
+    return topWallet;
+  };
   const [showHiddenTokens, setShowHiddenTokens] = useState(false);
   const [isTrenchesWalletDropdownOpen, setIsTrenchesWalletDropdownOpen] = useState(false);
   const trenchesSelectedWallets = selectedWallets as Set<string>;
@@ -3436,16 +3452,47 @@ const Portfolio: React.FC<PortfolioProps> = ({
                 </div>
 
               </div>
-                
+
               <div className="trenches-time-controls">
                 <div className="trenches-icon-buttons">
-                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="meme-portfolio-search-icon"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="meme-portfolio-search-icon"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+                  <Tooltip content="View top wallet on Monadscan">
+                  <button
+                    className="trenches-icon-button"
+                    onClick={() => {
+                      const topWallet = getWalletWithMostMon();
+                      if (topWallet) {
+                        window.open(`https://monadscan.com/address/${topWallet}`, '_blank');
+                      }
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="meme-portfolio-search-icon">
+                      <path d="M15 3h6v6" />
+                      <path d="M10 14 21 3" />
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    </svg>
+                  </button>
+                  </Tooltip>
+                  <Tooltip content="Search top wallet on Twitter">
+                  <button
+                    className="trenches-icon-button"
+                    onClick={() => {
+                      const topWallet = getWalletWithMostMon();
+                      if (topWallet) {
+                        window.open(`https://x.com/search?q=${topWallet}&src=typed_query&f=live`, '_blank');
+                      }
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="meme-portfolio-search-icon">
+                      <path d="m21 21-4.34-4.34" />
+                      <circle cx="11" cy="11" r="8" />
+                    </svg>
+                  </button>
+                  </Tooltip>
                 </div>
                 <div className="trenches-time-button">1d</div>
                 <div className="trenches-time-button">7d</div>
                 <div className="trenches-time-button">30d</div>
-                <div className="trenches-time-button-active">MAX</div>
+                <div className="trenches-time-button-active">Max</div>
               </div>
             </div>
             <div className="trenches-top-section">
@@ -4377,9 +4424,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                           currentPrice: p.lastPrice || 0,
                                         };
 
-                                          if (onPnlShare) {
-                                            onPnlShare(shareData);
-                                          }
+                                        if (onPnlShare) {
+                                          onPnlShare(shareData);
+                                        }
 
                                         if (setpopup) {
                                           setpopup(27);
