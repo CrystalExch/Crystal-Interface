@@ -800,6 +800,7 @@ const loadImages = useCallback(async () => {
       document.removeEventListener('mousedown', handleOutsideClick);
     }
   };
+  
   const handleColorPickerClick = (id: string, event: React.MouseEvent) => {
     if (activePicker === id) {
       setActivePicker(null);

@@ -293,6 +293,8 @@ interface PortfolioProps {
   refreshTrenchesData?: () => void;
   setOneCTSigner: any;
   activeWalletPrivateKey: any;
+  onPnlShare?: (data: any) => void;
+
 }
 
 type PortfolioTab = 'spot' | 'Perpetuals' | 'wallets' | 'trenches';
@@ -370,6 +372,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
   refreshTrenchesData,
   setOneCTSigner,
   activeWalletPrivateKey,
+  onPnlShare
+
 }) => {
   const formatBalanceCompact = (value: number): string => {
     if (value >= 1_000_000_000) {
@@ -2441,11 +2445,11 @@ const Portfolio: React.FC<PortfolioProps> = ({
     setTotalVolume(parseFloat(volume.toFixed(2)));
   }, [tradehistory, days]);
 
-const activePositions = isSpectating
-  ? spectatorPositions
-  : (activeTab === 'trenches' && trenchesSelectedWallets.size > 0 && trenchesPositions?.length
-    ? trenchesPositions
-    : positions || []);
+  const activePositions = isSpectating
+    ? spectatorPositions
+    : (activeTab === 'trenches' && trenchesSelectedWallets.size > 0 && trenchesPositions?.length
+      ? trenchesPositions
+      : positions || []);
 
   const totalUnrealizedPnl = activePositions.reduce((sum, p) => {
     return sum + (p.pnlNative || 0)
@@ -2461,6 +2465,7 @@ const activePositions = isSpectating
   const unrealizedSign =
     totalUnrealizedPnlNative >= 0 ? '+' : '-'
 
+  const [isOpeningPnl, setIsOpeningPnl] = useState(false);
 
   const calculatePerformanceRanges = () => {
     if (!activePositions || activePositions.length === 0) {
@@ -2507,26 +2512,26 @@ const activePositions = isSpectating
       { label: '<-50%', count: ranges.belowNeg50, color: 'rgb(247, 127, 125, 0.25)' }
     ];
   };
-const calculateBuySellRatio = () => {
-  const ranges = calculatePerformanceRanges();
-  
-  const greenCount = ranges[0].count + ranges[1].count + ranges[2].count;
-  
-  const redCount = ranges[3].count + ranges[4].count;
-  
-  const totalCount = greenCount + redCount;
-  
-  const buyPercent = totalCount > 0 ? (greenCount / totalCount) * 100 : 50;
-  const sellPercent = totalCount > 0 ? (redCount / totalCount) * 100 : 50;
-  return { 
-    buyCount: greenCount, 
-    sellCount: redCount, 
-    buyValue: 0, 
-    sellValue: 0,
-    buyPercent, 
-    sellPercent 
+  const calculateBuySellRatio = () => {
+    const ranges = calculatePerformanceRanges();
+
+    const greenCount = ranges[0].count + ranges[1].count + ranges[2].count;
+
+    const redCount = ranges[3].count + ranges[4].count;
+
+    const totalCount = greenCount + redCount;
+
+    const buyPercent = totalCount > 0 ? (greenCount / totalCount) * 100 : 50;
+    const sellPercent = totalCount > 0 ? (redCount / totalCount) * 100 : 50;
+    return {
+      buyCount: greenCount,
+      sellCount: redCount,
+      buyValue: 0,
+      sellValue: 0,
+      buyPercent,
+      sellPercent
+    };
   };
-};
   const totalRealizedPnlNative = activePositions.reduce((sum, p) => {
     if (p.remainingTokens > 0 && p.boughtTokens > 0) {
       const soldPortion = p.soldTokens / p.boughtTokens;
@@ -3905,9 +3910,10 @@ const calculateBuySellRatio = () => {
                                             currentPrice: p.lastPrice || 0,
                                           };
 
-                                          if (onMarketSelect) {
-                                            onMarketSelect(shareData);
+                                          if (onPnlShare) {
+                                            onPnlShare(shareData);
                                           }
+
 
                                           if (setpopup) {
                                             setpopup(27);
@@ -4138,8 +4144,8 @@ const calculateBuySellRatio = () => {
                                             currentPrice: p.lastPrice || 0,
                                           };
 
-                                          if (onMarketSelect) {
-                                            onMarketSelect(shareData);
+                                          if (onPnlShare) {
+                                            onPnlShare(shareData);
                                           }
 
                                           if (setpopup) {
@@ -4367,9 +4373,9 @@ const calculateBuySellRatio = () => {
                                           currentPrice: p.lastPrice || 0,
                                         };
 
-                                        if (onMarketSelect) {
-                                          onMarketSelect(shareData);
-                                        }
+                                          if (onPnlShare) {
+                                            onPnlShare(shareData);
+                                          }
 
                                         if (setpopup) {
                                           setpopup(27);
@@ -4551,7 +4557,7 @@ const calculateBuySellRatio = () => {
                         <div className="pnl-calendar-ratio-container">
                           <div
                             className="pnl-calendar-ratio-buy"
-                            style={{ width: `${buyPercent}%`  }}
+                            style={{ width: `${buyPercent}%` }}
                           ></div>
                           <div
                             className="pnl-calendar-ratio-sell"
