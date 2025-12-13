@@ -6311,6 +6311,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     copy.push(newPos);
                     idx = copy.length - 1;
                   }
+                  else {
+                    return copy;
+                  }
                 }
 
                 const pos = { ...copy[idx] };
