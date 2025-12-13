@@ -92,6 +92,8 @@ interface Token {
   trades?: any;
   bondingPercentage: number;
   source?: 'crystal' | 'nadfun';
+  market?: string;
+  circulatingSupply: number;
 }
 
 type ColumnKey = 'new' | 'graduating' | 'graduated';
@@ -1288,6 +1290,7 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
     holders: { range1: 10, range2: 50 },
   },
 };
+
 const BLACKLIST_DEFAULTS: BlacklistSettings = { items: [] };
 
 const getMetricColorClasses = (
@@ -2514,7 +2517,7 @@ const useMetricColorClasses = (
   ]);
 };
 
-const TokenRow = React.memo<{
+export const TokenRow = React.memo<{
   token: Token;
   quickbuyAmount: string;
   quickbuyAmountSecond: string;

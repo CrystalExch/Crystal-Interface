@@ -88,6 +88,8 @@ import { CrystalReferralAbi } from './abis/CrystalReferralAbi.ts';
 import { TokenAbi } from './abis/TokenAbi';
 import { shMonadAbi } from './abis/shMonadAbi.ts';
 import { CrystalVaultsAbi } from "./abis/CrystalVaultsAbi";
+import { zeroXAbi } from './abis/zeroXAbi.ts';
+import { zeroXActionsAbi } from './abis/zeroXActionsAbi.ts';
 
 // import types
 import { DataPoint } from './components/Chart/utils/chartDataGenerator.ts';
@@ -5821,6 +5823,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     copy.push(newPos);
                     idx = copy.length - 1;
                   }
+                  else {
+                    return copy;
+                  }
                 }
 
                 const pos = { ...copy[idx] };
@@ -7813,79 +7818,385 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     setpopup(0);
   };
 
-  const handleQuickBuy = useCallback(async (token: any, amt: string) => {
-    const val = BigInt(amt || '0') * 10n ** 18n;
-    if (val === 0n) return;
+  const getMaxSpendableWei = useCallback(
+    (addr: string): bigint => {
+      const balances = walletTokenBalances[addr];
+      if (!balances) return 0n;
 
-    const routerAddress = settings.chainConfig[activechain]?.launchpadRouter?.toLowerCase();
-    if (!routerAddress) {
-      console.error('Router address not found');
-      return;
-    }
+      if (!settings.chainConfig[activechain].eth || !balances[settings.chainConfig[activechain].eth]) return 0n;
 
-    const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      let raw = balances[settings.chainConfig[activechain].eth];
+      if (raw <= 0n) return 0n;
 
-    try {
-      if (showLoadingPopup) {
-        showLoadingPopup(txId, {
-          title: 'Sending transaction...',
-          subtitle: `${amt} MON worth of ${token.symbol}`,
-          amount: amt,
-          amountUnit: 'MON',
-          tokenImage: token.image
-        });
+      const gasReserve = BigInt(settings.chainConfig[activechain].gasamount ?? 0);
+      const safe = raw > gasReserve ? raw - gasReserve : 0n;
+
+      return safe;
+    },
+    [walletTokenBalances, activechain],
+  );
+
+  const handleQuickBuy = useCallback(
+    async (token: Token, amt: string, buttonType: 'primary' | 'secondary' = 'primary') => {
+      if (!connected) {
+        setpopup(4);
+        return;
       }
+      const val = BigInt(parseFloat(amt) * 10 ** 18 || 0);
+      if (val === 0n) return;
 
-      const uo = {
-        target: routerAddress,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: 'buy',
-          args: [true, token.id as `0x${string}`, val, 0n]
-        }),
-        value: val,
-      };
+      const targets: string[] = Array.from(selectedWallets);
+      const txId = `quickbuy-batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Confirming transaction...',
-          subtitle: `${amt} MON worth of ${token.symbol}`,
-          variant: 'info',
-          tokenImage: token.image
-        });
-      }
+      dispatch({
+        type: 'SET_LOADING',
+        id: token.id,
+        loading: true,
+        buttonType,
+      });
+      try {
+        if (showLoadingPopup) {
+          showLoadingPopup(txId, {
+            title: 'Sending batch buy...',
+            subtitle: `Buying ${amt} MON of ${token.symbol} across ${targets.length == 0 ? 1 : targets.length} wallet${targets.length > 1 ? 's' : ''}`,
+            amount: amt,
+            amountUnit: 'MON',
+            tokenImage: token.image,
+          });
+        }
 
-      await sendUserOperationAsync({ uo });
+        const isNadFun = token.source === 'nadfun';
+        const contractAddress = isNadFun
+          ? token.status == 'graduated' ? settings.chainConfig[activechain].nadFunDexRouter : settings.chainConfig[activechain].nadFunRouter
+          : settings.chainConfig[activechain].router;
 
-      if (terminalRefetch) {
+        let remaining = val;
+        const plan: { addr: string; amount: bigint }[] = [];
+        const transferPromises = [];
+
+        if (targets.length > 0) {
+          for (const addr of targets) {
+            const maxWei = getMaxSpendableWei(addr);
+            const fairShare = val / BigInt(targets.length);
+            const allocation = fairShare > maxWei ? maxWei : fairShare;
+            if (allocation > 0n) {
+              plan.push({ addr, amount: allocation });
+              remaining -= allocation;
+            } else {
+              plan.push({ addr, amount: 0n });
+            }
+          }
+          for (const entry of plan) {
+            if (remaining <= 0n) break;
+            const maxWei = getMaxSpendableWei(entry.addr);
+            const room = maxWei - entry.amount;
+            if (room > 0n) {
+              const add = remaining > room ? room : remaining;
+              entry.amount += add;
+              remaining -= add;
+            }
+          }
+          if (remaining > 0n) {
+            if (updatePopup) {
+              updatePopup(txId, {
+                title: 'Batch buy failed',
+                subtitle: 'Not enough MON balance across selected wallets',
+                variant: 'error',
+                isLoading: false,
+              });
+            }
+
+            dispatch({
+              type: 'SET_LOADING',
+              id: token.id,
+              loading: false,
+              buttonType,
+            });
+            return;
+          }
+          for (const { addr, amount: partWei } of plan) {
+            if (partWei <= 0n) continue;
+            const wally = subWallets.find((w) => w.address === addr);
+            const pk = wally?.privateKey ?? oneCTSigner;
+            if (!pk) continue;
+
+            let uo;
+            if (isNadFun) {
+              if (token.status == 'graduated') {
+                let minOutput = BigInt(Number(partWei) / token.price * (1 - Number(buyPresets[buttonType == 'primary' ? (activePresets.graduated) : (activePresets.graduated)]?.slippage) / 100))
+                const actions: any = []
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'buy',
+                    args: [{
+                      amountOutMin: BigInt(minOutput == 0n ? 1n : minOutput),
+                      token: token.id as `0x${string}`,
+                      to: addr as `0x${string}`,
+                      deadline: 0n,
+                    }],
+                  })],
+                }))
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
+                }))
+                uo = {
+                  target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: zeroXAbi,
+                    functionName: 'execute',
+                    args: [{
+                      recipient: addr as `0x${string}`,
+                      buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                      minAmountOut: BigInt(0n),
+                    }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                  }),
+                  value: partWei,
+                };
+              }
+              else {
+                // const fee = 99000n;
+                // const iva = value * fee / 100000n;
+                // const vNative = token.reserveQuote + iva;
+                // const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+                // const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+                let minOutput = BigInt(Number(partWei) / token.price * (1 - Number(buyPresets[buttonType == 'primary' ? (token.status == 'new' ? activePresets.new : token.status == 'graduating' ? activePresets.graduating : activePresets.graduated) : (token.status == 'new' ? activePresets.new : token.status == 'graduating' ? activePresets.graduating : activePresets.graduated)]?.slippage) / 100))
+
+                const actions: any = []
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'buy',
+                    args: [{
+                      amountOutMin: BigInt(minOutput),
+                      token: token.id as `0x${string}`,
+                      to: addr as `0x${string}`,
+                      deadline: 0n,
+                    }],
+                  })],
+                }))
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
+                }))
+                uo = {
+                  target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: zeroXAbi,
+                    functionName: 'execute',
+                    args: [{
+                      recipient: addr as `0x${string}`,
+                      buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                      minAmountOut: BigInt(0n),
+                    }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                  }),
+                  value: partWei,
+                };
+              }
+            } else {
+              // const fee = 99000n;
+              // const iva = partWei * fee / 100000n;
+              // const vNative = token.reserveQuote + iva;
+              // const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+              // const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buyPresets[buttonType == 'primary' ? (token.status == 'new' ? activePresets.new : token.status == 'graduating' ? activePresets.graduating : activePresets.graduated) : (token.status == 'new' ? activePresets.new : token.status == 'graduating' ? activePresets.graduating : activePresets.graduated)]?.slippage) / 100)));
+
+              uo = {
+                target: contractAddress as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: CrystalRouterAbi,
+                  functionName: 'buy',
+                  args: [true, token.id as `0x${string}`, partWei, BigInt(0)],
+                }),
+                value: partWei,
+              };
+            }
+
+            const wallet = nonces.current.get(addr);
+            const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, false, false, 1, addr];
+            if (wallet) wallet.nonce += 1;
+            wallet?.pendingtxs.push(params);
+            const transferPromise = sendUserOperationAsync(...params)
+              .then(() => {
+                if (wallet)
+                  wallet.pendingtxs = wallet.pendingtxs.filter(
+                    (p: any) => p[5] != params[5],
+                  );
+                return true;
+              })
+              .catch(() => {
+                if (wallet)
+                  wallet.pendingtxs = wallet.pendingtxs.filter(
+                    (p: any) => p[5] != params[5],
+                  );
+                return false;
+              });
+            transferPromises.push(transferPromise);
+          }
+        } else {
+          if (account?.address && !oneCTSigner) {
+            let uo;
+
+            if (isNadFun) {
+              if (token.status == 'graduated') {
+                let minOutput = BigInt(Number(val) / token.price * (1 - Number(buyPresets[buttonType == 'primary' ? (activePresets.graduated) : (activePresets.graduated)]?.slippage) / 100))
+                const actions: any = []
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'buy',
+                    args: [{
+                      amountOutMin: BigInt(minOutput == 0n ? 1n : minOutput),
+                      token: token.id as `0x${string}`,
+                      to: address as `0x${string}`,
+                      deadline: 0n,
+                    }],
+                  })],
+                }))
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
+                }))
+                uo = {
+                  target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: zeroXAbi,
+                    functionName: 'execute',
+                    args: [{
+                      recipient: address as `0x${string}`,
+                      buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                      minAmountOut: BigInt(0n),
+                    }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                  }),
+                  value: val,
+                };
+              }
+              else {
+                // const fee = 99000n;
+                // const iva = value * fee / 100000n;
+                // const vNative = token.reserveQuote + iva;
+                // const vToken = (((token.reserveQuote * token.reserveBase) + vNative - 1n) / vNative);
+                // const output = Number(token.reserveBase - vToken) * (1 / (1 + (Number(buySlippageValue) / 100)));
+                let minOutput = BigInt(Number(val) / token.price * (1 - Number(buyPresets[buttonType == 'primary' ? (token.status == 'new' ? activePresets.new : token.status == 'graduating' ? activePresets.graduating : activePresets.graduated) : (token.status == 'new' ? activePresets.new : token.status == 'graduating' ? activePresets.graduating : activePresets.graduated)]?.slippage) / 100))
+
+                const actions: any = []
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 9900n, contractAddress, 100n, encodeFunctionData({
+                    abi: NadFunAbi,
+                    functionName: 'buy',
+                    args: [{
+                      amountOutMin: BigInt(minOutput),
+                      token: token.id as `0x${string}`,
+                      to: address as `0x${string}`,
+                      deadline: 0n,
+                    }],
+                  })],
+                }))
+                actions.push(encodeFunctionData({
+                  abi: zeroXActionsAbi,
+                  functionName: 'BASIC',
+                  args: [settings.chainConfig[activechain].eth, 10000n, settings.chainConfig[activechain].feeAddress, 0n, '0x'],
+                }))
+                uo = {
+                  target: settings.chainConfig[activechain].zeroXSettler as `0x${string}`,
+                  data: encodeFunctionData({
+                    abi: zeroXAbi,
+                    functionName: 'execute',
+                    args: [{
+                      recipient: address as `0x${string}`,
+                      buyToken: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                      minAmountOut: BigInt(0n),
+                    }, actions, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+                  }),
+                  value: val,
+                };
+              }
+            } else {
+              uo = {
+                target: contractAddress as `0x${string}`,
+                data: encodeFunctionData({
+                  abi: CrystalRouterAbi,
+                  functionName: 'buy',
+                  args: [true, token.id as `0x${string}`, val, 0n],
+                }),
+                value: val,
+              };
+            }
+
+            const transferPromise = sendUserOperationAsync({ uo });
+            transferPromises.push(transferPromise.then(() => {
+              return true;
+            })
+              .catch(() => {
+                return false;
+              }));
+          }
+        }
+
+        const results = await Promise.allSettled(transferPromises);
+        const successfulTransfers = results.filter(
+          (result) => result.status === 'fulfilled' && result.value === true,
+        ).length;
+
         terminalRefetch();
-      }
 
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Quick Buy Complete',
-          subtitle: `Successfully bought ${token.symbol} with ${amt} MON`,
-          variant: 'success',
-          confirmed: true,
-          isLoading: false,
-          tokenImage: token.image
+        if (updatePopup) {
+          updatePopup(txId, {
+            title: `Bought ${amt} MON Worth`,
+            subtitle: `Distributed across ${successfulTransfers} wallet${successfulTransfers !== 1 ? 's' : ''}`,
+            variant: 'success',
+            confirmed: true,
+            isLoading: false,
+            tokenImage: token.image,
+          });
+        }
+      } catch (e: any) {
+        console.error('Quick buy failed', e);
+        const msg = String(e?.message ?? '');
+        if (updatePopup) {
+          updatePopup(txId, {
+            title: msg.toLowerCase().includes('insufficient')
+              ? 'Insufficient Balance'
+              : 'Buy Failed',
+            subtitle: msg || 'Transaction failed',
+            variant: 'error',
+            confirmed: true,
+            isLoading: false,
+            tokenImage: token.image,
+          });
+        }
+      } finally {
+        dispatch({
+          type: 'SET_LOADING',
+          id: token.id,
+          loading: false,
+          buttonType,
         });
       }
-    } catch (e: any) {
-      console.error('Quick buy failed', e);
-      const msg = String(e?.message ?? '');
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
-          subtitle: msg || 'Please try again.',
-          variant: 'error',
-          confirmed: true,
-          isLoading: false,
-          tokenImage: token.image
-        });
-      }
-    }
-  }, [sendUserOperationAsync, activechain, terminalRefetch]);
+    },
+    [
+      sendUserOperationAsync,
+      selectedWallets,
+      subWallets,
+      oneCTSigner,
+      getMaxSpendableWei,
+      address,
+      connected,
+      nonces,
+      activechain,
+    ],
+  );
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
