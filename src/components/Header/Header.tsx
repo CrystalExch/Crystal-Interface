@@ -865,6 +865,7 @@ const Header: React.FC<HeaderProps> = ({
     requestClipboardPermission();
   }, []);
   const [lastClipboardText, setLastClipboardText] = useState<string>('');
+  const [clipboardPermission, setClipboardPermission] = useState<boolean>(false);
 
   useEffect(() => {
     const BACKEND_BASE_URL = 'https://api.crystal.exchange';
@@ -937,41 +938,43 @@ const Header: React.FC<HeaderProps> = ({
       }
     };
 
+    const handleNewClipboardText = async (text: string) => {
+      const normalizedText = text.toLowerCase().trim()
+      let foundToken = null
+    
+      if (tokenList?.length) {
+        foundToken = tokenList.find(
+          token =>
+            token.address?.toLowerCase() === normalizedText ||
+            token.id?.toLowerCase() === normalizedText
+        )
+      }
+    
+      if (!foundToken && tokendict) {
+        const entry = Object.entries(tokendict).find(([addr]) =>
+          addr.toLowerCase() === normalizedText
+        )
+        if (entry) foundToken = entry[1]
+      }
+    
+      if (!foundToken) {
+        foundToken = await fetchTokenFromBackend(normalizedText)
+      }
+    
+      if (foundToken) setCopiedToken(foundToken)
+    }
+
     const checkClipboard = async () => {
       try {
-        if (!navigator.clipboard) return;
-
         const text = await navigator.clipboard.readText();
 
-        if (text && text !== lastClipboardText && text.startsWith('0x') && text.length >= 40) {
-          setLastClipboardText(text);
-
-          const normalizedText = text.toLowerCase().trim();
-          let foundToken = null;
-          if (tokenList && tokenList.length > 0) {
-            foundToken = tokenList.find(token =>
-              token.address?.toLowerCase() === normalizedText ||
-              token.id?.toLowerCase() === normalizedText
-            );
+        setLastClipboardText(prev => {
+          if (text && text.startsWith("0x") && text.length >= 40 && text !== prev) {
+            handleNewClipboardText(text)
+            return text
           }
-
-          if (!foundToken && tokendict) {
-            const tokenEntry = Object.entries(tokendict).find(([addr, _]) =>
-              addr.toLowerCase() === normalizedText
-            );
-            if (tokenEntry) {
-              foundToken = tokenEntry[1];
-            }
-          }
-
-          if (!foundToken) {
-            foundToken = await fetchTokenFromBackend(normalizedText);
-          }
-
-          if (foundToken) {
-            setCopiedToken(foundToken);
-          }
-        }
+          return prev
+        })
       } catch (error) {
 
         if (process.env.NODE_ENV === 'development') {
@@ -980,16 +983,15 @@ const Header: React.FC<HeaderProps> = ({
       }
     };
 
+    if (!navigator.clipboard || !clipboardPermission) return;
     const interval = setInterval(checkClipboard, 2000);
-
     checkClipboard();
 
     return () => clearInterval(interval);
-  }, [tokenList, tokendict, lastClipboardText]);
+  }, [tokenList, tokendict, clipboardPermission]);
 
   const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
   const [copiedToken, setCopiedToken] = useState<any>(null);
-  const [clipboardPermission, setClipboardPermission] = useState<boolean>(false);
   const memeTokenData = isMemeTokenPage && tokenData ? tokenData : undefined;
   const isPerpsRoute = location.pathname.startsWith('/perps')
   const currentperpsActiveMarketKey = isPerpsRoute ? perpsActiveMarketKey : undefined;

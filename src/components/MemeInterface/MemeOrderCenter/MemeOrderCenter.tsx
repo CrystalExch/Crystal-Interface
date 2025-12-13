@@ -2183,6 +2183,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             <button
               onClick={onToggleWidget}
               className={`meme-oc-quickbuy-button ${isWidgetOpen ? 'active' : ''}`}
+              disabled={!activeWalletPrivateKey}
+              style={!activeWalletPrivateKey ? {cursor: 'not-allowed'} : {}}
             >
               <img className="memeordercenter-lightning" src={lightning} />
 

@@ -14912,7 +14912,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [buySound, setBuySound] = useState('Step Audio');
   const [sellSound, setSellSound] = useState('Step Audio');
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
-  const audioRef = useRef<HTMLAudioElement | null>(new Audio(stepaudio));
+  const audioRef = useRef<HTMLAudioElement | null>(audio);
   const lastVolumeRef = useRef<number>(volume);
 
   const toggleDropdown = (key: string) => {

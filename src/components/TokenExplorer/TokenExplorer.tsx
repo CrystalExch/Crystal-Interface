@@ -894,18 +894,6 @@ const AlertsPopup: React.FC<{
   };
 
   useEffect(() => {
-    audioRef.current = new Audio(stepaudio);
-    audioRef.current.volume = settings.volume / 100;
-
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = settings.volume / 100;
     }
@@ -4015,7 +4003,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const handleWalletButtonClick = () => {
     if (!account.connected) {
-      if (setpopup) setpopup(4);
+      setpopup(4);
     } else {
       setIsWalletDropdownOpen(!isWalletDropdownOpen);
     }
@@ -4288,6 +4276,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const handleQuickBuy = useCallback(
     async (token: Token, amt: string, buttonType: 'primary' | 'secondary') => {
+      if (!account.connected) {
+        setpopup(4);
+        return;
+      }
       const val = BigInt(parseFloat(amt) * 10 ** 18 || 0);
       if (val === 0n) return;
 

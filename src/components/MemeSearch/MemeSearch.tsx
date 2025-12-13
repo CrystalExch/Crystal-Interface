@@ -591,10 +591,9 @@ const [buyingTokens, setBuyingTokens] = useState<Set<string>>(new Set());
     const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
     const walletDropdownRef = useRef<HTMLDivElement>(null);
 
-    // Sort state
     type SortType = 'time' | 'marketCap' | 'volume' | 'liquidity' | 'holders';
     type SortDirection = 'asc' | 'desc';
-    const [sortType, setSortType] = useState<SortType>('time');
+    const [sortType, setSortType] = useState<SortType>('volume');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
     const isWalletActive = (privateKey: string) => {
@@ -764,10 +763,7 @@ const abortRef = useRef<AbortController | null>(null);
 
     const handleSortChange = (newSortType: SortType) => {
         if (sortType === newSortType) {
-            // Toggle direction if clicking the same sort type
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
         } else {
-            // Set new sort type with default direction (desc)
             setSortType(newSortType);
             setSortDirection('desc');
         }
@@ -826,7 +822,7 @@ const abortRef = useRef<AbortController | null>(null);
         const activePreset = activePresets?.new || 1;
         const presetAmount = buyPresets?.[activePreset]?.amount;
         return presetAmount || '5';
-}, [quickAmounts, activePresets, buyPresets]);
+    }, [quickAmounts, activePresets, buyPresets]);
 
     const totalSelectedBalance = useMemo(() => {
         if (selectedWallets.size === 0) {
@@ -902,7 +898,6 @@ const abortRef = useRef<AbortController | null>(null);
 
         const progress = (price * TOTAL_SUPPLY) / 25000 * 100;
 
-        // Parse socials from the backend response
         const socials = [m.social1, m.social2, m.social3, m.social4]
             .map((s: string) => (s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s))
             .filter(Boolean);
@@ -950,37 +945,44 @@ const abortRef = useRef<AbortController | null>(null);
         };
     }, []);
 
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
     const fetchSearchResults = useCallback(async () => {
         abortRef.current?.abort();
         const controller = new AbortController();
         abortRef.current = controller;
 
         try {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
             setError(null);
             setLoading(true);
             setIsSearching(true);
-
-            const searchQuery = searchTerm.trim();
-            const url = `${BACKEND_BASE_URL}/search/query?query=${encodeURIComponent(searchQuery)}&sort=${encodeURIComponent('volume_24h')}`;
-            const res = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'content-type': 'application/json',
-                },
-                signal: controller.signal,
-            });
-
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-            const json = await res.json();
-            const rows = json?.tokens ?? json?.results ?? json ?? [];
-
-            const processedTokens = Array.isArray(rows)
-                ? rows.map((row: any) => mapBackendTokenToUi(row))
-                : [];
-            if (!controller.signal.aborted) {
-                setTokens(processedTokens);
-            }
+            debounceTimerRef.current = setTimeout(async () => {
+                const searchQuery = searchTerm.trim();
+                const url = `${BACKEND_BASE_URL}/search/query?query=${encodeURIComponent(searchQuery)}&sort=${encodeURIComponent(sortType == 'time' ? 'recent' : sortType == 'volume' ? 'volume_1h' : sortType == 'marketCap' ? 'mc' : 'holders')}`;
+                const res = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'content-type': 'application/json',
+                    },
+                    signal: controller.signal,
+                });
+    
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    
+                const json = await res.json();
+                const rows = json?.tokens ?? json?.results ?? json ?? [];
+    
+                const processedTokens = Array.isArray(rows)
+                    ? rows.map((row: any) => mapBackendTokenToUi(row))
+                    : [];
+                if (!controller.signal.aborted) {
+                    setTokens(processedTokens);
+                }
+                debounceTimerRef.current = null;
+            }, 300);
         } catch (e: any) {
             if (e?.name !== 'AbortError') {
                 setError('Failed to load search results.');
@@ -991,7 +993,7 @@ const abortRef = useRef<AbortController | null>(null);
                 setIsSearching(false);
             }
         }
-    }, [searchTerm, mapBackendTokenToUi]);
+    }, [searchTerm, sortType]);
 
     const fetchRecentlyViewedFromBackend = useCallback(
         async (tokens: Token[]) => {
@@ -1022,9 +1024,8 @@ const abortRef = useRef<AbortController | null>(null);
 
         addToSearchHistory(term);
         fetchSearchResults();
-    }, [searchTerm, fetchSearchResults, fetchRecentlyViewedFromBackend]);
+    }, [searchTerm, sortType, fetchSearchResults, fetchRecentlyViewedFromBackend]);
 
-    // Refresh recently viewed data whenever the recentlyViewed list changes
     useEffect(() => {
         if (searchTerm.trim().length < 1 && recentlyViewed.length > 0) {
             fetchRecentlyViewedFromBackend(recentlyViewed).then(setTokens);
@@ -1095,7 +1096,6 @@ const abortRef = useRef<AbortController | null>(null);
         const value = e.target.value;
         setSearchTerm(value);
 
-        // Clear error when search is cleared
         if (value.trim() === '') {
             setError(null);
         }
@@ -1108,9 +1108,21 @@ const abortRef = useRef<AbortController | null>(null);
     return (
         <div className="meme-search-overlay" onClick={() => setpopup(0)}>
             <div className="meme-search-modal" onClick={(e) => e.stopPropagation()}>
-                {/* Sort Header Bar - Always visible */}
                 <div className="meme-search-sort-header">
                     <div className="meme-search-sort-icons">
+                        <Tooltip content="1h Volume">
+                            <button
+                                className={`meme-search-sort-button ${sortType === 'volume' ? 'active' : ''}`}
+                                onClick={() => handleSortChange('volume')}
+                            >
+                                <BarChart3 size={14} />
+                                {sortType === 'volume' && (
+                                    sortDirection === 'desc' ?
+                                    <ChevronDown size={11} className="sort-direction-icon" /> :
+                                    <ChevronUp size={11} className="sort-direction-icon" />
+                                )}
+                            </button>
+                        </Tooltip>
                         <Tooltip content="Time">
                             <button
                                 className={`meme-search-sort-button ${sortType === 'time' ? 'active' : ''}`}
@@ -1131,19 +1143,6 @@ const abortRef = useRef<AbortController | null>(null);
                             >
                                 <TrendingUp size={14} />
                                 {sortType === 'marketCap' && (
-                                    sortDirection === 'desc' ?
-                                    <ChevronDown size={11} className="sort-direction-icon" /> :
-                                    <ChevronUp size={11} className="sort-direction-icon" />
-                                )}
-                            </button>
-                        </Tooltip>
-                        <Tooltip content="1h Volume">
-                            <button
-                                className={`meme-search-sort-button ${sortType === 'volume' ? 'active' : ''}`}
-                                onClick={() => handleSortChange('volume')}
-                            >
-                                <BarChart3 size={14} />
-                                {sortType === 'volume' && (
                                     sortDirection === 'desc' ?
                                     <ChevronDown size={11} className="sort-direction-icon" /> :
                                     <ChevronUp size={11} className="sort-direction-icon" />
@@ -1746,7 +1745,7 @@ const abortRef = useRef<AbortController | null>(null);
                                                                                     <img
                                                                                         src={
                                                                                             token.twitterHandle.includes('/i/communities/')
-                                                                                                ? '/community.png'
+                                                                                                ? communities
                                                                                                 : token.twitterHandle.includes('/status/')
                                                                                                     ? tweet
                                                                                                     : avatar
