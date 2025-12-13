@@ -610,15 +610,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                         ? 'HOUR_1'
                         : 'MINUTE_' + resolution,
                     priceType: 'LAST_PRICE',
-                    filterBeginKlineTimeInclusive: (from * 1000 - 100 * (
-                      resolution === '1D'
-                        ? 86400000
-                        : resolution === '240'
-                          ? 14400000
-                          : resolution === '60'
-                            ? 3600000
-                            : parseInt(resolution) * 60000
-                    )).toString(),
+                    filterBeginKlineTimeInclusive: (from * 1000).toString(),
                     filterEndKlineTimeExclusive: (to * 1000).toString(),
                   })
 
@@ -657,6 +649,11 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               });
             }
             let bars = dataRef.current[key];
+            const nextTime =
+            bars
+              .map((bar: any) => bar.time / 1000)
+              .filter((t: any) => t < from)
+              .pop() || null;
             if (!perps) {
               bars = bars.filter(
                 (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,
@@ -666,7 +663,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               if (!perps || (bars && bars.length)) {
                 onHistoryCallback(bars, { noData: false });
               } else {
-                onHistoryCallback([], { noData: true });
+                onHistoryCallback([], { nextTime, noData: true });
               }
             }, 0);
           } catch (error) {

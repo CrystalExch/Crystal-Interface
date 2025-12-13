@@ -1001,6 +1001,7 @@ const abortRef = useRef<AbortController | null>(null);
             globalFeesPaid: 0,
             mini: [],
             bundleHolding: 0,
+            circulatingSupply: 0,
         };
     }, []);
 

@@ -8043,7 +8043,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             transferPromises.push(transferPromise);
           }
         } else {
-          if (account?.address && !oneCTSigner) {
+          if (address && !oneCTSigner) {
             let uo;
 
             if (isNadFun) {
