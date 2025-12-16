@@ -11,7 +11,6 @@ import lightning from '../../assets/flash.png';
 import monadicon from '../../assets/monad.svg';
 import walleticon from '../../assets/wallet_icon.svg';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
-import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { settings as appSettings } from '../../settings';
 import { TokenRow } from '../TokenExplorer/TokenExplorer';
@@ -545,19 +544,6 @@ const MemeSearch: React.FC<MemeSearchProps> = ({
     createSubWallet,
     activeWalletPrivateKey,
 }) => {
-    const navigate = useNavigate();
-    const crystalLogo = '/CrystalLogo.png'
-    const NadfunLogo: React.FC = () => (
-        <svg width="11" height="11" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <linearGradient id="nadfun-meme-search" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#AD5FFB" />
-                    <stop offset="100%" stopColor="#D896FF" />
-                </linearGradient>
-            </defs>
-            <path fill="url(#nadfun-meme-search)" d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z" />
-        </svg>
-    );
     const copyToClipboard = useCallback(async (text: string) => {
         const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         try {

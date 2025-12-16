@@ -13,9 +13,8 @@
     minmax(100px, 1.2fr) 
     minmax(90px, 1fr) 
     minmax(80px, 1fr) 
-        minmax(80px, 1fr) 
-
-    minmax(120px, 1fr);
+    minmax(80px, 1fr) 
+    minmax(100px, .7fr);
   height: 32px;
   min-height: 32px;   
   padding: 1px 0 0 0;

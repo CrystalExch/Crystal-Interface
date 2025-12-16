@@ -15,7 +15,7 @@
     minmax(90px, 1fr) 
     minmax(80px, 1fr) 
     minmax(80px, 1fr) 
-    minmax(120px, 1fr);
+    minmax(100px, .7fr);
   position: relative;
   transition: background-color 0.15s ease;
   width: 100%;
@@ -224,17 +224,6 @@
 
 
 .oc-cell.perps-actions {
-  cursor: default;
-  display: flex;
-  font-size: 0.75rem;
-  font-weight: 300;
-  justify-self: right;
-  margin-right: 20px;
-  padding: 0 0;
-  overflow: hidden;
-  position: relative;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  z-index: 0;
-  gap: 0;
+  justify-self: center;
+  padding: 0;
 }

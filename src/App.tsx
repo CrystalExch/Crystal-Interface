@@ -8025,7 +8025,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             const params = [{ uo }, 0n, 0n, false, pk, wallet?.nonce, false, false, 1, addr];
             if (wallet) wallet.nonce += 1;
             wallet?.pendingtxs.push(params);
-            const transferPromise = sendUserOperationAsync(...params)
+            const transferPromise = (sendUserOperationAsync as any)(...params)
               .then(() => {
                 if (wallet)
                   wallet.pendingtxs = wallet.pendingtxs.filter(
