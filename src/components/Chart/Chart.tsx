@@ -4,6 +4,7 @@ import { settings } from '../../settings.ts';
 import normalizeTicker from '../../utils/normalizeTicker.ts';
 import Overlay from '../loading/LoadingComponent';
 import AdvancedTradingChart from './ChartCanvas/AdvancedTradingChart';
+import PerpsAdvancedChart from './ChartCanvas/PerpsAdvancedChart.tsx';
 import ChartCanvas from './ChartCanvas/ChartCanvas';
 import TimeFrameSelector from './TimeFrameSelector/TimeFrameSelector';
 import UTCClock from './UTCClock/UTCClock';
@@ -65,6 +66,43 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 }) => {
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [_lastPair, setLastPair] = useState('');
+
+  if (perps) return (
+    <div className="chartwrapper">
+      <PerpsAdvancedChart
+        data={data}
+        activeMarket={activeMarket}
+        selectedInterval={selectedInterval}
+        setSelectedInterval={setSelectedInterval}
+        setOverlayVisible={setOverlayVisible}
+        tradehistory={tradehistory}
+        isMarksVisible={isMarksVisible}
+        setIsMarksVisible={setIsMarksVisible}
+        orders={orders}
+        isOrdersVisible={isOrdersVisible}
+        showChartOutliers={showChartOutliers}
+        setShowChartOutliers={setShowChartOutliers}
+        router={router}
+        refetch={refetch}
+        sendUserOperationAsync={sendUserOperationAsync}
+        setChain={setChain}
+        usedRefAddress={usedRefAddress}
+        realtimeCallbackRef={realtimeCallbackRef}
+        limitPrice={limitPrice}
+        updateLimitAmount={updateLimitAmount}
+        tokenIn={tokenIn}
+        amountIn={amountIn}
+        isLimitOrderMode={isLimitOrderMode}
+        perps={perps}
+      />
+      <Overlay
+        isVisible={overlayVisible}
+        bgcolor={'rgb(6,6,6)'}
+        height={15}
+        maxLogoHeight={100}
+      />
+    </div>
+  )
 
   useEffect(() => {
     if (perps) return;

@@ -2000,11 +2000,6 @@ body {
   overflow: hidden;
 }
 
-.chart-container {
-  flex: 1;
-  min-height: 0;
-}
-
 .right-column {
   display: flex;
   flex-direction: column;

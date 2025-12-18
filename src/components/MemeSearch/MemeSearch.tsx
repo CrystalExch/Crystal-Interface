@@ -281,8 +281,6 @@ const getTokenStatus = (progress: number): 'new' | 'graduating' | 'graduated' =>
     return 'new';
 };
 
-const calculateBondingPercentage = (marketCap: number) => Math.min((marketCap / 25000) * 100, 100);
-
 const getBondingColor = (b: number) => {
     if (b < 25) return '#ee5b5bff';
     if (b < 50) return '#f59e0b';
@@ -965,11 +963,11 @@ const abortRef = useRef<AbortController | null>(null);
             telegramHandle: telegram || '',
             created: createdTimestamp,
             price,
-            marketCap: Number(m.marketcap_usd ?? 0),
+            marketCap: Number(m.marketcap_native_raw ?? 0),
             change24h: 0,
             buyTransactions: Number(m.tx?.buy ?? 0),
             sellTransactions: Number(m.tx?.sell ?? 0),
-            volume24h: Number(m.volume_usd ?? 0),
+            volume24h: Number(m.native_volume ?? 0) / 1e18,
             volumeDelta: 0,
             launchedTokens: Number(m.developer_tokens_created ?? 0),
             graduatedTokens: Number(m.developer_tokens_graduated ?? 0),
@@ -987,7 +985,7 @@ const abortRef = useRef<AbortController | null>(null);
             globalFeesPaid: 0,
             mini: [],
             bundleHolding: 0,
-            circulatingSupply: 0,
+            circulatingSupply: Number(m.circulating_supply ?? 0),
         };
     }, []);
 
@@ -1552,18 +1550,6 @@ const abortRef = useRef<AbortController | null>(null);
                                         );
                                     } else {
                                         const token = item.data as Token;
-                                        const status = getTokenStatus(token.progress);
-                                        const bondingPercentage = calculateBondingPercentage(token.marketCap);
-                                        const gradient = createColorGradient(getBondingColor(bondingPercentage));
-
-                                        type CSSVars = React.CSSProperties & Record<string, string>;
-                                        const imageStyle: CSSVars = {
-                                            position: 'relative',
-                                            '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
-                                            '--progress-color-start': gradient.start,
-                                            '--progress-color-mid': gradient.mid,
-                                            '--progress-color-end': gradient.end,
-                                        };
 
                                         return (
                                             <TokenRow
@@ -1605,18 +1591,7 @@ const abortRef = useRef<AbortController | null>(null);
                                     )}
                                      {sortedFilteredTokens.map((t) => {
                                         const status = getTokenStatus(t.progress);
-                                        const bondingPercentage = calculateBondingPercentage(t.marketCap);
-                                        const gradient = createColorGradient(getBondingColor(bondingPercentage));
-
-                                        type CSSVars = React.CSSProperties & Record<string, string>;
-                                        const imageStyle: CSSVars = {
-                                            position: 'relative',
-                                            '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
-                                            '--progress-color-start': gradient.start,
-                                            '--progress-color-mid': gradient.mid,
-                                            '--progress-color-end': gradient.end,
-                                        };
-
+   
                                         return (
                                             <TokenRow
                                                 key={t.id}

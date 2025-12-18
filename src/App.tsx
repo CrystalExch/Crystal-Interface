@@ -1205,7 +1205,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [perpsLimitChase, setPerpsLimitChase] = useState(true);
   const [perpsFilterOptions, setPerpsFilterOptions] = useState({});
   const [perpsKeystore, setPerpsKeystore] = useState<any>(() => {
-    const saved = localStorage.getItem('crystal_perps_signer');
+    const signatureKey = `crystal_perps_signer_${scaAddress?.toLowerCase() || 'default'}`;
+    const saved = localStorage.getItem(signatureKey);
     return saved !== null ? JSON.parse(saved) : {};
   })
   const [perpsDepositAmount, setPerpsDepositAmount] = useState('');
@@ -1609,7 +1610,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [isAudioEnabled, setIsAudioEnabled] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_audio_notifications') || 'false');
   });
-
   const [obInterval, setOBInterval] = useState<number>(() => {
     const stored = localStorage.getItem(
       `${activeMarket.baseAsset}_ob_interval`,
@@ -29241,6 +29241,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setPerpsLimitChase={setPerpsLimitChase}
                 perpsLimitChase={perpsLimitChase}
                 handlePerpsMarketSelect={handlePerpsMarketSelect}
+                scaAddress={scaAddress}
               />
             } />
           <Route path="/leaderboard"

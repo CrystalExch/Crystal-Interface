@@ -40,7 +40,7 @@ interface ChartCanvasProps {
   perps: boolean;
 }
 
-const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
+const PerpsAdvancedChart: React.FC<ChartCanvasProps> = ({
   data,
   activeMarket,
   selectedInterval,
@@ -116,7 +116,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         ).toString();
       }
 
-      const formattedPrice = formatSubscript(formatSig(priceInDisplayUnits.toFixed(Math.floor(Math.log10(Number(perps ? 1 / Number(activeMarketRef.current?.tickSize) : activeMarketRef.current?.priceFactor)))), !perps && activeMarketRef.current?.marketType != 0));
+      const formattedPrice = formatSubscript(formatSig(priceInDisplayUnits.toFixed(Math.floor(Math.log10(Number(1 / Number(activeMarketRef.current?.tickSize))))), false));
 
       const orderTypeText = isBuyOrder ? 'Place limit buy' : 'Place limit sell';
 
@@ -150,7 +150,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1)
               : Number(activeMarket.priceFactor),
           );
-          const formatted = formatSubscript(formatSig(newPrice.toFixed(Math.floor(Math.log10(Number(perps ? 1 / Number(activeMarketRef.current?.tickSize) : activeMarketRef.current?.priceFactor)))), !perps && activeMarketRef.current?.marketType != 0));
+          const formatted = formatSubscript(formatSig(newPrice.toFixed(Math.floor(Math.log10(Number(1 / Number(activeMarketRef.current?.tickSize))))), false));
           const side =
             tokenIn === activeMarket.quoteAddress
               ? 'Place limit buy'
@@ -463,14 +463,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     } catch (e) {}
   }, [orders, isOrdersVisible, chartReady]);
 
-  const getPriceScale = (tickSize: number) => {
-    const str = tickSize.toString()
-    if (str.includes(".")) {
-      return Math.pow(10, str.split(".")[1].length)
-    }
-    return 1 / tickSize
-  }
-
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
     if (Object.keys(activeMarketRef.current).length == 0) return;
@@ -519,19 +511,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         priceFormatterFactory: () => {
           return {
             format: (price: number) => {
-              return formatSubscript(formatSig(price.toFixed(Math.floor(Math.log10(Number(perps ? 1 / Number(activeMarketRef.current?.tickSize) : activeMarketRef.current?.priceFactor)))), !perps && activeMarketRef.current?.marketType != 0));
+              return formatSubscript(formatSig(price.toFixed(Math.floor(Math.log10(Number(1 / Number(activeMarketRef.current?.tickSize))))), false));
             },
           };
         },
-        ...(perps ? {} : {
-          studyFormatterFactory: () => {
-            return {
-              format: (value: number) => {
-                return formatSig(customRound(value, 3), false);
-              },
-            };
-          },
-        }),
       },
       save_load_adapter: localAdapterRef.current,
 
@@ -563,8 +546,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               timezone: 'Etc/UTC',
               exchange: 'crystal.exchange',
               minmov: 1,
-              pricescale:
-                perps ? getPriceScale(activeMarketRef.current?.tickSize || 1) : Number(activeMarketRef.current.priceFactor),
+              pricescale: (t => (t + '').includes('.') ? 10 ** ((t + '').split('.')[1].length) : 1 / t)(activeMarketRef.current?.tickSize || 1),
               has_intraday: true,
               has_volume: true,
               supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
@@ -598,67 +580,52 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               symbolInfo.name.split('/')[1] +
               resolution;
 
-            if (perps) {
-              await (async () => {
-                let offset: string | undefined
-                const all: any[] = []
+            await (async () => {
+              let offset: string | undefined
+              const all: any[] = []
 
-                while (true) {
-                  const params = new URLSearchParams({
-                    contractId: activeMarketRef.current?.contractId,
-                    klineType: resolution === '1D'
-                      ? 'DAY_1'
-                      : resolution === '240'
-                        ? 'HOUR_4'
-                        : resolution === '60'
-                          ? 'HOUR_1'
-                          : 'MINUTE_' + resolution,
-                    priceType: 'LAST_PRICE',
-                    filterBeginKlineTimeInclusive: ((from * 1000) - (resolution === '1D'
-                    ? 86400
+              while (true) {
+                const params = new URLSearchParams({
+                  contractId: activeMarketRef.current?.contractId,
+                  klineType: resolution === '1D'
+                    ? 'DAY_1'
                     : resolution === '240'
-                      ? 14400
+                      ? 'HOUR_4'
                       : resolution === '60'
-                        ? 3600
-                        : Number(resolution) * 60) * 2000).toString(),
-                    filterEndKlineTimeExclusive: (to * 1000).toString(),
-                    ...(offset ? { offsetData: offset } : {})
-                  })
+                        ? 'HOUR_1'
+                        : 'MINUTE_' + resolution,
+                  priceType: 'LAST_PRICE',
+                  filterBeginKlineTimeInclusive: ((from * 1000) - (resolution === '1D'
+                  ? 86400
+                  : resolution === '240'
+                    ? 14400
+                    : resolution === '60'
+                      ? 3600
+                      : Number(resolution) * 60) * 2000).toString(),
+                  filterEndKlineTimeExclusive: (to * 1000).toString(),
+                  ...(offset ? { offsetData: offset } : {})
+                })
 
-                  const r = await fetch(`${settings.perpsEndpoint}/api/v1/public/quote/getKline?${params}`, { headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
-                  if (!r?.data?.dataList?.length) break
+                const r = await fetch(`${settings.perpsEndpoint}/api/v1/public/quote/getKline?${params}`, { headers: { 'Content-Type': 'application/json' } }).then(r => r.json())
+                if (!r?.data?.dataList?.length) break
 
-                  all.push(...r.data.dataList)
-                  offset = r.data.nextPageOffsetData
-                  if (!offset) break
-                }
+                all.push(...r.data.dataList)
+                offset = r.data.nextPageOffsetData
+                if (!offset) break
+              }
 
-                const mapKlines = (klines: any[]) =>
-                  klines.map(candle => ({
-                    time: Number(candle.klineTime),
-                    open: Number(candle.open),
-                    high: Number(candle.high),
-                    low: Number(candle.low),
-                    close: Number(candle.close),
-                    volume: Number(candle.value),
-                  }))
+              const mapKlines = (klines: any[]) =>
+                klines.map(candle => ({
+                  time: Number(candle.klineTime),
+                  open: Number(candle.open),
+                  high: Number(candle.high),
+                  low: Number(candle.low),
+                  close: Number(candle.close),
+                  volume: Number(candle.value),
+                }))
 
-                  dataRef.current[key] = mapKlines(all.reverse())
-              })()
-            }
-            else {
-              await new Promise<void>((resolve) => {
-                const check = () => {
-                  if (dataRef.current[key]) {
-                    clearInterval(intervalCheck);
-                    resolve();
-                  }
-                };
-  
-                const intervalCheck = setInterval(check, 50);
-                check();
-              });
-            }
+                dataRef.current[key] = mapKlines(all.reverse())
+            })()
 
             let bars = dataRef.current[key];
             const nextTime =
@@ -666,13 +633,9 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               .map((bar: any) => bar.time / 1000)
               .filter((t: any) => t < from)
               .pop() || null;
-            if (!perps) {
-              bars = bars.filter(
-                (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,
-              );
-            }
+
             setTimeout(() => {
-              if (!perps || (bars && bars.length)) {
+              if ((bars && bars.length)) {
                 onHistoryCallback(bars, { noData: false });
               } else {
                 onHistoryCallback([], { nextTime, noData: true });
@@ -760,7 +723,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           pane.setHeight?.(100);
         }
       }
-
+      
       widgetRef.current.headerReady().then(() => {
         if (!widgetRef.current.activeChart() || perps) {
           return;
@@ -813,7 +776,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
       await widgetRef.current.activeChart().dataReady();
       setOverlayVisible(false);
-
+      
       const marketId = `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}_${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`;
       const chartId = `layout_${marketId}`;
 
@@ -889,7 +852,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
       widgetRef.current.activeChart().onDataLoaded().subscribe(null, () => {
         setChartReady(true);
-        setOverlayVisible(false)
+        setOverlayVisible(false);
       });
     });
 
@@ -1116,4 +1079,4 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   );
 };
 
-export default AdvancedTradingChart;
+export default PerpsAdvancedChart;

@@ -75,6 +75,7 @@ interface PerpsProps {
   setPerpsLimitChase: any;
   perpsLimitChase: any;
   handlePerpsMarketSelect: any;
+  scaAddress: string;
 }
 
 const Perps: React.FC<PerpsProps> = ({
@@ -137,10 +138,11 @@ const Perps: React.FC<PerpsProps> = ({
   setIsMarksVisible,
   setPerpsLimitChase,
   perpsLimitChase,
-  handlePerpsMarketSelect
+  handlePerpsMarketSelect,
+  scaAddress
 }) => {
   const [isMobileTradeModalOpen, setIsMobileTradeModalOpen] = useState(false);
-const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long");
+  const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long");
   const [exchangeConfig, setExchangeConfig] = useState<any>();
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
   const [orderdata, setorderdata] = useState<any>([]);
@@ -154,7 +156,7 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
   const [usedMargin, setUsedMargin] = useState('0.00');
   const [balance, setBalance] = useState('0.00');
   const [upnl, setUpnl] = useState(0)
-  const [userFees, setUserFees] = useState(["0.00038", "0.00012"]);
+  const [userFees, setUserFees] = useState(["0.00038", "0.00018"]);
   const [amountIn, setAmountIn] = useState(BigInt(0));
   const [sliderPercent, setSliderPercent] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -306,6 +308,13 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
       });
     }
   }, [activeOrderType]);
+
+  useEffect(() => {
+    const signerKey = `crystal_perps_signer_${scaAddress?.toLowerCase() || 'default'}`;
+    const savedSigner = localStorage.getItem(signerKey);
+    setSigner(savedSigner !== null ? JSON.parse(savedSigner) : {});
+  }, [scaAddress]);
+
   useEffect(() => {
     updateIndicatorPosition();
 
@@ -2218,14 +2227,15 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
                 const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
                 const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
                 const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
-                localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
+                const signatureKey = `crystal_perps_signer_${scaAddress?.toLowerCase() || 'default'}`;
+                localStorage.setItem(signatureKey, JSON.stringify(tempsigner));
                 setSigner(tempsigner)
               }
               else {
                 await handleTrade();
               }
             }}
-            disabled={true || address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0 || (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize)) || Number(inputString) > (Number(availableBalance) * Number(leverage)))}
+            disabled={address && Object.keys(signer).length != 0 && (isSigning || !inputString || Number(inputString) == 0 || (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize)) || Number(inputString) > (Number(availableBalance) * Number(leverage)))}
           >
             {isSigning ? (
               <div className="perps-button-spinner"></div>
@@ -2377,7 +2387,7 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
                 />
               </div>
               <div className="value-container">
-                {Number(userFees[0]) * 100}% / {Number(userFees[1]) * 100}%
+                {(Number(userFees[0]) * 100).toFixed(3)}% / {(Number(userFees[1]) * 100).toFixed(3)}%
               </div>
             </div>
           </div>
@@ -2397,7 +2407,8 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
                 const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
                 const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
                 const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
-                localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
+                const signatureKey = `crystal_perps_signer_${scaAddress?.toLowerCase() || 'default'}`;
+                localStorage.setItem(signatureKey, JSON.stringify(tempsigner));
                 setSigner(tempsigner)
                 setpopup(30)
               }
@@ -2420,7 +2431,8 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
                 const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
                 const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
                 const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
-                localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
+                const signatureKey = `crystal_perps_signer_${scaAddress?.toLowerCase() || 'default'}`;
+                localStorage.setItem(signatureKey, JSON.stringify(tempsigner));
                 setSigner(tempsigner)
                 setpopup(31)
               }
@@ -3126,7 +3138,8 @@ const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long")
                       const apiSig = await signMessageAsync({ message: "action: edgeX Onboard\nonlySignOn: https://pro.edgex.exchange" })
                       const privateKey = '0x' + (BigInt(keccak256(signature)) >> 5n).toString(16).padStart(64, "0");
                       const tempsigner = { ...starkPubFromPriv(privateKey), ...generateApiKeyFromSignature(apiSig), signature: apiSig };
-                      localStorage.setItem("crystal_perps_signer", JSON.stringify(tempsigner));
+                      const signatureKey = `crystal_perps_signer_${scaAddress?.toLowerCase() || 'default'}`;
+                      localStorage.setItem(signatureKey, JSON.stringify(tempsigner));
                       setSigner(tempsigner)
                     }
                     else {
