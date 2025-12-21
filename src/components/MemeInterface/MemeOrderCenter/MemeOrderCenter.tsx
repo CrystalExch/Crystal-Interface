@@ -180,14 +180,13 @@ interface TransactionFilters {
 
 interface SellPopupProps {
   showSellPopup: boolean;
-  selectedPosition: Position;
+  sellToken: any;
   sellAmount: string;
   sellSliderPercent: number;
   onClose: () => void;
   onSellAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSellSliderChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSellConfirm: () => void;
-  onMaxClick: () => void;
   fmt: (v: number, d?: number) => string;
   currentPrice: number;
   userAddr: string;
@@ -350,14 +349,13 @@ const Tooltip: React.FC<{
 
 const SellPopup: React.FC<SellPopupProps> = ({
   showSellPopup,
-  selectedPosition,
+  sellToken,
   sellAmount,
   sellSliderPercent,
   onClose,
   onSellAmountChange,
   onSellSliderChange,
   onSellConfirm,
-  onMaxClick,
   currentPrice,
   userAddr,
   subWallets,
@@ -430,7 +428,7 @@ const SellPopup: React.FC<SellPopupProps> = ({
       <div className="alerts-popup" onClick={(e) => e.stopPropagation()}>
         <div className="alerts-popup-header">
           <h3 className="alerts-popup-title">
-            Sell {selectedPosition.name} coin
+            Sell {sellToken.name} coin
           </h3>
           <button className="alerts-close-button" onClick={onClose}>
             <img src={closebutton} className="explorer-close-button" />
@@ -447,15 +445,15 @@ const SellPopup: React.FC<SellPopupProps> = ({
                 <div className="meme-balance-display">
                   <img src={walleticon} className="meme-wallet-icon" />
                   {(() => {
-                    const totalTokenBalance = Number(selectedPosition.remainingTokens) / 1e18;
+                    const totalTokenBalance = Number(sellToken.remainingTokens) / 1e18;
                     return (
                       totalTokenBalance *
-                      (selectedPosition.lastPrice || currentPrice)
+                      (sellToken.lastPrice || currentPrice)
                     ).toFixed(2);
                   })()}{' '}
                   MON
                 </div>
-                <button className="meme-balance-max-sell" onClick={onMaxClick}>
+                <button className="meme-balance-max-sell" onClick={() => handleMarkClick(100)}>
                   MAX
                 </button>
               </div>
@@ -538,7 +536,7 @@ const SellPopup: React.FC<SellPopupProps> = ({
             {isLoading ? (
               <div className="meme-button-spinner"></div>
             ) : (
-              `Instantly Sell $${selectedPosition.symbol}`
+              `Instantly Sell $${sellToken.symbol}`
             )}
           </button>
         </div>
@@ -613,9 +611,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   const [_dragStartY, setDragStartY] = useState(0);
   const [_dragStartHeight, setDragStartHeight] = useState(0);
   const [showSellPopup, setShowSellPopup] = useState(false);
-  const [selectedPosition, setSelectedPosition] = useState<Position | null>(
-    null,
-  );
   const [sellAmount, setSellAmount] = useState('');
   const [sellSliderPercent, setSellSliderPercent] = useState(0);
   const [showTokenBalance, setShowTokenBalance] = useState(false);
@@ -649,26 +644,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       trackedActive = true;
     }
   }
-  const handleSellClose = useCallback(() => {
-    setShowSellPopup(false);
-    setSelectedPosition(null);
-    setSellToken({})
-    setSellAmount('');
-    setSellSliderPercent(0);
-  }, []);
-
-  const handleSellMaxClick = useCallback(() => {
-    if (selectedPosition) {
-      const totalTokenBalance = Number(selectedPosition.remainingTokens) / 1e18;
-      const maxMonAmount =
-        totalTokenBalance * (selectedPosition.lastPrice || currentPrice);
-      setSellAmount(maxMonAmount.toFixed(2));
-      setSellSliderPercent(100);
-    }
-  }, [
-    selectedPosition,
-    currentPrice,
-  ]);
 
   useEffect(() => {
     if (isTradesTabVisible && activeSection !== 'trades') {
@@ -893,7 +868,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   }, [activeSection]);
 
   const handleSellClick = (position: Position) => {
-    setSelectedPosition(position);
     setSellToken(position)
     setShowSellPopup(true);
     setSellAmount('');
@@ -902,15 +876,15 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
   const handleSellConfirm = async () => {
     if (
-      selectedPosition &&
+      sellToken &&
       sellAmount &&
       parseFloat(sellAmount) > 0 &&
       onSellPosition
     ) {
       try {
-        await onSellPosition(selectedPosition, sellAmount, false);
+        await onSellPosition(sellToken, sellAmount, false);
         setShowSellPopup(false);
-        setSelectedPosition(null);
+        setSellToken({})
         setSellAmount('');
         setSellSliderPercent(0);
       } catch (error) {
@@ -922,11 +896,11 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const percent = parseInt(e.target.value);
     setSellSliderPercent(percent);
-    if (selectedPosition) {
-      const totalTokenBalance = Number(selectedPosition.remainingTokens) / 1e18;
+    if (sellToken) {
+      const totalTokenBalance = Number(sellToken.remainingTokens) / 1e18;
       const maxMonAmount =
         totalTokenBalance *
-        (selectedPosition.lastPrice || currentPrice);
+        (sellToken.lastPrice || currentPrice);
       const newAmount = (maxMonAmount * percent) / 100;
       setSellAmount(newAmount.toFixed(2));
     }
@@ -935,17 +909,24 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   const handleSellAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSellAmount(value);
-    if (selectedPosition) {
-      const totalTokenBalance = Number(selectedPosition.remainingTokens) / 1e18;
+    if (sellToken) {
+      const totalTokenBalance = Number(sellToken.remainingTokens) / 1e18;
       const maxMonAmount =
         totalTokenBalance *
-        (selectedPosition.lastPrice || currentPrice);
+        (sellToken.lastPrice || currentPrice);
       if (maxMonAmount > 0) {
         const percent = (parseFloat(value) / maxMonAmount) * 100;
         setSellSliderPercent(Math.min(100, Math.max(0, percent)));
       }
     }
   };
+
+  const handleSellClose = useCallback(() => {
+    setShowSellPopup(false);
+    setSellToken({})
+    setSellAmount('');
+    setSellSliderPercent(0);
+  }, []);
 
   const formatWalletDisplay = (address: string) => {
     const addressLower = address.toLowerCase();
@@ -2299,17 +2280,16 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           <span className="meme-oc-no-data">{noDataMessage}</span>
         </div>
       )}
-      {selectedPosition && showSellPopup &&
+      {sellToken && showSellPopup &&
         (<SellPopup
           showSellPopup={showSellPopup}
-          selectedPosition={selectedPosition}
+          sellToken={sellToken}
           sellAmount={sellAmount}
           sellSliderPercent={sellSliderPercent}
           onClose={handleSellClose}
           onSellAmountChange={handleSellAmountChange}
           onSellSliderChange={handleSellSliderChange}
           onSellConfirm={handleSellConfirm}
-          onMaxClick={handleSellMaxClick}
           fmt={fmt}
           currentPrice={currentPrice}
           userAddr={userAddr}

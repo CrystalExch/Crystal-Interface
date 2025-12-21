@@ -1792,8 +1792,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
           const sellToken = position.tokenId as `0x${string}`
           const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
-          if ((token?.allowances?.[account.address.toLowerCase()]?.allowance || 0n) < inputAmountWei) {
-            const nonce = token?.allowances?.[account.address.toLowerCase()]?.nonce ?? 0n
+          if ((position?.allowances?.[account.address.toLowerCase()]?.allowance || 0n) < inputAmountWei) {
+            const nonce = position?.allowances?.[account.address.toLowerCase()]?.nonce ?? 0n
 
             const signature = await signTypedDataAsync(
               {
@@ -1890,8 +1890,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const settler = settings.chainConfig[activechain].zeroXSettler as `0x${string}`
           const sellToken = position.tokenId as `0x${string}`
           const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
-          if ((token?.allowances?.[account.address.toLowerCase()]?.allowance || 0n) < amountTokenWei) {
-            const nonce = token?.allowances?.[account.address.toLowerCase()]?.nonce ?? 0n
+          if ((position?.allowances?.[account.address.toLowerCase()]?.allowance || 0n) < amountTokenWei) {
+            const nonce = position?.allowances?.[account.address.toLowerCase()]?.nonce ?? 0n
 
             const signature = await signTypedDataAsync(
               {
