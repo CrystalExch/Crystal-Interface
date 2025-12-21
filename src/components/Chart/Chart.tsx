@@ -95,12 +95,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         isLimitOrderMode={isLimitOrderMode}
         perps={perps}
       />
-      <Overlay
-        isVisible={overlayVisible}
-        bgcolor={'rgb(6,6,6)'}
-        height={15}
-        maxLogoHeight={100}
-      />
     </div>
   )
 
