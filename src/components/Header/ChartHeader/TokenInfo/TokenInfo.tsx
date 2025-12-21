@@ -1877,73 +1877,77 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               <div className="market-filter-tabs" ref={perpsFilterTabsRef}>
                 {perpsFilterTabs}
               </div>
-
-              <div className="perps-markets-list-header">
-                <div className="favorites-header"></div>
-                <div onClick={() => handlePerpsSort('volume')}>
-                  Market / Volume
-                  <SortArrow
-                    sortDirection={perpsSortField === 'volume' ? perpsSortDirection : undefined}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePerpsSort('volume');
-                    }}
-                  />
+              
+              <div className="perps-markets-content-outer-wrapper">
+                <div className="perps-markets-content-wrapper">
+                  <div className="perps-markets-list-header">
+                    <div className="favorites-header"></div>
+                    <div onClick={() => handlePerpsSort('volume')}>
+                      Market / Volume
+                      <SortArrow
+                        sortDirection={perpsSortField === 'volume' ? perpsSortDirection : undefined}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePerpsSort('volume');
+                        }}
+                      />
+                    </div>
+                    <div className="markets-dropdown-chart-container" onClick={() => handlePerpsSort('price')}>
+                      Last Price
+                      <SortArrow
+                        sortDirection={perpsSortField === 'price' ? perpsSortDirection : undefined}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePerpsSort('price');
+                        }}
+                      />
+                    </div>
+                    <div className="perps-oi-header" onClick={() => handlePerpsSort('change')}>
+                      24hr Change
+                      <SortArrow
+                        sortDirection={perpsSortField === 'change' ? perpsSortDirection : undefined}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePerpsSort('change');
+                        }}
+                      />
+                    </div>
+                    <div className="perps-funding-header" onClick={() => handlePerpsSort('funding')}>
+                      8hr Funding
+                      <SortArrow
+                        sortDirection={perpsSortField === 'funding' ? perpsSortDirection : undefined}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePerpsSort('funding');
+                        }}
+                      />
+                    </div>
+                    <div className="markets-dropdown-price-container" onClick={() => handlePerpsSort('openInterest')}>
+                      Open Interest
+                      <SortArrow
+                        sortDirection={perpsSortField === 'openInterest' ? perpsSortDirection : undefined}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePerpsSort('openInterest');
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="perps-markets-list-virtualized" style={{ height: '400px' }}>
+                    <List
+                      ref={virtualizationListRef}
+                      height={400}
+                      width="100%"
+                      itemCount={filteredPerpsMarkets.length}
+                      itemSize={40}
+                      itemData={virtualizationData}
+                      overscanCount={2}
+                      itemKey={(index, data) => data.markets[index]?.contractName || index}
+                    >
+                      {PerpsMarketRow}
+                    </List>
+                  </div>
                 </div>
-                <div className="markets-dropdown-chart-container" onClick={() => handlePerpsSort('price')}>
-                  Last Price
-                  <SortArrow
-                    sortDirection={perpsSortField === 'price' ? perpsSortDirection : undefined}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePerpsSort('price');
-                    }}
-                  />
-                </div>
-                <div className="perps-oi-header" onClick={() => handlePerpsSort('change')}>
-                  24hr Change
-                  <SortArrow
-                    sortDirection={perpsSortField === 'change' ? perpsSortDirection : undefined}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePerpsSort('change');
-                    }}
-                  />
-                </div>
-                <div className="perps-funding-header" onClick={() => handlePerpsSort('funding')}>
-                  8hr Funding
-                  <SortArrow
-                    sortDirection={perpsSortField === 'funding' ? perpsSortDirection : undefined}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePerpsSort('funding');
-                    }}
-                  />
-                </div>
-                <div className="markets-dropdown-price-container" onClick={() => handlePerpsSort('openInterest')}>
-                  Open Interest
-                  <SortArrow
-                    sortDirection={perpsSortField === 'openInterest' ? perpsSortDirection : undefined}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handlePerpsSort('openInterest');
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="perps-markets-list-virtualized" style={{ height: '400px', width: '100%' }}>
-                <List
-                  ref={virtualizationListRef}
-                  height={400}
-                  width="100%"
-                  itemCount={filteredPerpsMarkets.length}
-                  itemSize={40}
-                  itemData={virtualizationData}
-                  overscanCount={2}
-                  itemKey={(index, data) => data.markets[index]?.contractName || index}
-                >
-                  {PerpsMarketRow}
-                </List>
               </div>
             </div>
           )}

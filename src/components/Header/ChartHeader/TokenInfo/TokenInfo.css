@@ -1598,26 +1598,6 @@
   text-align: center;
 }
 
-@media (max-width: 768px) {
-  .perps-markets-dropdown-content {
-    width: 100vw;
-    left: -12px;
-  }
-  
-  .perps-markets-list-header {
-    grid-template-columns: 20px 1fr 0.7fr 0.5fr 0.5fr 0.5fr;
-    font-size: 0.7rem;
-  }
-  
-  .perps-market-item {
-    grid-template-columns: 15px 1fr 0.7fr 0.5fr 0.5fr 0.5fr;
-  }
-}
-
-
-
-
-
 .perps-markets-list-virtualized {
   width: 100%;
 }
@@ -1662,6 +1642,27 @@
   will-change: transform;
   transform: translateZ(0);
   backface-visibility: hidden;
+}
+
+@media (max-width: 700px) {
+  .perps-markets-dropdown-content {
+    width: 100vw;
+  }
+
+  .perps-markets-content-outer-wrapper {
+    width: 100vw;
+    display: flex;
+    overflow-x: scroll;
+    position: relative;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    min-width: 0;
+  }
+
+  .perps-markets-content-wrapper {
+    width: 700px;
+    flex: 0 0 auto;
+  }
 }
 
 .perps-market-item-container {

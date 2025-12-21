@@ -307,7 +307,7 @@ const Perps: React.FC<PerpsProps> = ({
         left: centeredLeft
       });
     }
-  }, [activeOrderType]);
+  }, [activeOrderType, windowWidth < 1020, isMobileTradeModalOpen]);
 
   useEffect(() => {
     const signerKey = `crystal_perps_signer_${scaAddress?.toLowerCase() || 'default'}`;
@@ -2547,32 +2547,127 @@ const Perps: React.FC<PerpsProps> = ({
 
   return (
     <div className="main-content-wrapper">
-      {layoutSettings === 'alternative' && (
+      {windowWidth > 1020 && layoutSettings === 'alternative' && (
         tradeModal
       )}
-      <div className="perps-mobile-bottom-bar">
-        <button
-          className="perps-mobile-trade-button long"
-          onClick={() => {
-            setActiveTradeType("long");
-            setMobileTradeType("long");
-            setIsMobileTradeModalOpen(true);
-          }}
+      <div className="chartandorderbookandordercenter">
+        <div className="chartandorderbook">
+          <ChartOrderbookPanel
+            layoutSettings={layoutSettings}
+            orderbookPosition={orderbookPosition}
+            orderdata={{
+              roundedBuyOrders: roundedBuyOrders?.orders,
+              roundedSellOrders: roundedSellOrders?.orders,
+              spreadData,
+              priceFactor: 1 / baseInterval,
+              marketType: 0,
+              symbolIn: activeMarket?.quoteAsset ?? 'USD',
+              symbolOut: activeMarket.baseAsset,
+            }}
+            windowWidth={windowWidth}
+            mobileView={mobileView}
+            isOrderbookVisible={isOrderbookVisible}
+            orderbookWidth={orderbookWidth}
+            setOrderbookWidth={setOrderbookWidth}
+            obInterval={obInterval}
+            amountsQuote={roundedBuyOrders?.amountsQuote}
+            setAmountsQuote={setAmountsQuote}
+            obtrades={trades}
+            setOBInterval={setOBInterval}
+            baseInterval={baseInterval}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            activeTab={obTab}
+            setActiveTab={setOBTab}
+            updateLimitAmount={updateLimitAmount}
+            renderChartComponent={renderChartComponent}
+            reserveQuote={0n}
+            reserveBase={0n}
+            isOrderbookLoading={isOrderbookLoading}
+            perps={true}
+          />
+        </div>
+        <div
+          className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
         >
-          Long
-        </button>
-        <button
-          className="perps-mobile-trade-button short"
-          onClick={() => {
-            setActiveTradeType("short");
-            setMobileTradeType("short");
-            setIsMobileTradeModalOpen(true);
-          }}
-        >
-          Short
-        </button>
+          <div
+            className="ordercenter-drag-handle"
+            onMouseDown={handleVertMouseDown}
+          />
+        </div>
+        <OrderCenter
+          orders={[]}
+          tradehistory={[]}
+          canceledorders={[]}
+          router={router}
+          address={address}
+          trades={tradesByMarket}
+          currentMarket={
+            perpsActiveMarketKey.replace(
+              new RegExp(
+                `^${wethticker}|${wethticker}$`,
+                'g'
+              ),
+              ethticker
+            )
+          }
+          orderCenterHeight={orderCenterHeight}
+          hideBalances={true}
+          tokenList={[]}
+          onMarketSelect={handlePerpsMarketSelect}
+          setSendTokenIn={setSendTokenIn}
+          setpopup={setpopup}
+          sortConfig={memoizedSortConfig}
+          onSort={emptyFunction}
+          tokenBalances={[]}
+          activeSection={perpsActiveSection}
+          setActiveSection={setPerpsActiveSection}
+          filter={filter}
+          setFilter={setFilter}
+          onlyThisMarket={onlyThisMarket}
+          setOnlyThisMarket={setOnlyThisMarket}
+          refetch={refetch}
+          sendUserOperationAsync={sendUserOperationAsync}
+          setChain={handleSetChain}
+          isVertDragging={isVertDragging}
+          isOrderCenterVisible={isOrderCenterVisible}
+          onLimitPriceUpdate={setCurrentLimitPrice}
+          openEditOrderPopup={openEditOrderPopup}
+          openEditOrderSizePopup={openEditOrderSizePopup}
+          marketsData={{}}
+          isPerps={true}
+          perpsPositions={positions}
+          perpsOpenOrders={orders}
+          handleClose={handleClose}
+          handleCancel={handleCancel}
+        />
+        <div className="perps-mobile-bottom-bar">
+          <button
+            className="perps-mobile-trade-button long"
+            onClick={() => {
+              setActiveTradeType("long");
+              setMobileTradeType("long");
+              setIsMobileTradeModalOpen(true);
+            }}
+          >
+            Long
+          </button>
+          <button
+            className="perps-mobile-trade-button short"
+            onClick={() => {
+              setActiveTradeType("short");
+              setMobileTradeType("short");
+              setIsMobileTradeModalOpen(true);
+            }}
+          >
+            Short
+          </button>
+        </div>
       </div>
-      {isMobileTradeModalOpen && (
+      {windowWidth > 1020 && layoutSettings === 'default' && (
+        tradeModal
+      )}
+      {windowWidth <= 1020 && isMobileTradeModalOpen && (
         <>
           <div 
             className="perps-mobile-modal-overlay"
@@ -2794,7 +2889,6 @@ const Perps: React.FC<PerpsProps> = ({
                       }
                     }}
                     className="perps-trade-input"
-                    autoFocus
                   />
                   <div
                     className="perps-size-unit-dropdown"
@@ -3342,7 +3436,7 @@ const Perps: React.FC<PerpsProps> = ({
                       />
                     </div>
                     <div className="value-container">
-                      {Number(userFees[0]) * 100}% / {Number(userFees[1]) * 100}%
+                      {(Number(userFees[0]) * 100).toFixed(3)}% / {(Number(userFees[1]) * 100).toFixed(3)}%
                     </div>
                   </div>
                 </div>
@@ -3351,101 +3445,6 @@ const Perps: React.FC<PerpsProps> = ({
             </div>
           </div>
         </>
-      )}
-      <div className="chartandorderbookandordercenter">
-        <div className="chartandorderbook">
-          <ChartOrderbookPanel
-            layoutSettings={layoutSettings}
-            orderbookPosition={orderbookPosition}
-            orderdata={{
-              roundedBuyOrders: roundedBuyOrders?.orders,
-              roundedSellOrders: roundedSellOrders?.orders,
-              spreadData,
-              priceFactor: 1 / baseInterval,
-              marketType: 0,
-              symbolIn: activeMarket?.quoteAsset ?? 'USD',
-              symbolOut: activeMarket.baseAsset,
-            }}
-            windowWidth={windowWidth}
-            mobileView={mobileView}
-            isOrderbookVisible={isOrderbookVisible}
-            orderbookWidth={orderbookWidth}
-            setOrderbookWidth={setOrderbookWidth}
-            obInterval={obInterval}
-            amountsQuote={roundedBuyOrders?.amountsQuote}
-            setAmountsQuote={setAmountsQuote}
-            obtrades={trades}
-            setOBInterval={setOBInterval}
-            baseInterval={baseInterval}
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            activeTab={obTab}
-            setActiveTab={setOBTab}
-            updateLimitAmount={updateLimitAmount}
-            renderChartComponent={renderChartComponent}
-            reserveQuote={0n}
-            reserveBase={0n}
-            isOrderbookLoading={isOrderbookLoading}
-            perps={true}
-          />
-        </div>
-        <div
-          className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
-        >
-          <div
-            className="ordercenter-drag-handle"
-            onMouseDown={handleVertMouseDown}
-          />
-        </div>
-        <OrderCenter
-          orders={[]}
-          tradehistory={[]}
-          canceledorders={[]}
-          router={router}
-          address={address}
-          trades={tradesByMarket}
-          currentMarket={
-            perpsActiveMarketKey.replace(
-              new RegExp(
-                `^${wethticker}|${wethticker}$`,
-                'g'
-              ),
-              ethticker
-            )
-          }
-          orderCenterHeight={orderCenterHeight}
-          hideBalances={true}
-          tokenList={[]}
-          onMarketSelect={handlePerpsMarketSelect}
-          setSendTokenIn={setSendTokenIn}
-          setpopup={setpopup}
-          sortConfig={memoizedSortConfig}
-          onSort={emptyFunction}
-          tokenBalances={[]}
-          activeSection={perpsActiveSection}
-          setActiveSection={setPerpsActiveSection}
-          filter={filter}
-          setFilter={setFilter}
-          onlyThisMarket={onlyThisMarket}
-          setOnlyThisMarket={setOnlyThisMarket}
-          refetch={refetch}
-          sendUserOperationAsync={sendUserOperationAsync}
-          setChain={handleSetChain}
-          isVertDragging={isVertDragging}
-          isOrderCenterVisible={isOrderCenterVisible}
-          onLimitPriceUpdate={setCurrentLimitPrice}
-          openEditOrderPopup={openEditOrderPopup}
-          openEditOrderSizePopup={openEditOrderSizePopup}
-          marketsData={{}}
-          isPerps={true}
-          perpsPositions={positions}
-          perpsOpenOrders={orders}
-          handleClose={handleClose}
-          handleCancel={handleCancel}
-        />
-      </div>
-      {layoutSettings === 'default' && (
-        tradeModal
       )}
     </div>
   );

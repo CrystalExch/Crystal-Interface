@@ -1751,9 +1751,8 @@
   .meme-interface-container {
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - 150px);
+    max-height: calc(100vh - 110px);
     min-height: 450px;
-    padding-bottom: 40px;
     padding-top: 55px;
   }
 

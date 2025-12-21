@@ -1573,11 +1573,6 @@ display: flex;
 @media (max-width: 1020px) {
     .perps-mobile-bottom-bar {
         display: flex;
-        position: fixed;
-        bottom: 53px;
-        left: 0;
-        right: 0;
-        z-index: 100;
         gap: 8px;
         padding: 12px;
         background: rgb(6, 6, 6);
@@ -1689,8 +1684,11 @@ display: flex;
 
     .perps-mobile-modal-content {
         overflow-y: auto;
-        padding-bottom: 20px;
+        padding-bottom: 20vh;
         flex: 1;
     }
 
+    .perps-amount-section {
+        padding-top: 0px;
+    }
 }

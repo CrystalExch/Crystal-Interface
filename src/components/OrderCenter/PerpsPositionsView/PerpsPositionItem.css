@@ -20,6 +20,8 @@
   transition: background-color 0.15s ease;
   width: 100%;
   padding-left: 10px;
+  min-height: 42.9px;
+  max-height: 42.9px;
 }
 
 .perps-position-item:hover {

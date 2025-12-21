@@ -902,11 +902,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
     }
 
-    if (window.innerHeight > 1080) return 367.58;
-    if (window.innerHeight > 960) return 324.38;
-    if (window.innerHeight > 840) return 282.18;
-    if (window.innerHeight > 720) return 239.98;
-    return 198.78;
+    if (window.innerHeight > 1080) return 368.3;
+    if (window.innerHeight > 960) return 325.4;
+    if (window.innerHeight > 840) return 282.5;
+    if (window.innerHeight > 720) return 239.6;
+    return 196.7;
   });
   const [isVertDragging, setIsVertDragging] = useState(false);
   const initialHeightRef = useRef(0);

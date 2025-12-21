@@ -682,15 +682,15 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   useEffect(() => {
     const handleResize = () => {
       if (window.innerHeight > 1080) {
-        onHeightChange?.(367.58);
+        onHeightChange?.(368.3);
       } else if (window.innerHeight > 960) {
-        onHeightChange?.(324.38);
+        onHeightChange?.(325.4);
       } else if (window.innerHeight > 840) {
-        onHeightChange?.(282.18);
+        onHeightChange?.(282.5);
       } else if (window.innerHeight > 720) {
-        onHeightChange?.(239.98);
+        onHeightChange?.(239.6);
       } else {
-        onHeightChange?.(198.78);
+        onHeightChange?.(196.7);
       }
     };
 

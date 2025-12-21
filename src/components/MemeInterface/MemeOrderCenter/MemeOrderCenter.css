@@ -157,12 +157,12 @@
   align-items: flex-start;
   background-color: rgba(6, 6, 6, 0.95);
   display: grid;
-  padding: 5px 15px 4px 15px;
+  padding: 6px 15px 4px 15px;
   position: sticky;
   top: 0;
   width: 100%;
   height: 32px;
-  margin-bottom: -8px;
+  margin-bottom: -4px;
 }
 
 .meme-oc-items {
@@ -172,7 +172,6 @@
   overflow-y: auto;
   max-height: calc(100% - 31px);
   flex: 1 1 0%;
-  min-height: 150px;
 }
 
 .meme-oc-item {

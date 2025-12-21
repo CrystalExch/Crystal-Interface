@@ -1584,11 +1584,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
     }
 
-    if (window.innerHeight > 1080) return 367.58;
-    if (window.innerHeight > 960) return 324.38;
-    if (window.innerHeight > 840) return 282.18;
-    if (window.innerHeight > 720) return 239.98;
-    return 198.78;
+    const h = window.innerHeight
+    const sizes = [368.3, 325.4, 282.5, 239.6, 196.7]
+    const breaks = [1080, 960, 840, 720]
+    
+    let i =
+      h > breaks[0] ? 0 :
+      h > breaks[1] ? 1 :
+      h > breaks[2] ? 2 :
+      h > breaks[3] ? 3 : 4
+    
+    return sizes[Math.min(i + (windowWidth <= 1020 ? 1 : 0), sizes.length - 1)]
   });
   const [selectedInterval, setSelectedInterval] = useState(() => {
     const savedTimeframe = localStorage.getItem('crystal_chart_timeframe');
@@ -8265,17 +8271,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   // auto resizer
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerHeight > 1080) {
-        setOrderCenterHeight(367.58);
-      } else if (window.innerHeight > 960) {
-        setOrderCenterHeight(324.38);
-      } else if (window.innerHeight > 840) {
-        setOrderCenterHeight(282.18);
-      } else if (window.innerHeight > 720) {
-        setOrderCenterHeight(239.98);
-      } else {
-        setOrderCenterHeight(198.78);
-      }
+      const h = window.innerHeight
+      const sizes = [368.3, 325.4, 282.5, 239.6, 196.7]
+      const breaks = [1080, 960, 840, 720]
+      
+      let i =
+        h > breaks[0] ? 0 :
+        h > breaks[1] ? 1 :
+        h > breaks[2] ? 2 :
+        h > breaks[3] ? 3 : 4
+      
+      setOrderCenterHeight(sizes[Math.min(i + (windowWidth <= 1020 ? 1 : 0), sizes.length - 1)])      
     };
 
     window.addEventListener('resize', handleResize);
@@ -16144,11 +16150,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
                     let defaultHeight: number;
 
-                    if (window.innerHeight > 1080) defaultHeight = 367.58;
-                    else if (window.innerHeight > 960) defaultHeight = 324.38;
-                    else if (window.innerHeight > 840) defaultHeight = 282.18;
-                    else if (window.innerHeight > 720) defaultHeight = 239.98;
-                    else defaultHeight = 198.78;
+                    const h = window.innerHeight
+                    const sizes = [368.3, 325.4, 282.5, 239.6, 196.7]
+                    const breaks = [1080, 960, 840, 720]
+                    
+                    let i =
+                      h > breaks[0] ? 0 :
+                      h > breaks[1] ? 1 :
+                      h > breaks[2] ? 2 :
+                      h > breaks[3] ? 3 : 4
+                    
+                    defaultHeight = sizes[Math.min(i + (windowWidth <= 1020 ? 1 : 0), sizes.length - 1)]
 
                     setOrderCenterHeight(defaultHeight);
                     localStorage.setItem(

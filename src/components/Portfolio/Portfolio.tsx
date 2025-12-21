@@ -637,15 +637,15 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 1020);
     if (window.innerHeight > 1080) {
-      setOrderCenterHeight(363.58);
+      setOrderCenterHeight(368.3);
     } else if (window.innerHeight > 960) {
-      setOrderCenterHeight(322.38);
+      setOrderCenterHeight(325.4);
     } else if (window.innerHeight > 840) {
-      setOrderCenterHeight(281.18);
+      setOrderCenterHeight(282.5);
     } else if (window.innerHeight > 720) {
-      setOrderCenterHeight(239.98);
+      setOrderCenterHeight(239.6);
     } else {
-      setOrderCenterHeight(198.78);
+      setOrderCenterHeight(196.7);
     }
   };
   useEffect(() => {
@@ -723,11 +723,11 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
   const activeOrders = orders.length;
   const [orderCenterHeight, setOrderCenterHeight] = useState(() => {
-    if (window.innerHeight > 1080) return 363.58;
-    if (window.innerHeight > 960) return 322.38;
-    if (window.innerHeight > 840) return 281.18;
-    if (window.innerHeight > 720) return 239.98;
-    return 198.78;
+    if (window.innerHeight > 1080) return 368.3;
+    if (window.innerHeight > 960) return 325.4;
+    if (window.innerHeight > 840) return 282.5;
+    if (window.innerHeight > 720) return 239.6;
+    return 196.7;
   });
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1020);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
