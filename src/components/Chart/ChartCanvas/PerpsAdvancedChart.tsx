@@ -718,11 +718,12 @@ const PerpsAdvancedChart: React.FC<ChartCanvasProps> = ({
     widgetRef.current.onChartReady(async () => {
       await widgetRef.current.activeChart().createStudy('Volume', false, false)
       const panes = widgetRef.current.activeChart().getPanes?.();
-      if (panes) {
-        for (const pane of panes) {
-          pane.setHeight?.(100);
+      if (panes && panes.length >= 2) {
+        const h = panes[0]?.getHeight?.()
+        if (typeof h === 'number') {
+          panes[1]?.setHeight?.(h / 7)
         }
-      }
+      }      
       
       widgetRef.current.headerReady().then(() => {
         if (!widgetRef.current.activeChart() || perps) {

@@ -276,15 +276,11 @@
   }
 
   .meme-search-modal {
-    max-width: 100%;
+    width: 100% !important;
     max-height: 95vh;
   }
 
   .meme-search-header {
-    padding: 12px 16px;
-  }
-
-  .meme-search-bar {
     padding: 12px 16px;
   }
 
