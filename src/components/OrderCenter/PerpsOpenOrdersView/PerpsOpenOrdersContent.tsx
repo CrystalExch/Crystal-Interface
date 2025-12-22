@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import TooltipLabel from '../../../components/TooltipLabel/TooltipLabel.tsx';
 import SortableHeaderCell from '../SortableHeaderCell/SortableHeaderCell';
 import PerpsOpenOrdersItem from './PerpsOpenOrdersItem';
@@ -42,6 +42,7 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
       }
     },
   );
+  const [isSigning, setIsSigning] = useState(false);
 
   const currentItems = sortedItems.length > 0 
     ? sortedItems.slice((currentPage - 1) * pageSize, currentPage * pageSize)
@@ -161,12 +162,22 @@ const PerpsOpenOrdersContent: React.FC<PerpsOpenOrdersContentProps> = ({
           />
         </SortableHeaderCell>
         <div
-          className={`cancel-all-oc-cell ${orders.length === 0 ? 'disabled' : ''}  ${false ? 'signing' : ''}`}
+          className={`cancel-all-oc-cell ${orders.length === 0 ? 'disabled' : ''}  ${isSigning ? 'signing' : ''}`}
         >
-          {!false ? (
+          {!isSigning ? (
           <span
             className="cancel-all-label"
             onClick={async () => {
+              if (orders.length === 0) return;
+              try {
+                setIsSigning(true);
+                await Promise.all(
+                  orders.map(o => handleCancel(o.id))
+                );
+              } catch (error) {
+              } finally {
+                setIsSigning(false);
+              }
             }}
           >
             {t('cancelAll')}

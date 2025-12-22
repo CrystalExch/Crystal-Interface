@@ -473,7 +473,8 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
-    if (Object.keys(activeMarketRef.current).length == 0) return;
+    if (Object.keys(activeMarket).length == 0) return;
+    activeMarketRef.current = activeMarket;
     widgetRef.current = new (window as any).TradingView.widget({
       container: chartRef.current,
       library_path: '/charting_library/',
@@ -920,7 +921,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       dataRef.current = {};
       widgetRef.current.remove();
     };
-  }, [Object.keys(activeMarketRef.current).length > 0, showChartOutliers]);
+  }, [Object.keys(activeMarket).length > 0, showChartOutliers]);
 
   useEffect(() => {
     try {
@@ -928,7 +929,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       if (chartReady) {
         setOverlayVisible(true);
         widgetRef.current.setSymbol(
-          `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}/${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`,
+          `${normalizeTicker(activeMarket.baseAsset, activechain)}/${normalizeTicker(activeMarket.quoteAsset, activechain)}`,
           selectedInterval === '1d'
             ? '1D'
             : selectedInterval === '4h'
