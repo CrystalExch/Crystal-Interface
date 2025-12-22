@@ -481,7 +481,7 @@ const Loader = () => {
 
   return (
     <>
-      {<FullScreenOverlay isVisible={(stateloading || addressinfoloading)} />}
+      {/* {<FullScreenOverlay isVisible={(stateloading || addressinfoloading)} />} */}
       {ready && <App stateloading={stateloading} setstateloading={setstateloading} addressinfoloading={addressinfoloading} setaddressinfoloading={setaddressinfoloading} />}
     </>
   );
@@ -28799,8 +28799,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         })(),
       }}>
         <Routes>
-          <Route path="/" element={<Navigate to="/spectra" replace />} />
-          <Route path="*" element={<Navigate to="/spectra" replace />} />
+          <Route path="/" element={<Navigate to="/perps" replace />} />
+          <Route path="*" element={<Navigate to="/perps" replace />} />
           <Route path="/spectra"
             element={
               <TokenExplorer
