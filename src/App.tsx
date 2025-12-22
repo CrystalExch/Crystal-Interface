@@ -1215,7 +1215,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const saved = localStorage.getItem('crystal_perps_leverage');
     return saved !== null ? saved : '10';
   });
-  const [userLeverage, setUserLeverage] = useState<any>();
+  const [tempLeverage, setTempLeverage] = useState(
+    perpsLeverage || '10'
+  );
 
   const handlePerpsMarketSelect = useCallback((marketKey: any) => {
     setPerpsLimitChase(true);
@@ -20547,7 +20549,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   <input
                     ref={(el) => {
                       if (el && popup === 35) {
-                        const leverageValue = parseFloat(perpsLeverage) || 10;
+                        const leverageValue = parseFloat(tempLeverage) || 10;
                         const percent = ((leverageValue - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1)) * 100;
                         const thumbW = 16;
                         const container = el.parentElement;
@@ -20568,10 +20570,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     min="1"
                     max={perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage}
                     step="1"
-                    value={(parseFloat(perpsLeverage) || 10)}
+                    value={parseFloat(tempLeverage) || 10}
                     onChange={(e) => {
                       const value = e.target.value;
-                      setPerpsLeverage(value);
+                      setTempLeverage(value);
 
                       const container = e.target.parentElement;
                       if (container) {
@@ -20604,27 +20606,30 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                     }}
                     className="leverage-slider-input"
                     style={{
-                      background: `linear-gradient(to right, #aaaecf ${(((parseFloat(perpsLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100) || 0}%, #2a2a2f ${(((parseFloat(perpsLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100) || 0}%)`
+                      background: `linear-gradient(to right, #aaaecf ${(((parseFloat(tempLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100) || 0}%, #2a2a2f ${(((parseFloat(tempLeverage) || 10) - 1) / (Number(perpsMarketsData[perpsActiveMarketKey]?.displayMaxLeverage) - 1) * 100) || 0}%)`
                     }}
                   />
                   <div className="leverage-value-popup">
-                    {parseFloat(perpsLeverage) || 10}x
+                    {parseFloat(tempLeverage) || 10}x
                   </div>
                 </div>
 
                 <div className="leverage-display">
-                  Leverage: <span className="leverage-value">{parseFloat(perpsLeverage) || 10}x</span>
+                  Leverage: <span className="leverage-value">{parseFloat(tempLeverage) || 10}x</span>
                 </div>
               </div>
 
               <button
                 className="leverage-update-button"
                 onClick={async () => {
-                  if (Object.keys(perpsMarketsData).length == 0) return;
+                  if (Object.keys(perpsMarketsData).length == 0 || !perpsKeystore?.accountId) {
+                    setpopup(0);
+                    return;
+                  };
                   const payload = {
                     accountId: perpsKeystore.accountId,
                     contractId: perpsMarketsData[perpsActiveMarketKey]?.contractId,
-                    leverage: perpsLeverage
+                    leverage: tempLeverage
                   }
                   const ts = Date.now().toString()
                   const path = '/api/v1/private/account/updateLeverageSetting'
@@ -20643,8 +20648,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       body: JSON.stringify(payload)
                     }).then(r => r.json())
                   ])
-                  console.log(metaRes)
-                  localStorage.setItem('crystal_perps_leverage', perpsLeverage);
+                  setPerpsLeverage(tempLeverage)
+                  localStorage.setItem('crystal_perps_leverage', tempLeverage);
                   setpopup(0);
                 }}
               >
@@ -29243,8 +29248,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 signMessageAsync={signMessageAsync}
                 leverage={perpsLeverage}
                 setLeverage={setPerpsLeverage}
-                userLeverage={userLeverage}
-                setUserLeverage={setUserLeverage}
                 signer={perpsKeystore}
                 setSigner={setPerpsKeystore}
                 setOrderCenterHeight={setOrderCenterHeight}
@@ -29254,6 +29257,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 perpsLimitChase={perpsLimitChase}
                 handlePerpsMarketSelect={handlePerpsMarketSelect}
                 scaAddress={scaAddress}
+                setTempLeverage={setTempLeverage}
               />
             } />
           <Route path="/leaderboard"

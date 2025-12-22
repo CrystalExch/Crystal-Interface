@@ -65,8 +65,6 @@ interface PerpsProps {
   signMessageAsync: any;
   leverage: string;
   setLeverage: (value: string) => void;
-  userLeverage: any;
-  setUserLeverage: any;
   signer: any;
   setSigner: any;
   setOrderCenterHeight: (height: number) => void;
@@ -76,6 +74,7 @@ interface PerpsProps {
   perpsLimitChase: any;
   handlePerpsMarketSelect: any;
   scaAddress: string;
+  setTempLeverage: any;
 }
 
 const Perps: React.FC<PerpsProps> = ({
@@ -129,8 +128,6 @@ const Perps: React.FC<PerpsProps> = ({
   signMessageAsync,
   leverage,
   setLeverage,
-  userLeverage,
-  setUserLeverage,
   signer,
   setSigner,
   setOrderCenterHeight,
@@ -139,7 +136,8 @@ const Perps: React.FC<PerpsProps> = ({
   setPerpsLimitChase,
   perpsLimitChase,
   handlePerpsMarketSelect,
-  scaAddress
+  scaAddress,
+  setTempLeverage
 }) => {
   const [isMobileTradeModalOpen, setIsMobileTradeModalOpen] = useState(false);
   const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long");
@@ -157,6 +155,7 @@ const Perps: React.FC<PerpsProps> = ({
   const [balance, setBalance] = useState('0.00');
   const [upnl, setUpnl] = useState(0)
   const [userFees, setUserFees] = useState(["0.00038", "0.00018"]);
+  const [userLeverage, setUserLeverage] = useState<any>();
   const [amountIn, setAmountIn] = useState(BigInt(0));
   const [sliderPercent, setSliderPercent] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -987,7 +986,8 @@ const Perps: React.FC<PerpsProps> = ({
 
   useEffect(() => {
     if (!activeMarket?.contractId || (Object.keys(signer).length > 0 && !userLeverage)) return;
-    setLeverage(userLeverage?.[activeMarket?.contractId]?.maxLeverage ? userLeverage?.[activeMarket?.contractId]?.maxLeverage : activeMarket?.displayMaxLeverage)
+    setLeverage(userLeverage?.[activeMarket?.contractId]?.maxLeverage ? userLeverage?.[activeMarket?.contractId]?.maxLeverage : activeMarket?.defaultLeverage)
+    setTempLeverage(userLeverage?.[activeMarket?.contractId]?.maxLeverage ? userLeverage?.[activeMarket?.contractId]?.maxLeverage : activeMarket?.defaultLeverage)
     setLeverageIsLoaded(true)
   }, [activeMarket?.contractId, userLeverage])
 
@@ -1620,7 +1620,7 @@ const Perps: React.FC<PerpsProps> = ({
         clearTimeout(accreconnectIntervalRef.current);
         accreconnectIntervalRef.current = null;
       }
-      setUserLeverage()
+      setUserLeverage(undefined)
     };
   }, [signer?.publicKey]);
 
