@@ -475,7 +475,7 @@ const PerpsAdvancedChart: React.FC<ChartCanvasProps> = ({
       interval: localStorage.getItem('crystal_chart_timeframe') || '5',
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       locale: 'en',
-      debug: true,
+      debug: false,
       theme: 'dark',
       supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
       auto_save_delay: 0.1,
@@ -716,16 +716,56 @@ const PerpsAdvancedChart: React.FC<ChartCanvasProps> = ({
       },
     });
 
-    widgetRef.current.onChartReady(async () => {
-      await widgetRef.current.activeChart().createStudy('Volume', false, false)
-      const panes = widgetRef.current.activeChart().getPanes?.();
-      if (panes && panes.length >= 2) {
-        const h = panes[0]?.getHeight?.()
-        if (typeof h === 'number') {
-          panes[1]?.setHeight?.(h / 7)
+    const waitForActiveChart = (widgetRef: any, cb: () => void) => {
+      const i = setInterval(() => {
+        try {
+          const chart = widgetRef.current?.activeChart?.();
+          if (chart) {
+            clearInterval(i);
+            cb();
+          }
+        } catch (e) {
         }
+      }, 10);
+    };
+
+    waitForActiveChart(widgetRef, async () => {
+      try {
+        await widgetRef.current.activeChart().createStudy('Volume', false, false)
+        const panes = widgetRef.current.activeChart().getPanes?.();
+        if (panes && panes.length >= 2) {
+          const h = panes[0]?.getHeight?.()
+          if (typeof h === 'number') {
+            panes[1]?.setHeight?.(h / 7)
+          }
+        }
+        
+      localAdapterRef.current?.getChartContent(`layout_${`${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}_${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`}`).then(async (content) => {
+        if (content) {
+          let layout =
+            typeof content === 'string' ? JSON.parse(content) : content;
+
+          if (layout) {
+            layout?.charts?.forEach((chart: any) => {
+              chart?.panes?.forEach((pane: any) => {
+                pane?.sources?.forEach((src: any) => {
+                  if (src?.state?.interval) delete src.state.interval;
+                });
+              });
+            });
+            await widgetRef.current.load(layout);
+          }
+        }
+      })
+      .catch((err: string) => {
+        console.error(err);
+      });
+      } catch (e) {
+        console.error(e);
       }
-      
+    });
+
+    widgetRef.current.onChartReady(async () => {
       widgetRef.current.headerReady().then(() => {
         if (!widgetRef.current.activeChart() || perps) {
           return;
@@ -777,32 +817,8 @@ const PerpsAdvancedChart: React.FC<ChartCanvasProps> = ({
       });
 
       await widgetRef.current.activeChart().dataReady();
-      setOverlayVisible(false);
       setChartReady(true);
-
-      const marketId = `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}_${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`;
-      const chartId = `layout_${marketId}`;
-
-      localAdapterRef.current?.getChartContent(chartId).then(async (content) => {
-        if (content) {
-          let layout =
-            typeof content === 'string' ? JSON.parse(content) : content;
-
-          if (layout) {
-            layout?.charts?.forEach((chart: any) => {
-              chart?.panes?.forEach((pane: any) => {
-                pane?.sources?.forEach((src: any) => {
-                  if (src?.state?.interval) delete src.state.interval;
-                });
-              });
-            });
-            await widgetRef.current.load(layout);
-          }
-        }
-      })
-      .catch((err: string) => {
-        console.error(err);
-      });
+      setOverlayVisible(false);
 
       widgetRef.current.subscribe('onAutoSaveNeeded', () => {
         widgetRef.current.save((layout: any) => {
