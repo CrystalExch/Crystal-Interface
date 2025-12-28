@@ -475,7 +475,7 @@ const PerpsAdvancedChart: React.FC<ChartCanvasProps> = ({
       interval: localStorage.getItem('crystal_chart_timeframe') || '5',
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       locale: 'en',
-      debug: false,
+      debug: true,
       theme: 'dark',
       supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
       auto_save_delay: 0.1,
@@ -602,7 +602,7 @@ const PerpsAdvancedChart: React.FC<ChartCanvasProps> = ({
                     ? 14400
                     : resolution === '60'
                       ? 3600
-                      : Number(resolution) * 60) * 10000).toString(),
+                      : Number(resolution) * 60) * 100000).toString(),
                   filterEndKlineTimeExclusive: (to * 1000).toString(),
                   ...(offset ? { offsetData: offset } : {})
                 })
@@ -724,7 +724,7 @@ const PerpsAdvancedChart: React.FC<ChartCanvasProps> = ({
         if (typeof h === 'number') {
           panes[1]?.setHeight?.(h / 7)
         }
-      }      
+      }
       
       widgetRef.current.headerReady().then(() => {
         if (!widgetRef.current.activeChart() || perps) {
@@ -778,7 +778,8 @@ const PerpsAdvancedChart: React.FC<ChartCanvasProps> = ({
 
       await widgetRef.current.activeChart().dataReady();
       setOverlayVisible(false);
-      
+      setChartReady(true);
+
       const marketId = `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}_${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`;
       const chartId = `layout_${marketId}`;
 

@@ -697,16 +697,10 @@
   overflow-x: scroll;
 }
 
-
-.filter-tab:hover {
-  background-color: #2a2a378f;
-}
-
 .filter-tab.active {
   color: #cad2e2;
-  background-color: #2a2a375e;
+  background-color: #2a2a3780;
 }
-
 
 .market-filter-tabs {
   display: flex;
@@ -731,7 +725,7 @@
   padding: 3px 10px;
   border-radius: 4px;
   transition: background-color 0.2s ease, color 0.2s ease;
-  background-color: #1c1c2355;
+  background-color: #2a2a3740;
   margin: 0 2px;
   flex-shrink: 0; 
 }
