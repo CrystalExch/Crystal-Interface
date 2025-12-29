@@ -623,7 +623,7 @@ const Perps: React.FC<PerpsProps> = ({
     const l2ExpireTime = (Date.now() + 365 * 24 * 60 * 60 * 1000)
     const l1ExpireTime = (Number(l2ExpireTime) - 9 * 24 * 60 * 60 * 1000)
     const l2Value = type == 'MARKET' ? Math.ceil(((side == 'BUY' ? (price * 10 * size) : Number(activeMarket?.tickSize))) * 100) / 100 : (side == 'BUY' ? (Math.ceil(price * size * 100) / 100) : (Math.floor(price * size * 100) / 100))
-    const limitFee = Math.ceil(l2Value * Number(type == 'MARKET' ? userFees[0] : userFees[0])).toString()
+    const limitFee = Math.ceil((type == 'MARKET' ? Math.ceil(((side == 'BUY' ? (price * 10 * size) : Number(activeMarket?.tickSize))) * 100) / 100 : (Math.ceil(price * size * 100) / 100)) * Number(type == 'MARKET' ? userFees[0] : userFees[1])).toString()
     const clientOrderId = Math.random().toString().slice(2).replace(/^0+/, '');
     const l2Nonce = BigInt(sha256(toUtf8Bytes(clientOrderId)).slice(0, 10)).toString()
     const baseRes = Number(activeMarket.starkExResolution)
