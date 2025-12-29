@@ -439,7 +439,6 @@ const Perps: React.FC<PerpsProps> = ({
       : 'Quote';
   });
 
-  // Add this useEffect for vertical dragging
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isVertDragging) return;
@@ -449,14 +448,13 @@ const Perps: React.FC<PerpsProps> = ({
 
       const mouseDelta = e.clientY - initialMousePosRef.current;
       const newHeight = Math.max(
-        150, // minimum height
+        150,
         Math.min(
-          window.innerHeight - 400, // maximum height (leaves room for chart/orderbook)
-          initialHeightRef.current - mouseDelta // subtract because Y increases downward
+          window.innerHeight - 400,
+          initialHeightRef.current - mouseDelta
         )
       );
 
-      // CRITICAL FIX: Actually update the height state!
       setOrderCenterHeight(newHeight);
       localStorage.setItem('perps_orderCenterHeight', newHeight.toString());
     };
@@ -501,7 +499,7 @@ const Perps: React.FC<PerpsProps> = ({
         document.body.removeChild(overlay);
       }
     };
-  }, [isVertDragging, setOrderCenterHeight]); // Add setOrderCenterHeight to dependencies
+  }, [isVertDragging, setOrderCenterHeight]);
 
   const prevAmountsQuote = useRef(amountsQuote)
   const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string, amountsQuote: string }>({ orders: [], key: '', amountsQuote });
@@ -625,7 +623,7 @@ const Perps: React.FC<PerpsProps> = ({
     const l2ExpireTime = (Date.now() + 365 * 24 * 60 * 60 * 1000)
     const l1ExpireTime = (Number(l2ExpireTime) - 9 * 24 * 60 * 60 * 1000)
     const l2Value = type == 'MARKET' ? Math.ceil(((side == 'BUY' ? (price * 10 * size) : Number(activeMarket?.tickSize))) * 100) / 100 : (side == 'BUY' ? (Math.ceil(price * size * 100) / 100) : (Math.floor(price * size * 100) / 100))
-    const limitFee = Math.ceil(l2Value * Number(type == 'MARKET' ? userFees[0] : userFees[1])).toString()
+    const limitFee = Math.ceil(l2Value * Number(type == 'MARKET' ? userFees[0] : userFees[0])).toString()
     const clientOrderId = Math.random().toString().slice(2).replace(/^0+/, '');
     const l2Nonce = BigInt(sha256(toUtf8Bytes(clientOrderId)).slice(0, 10)).toString()
     const baseRes = Number(activeMarket.starkExResolution)
