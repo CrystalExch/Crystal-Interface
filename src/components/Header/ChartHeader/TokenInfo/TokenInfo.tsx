@@ -662,8 +662,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       )
       .map(market => ({
         ...market,
-        formattedVolume: `$${formatCommas(Number(market.value).toFixed(2))}`,
-        formattedOI: `$${formatCommas((Number(market.openInterest) * Number(market.lastPrice)).toFixed(2))}`,
+        formattedVolume: `$${formatCommas(Number(market.value).toFixed(0))}`,
+        formattedOI: `$${formatCommas((Number(market.openInterest) * Number(market.lastPrice)).toFixed(0))}`,
         formattedFunding: `${(market.fundingRate * 100).toFixed(4)}%`,
         formattedChange: `${(Number(market.priceChangePercent) >= 0 ? '+' : '') +
           (market?.priceChange ? formatCommas(market.priceChange) : '') + ' / ' +

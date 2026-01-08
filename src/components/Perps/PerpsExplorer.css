@@ -1,0 +1,115 @@
+.perps-trending-cell {
+    display: flex;
+    align-items: center;
+    color: #ffffff;
+    font-size: 0.9rem;
+}
+
+.perps-trending-market-cap-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.perps-trending-token-image-container {
+    align-items: center;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    height: 30px;
+    justify-content: center;
+    position: relative;
+    transition: --progress-angle 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 30px;
+    flex-shrink: 0;
+}
+
+.perps-trending-token-image {
+    border-radius: 50%;
+    background: transparent;
+    display: block;
+    flex-shrink: 0;
+    height: 30px;
+    -o-object-fit: cover;
+    object-fit: cover;
+    transition: all 0.3s ease;
+    width: 30px;
+}
+
+.perps-trending-progress-spacer {
+    align-items: center;
+    border-radius: 6px;
+    display: flex;
+    height: 30px;
+    justify-content: center;
+    width: 30px;
+}
+
+.trending-row.perps {
+    padding: 6px 20px;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 0.7fr 1fr;
+}
+
+.trending-header.perps {
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 0.7fr 1.05fr;
+}
+
+.perps-trending-token-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.perps-token-explorer-launchpad-logo-container {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: black;
+    width: 14px;
+    height: 14px;
+    border-radius: 20px;
+    border: 1px solid #AD5FFB;
+    bottom: -3px;
+    right: -3px;
+}
+
+.perps-token-explorer-launchpad-logo {
+    width: 8px;
+}
+
+.perps-trending-buy-btn {
+    background: #26b272;
+    border: none;
+    border-radius: 15px;
+    color: #0f0f12;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.3rem 1.2rem 0.3rem 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    justify-content: center;
+    letter-spacing: -0.5px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.perps-trending-sell-btn {
+    background: #d05959;
+    border: none;
+    border-radius: 15px;
+    color: #0f0f12;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.3rem 1.2rem 0.3rem 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    justify-content: center;
+    letter-spacing: -0.5px;
+    transition: all 0.2s ease;
+    position: relative;
+}

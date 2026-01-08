@@ -6108,7 +6108,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               <div className="trending-header-cell">Market Cap</div>
               <div className="trending-header-cell">Liquidity</div>
               <div className="trending-header-cell">Volume</div>
-              <div className="trending-header-cell">TXNS</div>
+              <div className="trending-header-cell">Trades</div>
               <div className="trending-header-cell">Token Info</div>
               <div className="trending-header-cell action-cell">Action</div>
             </div>
@@ -6230,11 +6230,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                       </div>
 
                       <div className="trending-token-info">
-                        <div className="trending-token-name-row"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            copyToClipboard(token.id);
-                          }}>
+                        <div className="trending-token-name-row">
                           <span className="trending-token-symbol">{token.symbol}</span>
                           <div className="trending-token-name-wrapper">
                             <span className="trending-token-name">{token.name}</span>
@@ -6242,7 +6238,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                               className="trending-copy-address-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigator.clipboard.writeText(token.address);
+                                copyToClipboard(token.id);
                               }}
                             >
                               <svg
@@ -6256,7 +6252,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                             </button>
                           </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <span className="trending-time-created" style={{
                             color: (Math.floor(Date.now() / 1000) - token.created) > 21600
                               ? '#f77f7d'

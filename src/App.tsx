@@ -11619,7 +11619,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
       }
     }
-    if (!path.startsWith('perps')) {
+    if (!path.startsWith('perps') && !path.startsWith('markets')) {
       setPerpsMarketsData({})
       setPerpsFilterOptions({})
     }
