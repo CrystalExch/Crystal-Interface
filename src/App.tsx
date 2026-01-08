@@ -173,6 +173,7 @@ import TokenDetail from './components/DegenToken/TokenDetail';
 import Tracker from './components/Tracker/Tracker.tsx';
 import Earn from './components/Earn/Earn.tsx';
 import Perps from './components/Perps/Perps.tsx';
+import PerpsExplorer from './components/Perps/PerpsExplorer.tsx';
 import PNLComponent from './components/PNLComponent/PNLComponent.tsx';
 import ImportWalletsPopup from './components/Tracker/ImportWalletsPopup.tsx';
 import TradingPresetsPopup from './components/Tracker/TradingPresetsPopup/TradingPresetsPopup';
@@ -29260,6 +29261,100 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setTempLeverage={setTempLeverage}
               />
             } />
+          <Route path="/markets"
+            element={
+              <PerpsExplorer
+                setpopup={setpopup}
+                appliedFilters={appliedExplorerFilters}
+                onOpenFiltersForColumn={handleOpenFiltersForColumn}
+                sendUserOperationAsync={sendUserOperationAsync}
+                terminalQueryData={terminalQueryData}
+                terminalRefetch={terminalRefetch}
+                setTokenData={setTokenData}
+                monUsdPrice={monUsdPrice}
+                subWallets={subWallets}
+                walletTokenBalances={walletTokenBalances}
+                activeWalletPrivateKey={oneCTSigner}
+                activechain={activechain}
+                isBlurred={isBlurred}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                }}
+                quickAmounts={quickAmounts}
+                setQuickAmounts={setQuickAmounts}
+                alertSettingsRef={alertSettingsRef}
+                pausedColumnRef={pausedColumnRef}
+                dispatch={dispatch}
+                hidden={hidden}
+                tokensByStatus={tokensByStatus}
+                alertSettings={alertSettings}
+                setAlertSettings={setAlertSettings}
+                loading={teLoading}
+                isLoading={isTokenExplorerLoading}
+                nonces={nonces}
+                selectedWallets={selectedWallets}
+                setSelectedWallets={setSelectedWallets}
+                createSubWallet={createSubWallet}
+                setOneCTDepositAddress={setOneCTDepositAddress}
+                layoutSettings={perpsLayoutSettings}
+                orderbookPosition={perpsOrderbookPosition}
+                windowWidth={windowWidth}
+                mobileView={mobileView}
+                isOrderbookVisible={isOrderbookVisible}
+                orderbookWidth={orderbookWidth}
+                setOrderbookWidth={setOrderbookWidth}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                activeTab={obTab}
+                setActiveTab={setOBTab}
+                router={router}
+                address={scaAddress}
+                orderCenterHeight={orderCenterHeight}
+                setSendTokenIn={setSendTokenIn}
+                sortConfig={memoizedSortConfig}
+                onSort={emptyFunction}
+                activeSection={activeSection}
+                setActiveSection={setActiveSection}
+                filter={filter}
+                setFilter={setFilter}
+                onlyThisMarket={onlyThisMarket}
+                setOnlyThisMarket={setOnlyThisMarket}
+                refetch={refetch}
+                setChain={handleSetChain}
+                isOrderCenterVisible={isOrderCenterVisible}
+                openEditOrderPopup={openEditOrderPopup}
+                openEditOrderSizePopup={openEditOrderSizePopup}
+                wethticker={wethticker}
+                ethticker={ethticker}
+                memoizedSortConfig={memoizedSortConfig}
+                emptyFunction={emptyFunction}
+                handleSetChain={handleSetChain}
+                selectedInterval={selectedInterval}
+                setSelectedInterval={setSelectedInterval}
+                perpsActiveMarketKey={perpsActiveMarketKey}
+                setperpsActiveMarketKey={setperpsActiveMarketKey}
+                perpsMarketsData={perpsMarketsData}
+                setPerpsMarketsData={setPerpsMarketsData}
+                perpsFilterOptions={perpsFilterOptions}
+                setPerpsFilterOptions={setPerpsFilterOptions}
+                signMessageAsync={signMessageAsync}
+                leverage={perpsLeverage}
+                setLeverage={setPerpsLeverage}
+                signer={perpsKeystore}
+                setSigner={setPerpsKeystore}
+                setOrderCenterHeight={setOrderCenterHeight}
+                isMarksVisible={isMarksVisible}
+                setIsMarksVisible={setIsMarksVisible}
+                setPerpsLimitChase={setPerpsLimitChase}
+                perpsLimitChase={perpsLimitChase}
+                handlePerpsMarketSelect={handlePerpsMarketSelect}
+                scaAddress={scaAddress}
+                setTempLeverage={setTempLeverage}
+              />
+            }
+          />
           <Route path="/leaderboard"
             element={
               <Leaderboard
