@@ -47,11 +47,11 @@
 
 .trending-row.perps {
     padding: 6px 20px;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 0.7fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 0.8fr 0.8fr 1fr;
 }
 
 .trending-header.perps {
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 0.7fr 1.05fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 0.8fr 0.8fr 1.05fr;
 }
 
 .perps-trending-token-info {
@@ -79,7 +79,7 @@
 }
 
 .perps-trending-buy-btn {
-    background: #26b272;
+    background: #26b26d;
     border: none;
     border-radius: 15px;
     color: #0f0f12;

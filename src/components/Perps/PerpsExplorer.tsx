@@ -54,6 +54,7 @@ import walleticon from '../../assets/wallet_icon.svg';
 import { TwitterHover } from '../TwitterHover/TwitterHover';
 import './PerpsExplorer.css';
 import { formatCommas } from '../../utils/numberDisplayFormat.ts';
+import SortArrow from '../OrderCenter/SortArrow/SortArrow.tsx';
 
 interface Token {
   id: string;
@@ -5692,11 +5693,60 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
     };
   }, [pausedColumn, newTokens, graduatingTokens, graduatedTokens]);
 
+  const [perpsSortField, setPerpsSortField] = useState<'market' | 'change' | 'volume' | 'openInterest' | 'funding' | 'trades' | null>('openInterest');
+  const [perpsSortDirection, setPerpsSortDirection] = useState<'asc' | 'desc' | undefined>('desc');
+
+  const handlePerpsSort = (field: 'market' | 'change' | 'volume' | 'openInterest' | 'funding' | 'trades') => {
+    if (perpsSortField === field) {
+      setPerpsSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setPerpsSortField(field);
+      setPerpsSortDirection('desc');
+    }
+  };
+
   const trendingTokens = useMemo(() => {
-    return (Object.values(perpsMarketsData).filter((t: any) => !!t.priceChangePercent) as any[])
-  }, [
-    perpsMarketsData
-  ]);
+    const filtered = (Object.values(perpsMarketsData).filter((t: any) => !!t.priceChangePercent) as any[])
+
+    if (perpsSortField && perpsSortDirection) {
+      filtered.sort((a, b) => {
+        if (perpsSortField === 'market') {
+          const cmp = a.baseAsset.localeCompare(b.baseAsset);
+          return perpsSortDirection === 'asc' ? cmp : -cmp;
+        }
+        let aValue: number = 0;
+        let bValue: number = 0;
+
+        switch (perpsSortField) {
+          case 'change':
+            aValue = parseFloat((a.priceChangePercent || 0).toString().replace(/[+%]/g, ''));
+            bValue = parseFloat((b.priceChangePercent || 0).toString().replace(/[+%]/g, ''));
+            break;
+          case 'volume':
+            aValue = parseFloat((a.value || 0).toString().replace(/,/g, ''));
+            bValue = parseFloat((b.value || 0).toString().replace(/,/g, ''));
+            break;
+          case 'openInterest':
+            aValue = parseFloat((a.openInterest || 0).toString()) * parseFloat((a.lastPrice || 0).toString());
+            bValue = parseFloat((b.openInterest || 0).toString()) * parseFloat((b.lastPrice || 0).toString());
+            break;
+          case 'funding':
+            aValue = parseFloat((a.fundingRate || 0).toString());
+            bValue = parseFloat((b.fundingRate || 0).toString());
+            break;
+          case 'trades':
+            aValue = parseFloat((a.trades || 0).toString());
+            bValue = parseFloat((b.trades || 0).toString());
+            break;
+          default:
+            return 0;
+        }
+        return perpsSortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      });
+    }
+
+    return filtered;
+  }, [perpsMarketsData, perpsSortField, perpsSortDirection]);
 
   const tokenCounts = useMemo(
     () => ({
@@ -6888,14 +6938,66 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
         ) : (
           <div className="trending-container">
             <div className="trending-header perps">
-              <div className="trending-header-cell pair-info-header">
-                Pair Info
+              <div className="trending-header-cell pair-info-header" onClick={() => handlePerpsSort('market')}>
+                Market
+                <SortArrow
+                  sortDirection={perpsSortField === 'market' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
+                  onClick={(e) => {
+                      e.stopPropagation();
+                      handlePerpsSort('market');
+                  }}
+                />
               </div>
-              <div className="trending-header-cell">Price</div>
-              <div className="trending-header-cell">Volume</div>
-              <div className="trending-header-cell">Open Interest</div>
-              <div className="trending-header-cell">Trades</div>
-              <div className="trending-header-cell">Funding</div>
+              <div className="trending-header-cell" onClick={() => handlePerpsSort('change')}>
+                Price
+                <SortArrow
+                  sortDirection={perpsSortField === 'change' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
+                  onClick={(e) => {
+                      e.stopPropagation();
+                      handlePerpsSort('change');
+                  }}
+                />
+              </div>
+              <div className="trending-header-cell" onClick={() => handlePerpsSort('volume')}>
+                Volume
+                <SortArrow
+                  sortDirection={perpsSortField === 'volume' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
+                  onClick={(e) => {
+                      e.stopPropagation();
+                      handlePerpsSort('volume');
+                  }}
+                />
+              </div>
+              <div className="trending-header-cell" onClick={() => handlePerpsSort('openInterest')}>
+                Open Interest
+                <SortArrow
+                  sortDirection={perpsSortField === 'openInterest' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
+                  onClick={(e) => {
+                      e.stopPropagation();
+                      handlePerpsSort('openInterest');
+                  }}
+                />
+              </div>
+              <div className="trending-header-cell" onClick={() => handlePerpsSort('funding')}>
+                Funding
+                <SortArrow
+                  sortDirection={perpsSortField === 'funding' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
+                  onClick={(e) => {
+                      e.stopPropagation();
+                      handlePerpsSort('funding');
+                  }}
+                />
+              </div>
+              <div className="trending-header-cell" onClick={() => handlePerpsSort('trades')}>
+                Trades
+                <SortArrow
+                  sortDirection={perpsSortField === 'trades' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
+                  onClick={(e) => {
+                      e.stopPropagation();
+                      handlePerpsSort('trades');
+                  }}
+                />
+              </div>
               <div className="trending-header-cell action-cell">Action</div>
             </div>
 
@@ -6996,14 +7098,6 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
                       </div>
                       <div
                         className={`perps-trending-token-image-container ${token.status === 'graduated' ? 'graduated' : ''} ${!displaySettings.squareImages ? 'circle-mode' : ''} ${!displaySettings.progressBar ? 'no-progress-ring' : ''} ${token.source === 'nadfun' ? 'nadfun-token' : ''}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(
-                            `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(token.iconURL)}`,
-                            '_blank',
-                            'noopener,noreferrer',
-                          );
-                        }}
                         style={
                           token.status === 'graduated' ||
                           !displaySettings.progressBar
@@ -7038,11 +7132,6 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
                                 {token.baseAsset.slice(0, 2).toUpperCase()}
                               </div>
                             )}
-                            <div
-                              className={`trending-image-overlay ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
-                            >
-                              <img className="camera-icon" src={camera} />
-                            </div>
                           </div>
                         </div>
                         <div className="perps-token-explorer-launchpad-logo-container">
@@ -7253,6 +7342,10 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
                       ${formatCommas((Number(token.openInterest) * Number(token.lastPrice)).toFixed(0))}
                     </div>
 
+                    <div className="trending-cell token-info-cell">
+                        {`${(token.fundingRate * 100).toFixed(4)}%`}
+                    </div>
+
                     <div className="perps-trending-cell">
                       <div className="trending-txns">
                         <div className="trending-txns-numbers">
@@ -7289,10 +7382,6 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
                           })()}
                         </div>
                       </div>
-                    </div>
-
-                    <div className="trending-cell token-info-cell">
-                        {`${(token.fundingRate * 100).toFixed(4)}%`}
                     </div>
 
                     <div className="trending-cell action-cell" style={{gap: '10px'}}>

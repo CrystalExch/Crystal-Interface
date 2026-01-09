@@ -1111,6 +1111,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       setSortDirection('desc');
     }
   };
+
   const handlePerpsSort = (field: 'volume' | 'price' | 'change' | 'funding' | 'openInterest') => {
     if (perpsSortField === field) {
       setPerpsSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
@@ -1119,6 +1120,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       setPerpsSortDirection('desc');
     }
   };
+  
   const filterMarketsByTab = (market: any) => {
     switch (activeFilter) {
       case 'favorites':
@@ -1885,7 +1887,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     <div onClick={() => handlePerpsSort('volume')}>
                       Market / Volume
                       <SortArrow
-                        sortDirection={perpsSortField === 'volume' ? perpsSortDirection : undefined}
+                        sortDirection={perpsSortField === 'volume' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
                         onClick={(e) => {
                           e.stopPropagation();
                           handlePerpsSort('volume');
@@ -1895,7 +1897,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     <div className="markets-dropdown-chart-container" onClick={() => handlePerpsSort('price')}>
                       Last Price
                       <SortArrow
-                        sortDirection={perpsSortField === 'price' ? perpsSortDirection : undefined}
+                        sortDirection={perpsSortField === 'price' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
                         onClick={(e) => {
                           e.stopPropagation();
                           handlePerpsSort('price');
@@ -1905,7 +1907,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     <div className="perps-oi-header" onClick={() => handlePerpsSort('change')}>
                       24hr Change
                       <SortArrow
-                        sortDirection={perpsSortField === 'change' ? perpsSortDirection : undefined}
+                        sortDirection={perpsSortField === 'change' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
                         onClick={(e) => {
                           e.stopPropagation();
                           handlePerpsSort('change');
@@ -1915,7 +1917,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     <div className="perps-funding-header" onClick={() => handlePerpsSort('funding')}>
                       8hr Funding
                       <SortArrow
-                        sortDirection={perpsSortField === 'funding' ? perpsSortDirection : undefined}
+                        sortDirection={perpsSortField === 'funding' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
                         onClick={(e) => {
                           e.stopPropagation();
                           handlePerpsSort('funding');
@@ -1925,7 +1927,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     <div className="markets-dropdown-price-container" onClick={() => handlePerpsSort('openInterest')}>
                       Open Interest
                       <SortArrow
-                        sortDirection={perpsSortField === 'openInterest' ? perpsSortDirection : undefined}
+                        sortDirection={perpsSortField === 'openInterest' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
                         onClick={(e) => {
                           e.stopPropagation();
                           handlePerpsSort('openInterest');
