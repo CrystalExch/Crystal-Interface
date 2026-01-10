@@ -5289,6 +5289,7 @@
 }
 
 .action-cell {
+  cursor: default !important;
   justify-content: flex-end;
 }
 

@@ -6938,7 +6938,7 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
         ) : (
           <div className="trending-container">
             <div className="trending-header perps">
-              <div className="trending-header-cell pair-info-header" onClick={() => handlePerpsSort('market')}>
+              <div className="trending-header-cell perps pair-info-header" onClick={() => handlePerpsSort('market')}>
                 Market
                 <SortArrow
                   sortDirection={perpsSortField === 'market' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
@@ -6948,7 +6948,7 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
                   }}
                 />
               </div>
-              <div className="trending-header-cell" onClick={() => handlePerpsSort('change')}>
+              <div className="trending-header-cell perps" onClick={() => handlePerpsSort('change')}>
                 Price
                 <SortArrow
                   sortDirection={perpsSortField === 'change' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
@@ -6958,7 +6958,7 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
                   }}
                 />
               </div>
-              <div className="trending-header-cell" onClick={() => handlePerpsSort('volume')}>
+              <div className="trending-header-cell perps" onClick={() => handlePerpsSort('volume')}>
                 Volume
                 <SortArrow
                   sortDirection={perpsSortField === 'volume' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
@@ -6968,7 +6968,7 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
                   }}
                 />
               </div>
-              <div className="trending-header-cell" onClick={() => handlePerpsSort('openInterest')}>
+              <div className="trending-header-cell perps" onClick={() => handlePerpsSort('openInterest')}>
                 Open Interest
                 <SortArrow
                   sortDirection={perpsSortField === 'openInterest' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
@@ -6978,7 +6978,7 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
                   }}
                 />
               </div>
-              <div className="trending-header-cell" onClick={() => handlePerpsSort('funding')}>
+              <div className="trending-header-cell perps" onClick={() => handlePerpsSort('funding')}>
                 Funding
                 <SortArrow
                   sortDirection={perpsSortField === 'funding' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
@@ -6988,7 +6988,7 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
                   }}
                 />
               </div>
-              <div className="trending-header-cell" onClick={() => handlePerpsSort('trades')}>
+              <div className="trending-header-cell perps" onClick={() => handlePerpsSort('trades')}>
                 Trades
                 <SortArrow
                   sortDirection={perpsSortField === 'trades' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
@@ -6998,7 +6998,7 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
                   }}
                 />
               </div>
-              <div className="trending-header-cell action-cell">Action</div>
+              <div className="trending-header-cell perps action-cell">Action</div>
             </div>
 
             <div className="trending-list">

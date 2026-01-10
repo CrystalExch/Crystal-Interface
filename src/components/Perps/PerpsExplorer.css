@@ -52,6 +52,14 @@
 
 .trending-header.perps {
     grid-template-columns: 1fr 1fr 1fr 1fr 0.8fr 0.8fr 1.05fr;
+    padding: 0px 20px;
+}
+
+.trending-header-cell.perps {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 6px 0px;
 }
 
 .perps-trending-token-info {
