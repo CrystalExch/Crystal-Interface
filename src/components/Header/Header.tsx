@@ -803,8 +803,6 @@ const Header: React.FC<HeaderProps> = ({
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState<boolean>(false);
   const backgroundlesslogo = '/CrystalLogo.png';
 
-  const isMemeTokenPage = location.pathname.startsWith('/meme/');
-
   useEffect(() => {
     const storedWalletNames = localStorage.getItem('crystal_wallet_names');
     if (storedWalletNames) {
@@ -992,9 +990,11 @@ const Header: React.FC<HeaderProps> = ({
 
   const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
   const [copiedToken, setCopiedToken] = useState<any>(null);
-  const memeTokenData = isMemeTokenPage && tokenData ? tokenData : undefined;
   const isPerpsRoute = location.pathname.startsWith('/perps')
-  const currentperpsActiveMarketKey = isPerpsRoute ? perpsActiveMarketKey : undefined;
+  const isPredictRoute = location.pathname.startsWith('/predict')
+  const isMemeRoute =  location.pathname.startsWith('/meme/');
+  const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
+  const memeTokenData = isMemeRoute && tokenData ? tokenData : undefined;
 
   const formatNumberWithCommas = (num: number, decimals = 2) => {
     if (num === 0) return "0";
@@ -1091,8 +1091,6 @@ const Header: React.FC<HeaderProps> = ({
     document.body.style.overflow = !isMenuOpen ? 'hidden' : 'auto';
   };
 
-  const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
-
   const rightHeaderClass = isTradeRoute && !simpleView ? 'right-header-trade' : 'right-header';
   const marketHeader = marketsData?.find(
     (market: any) => market?.address === activeMarket?.address
@@ -1101,7 +1099,7 @@ const Header: React.FC<HeaderProps> = ({
   const currentWallet = getCurrentWalletInfo();
   const displayAddress = currentWallet ? currentWallet.address : account.address;
 
-  const shouldShowSpecialButton = isMemeTokenPage || isPerpsRoute || window.innerWidth < 1020;
+  const shouldShowSpecialButton = isMemeRoute || isPerpsRoute || window.innerWidth < 1020;
 
   return (
     <>
@@ -1116,22 +1114,22 @@ const Header: React.FC<HeaderProps> = ({
           <ChartHeader
             in_icon={tokendict[activeMarket.baseAddress].image}
             out_icon={tokendict[activeMarket.quoteAddress].image}
-            price={isMemeTokenPage && memeTokenData ?
+            price={isMemeRoute && memeTokenData ?
               (memeTokenData.price || 0.000001)?.toString() || 'N/A' :
               formatSubscript(marketHeader?.currentPrice) || 'N/A'
             }
-            priceChangeAmount={isMemeTokenPage && memeTokenData ?
+            priceChangeAmount={isMemeRoute && memeTokenData ?
               memeTokenData.change24h?.toString() || 'N/A' :
               formatSubscript(marketHeader?.priceChangeAmount) || 'N/A'
             }
-            priceChangePercent={isMemeTokenPage && memeTokenData ?
+            priceChangePercent={isMemeRoute && memeTokenData ?
               `${memeTokenData.change24h >= 0 ? '+' : ''}${memeTokenData.change24h?.toFixed(2)}` :
               marketHeader?.priceChange || 'N/A'
             }
             activeMarket={activeMarket}
             high24h={formatSubscript(marketHeader?.high24h) || 'N/A'}
             low24h={formatSubscript(marketHeader?.low24h) || 'N/A'}
-            volume={isMemeTokenPage && memeTokenData ?
+            volume={isMemeRoute && memeTokenData ?
               memeTokenData.volume24h?.toString() || 'N/A' :
               marketHeader?.volume || 'N/A'
             }
@@ -1142,10 +1140,9 @@ const Header: React.FC<HeaderProps> = ({
             marketsData={marketsData}
             simpleView={simpleView}
             tradesByMarket={tradesByMarket}
-            isMemeToken={isMemeTokenPage}
             memeTokenData={memeTokenData}
-            isPerpsToken={isPerpsRoute}
-            perpsActiveMarketKey={currentperpsActiveMarketKey}
+            route={isMemeRoute ? 'meme' : isPerpsRoute ? 'perps' : isPredictRoute ? 'predict' : isTradeRoute ? 'trade' : ''}
+            perpsActiveMarketKey={perpsActiveMarketKey}
             perpsMarketsData={perpsMarketsData}
             perpsFilterOptions={perpsFilterOptions}
             monUsdPrice={monUsdPrice}

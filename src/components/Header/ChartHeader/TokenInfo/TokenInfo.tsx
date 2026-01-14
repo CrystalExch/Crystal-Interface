@@ -332,9 +332,7 @@ interface TokenInfoProps {
   setpopup: any;
   marketsData: any[];
   isLoading?: boolean;
-  isTradeRoute?: boolean;
   simpleView?: boolean;
-  isMemeToken?: boolean;
   memeTokenData?: {
     symbol: string;
     name: string;
@@ -356,7 +354,7 @@ interface TokenInfoProps {
     bondingPercentage: number;
     source?: 'nadfun' | 'crystal' | string;
   };
-  isPerpsToken?: boolean;
+  route: string;
   perpsActiveMarketKey: string;
   perpsMarketsData: { [key: string]: any };
   perpsFilterOptions: any;
@@ -520,6 +518,7 @@ const Tooltip: React.FC<{
     </div>
   );
 };
+
 const TokenInfo: React.FC<TokenInfoProps> = ({
   userAddress,
   externalUserStats,
@@ -532,11 +531,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   setpopup,
   marketsData,
   isLoading,
-  isTradeRoute = true,
+  route,
   simpleView = false,
-  isMemeToken = false,
   memeTokenData,
-  isPerpsToken = false,
   perpsActiveMarketKey,
   perpsMarketsData,
   perpsFilterOptions,
@@ -556,7 +553,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [shouldFocus, setShouldFocus] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [hoveredToken, setHoveredToken] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [isPerpsDropdownOpen, setIsPerpsDropdownOpen] = useState(false);
   const [isPerpsDropdownVisible, setIsPerpsDropdownVisible] = useState(false);
@@ -576,7 +572,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const perpsSearchInputRef = useRef<HTMLInputElement>(null);
   const virtualizationListRef = useRef<List>(null);
   const { favorites, toggleFavorite, activechain } = useSharedContext();
-  const isAdvancedView = isTradeRoute && !simpleView;
+  const isAdvancedView = route == 'trade' && !simpleView;
 
   const updatePreviewPosition = useCallback(() => {
     if (!imageContainerRef.current) return;
@@ -876,7 +872,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     };
 
     const container = memeHeaderRightRef.current;
-    if (container && isMemeToken) {
+    if (container && route == 'meme') {
       container.addEventListener('scroll', handleMemeScroll);
       handleMemeScroll();
     }
@@ -886,7 +882,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         container.removeEventListener('scroll', handleMemeScroll);
       }
     };
-  }, [isMemeToken]);
+  }, [route]);
 
   useEffect(() => {
     const handlePerpsScroll = () => {
@@ -911,7 +907,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     };
 
     const container = perpsMetricsRef.current;
-    if (container && isPerpsToken) {
+    if (container && route == 'perps') {
       container.addEventListener('scroll', handlePerpsScroll);
       handlePerpsScroll();
     }
@@ -921,13 +917,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         container.removeEventListener('scroll', handlePerpsScroll);
       }
     };
-  }, [isPerpsToken]);
+  }, [route]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent): void => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        if (isPerpsToken) {
+        if (route == 'perps') {
           togglePerpsDropdown();
         }
         else if (isAdvancedView) {
@@ -946,7 +942,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
     document.addEventListener('keydown', handleGlobalKeyDown);
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [isDropdownOpen, isPerpsDropdownOpen, isAdvancedView, isPerpsToken, setpopup]);
+  }, [isDropdownOpen, isPerpsDropdownOpen, isAdvancedView, route, setpopup]);
 
   useEffect(() => {
     const handleFilterScroll = () => {
@@ -1019,8 +1015,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     activeMarket?.baseAddress?.toLowerCase() ||
     '0x0000000000000000000000000000000000000000';
 
-  const shouldShowFullHeader = isTradeRoute && !simpleView;
-  const shouldShowTokenInfo = isTradeRoute && !simpleView ? "token-info-container" : "token-info-container-simple";
+  const shouldShowFullHeader = route == 'trade' && !simpleView;
+  const shouldShowTokenInfo = route == 'trade' && !simpleView ? "token-info-container" : "token-info-container-simple";
 
   const handleSymbolInfoClick = (e: React.MouseEvent) => {
     if (
@@ -1277,7 +1273,220 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     return () => clearInterval(id)
   }, [perpsTokenInfo?.nextFundingTime])
 
-  if (isMemeToken && memeTokenData) {
+  if (route == 'predict') {
+    const isPerpsLoading = !perpsTokenInfo?.lastPrice || !perpsTokenInfo?.contractName;
+    if (isPerpsLoading) {
+      return <PerpsTokenSkeleton />;
+    }
+
+    return (
+      <div className="perps-interface-token-info-container">
+        <div className="perps-interface-token-header-info">
+          <div className="perps-interface-token-header-left" onClick={togglePerpsDropdown}>
+            <button
+              className={`favorite-icon ${favorites.includes(perpsTokenInfo.contractName) ? 'active' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavorite(perpsTokenInfo.contractName);
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill={favorites.includes(perpsTokenInfo.contractName) ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>
+            </button>
+            <div className="perps-interface-token-icon-container">
+              <img
+                src={perpsTokenInfo.iconURL}
+                className="perps-interface-token-icon"
+              />
+            </div>
+            <div className="perps-interface-token-identity">
+              <div className="perps-interface-token-name-row">
+                <div className="perps-interface-token-symbol">{perpsTokenInfo.baseAsset}/{perpsTokenInfo.quoteAsset}</div>
+              </div>
+              <div className="ctrlktooltip">
+                Ctrl+K
+              </div>
+            </div>
+          </div>
+
+          <div className="perps-interface-token-header-right">
+            <div className="perps-interface-token-metrics" ref={perpsMetricsRef}>
+              <span className={`perps-interface-metric-value perps-price-large ${priceColor}`}>
+                {formatCommas(Number(perpsTokenInfo.lastPrice).toFixed((perpsTokenInfo.lastPrice.toString().split(".")[1] || "").length))}
+              </span>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">Oracle</span>
+                <span className="perps-interface-metric-value perps-price-small">
+                  {formatCommas(Number(perpsTokenInfo.oraclePrice).toFixed((perpsTokenInfo.lastPrice.toString().split(".")[1] || "").length))}
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">24h Change</span>
+                <span
+                  className={`perps-interface-metric-value ${Number(perpsTokenInfo.priceChangePercent) >= 0 ? 'positive' : 'negative'}`}
+                >
+                  {(Number(perpsTokenInfo.priceChangePercent) >= 0 ? '+' : '') + formatCommas(perpsTokenInfo.priceChange) + ' / ' + (Number(perpsTokenInfo.priceChangePercent) >= 0 ? '+' : '') + Number(perpsTokenInfo.priceChangePercent * 100).toFixed(2)}%
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">24h Volume</span>
+                <span className="perps-interface-metric-value perps-price-small">
+                  ${formatCommas(Number(perpsTokenInfo.value).toFixed(2))}
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">Open Interest</span>
+                <span className="perps-interface-metric-value perps-price-small">
+                  ${formatCommas((Number(perpsTokenInfo.openInterest) * Number(perpsTokenInfo.lastPrice)).toFixed(2))}
+                </span>
+              </div>
+
+              <div className="perps-interface-token-metric">
+                <span className="perps-interface-metric-label">Funding / Countdown</span>
+                <div className="perps-interface-funding-container">
+                  <span
+                    className={`perps-interface-metric-value ${perpsTokenInfo.fundingRate >= 0 ? 'positive' : 'negative'}`}
+                  >
+                    {perpsTokenInfo.fundingRate >= 0 ? '+' : ''}{(perpsTokenInfo.fundingRate * 100).toFixed(4)}%
+                  </span>
+                  <span className="perps-interface-metric-value perps-price-small">
+                    {' / ' + remaining}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="perps-markets-dropdown" ref={perpsDropdownRef}>
+          {isPerpsDropdownOpen && (
+            <div
+              className={`perps-markets-dropdown-content ${isPerpsDropdownVisible ? 'visible' : ''}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="markets-dropdown-header">
+                <div className="search-container">
+                  <div className="search-wrapper">
+                    <Search className="search-icon" size={12} />
+                    <input
+                      ref={perpsSearchInputRef}
+                      type="text"
+                      placeholder="Search perps markets"
+                      className="search-input"
+                      value={perpsSearchQuery}
+                      onChange={(e) => setPerpsSearchQuery(e.target.value)}
+                      tabIndex={isPerpsDropdownVisible ? 0 : -1}
+                      autoComplete="off"
+                    />
+                    {perpsSearchQuery && (
+                      <button
+                        className="cancel-search"
+                        onClick={() => setPerpsSearchQuery('')}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="market-filter-tabs" ref={perpsFilterTabsRef}>
+                {perpsFilterTabs}
+              </div>
+              
+              <div className="perps-markets-content-outer-wrapper">
+                <div className="perps-markets-content-wrapper">
+                  <div className="perps-markets-list-header">
+                    <div className="favorites-header"></div>
+                    <div onClick={() => handlePerpsSort('volume')}>
+                      Market / Volume
+                      <SortArrow
+                        sortDirection={perpsSortField === 'volume' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePerpsSort('volume');
+                        }}
+                      />
+                    </div>
+                    <div className="markets-dropdown-chart-container" onClick={() => handlePerpsSort('price')}>
+                      Last Price
+                      <SortArrow
+                        sortDirection={perpsSortField === 'price' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePerpsSort('price');
+                        }}
+                      />
+                    </div>
+                    <div className="perps-oi-header" onClick={() => handlePerpsSort('change')}>
+                      24hr Change
+                      <SortArrow
+                        sortDirection={perpsSortField === 'change' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePerpsSort('change');
+                        }}
+                      />
+                    </div>
+                    <div className="perps-funding-header" onClick={() => handlePerpsSort('funding')}>
+                      8hr Funding
+                      <SortArrow
+                        sortDirection={perpsSortField === 'funding' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePerpsSort('funding');
+                        }}
+                      />
+                    </div>
+                    <div className="markets-dropdown-price-container" onClick={() => handlePerpsSort('openInterest')}>
+                      Open Interest
+                      <SortArrow
+                        sortDirection={perpsSortField === 'openInterest' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePerpsSort('openInterest');
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="perps-markets-list-virtualized" style={{ height: '400px' }}>
+                    <List
+                      ref={virtualizationListRef}
+                      height={400}
+                      width="100%"
+                      itemCount={filteredPerpsMarkets.length}
+                      itemSize={40}
+                      itemData={virtualizationData}
+                      overscanCount={2}
+                      itemKey={(index, data) => data.markets[index]?.contractName || index}
+                    >
+                      {PerpsMarketRow}
+                    </List>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (route == 'meme' && memeTokenData) {
     const isLoadingMemeData =
       (memeTokenData.symbol === 'TKN' && memeTokenData.name === 'Token');
 
@@ -1745,7 +1954,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     );
   }
 
-  if (isPerpsToken) {
+  if (route == 'perps') {
     const isPerpsLoading = !perpsTokenInfo?.lastPrice || !perpsTokenInfo?.contractName;
     if (isPerpsLoading) {
       return <PerpsTokenSkeleton />;
@@ -1996,32 +2205,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         {shouldShowFullHeader && (
           <div
             className="token-icons-container"
-            onMouseEnter={() => setHoveredToken(true)}
-            onMouseLeave={() => setHoveredToken(false)}
           >
-            {bondingPercentage > 0 && isMemeToken ? (
-              <div
-                className="token-icons-with-bonding"
-                style={{
-                  '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
-                  '--progress-color-start': createColorGradient(
-                    getBondingColor(bondingPercentage),
-                  ).start,
-                  '--progress-color-mid': createColorGradient(
-                    getBondingColor(bondingPercentage),
-                  ).mid,
-                  '--progress-color-end': createColorGradient(
-                    getBondingColor(bondingPercentage),
-                  ).end,
-                } as React.CSSProperties}
-              >
-                <div className="token-icons-inner">
-                  <TokenIcons inIcon={in_icon} outIcon={out_icon} />
-                </div>
-              </div>
-            ) : (
-              <TokenIcons inIcon={in_icon} outIcon={out_icon} />
-            )}
+            <TokenIcons inIcon={in_icon} outIcon={out_icon} />
           </div>
         )}
 

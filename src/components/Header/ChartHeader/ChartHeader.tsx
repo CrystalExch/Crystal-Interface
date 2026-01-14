@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
 
 import AdditionalMetrics from './AdditionalMetrics/AdditionalMetrics';
 import TokenInfo from './TokenInfo/TokenInfo.tsx';
@@ -40,7 +39,6 @@ interface ChartHeaderProps {
   marketsData: any;
   simpleView: boolean;
   tradesByMarket: any;
-  isMemeToken?: boolean;
   memeTokenData?: {
     symbol: string;
     name: string;
@@ -62,7 +60,7 @@ interface ChartHeaderProps {
     bondingPercentage: number;
     source?: 'nadfun' | 'crystal' | string;
   };
-  isPerpsToken?: boolean;
+  route: string;
   perpsActiveMarketKey: any;
   perpsMarketsData: any;
   perpsFilterOptions: any;
@@ -90,9 +88,8 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   marketsData,
   simpleView,
   tradesByMarket,
-  isMemeToken = false,
   memeTokenData,
-  isPerpsToken = false,
+  route,
   perpsActiveMarketKey,
   perpsMarketsData,
   perpsFilterOptions,
@@ -107,10 +104,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
   const [isLoading, setIsLoading] = useState(true);
-
-  const location = useLocation();
-  const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
-  const shouldShowFullHeader = isTradeRoute && !simpleView;
+  const shouldShowFullHeader = route == 'trade' && !simpleView;
 
   useEffect(() => {
     if (orderdata.liquidityBuyOrders?.orders || orderdata.liquiditySellOrders?.orders || orderdata?.reserveQuote || orderdata?.reserveBase) {
@@ -201,11 +195,9 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         setpopup={setpopup}
         marketsData={marketsData}
         isLoading={isLoading || price == 'N/A'}
-        isTradeRoute={isTradeRoute}
+        route={route}
         simpleView={simpleView}
-        isMemeToken={isMemeToken}
         memeTokenData={memeTokenData}
-        isPerpsToken={isPerpsToken}
         perpsActiveMarketKey={perpsActiveMarketKey}
         perpsMarketsData={perpsMarketsData}
         perpsFilterOptions={perpsFilterOptions}

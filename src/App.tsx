@@ -29355,6 +29355,67 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               />
             }
           />
+          <Route path="/predict"
+            element={
+              <Perps
+                layoutSettings={perpsLayoutSettings}
+                orderbookPosition={perpsOrderbookPosition}
+                windowWidth={windowWidth}
+                mobileView={mobileView}
+                isOrderbookVisible={isOrderbookVisible}
+                orderbookWidth={orderbookWidth}
+                setOrderbookWidth={setOrderbookWidth}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                activeTab={obTab}
+                setActiveTab={setOBTab}
+                router={router}
+                address={scaAddress}
+                orderCenterHeight={orderCenterHeight}
+                setSendTokenIn={setSendTokenIn}
+                setpopup={setpopup}
+                sortConfig={memoizedSortConfig}
+                onSort={emptyFunction}
+                activeSection={activeSection}
+                setActiveSection={setActiveSection}
+                filter={filter}
+                setFilter={setFilter}
+                onlyThisMarket={onlyThisMarket}
+                setOnlyThisMarket={setOnlyThisMarket}
+                refetch={refetch}
+                sendUserOperationAsync={sendUserOperationAsync}
+                setChain={handleSetChain}
+                isOrderCenterVisible={isOrderCenterVisible}
+                openEditOrderPopup={openEditOrderPopup}
+                openEditOrderSizePopup={openEditOrderSizePopup}
+                wethticker={wethticker}
+                ethticker={ethticker}
+                memoizedSortConfig={memoizedSortConfig}
+                emptyFunction={emptyFunction}
+                handleSetChain={handleSetChain}
+                selectedInterval={selectedInterval}
+                setSelectedInterval={setSelectedInterval}
+                perpsActiveMarketKey={perpsActiveMarketKey}
+                setperpsActiveMarketKey={setperpsActiveMarketKey}
+                perpsMarketsData={perpsMarketsData}
+                setPerpsMarketsData={setPerpsMarketsData}
+                perpsFilterOptions={perpsFilterOptions}
+                setPerpsFilterOptions={setPerpsFilterOptions}
+                signMessageAsync={signMessageAsync}
+                leverage={perpsLeverage}
+                setLeverage={setPerpsLeverage}
+                signer={perpsKeystore}
+                setSigner={setPerpsKeystore}
+                setOrderCenterHeight={setOrderCenterHeight}
+                isMarksVisible={isMarksVisible}
+                setIsMarksVisible={setIsMarksVisible}
+                setPerpsLimitChase={setPerpsLimitChase}
+                perpsLimitChase={perpsLimitChase}
+                handlePerpsMarketSelect={handlePerpsMarketSelect}
+                scaAddress={scaAddress}
+                setTempLeverage={setTempLeverage}
+              />
+            } />
           <Route path="/leaderboard"
             element={
               <Leaderboard
