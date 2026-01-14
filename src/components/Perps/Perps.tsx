@@ -224,7 +224,7 @@ const Perps: React.FC<PerpsProps> = ({
   const popupRef = useRef<HTMLDivElement>(null);
   const presetInputRef = useRef<HTMLInputElement>(null);
   const subRefs = useRef<any>([]);
-
+  const pendingBarsRef = useRef<Record<string, any[]>>({})
   const marketButtonRef = useRef<HTMLButtonElement>(null);
   const limitButtonRef = useRef<HTMLButtonElement>(null);
   const proButtonRef = useRef<HTMLButtonElement>(null);
@@ -1370,17 +1370,20 @@ const Perps: React.FC<PerpsProps> = ({
                       ? msg?.[0].klineType.slice('MINUTE_'.length)
                       : msg?.[0].klineType)
 
+              const mapKlines = (klines: any[]) =>
+                klines.map(candle => ({
+                  time: Number(candle.klineTime),
+                  open: Number(candle.open),
+                  high: Number(candle.high),
+                  low: Number(candle.low),
+                  close: Number(candle.close),
+                  volume: Number(candle.value),
+                }))
               if (realtimeCallbackRef.current[key]) {
-                const mapKlines = (klines: any[]) =>
-                  klines.map(candle => ({
-                    time: Number(candle.klineTime),
-                    open: Number(candle.open),
-                    high: Number(candle.high),
-                    low: Number(candle.low),
-                    close: Number(candle.close),
-                    volume: Number(candle.value),
-                  }))
-                realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
+                realtimeCallbackRef.current[key](mapKlines(msg)[0]);
+              }
+              else {
+                (pendingBarsRef.current[key] ??= []).push(mapKlines(msg)[0])
               }
             }
             else {
@@ -1393,17 +1396,20 @@ const Perps: React.FC<PerpsProps> = ({
                     : msg?.[0].klineType.startsWith('MINUTE_')
                       ? msg?.[0].klineType.slice('MINUTE_'.length)
                       : msg?.[0].klineType)
+              const mapKlines = (klines: any[]) =>
+                klines.map(candle => ({
+                  time: Number(candle.klineTime),
+                  open: Number(candle.open),
+                  high: Number(candle.high),
+                  low: Number(candle.low),
+                  close: Number(candle.close),
+                  volume: Number(candle.value),
+                }))
               if (realtimeCallbackRef.current[key]) {
-                const mapKlines = (klines: any[]) =>
-                  klines.map(candle => ({
-                    time: Number(candle.klineTime),
-                    open: Number(candle.open),
-                    high: Number(candle.high),
-                    low: Number(candle.low),
-                    close: Number(candle.close),
-                    volume: Number(candle.value),
-                  }))
-                realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
+                realtimeCallbackRef.current[key](mapKlines(msg)[0]);
+              }
+              else {
+                (pendingBarsRef.current[key] ??= []).push(mapKlines(msg)[0])
               }
             }
           }
@@ -1706,6 +1712,7 @@ const Perps: React.FC<PerpsProps> = ({
       perps={true}
       selectedInterval={selectedInterval}
       setSelectedInterval={setSelectedInterval}
+      pendingBarsRef={pendingBarsRef}
     />
   ), [
     activeMarket,
@@ -1715,10 +1722,9 @@ const Perps: React.FC<PerpsProps> = ({
     refetch,
     handleSetChain,
     chartData,
-    realtimeCallbackRef,
     updateLimitAmount,
     location.pathname,
-    selectedInterval
+    selectedInterval,
   ]);
 
   const tradeModal = (

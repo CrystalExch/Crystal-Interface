@@ -38,6 +38,7 @@ interface ChartCanvasProps {
   amountIn?: bigint;
   isLimitOrderMode?: boolean;
   perps: boolean;
+  pendingBarsRef?: any;
 }
 
 const PerpsAdvancedChart: React.FC<ChartCanvasProps> = ({
@@ -65,6 +66,7 @@ const PerpsAdvancedChart: React.FC<ChartCanvasProps> = ({
   amountIn = BigInt(0),
   isLimitOrderMode = false,
   perps,
+  pendingBarsRef
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
@@ -705,11 +707,15 @@ const PerpsAdvancedChart: React.FC<ChartCanvasProps> = ({
           resolution: any,
           onRealtimeCallback: any,
         ) => {
-          realtimeCallbackRef.current[
-            symbolInfo.name.split('/')[0] +
-              symbolInfo.name.split('/')[1] +
-              resolution
-          ] = onRealtimeCallback;
+          const key = symbolInfo.name.split('/')[0] +
+          symbolInfo.name.split('/')[1] +
+          resolution
+          realtimeCallbackRef.current[key] = onRealtimeCallback;
+          const pendingBars = pendingBarsRef.current[key]
+          if (pendingBars) {
+            pendingBars.forEach(onRealtimeCallback)
+            delete pendingBarsRef.current[key]
+          }
         },
 
         unsubscribeBars: () => {},

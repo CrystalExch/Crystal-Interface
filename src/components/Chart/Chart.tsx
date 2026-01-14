@@ -36,6 +36,7 @@ interface ChartComponentProps {
   setSelectedInterval: any;
   isLimitOrderMode?: boolean;
   perps?: boolean;
+  pendingBarsRef?: any;
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -63,6 +64,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   setSelectedInterval,
   isLimitOrderMode = false,
   perps = false,
+  pendingBarsRef,
 }) => {
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [_lastPair, setLastPair] = useState('');
@@ -94,6 +96,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         amountIn={amountIn}
         isLimitOrderMode={isLimitOrderMode}
         perps={perps}
+        pendingBarsRef={pendingBarsRef}
       />
       <Overlay
         isVisible={overlayVisible}
