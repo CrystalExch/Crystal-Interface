@@ -7006,11 +7006,11 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
                 Array.from({ length: 12 }).map((_, index) => (
                   <div
                     key={`skeleton-trending-${index}`}
-                    className="trending-row loading"
+                    className="trending-row perps loading"
                   >
                     <div className="trending-cell pair-info-cell">
-                      <div className="skeleton trending-image" />
-                      <div className="skeleton trending-name-text" />
+                      <div className="skeleton trending-image perps" />
+                      <div className="skeleton trending-name-text perps" />
                     </div>
                     <div className="trending-cell">
                       <div className="skeleton trending-value-text" />
@@ -7027,8 +7027,9 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
                     <div className="trending-cell">
                       <div className="skeleton trending-value-text" />
                     </div>
-                    <div className="trending-cell">
-                      <div className="skeleton trending-button" />
+                    <div className="trending-cell action-cell" style={{gap: '10px'}}>
+                      <div className="skeleton trending-button perps" />
+                      <div className="skeleton trending-button perps" />
                     </div>
                   </div>
                 ))
@@ -7306,7 +7307,7 @@ const PerpsExplorer: React.FC<PerpsExplorerProps> = ({
                                 </a>
                               </Tooltip>
                             )}
-                            <Tooltip content="Search CA on Twitter">
+                            <Tooltip content="Search Asset on Twitter">
                               <a
                                 className="explorer-telegram-btn"
                                 href={`https://twitter.com/search?q=$${token.baseAsset}`}
