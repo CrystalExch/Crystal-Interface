@@ -1,142 +1,848 @@
-.perps-trending-cell {
+/* Predict-specific Grid Layout - doesn't modify original styles */
+
+/* Layout with Trade Stream */
+.predict-layout-with-stream {
     display: flex;
-    align-items: center;
-    color: #ffffff;
-    font-size: 0.9rem;
+    gap: 0;
+    height: 100%;
+    width: 100%;
 }
 
-.perps-trending-market-cap-text {
+.predict-trade-stream-sidebar {
+    width: 300px;
+    min-width: 300px;
+    background: rgba(15, 15, 18, 0.6);
+    border-right: 1px solid rgba(170, 174, 207, 0.1);
     display: flex;
     flex-direction: column;
+    height: 100%;
+    overflow: hidden;
 }
 
-.perps-trending-token-image-container {
-    align-items: center;
-    background: transparent;
-    border-radius: 50%;
-    cursor: pointer;
+.predict-trade-stream-header {
     display: flex;
-    height: 30px;
-    justify-content: center;
-    position: relative;
-    transition: --progress-angle 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    width: 30px;
-    flex-shrink: 0;
-}
-
-.perps-trending-token-image {
-    border-radius: 50%;
-    background: transparent;
-    display: block;
-    flex-shrink: 0;
-    height: 30px;
-    -o-object-fit: cover;
-    object-fit: cover;
-    transition: all 0.3s ease;
-    width: 30px;
-}
-
-.perps-trending-progress-spacer {
     align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(170, 174, 207, 0.1);
+}
+
+.predict-trade-stream-header h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+}
+
+.predict-trade-stream-count {
+    background: rgba(170, 174, 207, 0.15);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+}
+
+.predict-trade-stream-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.predict-trade-stream-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.predict-trade-stream-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+}
+
+.predict-trade-stream-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.3);
+    text-align: center;
+    gap: 12px;
+}
+
+.predict-trade-stream-empty p {
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.predict-trade-stream-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(170, 174, 207, 0.08);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all 0.2s ease;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.predict-trade-stream-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(170, 174, 207, 0.15);
+}
+
+.predict-trade-stream-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.predict-trade-stream-market {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.predict-trade-stream-time {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.4);
+    flex-shrink: 0;
+}
+
+.predict-trade-stream-item-details {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.predict-trade-stream-side {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.predict-trade-stream-side.buy {
+    background: rgba(38, 178, 109, 0.2);
+    color: #26b26d;
+}
+
+.predict-trade-stream-side.sell {
+    background: rgba(208, 89, 89, 0.2);
+    color: #d05959;
+}
+
+.predict-trade-stream-price {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.predict-trade-stream-amount {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-left: auto;
+}
+
+/* Adjust grid container to fit alongside stream */
+.predict-layout-with-stream .predict-grid-container {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Filter Bar Styles */
+.predict-filter-bar {
+    display: flex;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(170, 174, 207, 0.1);
+    align-items: center;
+    flex-wrap: nowrap;
+    background: transparent;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.predict-filter-bar::-webkit-scrollbar {
+    height: 4px;
+}
+
+.predict-filter-bar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+}
+
+.predict-category-filters {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+    flex-wrap: nowrap;
+    align-items: center;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+}
+
+.predict-category-filters::-webkit-scrollbar {
+    height: 4px;
+}
+
+.predict-category-filters::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+}
+
+.predict-category-btn {
+    padding: 6px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(170, 174, 207, 0.15);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+.predict-category-btn:hover {
+    background: rgba(170, 174, 207, 0.1);
+    border-color: rgba(170, 174, 207, 0.25);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.predict-category-btn.active {
+    background: rgba(170, 174, 207, 0.25);
+    border-color: rgba(170, 174, 207, 0.4);
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.predict-category-skeleton {
+    width: 70px;
+    height: 28px;
+    border-radius: 16px;
+}
+
+.predict-sort-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.predict-sort-label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    font-weight: 400;
+}
+
+.predict-sort-select {
+    padding: 6px 10px;
     border-radius: 6px;
-    display: flex;
-    height: 30px;
-    justify-content: center;
-    width: 30px;
-}
-
-.trending-row.perps {
-    padding: 6px 20px;
-    grid-template-columns: 1fr 1fr 1fr 1fr 0.8fr 0.8fr 1fr;
-}
-
-.trending-header.perps {
-    grid-template-columns: 1fr 1fr 1fr 1fr 0.8fr 0.8fr 1.05fr;
-    padding: 0px 20px;
-}
-
-.trending-header-cell.perps {
+    border: 1px solid rgba(170, 174, 207, 0.15);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
     cursor: pointer;
+    min-width: 140px;
+    font-weight: 400;
+    transition: all 0.2s ease;
+}
+
+.predict-sort-select:hover {
+    background: rgba(170, 174, 207, 0.1);
+    border-color: rgba(170, 174, 207, 0.25);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.predict-sort-select option {
+    background: #1a1a1a;
+    color: #ffffff;
+}
+
+.predict-sort-direction-btn {
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid rgba(170, 174, 207, 0.15);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    padding: 6px 0px;
+    justify-content: center;
+    height: 28px;
+    width: 28px;
 }
 
-.trending-row.loading .trending-image {
-    width: 32px;
-    height: 32px;
+.predict-sort-direction-btn:hover {
+    background: rgba(170, 174, 207, 0.1);
+    border-color: rgba(170, 174, 207, 0.25);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Pagination Styles */
+.predict-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-top: 1px solid rgba(170, 174, 207, 0.06);
+    background: transparent;
+    opacity: 0.55;
+    transition: opacity 0.2s ease;
+}
+
+.predict-pagination:hover {
+    opacity: 0.9;
+}
+
+.predict-pagination-btn {
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(170, 174, 207, 0.12);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    min-width: 58px;
+}
+
+.predict-pagination-btn:hover:not(:disabled) {
+    background: rgba(170, 174, 207, 0.1);
+    border-color: rgba(170, 174, 207, 0.25);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.predict-pagination-btn:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+}
+
+.predict-pagination-info {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.68rem;
+    font-weight: 400;
+}
+
+/* Favorite Button */
+.predict-favorite-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.predict-favorite-btn:hover {
+    transform: scale(1.1);
+}
+
+.predict-grid-container .trending-list {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 20px;
+    grid-auto-rows: max-content;
+    align-items: start;
+}
+
+.predict-grid-container .trending-row.perps {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(30, 35, 45, 0.6);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    min-height: 220px;
+    height: auto;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    align-self: start;
+}
+
+.predict-grid-container .trending-row.perps:hover {
+    background: rgba(40, 45, 55, 0.8);
+    border-color: rgba(170, 174, 207, 0.3);
+    transform: translateY(-2px);
+}
+
+.predict-grid-container .trending-header.perps {
+    display: none;
+}
+
+/* Card-style cells */
+.predict-grid-container .perps-trending-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    color: #ffffff;
+    font-size: 0.75rem;
+    gap: 4px;
+    padding: 6px 0;
+    min-height: 40px;
+}
+
+.predict-grid-container .trending-row.perps .pair-info-cell {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 4px;
+    flex-shrink: 0;
+}
+
+.predict-grid-container .trending-row.perps .action-cell {
+    flex-direction: row !important;
+    gap: 6px;
+    margin-top: auto;
+    padding-top: 4px;
+    flex-shrink: 0;
+}
+
+.predict-grid-container .trending-row.perps .action-cell button {
+    flex: 1;
+}
+
+/* Hide action buttons in cards, hide/blacklist buttons */
+.predict-grid-container .trending-token-actions {
+    display: none;
+}
+
+/* Remove text labels - will use icons instead */
+
+/* Compact Metrics Row - Polymarket Style */
+.predict-metrics-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: nowrap;
+    padding: 0;
+    margin-top: auto;
+    padding-top: 8px;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.predict-metric {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: inherit;
+    color: inherit;
+    padding: 0;
+    background: transparent;
+    border: none;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.predict-metric-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+.predict-metric-value {
+    font-weight: 400;
+    color: inherit;
+}
+
+.predict-live-dot {
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    margin: 4.8px 0px;
+    background: #ff5757;
+    flex-shrink: 0;
 }
 
-.trending-row.loading .trending-name-text {
-    width: 50px;
+.predict-metric-separator {
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    flex-shrink: 0;
+}
+
+.predict-metric-tag {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+/* Typography improvements for cards - match skeleton sizes */
+.predict-grid-container .perps-trending-token-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.predict-grid-container .trending-row.perps .trending-token-symbol {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #ffffff;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    display: block;
+    line-height: 1.3;
+    white-space: normal;
+    hyphens: auto;
+}
+
+.predict-grid-container .trending-row.perps .perps-trending-market-cap-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    min-height: 16px;
+}
+
+.predict-grid-container .trending-row.perps .trending-change {
+    font-size: 0.8rem;
+    margin-top: 4px;
+}
+
+/* Probability styling */
+.predict-probability {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.predict-probability-main {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.predict-probability-change {
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.predict-probability-change.positive {
+    color: #52f2a7;
+}
+
+.predict-probability-change.negative {
+    color: #ff7b7b;
+}
+
+/* Match image size to skeleton - SQUARE not circular */
+.predict-grid-container .perps-trending-token-image-container {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px !important;
+}
+
+.predict-grid-container .perps-trending-token-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px !important;
+}
+
+.predict-grid-container .perps-trending-progress-spacer {
+    width: 40px;
+    height: 40px;
+}
+
+/* Match button size to skeleton */
+.predict-grid-container .trending-row.perps .action-cell button {
+    height: 36px;
+    min-height: 36px;
+}
+
+/* Match value text size to skeleton */
+.predict-grid-container .perps-trending-cell {
+    min-height: 16px;
+}
+
+/* Ensure card has same min-height as skeleton - already set above */
+
+/* Loading state for grid */
+.predict-grid-container .trending-row.loading {
+    min-height: 200px;
+}
+
+.predict-grid-container .trending-row.loading .trending-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.predict-grid-container .trending-row.loading .trending-name-text {
+    flex: 1;
     height: 20px;
     border-radius: 4px;
 }
 
-.trending-row.loading .trending-button {
-    width: 80px;
-    height: 29px;
-    border-radius: 15px;
+.predict-grid-container .trending-row.loading .trending-value-text {
+    width: 100%;
+    height: 16px;
+    border-radius: 4px;
 }
 
-.perps-trending-token-info {
+.predict-grid-container .trending-row.loading .trending-button {
+    flex: 1;
+    height: 36px;
+    border-radius: 8px;
+}
+
+/* Multi-outcome Market Styles */
+.predict-grid-container .trending-row.perps.multi-outcome {
+    min-height: auto;
+    padding: 16px;
+    gap: 12px;
+}
+
+.predict-multi-header {
     display: flex;
-    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.predict-multi-image-container {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(170, 174, 207, 0.15), rgba(120, 140, 180, 0.1));
+}
+
+.predict-multi-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.predict-multi-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(170, 174, 207, 0.2), rgba(120, 140, 180, 0.15));
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.predict-multi-title-container {
+    flex: 1;
     min-width: 0;
 }
 
-.perps-token-explorer-launchpad-logo-container {
-    position: absolute;
+.predict-multi-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 4px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.35;
+}
+
+.predict-multi-subtitle {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.3;
+}
+
+.predict-multi-outcomes {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-height: 120px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.predict-multi-outcomes::-webkit-scrollbar {
+    width: 3px;
+}
+
+.predict-multi-outcomes::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+}
+
+.predict-multi-outcomes::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.predict-multi-outcome-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background 0.15s ease;
+}
+
+.predict-multi-outcome-row:last-child {
+    border-bottom: none;
+}
+
+.predict-multi-outcome-row:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.predict-multi-outcome-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+}
+
+.predict-multi-outcome-name {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.85);
+    overflow-wrap: break-word;
+    word-break: break-word;
+    flex: 1;
+    line-height: 1.3;
+}
+
+.predict-multi-outcome-probability {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.95);
+    flex-shrink: 0;
+    letter-spacing: -0.3px;
+}
+
+.predict-multi-outcome-actions {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.predict-multi-yes-btn,
+.predict-multi-no-btn {
+    padding: 3px 12px;
+    border-radius: 5px;
+    border: none;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-width: 38px;
+    height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: black;
-    width: 14px;
-    height: 14px;
-    border-radius: 20px;
-    border: 1px solid #AD5FFB;
-    bottom: -3px;
-    right: -3px;
 }
 
-.perps-token-explorer-launchpad-logo {
-    width: 8px;
-}
-
-.perps-trending-buy-btn {
+.predict-multi-yes-btn {
     background: #26b26d;
-    border: none;
-    border-radius: 15px;
     color: #0f0f12;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 600;
-    padding: 0.3rem 1.2rem 0.3rem 1.1rem;
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    justify-content: center;
-    letter-spacing: -0.5px;
-    transition: all 0.2s ease;
-    position: relative;
 }
 
-.perps-trending-sell-btn {
+.predict-multi-yes-btn:hover:not(:disabled) {
+    background: #2ed47f;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(38, 178, 109, 0.3);
+}
+
+.predict-multi-no-btn {
     background: #d05959;
-    border: none;
-    border-radius: 15px;
     color: #0f0f12;
-    cursor: pointer;
-    font-size: 0.8rem;
-    font-weight: 600;
-    padding: 0.3rem 1.2rem 0.3rem 1.1rem;
+}
+
+.predict-multi-no-btn:hover:not(:disabled) {
+    background: #e06767;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(208, 89, 89, 0.3);
+}
+
+.predict-multi-yes-btn:disabled,
+.predict-multi-no-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.predict-multi-footer {
     display: flex;
     align-items: center;
-    gap: 2px;
-    justify-content: center;
-    letter-spacing: -0.5px;
-    transition: all 0.2s ease;
-    position: relative;
+    justify-content: flex-start;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    margin-top: 2px;
+}
+
+/* Responsive grid */
+@media (max-width: 1600px) {
+    .predict-grid-container .trending-list {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 1200px) {
+    .predict-grid-container .trending-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .predict-grid-container .trending-list {
+        grid-template-columns: 1fr;
+    }
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import ChartOrderbookPanel from '../ChartOrderbookPanel/ChartOrderbookPanel';
 import OrderCenter from '../OrderCenter/OrderCenter';
 import ChartComponent from '../Chart/Chart';
@@ -137,12 +138,70 @@ const Predict: React.FC<PredictProps> = ({
   scaAddress,
   setTempLeverage
 }) => {
+  const { marketSlug } = useParams<{ marketSlug?: string }>();
   const [isMobileTradeModalOpen, setIsMobileTradeModalOpen] = useState(false);
   const [mobileTradeType, setMobileTradeType] = useState<"long" | "short">("long");
   const [exchangeConfig, setExchangeConfig] = useState<any>();
   const [chartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', true]);
   const [orderdata, setorderdata] = useState<any>([]);
   const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};
+
+  // Fetch specific market data when marketSlug is present
+  useEffect(() => {
+    if (marketSlug && (!perpsActiveMarketKey || Object.keys(perpsMarketsData).length === 0)) {
+      const fetchMarketData = async () => {
+        try {
+          const response = await fetch(`/predictapi/events?slug=${marketSlug}`);
+          const data = await response.json();
+
+          if (data && data.length > 0) {
+            const event = data[0];
+            const markets = event.markets || [];
+
+            if (markets.length > 0) {
+              const market = markets[0];
+              const conditionId = market.conditionId;
+
+              // Set this as the active market
+              setperpsActiveMarketKey(conditionId);
+
+              // Add market data to perpsMarketsData if not already there
+              if (!perpsMarketsData[conditionId]) {
+                const outcomePrices = typeof market.outcomePrices === 'string'
+                  ? JSON.parse(market.outcomePrices)
+                  : market.outcomePrices || [];
+
+                setPerpsMarketsData((prev: any) => ({
+                  ...prev,
+                  [conditionId]: {
+                    contractId: conditionId,
+                    baseAsset: event.title || market.question,
+                    quoteAsset: 'USD',
+                    lastPrice: parseFloat(outcomePrices[0] || 0),
+                    value: market.volume || market.volume24hr || 0,
+                    liquidity: market.liquidity || 0,
+                    outcomes: [market.question],
+                    outcomePrices: [parseFloat(outcomePrices[0] || 0)],
+                    eventTitle: event.title,
+                    eventSlug: event.slug,
+                    iconURL: event.image || event.icon,
+                    question: market.question,
+                    endDate: market.endDate,
+                    enableDisplay: true,
+                    active: market.active,
+                  }
+                }));
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching market data:', error);
+        }
+      };
+
+      fetchMarketData();
+    }
+  }, [marketSlug, perpsActiveMarketKey, perpsMarketsData, setperpsActiveMarketKey, setPerpsMarketsData]);
   const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
   const [activeOrderType, setActiveOrderType] = useState<"Market" | "Limit" | "Scale" | "Stop" | "TP/SL" | "Pro">("Market");
   const [inputString, setInputString] = useState('');
@@ -2604,6 +2663,104 @@ const Predict: React.FC<PredictProps> = ({
       </div>
     </div>
   )
+
+  const isEventMarket = activeMarket?.source === 'polymarket';
+  const eventOutcomes = Array.isArray(activeMarket?.outcomes)
+    ? activeMarket.outcomes
+    : [];
+  const eventPrices = Array.isArray(activeMarket?.outcomePrices)
+    ? activeMarket.outcomePrices
+    : [];
+  const mergedOutcomes =
+    eventOutcomes.length > 0
+      ? eventOutcomes.map((label: string, idx: number) => ({
+          label,
+          price: Number(eventPrices[idx] ?? 0),
+        }))
+      : [
+          { label: 'Yes', price: Number(eventPrices[0] ?? 0) },
+          { label: 'No', price: Number(eventPrices[1] ?? 0) },
+        ];
+  const eventTitle =
+    activeMarket?.eventTitle || activeMarket?.question || 'Event';
+  const eventImage = activeMarket?.eventImage || activeMarket?.iconURL;
+  const eventUrl =
+    activeMarket?.website ||
+    (activeMarket?.eventSlug || activeMarket?.marketSlug
+      ? `https://polymarket.com/event/${activeMarket.eventSlug || activeMarket.marketSlug}`
+      : undefined);
+  const eventEndLabel = (() => {
+    if (!activeMarket?.endDate) return 'TBD';
+    const date = new Date(activeMarket.endDate);
+    if (Number.isNaN(date.getTime())) return 'TBD';
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  })();
+
+  if (isEventMarket) {
+    return (
+      <div className="predict-event-page">
+        <div className="predict-event-card">
+          <div className="predict-event-header">
+            <div className="predict-event-image">
+              {eventImage ? (
+                <img src={eventImage} alt={eventTitle} />
+              ) : (
+                <span>{eventTitle.slice(0, 1).toUpperCase()}</span>
+              )}
+            </div>
+            <div className="predict-event-heading">
+              <h1 className="predict-event-title">{eventTitle}</h1>
+              {activeMarket?.question && (
+                <p className="predict-event-question">
+                  {activeMarket.question}
+                </p>
+              )}
+              <div className="predict-event-meta">
+                <span>
+                  ${formatCommas(Number(activeMarket?.volume24h || 0).toFixed(0))}{' '}
+                  Vol.
+                </span>
+                <span>
+                  ${formatCommas(Number(activeMarket?.liquidity || 0).toFixed(0))}{' '}
+                  Liquidity
+                </span>
+                <span>Ends {eventEndLabel}</span>
+              </div>
+            </div>
+          </div>
+          <div className="predict-event-outcomes">
+            {mergedOutcomes.map((outcome, idx) => (
+              <div className="predict-event-outcome" key={`${outcome.label}-${idx}`}>
+                <div className="predict-event-outcome-label">
+                  {outcome.label}
+                </div>
+                <div className="predict-event-outcome-prob">
+                  {(outcome.price * 100).toFixed(0)}%
+                </div>
+              </div>
+            ))}
+          </div>
+          {eventUrl && (
+            <div className="predict-event-actions">
+              <a
+                className="predict-event-link"
+                href={eventUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View on Polymarket
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="main-content-wrapper">

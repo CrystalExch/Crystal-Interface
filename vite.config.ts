@@ -18,7 +18,19 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api/, '/api'),
         secure: true
-      }
+      },
+      '/predictapi': {
+        target: 'https://gamma-api.polymarket.com',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/predictapi/, ''),
+        secure: true
+      },
+      '/clob': {
+        target: 'https://clob.polymarket.com',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/clob/, ''),
+        secure: true
+      },
     },
   },
   publicDir: 'public', 

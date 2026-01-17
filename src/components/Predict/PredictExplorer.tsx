@@ -4112,295 +4112,436 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
   useEffect(() => {
     let liveStreamCancelled = false;
+    let priceUpdateInterval: NodeJS.Timeout | null = null;
+    const EVENTS_PAGE_SIZE = 60;
+    const MAX_EVENTS_PAGES = 8;
+    const fetchPolymarketJson = async (path: string) => {
+      const response = await fetch(path, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const contentType = response.headers.get('content-type') || '';
+      if (!response.ok) {
+        const body = contentType.includes('application/json')
+          ? JSON.stringify(await response.json())
+          : await response.text();
+        throw new Error(
+          `Polymarket request failed (${response.status}) for ${path}: ${body.slice(0, 200)}`,
+        );
+      }
+      if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(
+          `Polymarket response not JSON for ${path}: ${text.slice(0, 200)}`,
+        );
+      }
+      return response.json();
+    };
+    const fetchAllEvents = async (basePath: string) => {
+      const allEvents: any[] = [];
+      let offset = 0;
 
-    const fetchData = async () => {
-      try {
-        if (Object.keys(perpsMarketsData).length == 0) {
-          const [metaRes, labelsRes] = await Promise.all([
-            fetch(`${settings.perpsEndpoint}/api/v1/public/meta/getMetaData`, {
-              method: 'GET',
-              headers: { 'Content-Type': 'application/json' },
-            }).then((r) => r.json()),
-            fetch(`${settings.perpsEndpoint}/api/v1/public/contract-labels`, {
-              method: 'GET',
-              headers: { 'Content-Type': 'application/json' },
-            }).then((r) => r.json()),
-          ]);
-          if (liveStreamCancelled) return;
-          if (metaRes?.data) setExchangeConfig(metaRes.data);
-          if (labelsRes?.data) {
-            const categoriesMap: Record<string, string[]> = {
-              All: metaRes.data.contractList
-                .filter((c: any) => c.enableDisplay == true)
-                .flatMap((c: any) => c.contractName),
-              ...Object.fromEntries(
-                labelsRes.data.map((s: any) => [
-                  s.name,
-                  s.contracts.map((c: any) => c.contractName),
-                ]),
-              ),
-            };
-            if (metaRes?.data) {
-              const coinMap = Object.fromEntries(
-                metaRes.data.coinList.map((c: any) => [c.coinName, c.iconUrl]),
-              );
-              setPerpsMarketsData(
-                Object.fromEntries(
-                  metaRes.data.contractList
-                    .filter((c: any) =>
-                      categoriesMap.All.includes(c.contractName),
-                    )
-                    .map((c: any) => {
-                      const name = c.contractName.toUpperCase();
-                      const quote = name.endsWith('USD') ? 'USD' : '';
-                      const base = quote ? name.replace(quote, '') : name;
-                      return [
-                        c.contractName,
-                        {
-                          ...c,
-                          baseAsset: base,
-                          quoteAsset: quote,
-                          iconURL: coinMap[base],
-                        },
-                      ];
-                    }),
-                ),
-              );
-            }
-            setPerpsFilterOptions(categoriesMap);
-          }
+      for (let i = 0; i < MAX_EVENTS_PAGES; i += 1) {
+        const page = await fetchPolymarketJson(
+          `${basePath}&limit=${EVENTS_PAGE_SIZE}&offset=${offset}`,
+        );
+        if (!Array.isArray(page) || page.length === 0) break;
+        allEvents.push(...page);
+        if (page.length < EVENTS_PAGE_SIZE) break;
+        offset += page.length;
+      }
+
+      return allEvents;
+    };
+    const startTradeStream = () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+
+      const ws = new WebSocket('wss://ws-live-data.polymarket.com/');
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        try {
+          ws.send(
+            JSON.stringify({
+              type: 'subscribe',
+              channels: ['trades'],
+            }),
+          );
+        } catch (error) {
+          console.warn('Polymarket trade stream subscribe failed:', error);
         }
 
-        /* const tradelogs = result[1].result;
-            const orderlogs = result?.[2]?.result;
-            const filllogs = result?.[3]?.result;
-            let ordersChanged = false;
-            let canceledOrdersChanged = false;
-            let tradesByMarketChanged = false;
-            let tradeHistoryChanged = false;
-            let temporders: any;
-            let tempcanceledorders: any;
-            let temptradesByMarket: any;
-            let temptradehistory: any;
-            setorders((orders) => {
-              temporders = [...orders];
-              return orders;
-            })
-            setcanceledorders((canceledorders) => {
-              tempcanceledorders = [...canceledorders];
-              return canceledorders;
-            })
-            settradesByMarket((tradesByMarket: any) => {
-              temptradesByMarket = { ...tradesByMarket };
-              return tradesByMarket;
-            })
-            settradehistory((tradehistory: any) => {
-              temptradehistory = [...tradehistory];
-              return tradehistory;
-            }) */
-      } catch {}
-    };
-
-    const connectWebSocket = () => {
-      if (liveStreamCancelled) return;
-      fetchData();
-      const endpoint = `wss://quote.edgex.exchange/api/v1/public/ws?timestamp=${Date.now()}`;
-      wsRef.current = new WebSocket(endpoint);
-
-      wsRef.current.onopen = async () => {
-        setWsReady(true);
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current);
+        }
         pingIntervalRef.current = setInterval(() => {
           if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(
-              JSON.stringify({
-                type: 'pong',
-                time: Date.now().toString(),
-              }),
-            );
+            try {
+              wsRef.current.send(JSON.stringify({ type: 'ping' }));
+            } catch (error) {
+              console.warn('Polymarket trade stream ping failed:', error);
+            }
           }
-        }, 15000);
-
-        const subs = ['ticker.all.1s'];
-
-        subs.forEach((channel: any) => {
-          wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }));
-        });
+        }, 20000);
       };
 
-      wsRef.current.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        if (message?.content?.data) {
-          const msg = message?.content?.data;
-          if (message.content.channel.startsWith('depth')) {
-            if (msg[0].depthType == 'SNAPSHOT') {
-              setorderdata([
-                msg[0].bids.map((i: any) => ({
-                  ...i,
-                  price: Number(i.price),
-                  size: Number(i.size),
-                })),
-                msg[0].asks.map((i: any) => ({
-                  ...i,
-                  price: Number(i.price),
-                  size: Number(i.size),
-                })),
-                msg[0].contractName,
-              ]);
-            } else {
-              setorderdata((prev: any) => {
-                const temporders = [[...prev[0]], [...prev[1]]];
+      ws.onmessage = (event) => {
+        if (liveStreamCancelled) return;
+        try {
+          const payload = JSON.parse(event.data);
+          const trades = Array.isArray(payload)
+            ? payload
+            : Array.isArray(payload?.trades)
+              ? payload.trades
+              : Array.isArray(payload?.data?.trades)
+                ? payload.data.trades
+                : payload?.trade
+                  ? [payload.trade]
+                  : payload?.data?.trade
+                    ? [payload.data.trade]
+                    : [];
 
-                msg[0].bids.forEach((i: any) => {
-                  const price = Number(i.price);
-                  const size = Number(i.size);
-                  const idx = temporders[0].findIndex((o) => o.price === price);
+          if (!trades.length) return;
 
-                  if (size === 0 && idx !== -1) {
-                    temporders[0].splice(idx, 1);
-                  } else if (idx !== -1) {
-                    temporders[0][idx].size = size;
-                  } else if (size > 0) {
-                    let insertAt = temporders[0].findIndex(
-                      (o) => o.price < price,
-                    );
-                    if (insertAt === -1) insertAt = temporders[0].length;
-                    temporders[0].splice(insertAt, 0, { ...i, price, size });
-                  }
+          setLiveTrades((prev) => {
+            const combined = [...trades, ...prev];
+            const uniqueMap = new Map<string, any>();
+
+            combined.forEach((trade) => {
+              const timestamp =
+                trade?.timestamp ??
+                trade?.time ??
+                trade?.ts ??
+                trade?.createdAt;
+              const normalizedTimestamp =
+                typeof timestamp === 'string'
+                  ? new Date(timestamp).getTime()
+                  : timestamp;
+              const tradeId =
+                trade?.id ||
+                trade?.trade_id ||
+                trade?.transactionHash ||
+                trade?.tx_hash ||
+                `${trade?.market || trade?.conditionId || trade?.marketId || 'market'}-${normalizedTimestamp}`;
+
+              if (!uniqueMap.has(tradeId)) {
+                uniqueMap.set(tradeId, {
+                  ...trade,
+                  timestamp: normalizedTimestamp,
                 });
-
-                msg[0].asks.forEach((i: any) => {
-                  const price = Number(i.price);
-                  const size = Number(i.size);
-                  const idx = temporders[1].findIndex((o) => o.price === price);
-
-                  if (size === 0 && idx !== -1) {
-                    temporders[1].splice(idx, 1);
-                  } else if (idx !== -1) {
-                    temporders[1][idx].size = size;
-                  } else if (size > 0) {
-                    let insertAt = temporders[1].findIndex(
-                      (o) => o.price > price,
-                    );
-                    if (insertAt === -1) insertAt = temporders[1].length;
-                    temporders[1].splice(insertAt, 0, { ...i, price, size });
-                  }
-                });
-                temporders.push(msg[0].contractName);
-                return temporders;
-              });
-            }
-          } else if (message.content.channel.startsWith('trades')) {
-          } else if (message.content.channel.startsWith('kline')) {
-            if (message.content.dataType == 'Snapshot') {
-              const key =
-                msg?.[0].contractName +
-                (msg?.[0].klineType === 'DAY_1'
-                  ? '1D'
-                  : msg?.[0].klineType === 'HOUR_4'
-                    ? '240'
-                    : msg?.[0].klineType === 'HOUR_1'
-                      ? '60'
-                      : msg?.[0].klineType.startsWith('MINUTE_')
-                        ? msg?.[0].klineType.slice('MINUTE_'.length)
-                        : msg?.[0].klineType);
-
-              if (realtimeCallbackRef.current[key]) {
-                const mapKlines = (klines: any[]) =>
-                  klines.map((candle) => ({
-                    time: Number(candle.klineTime),
-                    open: Number(candle.open),
-                    high: Number(candle.high),
-                    low: Number(candle.low),
-                    close: Number(candle.close),
-                    volume: Number(candle.value),
-                  }));
-                realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
               }
-            } else {
-              const key =
-                msg?.[0].contractName +
-                (msg?.[0].klineType === 'DAY_1'
-                  ? '1D'
-                  : msg?.[0].klineType === 'HOUR_4'
-                    ? '240'
-                    : msg?.[0].klineType === 'HOUR_1'
-                      ? '60'
-                      : msg?.[0].klineType.startsWith('MINUTE_')
-                        ? msg?.[0].klineType.slice('MINUTE_'.length)
-                        : msg?.[0].klineType);
-              if (realtimeCallbackRef.current[key]) {
-                const mapKlines = (klines: any[]) =>
-                  klines.map((candle) => ({
-                    time: Number(candle.klineTime),
-                    open: Number(candle.open),
-                    high: Number(candle.high),
-                    low: Number(candle.low),
-                    close: Number(candle.close),
-                    volume: Number(candle.value),
-                  }));
-                realtimeCallbackRef.current[key](mapKlines(msg.reverse())[0]);
-              }
-            }
-          } else if (message.content.channel.startsWith('ticker')) {
-            setPerpsMarketsData((prev: any) =>
-              Object.fromEntries(
-                Object.entries(prev).map(([name, market]: any) => {
-                  const update = message.content.data.find(
-                    (d: any) => d.contractName === name,
-                  );
-                  return [name, update ? { ...market, ...update } : market];
-                }),
-              ),
-            );
-          }
-          /* let ordersChanged = false;
-              let canceledOrdersChanged = false;
-              let tradesByMarketChanged = false;
-              let tradeHistoryChanged = false;
-              let temporders: any;
-              let tempcanceledorders: any;
-              let temptradesByMarket: any;
-              let temptradehistory: any;
-              setorders((orders) => {
-                temporders = [...orders];
-                return orders;
-              })
-              setcanceledorders((canceledorders) => {
-                tempcanceledorders = [...canceledorders];
-                return canceledorders;
-              })
-              settradesByMarket((tradesByMarket: any) => {
-                temptradesByMarket = { ...tradesByMarket };
-                return tradesByMarket;
-              })
-              settradehistory((tradehistory: any) => {
-                temptradehistory = [...tradehistory];
-                return tradehistory;
-              }) */
+            });
+
+            return Array.from(uniqueMap.values())
+              .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+              .slice(0, MAX_LIVE_TRADES);
+          });
+        } catch (error) {
+          console.warn('Polymarket trade stream parse failed:', error);
         }
       };
 
-      wsRef.current.onclose = () => {
-        setWsReady(false);
-        subRefs.current = [];
+      ws.onclose = () => {
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current);
           pingIntervalRef.current = null;
         }
+        if (liveStreamCancelled) return;
         reconnectIntervalRef.current = setTimeout(() => {
-          connectWebSocket();
-        }, 500);
+          if (!liveStreamCancelled) {
+            startTradeStream();
+          }
+        }, 5000);
       };
 
-      wsRef.current.onerror = (error) => {
-        console.error(error);
+      ws.onerror = (error) => {
+        console.warn('Polymarket trade stream error:', error);
       };
     };
 
-    connectWebSocket();
+    const fetchInitialData = async () => {
+      try {
+        if (Object.keys(perpsMarketsData).length == 0) {
+          // Fetch events with active markets from Polymarket via proxy
+          const [eventsRes, tagsRes] = await Promise.all([
+            fetchAllEvents(
+              '/predictapi/events?active=true&archived=false&closed=false',
+            ),
+            fetchPolymarketJson('/predictapi/tags?limit=100'),
+          ]);
+
+          if (liveStreamCancelled) return;
+
+          if (eventsRes) {
+            const allEvents = Array.isArray(eventsRes) ? eventsRes : [];
+
+            // Group markets by event - if event has >2 markets, it's multi-outcome
+            const groupedMarkets: any[] = [];
+
+            allEvents.forEach((event: any) => {
+              const activeMarkets = (event.markets || []).filter((m: any) => m.active);
+
+              if (activeMarkets.length === 0) return;
+
+              // Multi-outcome event (>2 markets) - group into single card
+              if (activeMarkets.length > 2) {
+                groupedMarkets.push({
+                  conditionId: `event-${event.slug || event.id}`,
+                  eventId: event.slug || event.id,
+                  eventTitle: event.title,
+                  eventSlug: event.slug,
+                  eventImage: event.image || event.icon,
+                  eventTags: event.tags || [],
+                  isMultiOutcome: true,
+                  active: true,
+                  outcomes: activeMarkets.map((m: any) => m.question),
+                  outcomePrices: activeMarkets.map((m: any) => {
+                    const prices = typeof m.outcomePrices === 'string'
+                      ? JSON.parse(m.outcomePrices)
+                      : m.outcomePrices || [];
+                    return parseFloat(prices[0] || 0);
+                  }),
+                  markets: activeMarkets,
+                  volume24hr: activeMarkets.reduce((sum: number, m: any) => sum + (m.volume24hr || 0), 0),
+                  volume: activeMarkets.reduce((sum: number, m: any) => sum + (m.volume || 0), 0),
+                  liquidity: activeMarkets.reduce((sum: number, m: any) => sum + (m.liquidity || 0), 0),
+                  endDate: activeMarkets[0]?.endDate,
+                  startDate: activeMarkets[0]?.startDate,
+                  fundingTime: new Date(activeMarkets[0]?.startDate || activeMarkets[0]?.creationDate || Date.now()).getTime(),
+                });
+              } else {
+                // Binary market (1-2 outcomes) - separate cards
+                activeMarkets.forEach((market: any) => {
+                  groupedMarkets.push({
+                    ...market,
+                    eventTitle: event.title,
+                    eventSlug: event.slug,
+                    eventImage: event.image || event.icon,
+                    eventTags: event.tags || [],
+                    isMultiOutcome: false,
+                  });
+                });
+              }
+            });
+
+            const allMarkets = groupedMarkets;
+
+            // Build categories map from tags
+            const categoriesMap: Record<string, string[]> = {
+              All: allMarkets.map((m: any) => m.conditionId),
+            };
+
+            // Add "Trending" category - top markets by 24h volume
+            const topVolumeMarkets = [...allMarkets]
+              .filter((m: any) => m.active)
+              .sort((a: any, b: any) => (b.volume24hr || 0) - (a.volume24hr || 0))
+              .slice(0, 100)
+              .map((m: any) => m.conditionId);
+
+            if (topVolumeMarkets.length > 0) {
+              categoriesMap.Trending = topVolumeMarkets;
+            }
+
+            // Add "24hr Highest Volume" category
+            const highestVolumeMarkets = [...allMarkets]
+              .filter((m: any) => m.active)
+              .sort((a: any, b: any) => (b.volume24hr || 0) - (a.volume24hr || 0))
+              .slice(0, 100)
+              .map((m: any) => m.conditionId);
+
+            if (highestVolumeMarkets.length > 0) {
+              categoriesMap['24hr Highest Volume'] = highestVolumeMarkets;
+            }
+
+            if (tagsRes && Array.isArray(tagsRes)) {
+              tagsRes.forEach((tag: any) => {
+                // Get markets that have this tag
+                const tagMarkets = allEvents
+                  .filter((event: any) =>
+                    event.tags?.some((t: any) => t.id === tag.id || t.label === tag.label)
+                  )
+                  .flatMap((event: any) =>
+                    (event.markets || []).map((m: any) => m.conditionId)
+                  );
+
+                if (tagMarkets.length > 0) {
+                  categoriesMap[tag.label || tag.name] = tagMarkets;
+                }
+              });
+            }
+
+            // Transform markets to match the expected data structure
+            setPerpsMarketsData(
+              Object.fromEntries(
+                allMarkets
+                  .filter((m: any) => m.active)
+                  .map((market: any) => {
+                    // Parse outcomes if they're strings
+                    const outcomes = typeof market.outcomes === 'string'
+                      ? JSON.parse(market.outcomes)
+                      : market.outcomes || [];
+
+                    const outcomePrices = typeof market.outcomePrices === 'string'
+                      ? JSON.parse(market.outcomePrices)
+                      : market.outcomePrices || [];
+
+                    // Calculate price for display (convert 0-1 to dollar amount)
+                    const primaryPrice = parseFloat(outcomePrices[0] || 0);
+
+                    // Extract a short name from the question for display
+                    const shortName = (market.question || '')
+                      .replace(/^Will\s+/i, '')
+                      .replace(/^Is\s+/i, '')
+                      .replace(/\?.*$/, '')
+                      .substring(0, 50);
+
+                    return [
+                      market.conditionId, // Use conditionId as the key
+                      {
+                        contractId: market.conditionId,
+                        contractName: market.conditionId,
+                        baseAsset: shortName,
+                        quoteAsset: 'USD',
+                        iconURL: market.image || market.eventImage || '',
+                        question: market.question,
+                        outcomes: outcomes,
+                        outcomePrices: outcomePrices,
+                        // Price fields
+                        lastPrice: primaryPrice,
+                        priceChangePercent: market.priceChangePercent || 0,
+                        // Volume fields - Polymarket uses volume in USD
+                        value: market.volume24hr || market.volume || 0,
+                        volume: market.volume || 0,
+                        volume24h: market.volume24hr || 0,
+                        // Liquidity
+                        liquidity: market.liquidity || 0,
+                        openInterest: market.liquidity || 0, // Use liquidity as proxy for OI
+                        // Funding rate (Polymarket doesn't have this, set to 0)
+                        fundingRate: 0,
+                        fundingTime: new Date(market.startDate || market.creationDate || Date.now()).getTime(),
+                        // Trade count (use a reasonable estimate based on volume)
+                        trades: Math.floor((market.volume24hr || 0) / 100) || 0,
+                        // Status
+                        enableDisplay: market.active,
+                        status: 'graduated', // All Polymarket markets are "active"
+                        // Social links (Polymarket doesn't provide these directly)
+                        twitterHandle: market.twitterHandle || '',
+                        telegram: market.telegram || '',
+                        discord: market.discord || '',
+                        website: `https://polymarket.com/event/${market.eventSlug || market.slug}`,
+                        // Additional Polymarket-specific fields
+                        clobTokenIds: market.clobTokenIds || [],
+                        marketSlug: market.slug,
+                        eventTitle: market.eventTitle,
+                        eventSlug: market.eventSlug,
+                        endDate: market.endDate,
+                        startDate: market.startDate,
+                        isBlacklisted: false,
+                        bondingPercentage: 1, // All markets are "complete"
+                        source: 'polymarket',
+                      },
+                    ];
+                  }),
+              ),
+            );
+
+            setPerpsFilterOptions(categoriesMap);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching Polymarket data:', error);
+        setPerpsFilterOptions({ All: [] });
+      }
+    };
+
+    const updatePrices = async (currentPageMarkets: string[]) => {
+      if (liveStreamCancelled || currentPageMarkets.length === 0) return;
+
+      try {
+        // Only fetch a single page with the markets we need
+        const eventsRes = await fetchPolymarketJson(
+          `/predictapi/events?limit=${EVENTS_PAGE_SIZE}&closed=false`,
+        );
+
+        if (liveStreamCancelled || !eventsRes) return;
+
+        const allEvents = Array.isArray(eventsRes) ? eventsRes : [];
+
+        // Update market prices only for currently visible markets
+        setPerpsMarketsData((prev: any) => {
+          const updated = { ...prev };
+
+          allEvents.forEach((event: any) => {
+            (event.markets || []).forEach((market: any) => {
+              // Only update if this market is in the current page
+              if (updated[market.conditionId] && currentPageMarkets.includes(market.conditionId)) {
+                const outcomes = typeof market.outcomes === 'string'
+                  ? JSON.parse(market.outcomes)
+                  : market.outcomes || [];
+
+                const outcomePrices = typeof market.outcomePrices === 'string'
+                  ? JSON.parse(market.outcomePrices)
+                  : market.outcomePrices || [];
+
+                const primaryPrice = parseFloat(outcomePrices[0] || 0);
+                const previousPrice = updated[market.conditionId].lastPrice || primaryPrice;
+
+                // Calculate price change percent
+                const priceChangePercent = previousPrice !== 0
+                  ? (primaryPrice - previousPrice) / previousPrice
+                  : 0;
+
+                updated[market.conditionId] = {
+                  ...updated[market.conditionId],
+                  outcomes: outcomes,
+                  outcomePrices: outcomePrices,
+                  lastPrice: primaryPrice,
+                  priceChangePercent: priceChangePercent,
+                  value: market.volume24hr || market.volume || 0,
+                  volume24h: market.volume24hr || 0,
+                  volume: market.volume || 0,
+                  liquidity: market.liquidity || 0,
+                  openInterest: market.liquidity || 0,
+                  trades: Math.floor((market.volume24hr || 0) / 100) || 0,
+                };
+              }
+            });
+          });
+
+          return updated;
+        });
+      } catch (error) {
+        console.error('Error updating Polymarket prices:', error);
+      }
+    };
+
+    const initializeData = async () => {
+      await fetchInitialData();
+
+      if (!liveStreamCancelled) {
+        setWsReady(true);
+        startTradeStream();
+
+        // Start polling for price updates every second
+        priceUpdateInterval = setInterval(() => {
+          // Get current page markets from realtimeCallbackRef
+          const currentMarkets = realtimeCallbackRef.current.getCurrentPageMarkets?.() || [];
+          updatePrices(currentMarkets);
+        }, 1000);
+      }
+    };
+
+    initializeData();
 
     return () => {
       liveStreamCancelled = true;
+      if (priceUpdateInterval) {
+        clearInterval(priceUpdateInterval);
+        priceUpdateInterval = null;
+      }
       if (pingIntervalRef.current) {
         clearInterval(pingIntervalRef.current);
         pingIntervalRef.current = null;
@@ -5360,9 +5501,17 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const handleTokenClick = useCallback(
     (t: Token) => {
       setTokenData(t);
-      navigate(`/meme/${t.id}`);
+      const marketKey = (t as any).contractId || (t as any).contractName;
+      const marketSlug = (t as any).eventSlug || (t as any).slug || marketKey;
+      if (marketKey) {
+        setperpsActiveMarketKey(marketKey);
+      }
+      if (setOnlyThisMarket) {
+        setOnlyThisMarket(true);
+      }
+      navigate(`/event/${marketSlug}`);
     },
-    [navigate],
+    [navigate, setOnlyThisMarket, setperpsActiveMarketKey],
   );
 
   const hideToken = useCallback(
@@ -5693,10 +5842,20 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     };
   }, [pausedColumn, newTokens, graduatingTokens, graduatedTokens]);
 
-  const [perpsSortField, setPerpsSortField] = useState<'market' | 'change' | 'volume' | 'openInterest' | 'funding' | 'trades' | null>('openInterest');
+  const [perpsSortField, setPerpsSortField] = useState<'market' | 'change' | 'volume' | 'openInterest' | 'trades' | 'endDate' | null>('volume');
   const [perpsSortDirection, setPerpsSortDirection] = useState<'asc' | 'desc' | undefined>('desc');
+  const [perpsCurrentPage, setPerpsCurrentPage] = useState(1);
+  const [favoriteMarkets, setFavoriteMarkets] = useState<Set<string>>(new Set());
+  const [selectedCategory, setSelectedCategory] = useState<string>('Trending');
+  const hasSetDefaultCategoryRef = useRef(false);
+  const [liveTrades, setLiveTrades] = useState<any[]>([]);
+  const [hoveredMarket, setHoveredMarket] = useState<string | null>(null);
+  const [marketHoverData, setMarketHoverData] = useState<Record<string, { orderbook?: any; series?: any }>>({});
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const ITEMS_PER_PAGE = 100;
+  const MAX_LIVE_TRADES = 50;
 
-  const handlePerpsSort = (field: 'market' | 'change' | 'volume' | 'openInterest' | 'funding' | 'trades') => {
+  const handlePerpsSort = (field: 'market' | 'change' | 'volume' | 'openInterest' | 'trades' | 'endDate') => {
     if (perpsSortField === field) {
       setPerpsSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -5705,8 +5864,69 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     }
   };
 
+  // Fetch orderbook and series data on hover
+  const fetchMarketHoverData = useCallback(async (conditionId: string, tokenId?: string) => {
+    try {
+      // Fetch orderbook
+      const orderbookPromise = fetch(`/clob/book?token_id=${tokenId || conditionId}`)
+        .then(res => res.json())
+        .catch(err => {
+          console.warn('Failed to fetch orderbook:', err);
+          return null;
+        });
+
+      // Fetch series
+      const seriesPromise = fetch(`/clob/series?id=${conditionId}`)
+        .then(res => res.json())
+        .catch(err => {
+          console.warn('Failed to fetch series:', err);
+          return null;
+        });
+
+      const [orderbook, series] = await Promise.all([orderbookPromise, seriesPromise]);
+
+      setMarketHoverData(prev => ({
+        ...prev,
+        [conditionId]: { orderbook, series }
+      }));
+    } catch (error) {
+      console.error('Error fetching market hover data:', error);
+    }
+  }, []);
+
+  const handleMarketHover = useCallback((conditionId: string, tokenId?: string) => {
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+
+    // Set new timeout to fetch data after 300ms hover
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredMarket(conditionId);
+
+      // Only fetch if we don't already have the data
+      if (!marketHoverData[conditionId]) {
+        fetchMarketHoverData(conditionId, tokenId);
+      }
+    }, 300);
+  }, [marketHoverData, fetchMarketHoverData]);
+
+  const handleMarketLeave = useCallback(() => {
+    // Clear timeout if user leaves before 300ms
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    setHoveredMarket(null);
+  }, []);
+
   const trendingTokens = useMemo(() => {
-    const filtered = (Object.values(perpsMarketsData).filter((t: any) => !!t.priceChangePercent) as any[])
+    // Filter by category first
+    let filtered = Object.values(perpsMarketsData).filter((t: any) => t.enableDisplay) as any[];
+
+    if (selectedCategory && selectedCategory !== 'All' && perpsFilterOptions[selectedCategory]) {
+      const categoryMarketIds = perpsFilterOptions[selectedCategory];
+      filtered = filtered.filter((t: any) => categoryMarketIds.includes(t.contractId));
+    }
 
     if (perpsSortField && perpsSortDirection) {
       filtered.sort((a, b) => {
@@ -5719,24 +5939,24 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
         switch (perpsSortField) {
           case 'change':
-            aValue = parseFloat((a.priceChangePercent || 0).toString().replace(/[+%]/g, ''));
-            bValue = parseFloat((b.priceChangePercent || 0).toString().replace(/[+%]/g, ''));
+            aValue = parseFloat((a.lastPrice || 0).toString());
+            bValue = parseFloat((b.lastPrice || 0).toString());
             break;
           case 'volume':
             aValue = parseFloat((a.value || 0).toString().replace(/,/g, ''));
             bValue = parseFloat((b.value || 0).toString().replace(/,/g, ''));
             break;
           case 'openInterest':
-            aValue = parseFloat((a.openInterest || 0).toString()) * parseFloat((a.lastPrice || 0).toString());
-            bValue = parseFloat((b.openInterest || 0).toString()) * parseFloat((b.lastPrice || 0).toString());
-            break;
-          case 'funding':
-            aValue = parseFloat((a.fundingRate || 0).toString());
-            bValue = parseFloat((b.fundingRate || 0).toString());
+            aValue = parseFloat((a.liquidity || 0).toString());
+            bValue = parseFloat((b.liquidity || 0).toString());
             break;
           case 'trades':
             aValue = parseFloat((a.trades || 0).toString());
             bValue = parseFloat((b.trades || 0).toString());
+            break;
+          case 'endDate':
+            aValue = new Date(a.endDate || 0).getTime();
+            bValue = new Date(b.endDate || 0).getTime();
             break;
           default:
             return 0;
@@ -5746,7 +5966,51 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     }
 
     return filtered;
-  }, [perpsMarketsData, perpsSortField, perpsSortDirection]);
+  }, [perpsMarketsData, perpsSortField, perpsSortDirection, selectedCategory, perpsFilterOptions]);
+
+  useEffect(() => {
+    if (hasSetDefaultCategoryRef.current) return;
+    if (perpsFilterOptions?.Trending?.length) {
+      setSelectedCategory('Trending');
+      setPerpsCurrentPage(1);
+      hasSetDefaultCategoryRef.current = true;
+      return;
+    }
+    if (perpsFilterOptions?.All?.length) {
+      setSelectedCategory('All');
+      setPerpsCurrentPage(1);
+      hasSetDefaultCategoryRef.current = true;
+    }
+  }, [perpsFilterOptions]);
+
+  const paginatedTokens = useMemo(() => {
+    const startIndex = (perpsCurrentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return trendingTokens.slice(startIndex, endIndex);
+  }, [trendingTokens, perpsCurrentPage, ITEMS_PER_PAGE]);
+
+  const totalPages = useMemo(() => {
+    return Math.ceil(trendingTokens.length / ITEMS_PER_PAGE);
+  }, [trendingTokens, ITEMS_PER_PAGE]);
+
+  // Update the callback with current page markets for real-time price updates
+  useEffect(() => {
+    realtimeCallbackRef.current.getCurrentPageMarkets = () => {
+      return paginatedTokens.map((token: any) => token.contractId);
+    };
+  }, [paginatedTokens]);
+
+  const toggleFavorite = (contractId: string) => {
+    setFavoriteMarkets(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(contractId)) {
+        newSet.delete(contractId);
+      } else {
+        newSet.add(contractId);
+      }
+      return newSet;
+    });
+  };
 
   const tokenCounts = useMemo(
     () => ({
@@ -6936,10 +7200,115 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
             </div>
           </>
         ) : (
-          <div className="trending-container">
+          <div className="predict-layout-with-stream">
+            {/* Live Trade Stream Sidebar */}
+            <div className="predict-trade-stream-sidebar">
+              <div className="predict-trade-stream-header">
+                <h3>Live Trades</h3>
+                <div className="predict-trade-stream-count">{liveTrades.length}</div>
+              </div>
+              <div className="predict-trade-stream-list">
+                {liveTrades.length === 0 ? (
+                  <div className="predict-trade-stream-empty">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2">
+                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                    <p>Waiting for trades...</p>
+                  </div>
+                ) : (
+                  liveTrades.map((trade, idx) => {
+                    const timestamp = trade?.timestamp ?? trade?.time ?? trade?.ts ?? trade?.createdAt ?? Date.now();
+                    const timeAgo = formatTimeAgo(typeof timestamp === 'string' ? new Date(timestamp).getTime() : timestamp);
+                    const isBuy = trade?.side === 'BUY' || trade?.type === 'buy' || trade?.isBuy;
+                    const amount = trade?.amount || trade?.size || trade?.quantity || 0;
+                    const price = trade?.price || 0;
+                    const market = trade?.market || trade?.marketName || trade?.eventName || 'Unknown';
+
+                    return (
+                      <div key={idx} className="predict-trade-stream-item">
+                        <div className="predict-trade-stream-item-header">
+                          <span className="predict-trade-stream-market">{market.length > 30 ? market.substring(0, 30) + '...' : market}</span>
+                          <span className="predict-trade-stream-time">{timeAgo}</span>
+                        </div>
+                        <div className="predict-trade-stream-item-details">
+                          <span className={`predict-trade-stream-side ${isBuy ? 'buy' : 'sell'}`}>
+                            {isBuy ? 'YES' : 'NO'}
+                          </span>
+                          <span className="predict-trade-stream-price">{(price * 100).toFixed(1)}¢</span>
+                          <span className="predict-trade-stream-amount">${formatCommas(amount.toFixed(0))}</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="trending-container predict-grid-container">
+            {/* Filter and Sort Bar */}
+            <div className="predict-filter-bar">
+              {/* Category Filters */}
+              <div className="predict-category-filters">
+                {Object.keys(perpsFilterOptions).length === 0 ? (
+                  // Loading skeletons
+                  Array(6).fill(0).map((_, i) => (
+                    <div key={i} className="predict-category-skeleton skeleton" />
+                  ))
+                ) : (
+                  Object.keys(perpsFilterOptions).map((category) => (
+                    <button
+                      key={category}
+                      className={`predict-category-btn ${selectedCategory === category ? 'active' : ''}`}
+                      onClick={() => {
+                        setSelectedCategory(category);
+                        setPerpsCurrentPage(1);
+                      }}
+                    >
+                      {category}
+                    </button>
+                  ))
+                )}
+              </div>
+
+              {/* Sort Dropdown */}
+              <div className="predict-sort-container">
+                <label className="predict-sort-label">Sort by:</label>
+                <select
+                  value={perpsSortField || ''}
+                  onChange={(e) => handlePerpsSort(e.target.value as any)}
+                  className="predict-sort-select"
+                >
+                  <option value="volume">Highest Volume</option>
+                  <option value="openInterest">Highest Liquidity</option>
+                  <option value="change">Highest Probability</option>
+                  <option value="trades">Most Traders</option>
+                  <option value="endDate">Ending Soon</option>
+                </select>
+                <button
+                  className="predict-sort-direction-btn"
+                  onClick={() => setPerpsSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+                  title={perpsSortDirection === 'asc' ? 'Ascending' : 'Descending'}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ transform: perpsSortDirection === 'asc' ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}
+                  >
+                    <path d="M12 5v14M19 12l-7 7-7-7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
             <div className="trending-header perps">
               <div className="trending-header-cell perps pair-info-header" onClick={() => handlePerpsSort('market')}>
-                Market
+                Event
                 <SortArrow
                   sortDirection={perpsSortField === 'market' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
                   onClick={(e) => {
@@ -6949,7 +7318,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                 />
               </div>
               <div className="trending-header-cell perps" onClick={() => handlePerpsSort('change')}>
-                Price
+                Probability
                 <SortArrow
                   sortDirection={perpsSortField === 'change' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
                   onClick={(e) => {
@@ -6959,7 +7328,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                 />
               </div>
               <div className="trending-header-cell perps" onClick={() => handlePerpsSort('volume')}>
-                Volume
+                Volume 24h
                 <SortArrow
                   sortDirection={perpsSortField === 'volume' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
                   onClick={(e) => {
@@ -6969,7 +7338,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                 />
               </div>
               <div className="trending-header-cell perps" onClick={() => handlePerpsSort('openInterest')}>
-                Open Interest
+                Liquidity
                 <SortArrow
                   sortDirection={perpsSortField === 'openInterest' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
                   onClick={(e) => {
@@ -6978,18 +7347,8 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                   }}
                 />
               </div>
-              <div className="trending-header-cell perps" onClick={() => handlePerpsSort('funding')}>
-                Funding
-                <SortArrow
-                  sortDirection={perpsSortField === 'funding' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
-                  onClick={(e) => {
-                      e.stopPropagation();
-                      handlePerpsSort('funding');
-                  }}
-                />
-              </div>
               <div className="trending-header-cell perps" onClick={() => handlePerpsSort('trades')}>
-                Trades
+                Traders
                 <SortArrow
                   sortDirection={perpsSortField === 'trades' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
                   onClick={(e) => {
@@ -6998,11 +7357,21 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                   }}
                 />
               </div>
-              <div className="trending-header-cell perps action-cell">Action</div>
+              <div className="trending-header-cell perps" onClick={() => handlePerpsSort('endDate')}>
+                Ends
+                <SortArrow
+                  sortDirection={perpsSortField === 'endDate' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
+                  onClick={(e) => {
+                      e.stopPropagation();
+                      handlePerpsSort('endDate');
+                  }}
+                />
+              </div>
+              <div className="trending-header-cell perps action-cell">Trade</div>
             </div>
 
             <div className="trending-list">
-              {trendingTokens.length == 0 ? (
+              {paginatedTokens.length == 0 ? (
                 Array.from({ length: 12 }).map((_, index) => (
                   <div
                     key={`skeleton-trending-${index}`}
@@ -7033,14 +7402,176 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                     </div>
                   </div>
                 ))
-              ) : trendingTokens.length ? (
-                trendingTokens.map((token) => (
-                  <div
-                    key={token.contractId}
-                    className={`trending-row perps ${hidden.has(token.contractId) ? 'hidden-token' : ''} ${token.isBlacklisted ? 'blacklisted-token' : ''}`}
-                    onClick={() => handlePerpsMarketSelect(token.contractName)}
+              ) : paginatedTokens.length ? (
+                paginatedTokens.map((token) => {
+                  const outcomes = token.outcomes || ['Yes', 'No'];
+                  const outcomePrices = token.outcomePrices || [token.lastPrice, 1 - token.lastPrice];
+                  const isMultiOutcome = outcomes.length > 2;
+
+                  // For multi-outcome markets, render a special card layout
+                  if (isMultiOutcome) {
+                    return (
+                      <div
+                        key={token.contractId}
+                        className={`trending-row perps multi-outcome ${hidden.has(token.contractId) ? 'hidden-token' : ''} ${token.isBlacklisted ? 'blacklisted-token' : ''}`}
+                        onClick={() => handleTokenClick(token)}
+                        onMouseEnter={() => handleMarketHover(token.contractId, token.markets?.[0]?.tokenID)}
+                        onMouseLeave={handleMarketLeave}
+                      >
+                        {/* Favorite Button */}
+                        <button
+                          className="predict-favorite-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(token.contractId);
+                          }}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill={favoriteMarkets.has(token.contractId) ? '#aaaecf' : 'none'}
+                            stroke={favoriteMarkets.has(token.contractId) ? '#aaaecf' : 'rgba(255,255,255,0.5)'}
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                          </svg>
+                        </button>
+
+                        {/* Event Header */}
+                        <div className="predict-multi-header">
+                          <div className="predict-multi-image-container">
+                            {token.iconURL && (token.iconURL.startsWith('https://static') || token.iconURL.startsWith('https://polymarket') || token.iconURL.startsWith('http')) ? (
+                              <img
+                                src={token.iconURL}
+                                className="predict-multi-image"
+                                alt={token.baseAsset}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="predict-multi-image-placeholder">
+                                {token.baseAsset.slice(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <div className="predict-multi-title-container">
+                            <div className="predict-multi-title">
+                              {token.eventTitle || token.baseAsset}
+                            </div>
+                            <div className="predict-multi-subtitle">
+                              {token.question}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Outcomes List */}
+                        <div className="predict-multi-outcomes">
+                          {outcomes.map((outcome: string, idx: number) => {
+                            const probability = Number(outcomePrices[idx] || 0);
+                            return (
+                              <div key={idx} className="predict-multi-outcome-row">
+                                <div className="predict-multi-outcome-info">
+                                  <span className="predict-multi-outcome-name">
+                                    {outcome}
+                                  </span>
+                                  <span className="predict-multi-outcome-probability">
+                                    {(probability * 100).toFixed(0)}%
+                                  </span>
+                                </div>
+                                <div className="predict-multi-outcome-actions">
+                                  <button
+                                    className="predict-multi-yes-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleQuickBuy(token, quickAmounts.new, idx === 0 ? 'primary' : 'secondary');
+                                    }}
+                                    disabled={loading.has(`${token.contractId}-${idx}`)}
+                                  >
+                                    {loading.has(`${token.contractId}-${idx}`) ? (
+                                      <div className="quickbuy-loading-spinner" />
+                                    ) : (
+                                      'Yes'
+                                    )}
+                                  </button>
+                                  <button
+                                    className="predict-multi-no-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleQuickBuy(token, quickAmounts.new, idx === 0 ? 'secondary' : 'primary');
+                                    }}
+                                    disabled={loading.has(`${token.contractId}-${idx}-no`)}
+                                  >
+                                    {loading.has(`${token.contractId}-${idx}-no`) ? (
+                                      <div className="quickbuy-loading-spinner" />
+                                    ) : (
+                                      'No'
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Volume Footer */}
+                        <div className="predict-multi-footer">
+                          <div className="predict-metric metric-volume">
+                            <svg
+                              className="predict-metric-icon"
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            </svg>
+                            <span className="predict-metric-value">
+                              ${formatCommas(Number(token.value / 1000).toFixed(0))}k Vol.
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Standard 2-outcome market
+                  return (
+                    <div
+                      key={token.contractId}
+                      className={`trending-row perps ${hidden.has(token.contractId) ? 'hidden-token' : ''} ${token.isBlacklisted ? 'blacklisted-token' : ''}`}
+                      onClick={() => handleTokenClick(token)}
+                      onMouseEnter={() => handleMarketHover(token.contractId, token.tokenID)}
+                      onMouseLeave={handleMarketLeave}
                   >
                     <div className="trending-cell pair-info-cell">
+                      {/* Favorite Button */}
+                      <button
+                        className="predict-favorite-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(token.contractId);
+                        }}
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill={favoriteMarkets.has(token.contractId) ? '#aaaecf' : 'none'}
+                          stroke={favoriteMarkets.has(token.contractId) ? '#aaaecf' : 'rgba(255,255,255,0.5)'}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                      </button>
                       <div className="trending-token-actions">
                         <button
                           className={`explorer-hide-button ${hidden.has(token.contractId) ? 'strikethrough' : ''}`}
@@ -7117,25 +7648,30 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                           <div
                             className={`trending-image-wrapper ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
                           >
-                            {token.iconURL &&
-                            token.iconURL.startsWith(
-                              'https://static',
-                            ) ? (
+                            {token.iconURL && (token.iconURL.startsWith('https://static') || token.iconURL.startsWith('https://polymarket') || token.iconURL.startsWith('http')) ? (
                               <img
                                 src={token.iconURL}
                                 className={`perps-trending-token-image ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
                                 alt={token.baseAsset}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  if (target.nextElementSibling) {
+                                    (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                                  }
+                                }}
                               />
-                            ) : (
-                              <div
-                                className={`trending-token-letter ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
-                              >
-                                {token.baseAsset.slice(0, 2).toUpperCase()}
-                              </div>
-                            )}
+                            ) : null}
+                            <div
+                              className={`trending-token-letter ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+                              style={{ display: (token.iconURL && (token.iconURL.startsWith('https://static') || token.iconURL.startsWith('https://polymarket') || token.iconURL.startsWith('http'))) ? 'none' : 'flex' }}
+                            >
+                              {token.baseAsset.slice(0, 2).toUpperCase()}
+                            </div>
                           </div>
                         </div>
-                        <div className="perps-token-explorer-launchpad-logo-container">
+                        {/* Removed Polymarket badge - it's the default */}
+                        <div className="perps-token-explorer-launchpad-logo-container" style={{ display: 'none' }}>
                           {token.iconURL.startsWith(
                               'https://static',
                             ) ? (
@@ -7323,114 +7859,127 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                       </div>
                     </div>
 
+                    {/* Probability */}
                     <div className="perps-trending-cell">
-                      <div className="perps-trending-market-cap-text">
-                        ${formatCommas(Number(token.lastPrice).toFixed((token.lastPrice.toString().split(".")[1] || "").length))}
+                      <div className="predict-probability">
+                        <div className="predict-probability-main">
+                          {(Number(token.lastPrice) * 100).toFixed(0)}%
+                        </div>
                         <span
-                          className={`trending-change ${token.priceChangePercent >= 0 ? 'positive' : 'negative'}`}
+                          className={`predict-probability-change ${token.priceChangePercent >= 0 ? 'positive' : 'negative'}`}
                         >
                           {token.priceChangePercent >= 0 ? '+' : ''}
-                          {(token.priceChangePercent * 100).toFixed(2)}%
+                          {(token.priceChangePercent * 100).toFixed(1)}%
                         </span>
                       </div>
                     </div>
 
-                    <div className="perps-trending-cell">
-                      ${formatCommas(Number(token.value).toFixed(0))}
-                    </div>
+                    {/* Compact Metrics Row - Polymarket Style */}
+                    <div className="predict-metrics-row">
+                      {(() => {
+                        const endDate = new Date(token.endDate);
+                        const now = new Date();
+                        const diffMs = endDate.getTime() - now.getTime();
+                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                        const isLive = diffHours > 0 && diffHours < 48;
 
-                    <div className="perps-trending-cell">
-                      ${formatCommas((Number(token.openInterest) * Number(token.lastPrice)).toFixed(0))}
-                    </div>
-
-                    <div className="trending-cell token-info-cell">
-                        {`${(token.fundingRate * 100).toFixed(4)}%`}
-                    </div>
-
-                    <div className="perps-trending-cell">
-                      <div className="trending-txns">
-                        <div className="trending-txns-numbers">
-                          {(() => {
-                            const totalTx =
-                              token.trades;
-                            return totalTx > 0 ? (
-                              <>
-                                <span
-                                  className="trending-buy-count"
-                                  style={{ color: '#28ed8a' }}
-                                >
-                                  {token.trades}
-                                </span>
-                                <span
-                                  style={{ color: 'rgba(255, 255, 255, 0.3)' }}
-                                >
-                                  /
-                                </span>
-                                <span
-                                  className="trending-sell-count"
-                                  style={{ color: '#f77f7d' }}
-                                >
-                                  {token.trades}
-                                </span>
-                              </>
-                            ) : (
-                              <span
-                                style={{ color: 'rgba(255, 255, 255, 0.3)' }}
-                              >
-                                0
-                              </span>
-                            );
-                          })()}
-                        </div>
-                      </div>
+                        return (
+                          <>
+                            {isLive && <span className="predict-live-dot"></span>}
+                            <span className="predict-metric-value">
+                              {(() => {
+                                if (diffDays > 365) {
+                                  return `${Math.floor(diffDays / 365)}y`;
+                                } else if (diffDays > 30) {
+                                  return `${Math.floor(diffDays / 30)}mo`;
+                                } else if (diffDays > 0) {
+                                  return `${diffDays}d`;
+                                } else if (diffHours > 0) {
+                                  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                                  return `${diffHours}:${String(minutes).padStart(2, '0')}`;
+                                } else {
+                                  return 'Ended';
+                                }
+                              })()}
+                            </span>
+                            <span className="predict-metric-separator"></span>
+                          </>
+                        );
+                      })()}
+                      <span className="predict-metric-value">
+                        ${Number(token.value / 1000000) >= 1
+                          ? `${(Number(token.value / 1000000)).toFixed(0)}m`
+                          : `${(Number(token.value / 1000)).toFixed(0)}k`} Vol.
+                      </span>
+                      <svg
+                        className="predict-metric-icon"
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{ marginLeft: '4px' }}
+                      >
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                      </svg>
+                      {token.eventTags && token.eventTags[0] && (
+                        <>
+                          <span className="predict-metric-separator"></span>
+                          <span className="predict-metric-tag">{token.eventTags[0].label || token.eventTags[0]}</span>
+                        </>
+                      )}
                     </div>
 
                     <div className="trending-cell action-cell" style={{gap: '10px'}}>
-                      <button
-                        className={`perps-trending-buy-btn`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleQuickBuy(token, quickAmounts.new, 'primary');
-                        }}
-                        disabled={loading.has(`${token.contractId}-primary`)}
-                      >
-                        {loading.has(`${token.contractId}-primary`) ? (
-                          <div className="quickbuy-loading-spinner" />
-                        ) : (
+                      {(() => {
+                        const outcomes = token.outcomes || ['Yes', 'No'];
+                        const outcomePrices = token.outcomePrices || [token.lastPrice, 1 - token.lastPrice];
+                        const outcome1 = outcomes[0] || 'Yes';
+                        const outcome2 = outcomes[1] || 'No';
+                        const yesPrice = Number(outcomePrices[0] || token.lastPrice || 0.5);
+                        const noPrice = Number(outcomePrices[1] || (1 - yesPrice));
+
+                        return (
                           <>
-                            <img
-                              src={lightning}
-                              alt=""
-                              className="trending-buy-icon"
-                            />
-                            <span className="mon-text">BUY</span>
+                            <button
+                              className={`perps-trending-buy-btn`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleQuickBuy(token, quickAmounts.new, 'primary');
+                              }}
+                              disabled={loading.has(`${token.contractId}-primary`)}
+                            >
+                              {loading.has(`${token.contractId}-primary`) ? (
+                                <div className="quickbuy-loading-spinner" />
+                              ) : (
+                                <span className="mon-text">{outcome1.length > 10 ? outcome1.substring(0, 10) + '...' : outcome1} {(yesPrice * 100).toFixed(0)}¢</span>
+                              )}
+                            </button>
+                            <button
+                              className={`perps-trending-sell-btn`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleQuickBuy(token, quickAmounts.new, 'secondary');
+                              }}
+                              disabled={loading.has(`${token.contractId}-secondary`)}
+                            >
+                              {loading.has(`${token.contractId}-secondary`) ? (
+                                <div className="quickbuy-loading-spinner" />
+                              ) : (
+                                <span className="mon-text">{outcome2.length > 10 ? outcome2.substring(0, 10) + '...' : outcome2} {(noPrice * 100).toFixed(0)}¢</span>
+                              )}
+                            </button>
                           </>
-                        )}
-                      </button>
-                      <button
-                        className={`perps-trending-sell-btn`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleQuickBuy(token, quickAmounts.new, 'primary');
-                        }}
-                        disabled={loading.has(`${token.contractId}-primary`)}
-                      >
-                        {loading.has(`${token.contractId}-primary`) ? (
-                          <div className="quickbuy-loading-spinner" />
-                        ) : (
-                          <>
-                            <img
-                              src={lightning}
-                              alt=""
-                              className="trending-buy-icon"
-                            />
-                            <span className="mon-text">SELL</span>
-                          </>
-                        )}
-                      </button>
+                        );
+                      })()}
                     </div>
                   </div>
-                ))
+                );
+                })
               ) : (
                 <div className="no-tokens-message">
                   <img src={empty} className="empty-icon" />
@@ -7438,6 +7987,36 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="predict-pagination">
+                <button
+                  className="predict-pagination-btn"
+                  onClick={() => {
+                    setPerpsCurrentPage(prev => Math.max(1, prev - 1));
+                    document.querySelector('.predict-grid-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  disabled={perpsCurrentPage === 1}
+                >
+                  Previous
+                </button>
+                <span className="predict-pagination-info">
+                  Page {perpsCurrentPage} of {totalPages} ({trendingTokens.length} markets)
+                </span>
+                <button
+                  className="predict-pagination-btn"
+                  onClick={() => {
+                    setPerpsCurrentPage(prev => Math.min(totalPages, prev + 1));
+                    document.querySelector('.predict-grid-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
+                  disabled={perpsCurrentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
           </div>
         )}
       </div>

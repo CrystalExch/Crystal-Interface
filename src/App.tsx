@@ -29357,7 +29357,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               />
             }
           />
-          <Route path="/event"
+          <Route path="/event/:marketSlug"
             element={
               <Predict
                 layoutSettings={perpsLayoutSettings}
