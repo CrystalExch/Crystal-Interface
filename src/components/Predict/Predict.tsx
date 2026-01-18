@@ -148,9 +148,10 @@ const Predict: React.FC<PredictProps> = ({
 
   // Fetch specific market data when marketSlug is present
   useEffect(() => {
-    if (marketSlug && (!perpsActiveMarketKey || Object.keys(perpsMarketsData).length === 0)) {
+    if (marketSlug) {
       const fetchMarketData = async () => {
         try {
+          // Fetch event data
           const response = await fetch(`/predictapi/events?slug=${marketSlug}`);
           const data = await response.json();
 
@@ -161,37 +162,89 @@ const Predict: React.FC<PredictProps> = ({
             if (markets.length > 0) {
               const market = markets[0];
               const conditionId = market.conditionId;
+              const tokenID = market.tokenID || market.tokens?.[0]?.token_id;
 
               // Set this as the active market
               setperpsActiveMarketKey(conditionId);
 
-              // Add market data to perpsMarketsData if not already there
-              if (!perpsMarketsData[conditionId]) {
-                const outcomePrices = typeof market.outcomePrices === 'string'
-                  ? JSON.parse(market.outcomePrices)
-                  : market.outcomePrices || [];
+              // Parse outcome prices
+              const outcomePrices = typeof market.outcomePrices === 'string'
+                ? JSON.parse(market.outcomePrices)
+                : market.outcomePrices || [];
 
-                setPerpsMarketsData((prev: any) => ({
-                  ...prev,
-                  [conditionId]: {
-                    contractId: conditionId,
-                    baseAsset: event.title || market.question,
-                    quoteAsset: 'USD',
-                    lastPrice: parseFloat(outcomePrices[0] || 0),
-                    value: market.volume || market.volume24hr || 0,
-                    liquidity: market.liquidity || 0,
-                    outcomes: [market.question],
-                    outcomePrices: [parseFloat(outcomePrices[0] || 0)],
-                    eventTitle: event.title,
-                    eventSlug: event.slug,
-                    iconURL: event.image || event.icon,
-                    question: market.question,
-                    endDate: market.endDate,
-                    enableDisplay: true,
-                    active: market.active,
-                  }
-                }));
+              // Fetch additional market data in parallel
+              const [orderbookData, tradesData, seriesData, holdersData] = await Promise.allSettled([
+                tokenID ? fetch(`/clob/book?token_id=${tokenID}`).then(res => res.json()).catch(() => null) : Promise.resolve(null),
+                tokenID ? fetch(`/clob/trades?token_id=${tokenID}`).then(res => res.json()).catch(() => null) : Promise.resolve(null),
+                fetch(`/clob/series?id=${conditionId}`).then(res => res.json()).catch(() => null),
+                conditionId ? fetch(`/predictapi/markets/${conditionId}`).then(res => res.json()).catch(() => null) : Promise.resolve(null)
+              ]);
+
+              const orderbook = orderbookData.status === 'fulfilled' ? orderbookData.value : null;
+              const trades = tradesData.status === 'fulfilled' ? tradesData.value : null;
+              const series = seriesData.status === 'fulfilled' ? seriesData.value : null;
+              const holders = holdersData.status === 'fulfilled' ? holdersData.value : null;
+
+              // Set orderbook data for the chart
+              if (orderbook) {
+                const bids = orderbook.bids?.map((bid: any) => ({
+                  price: parseFloat(bid.price),
+                  size: parseFloat(bid.size)
+                })) || [];
+                const asks = orderbook.asks?.map((ask: any) => ({
+                  price: parseFloat(ask.price),
+                  size: parseFloat(ask.size)
+                })) || [];
+                setorderdata([bids, asks, conditionId]);
               }
+
+              // Set chart data from series
+              if (series && series.history) {
+                const chartPoints: DataPoint[] = series.history.map((point: any) => ({
+                  time: new Date(point.t * 1000).getTime() / 1000,
+                  open: parseFloat(point.p),
+                  high: parseFloat(point.p),
+                  low: parseFloat(point.p),
+                  close: parseFloat(point.p),
+                  volume: 0
+                }));
+                setChartData([chartPoints, conditionId, true]);
+              }
+
+              // Build comprehensive market data
+              const marketData = {
+                contractId: conditionId,
+                baseAsset: event.title || market.question,
+                quoteAsset: 'USD',
+                lastPrice: parseFloat(outcomePrices[0] || 0),
+                value: market.volume || market.volume24hr || 0,
+                liquidity: market.liquidity || 0,
+                outcomes: markets.map((m: any) => m.question),
+                outcomePrices: outcomePrices.map((p: any) => parseFloat(p || 0)),
+                eventTitle: event.title,
+                eventSlug: event.slug,
+                iconURL: event.image || event.icon,
+                question: market.question,
+                endDate: market.endDate,
+                startDate: market.startDate || market.creationDate,
+                enableDisplay: true,
+                active: market.active,
+                tokenID: tokenID,
+                orderbook: orderbook,
+                trades: trades,
+                series: series,
+                holders: holders,
+                markets: markets,
+                volume24hr: market.volume24hr || 0,
+                volumeNum: market.volumeNum || 0,
+                description: market.description || event.description,
+                tags: event.tags || [],
+              };
+
+              setPerpsMarketsData((prev: any) => ({
+                ...prev,
+                [conditionId]: marketData
+              }));
             }
           }
         } catch (error) {
@@ -201,7 +254,7 @@ const Predict: React.FC<PredictProps> = ({
 
       fetchMarketData();
     }
-  }, [marketSlug, perpsActiveMarketKey, perpsMarketsData, setperpsActiveMarketKey, setPerpsMarketsData]);
+  }, [marketSlug, setperpsActiveMarketKey, setPerpsMarketsData]);
   const [activeTradeType, setActiveTradeType] = useState<"long" | "short">("long");
   const [activeOrderType, setActiveOrderType] = useState<"Market" | "Limit" | "Scale" | "Stop" | "TP/SL" | "Pro">("Market");
   const [inputString, setInputString] = useState('');
@@ -2733,7 +2786,7 @@ const Predict: React.FC<PredictProps> = ({
             </div>
           </div>
           <div className="predict-event-outcomes">
-            {mergedOutcomes.map((outcome, idx) => (
+            {mergedOutcomes.map((outcome: any, idx: any) => (
               <div className="predict-event-outcome" key={`${outcome.label}-${idx}`}>
                 <div className="predict-event-outcome-label">
                   {outcome.label}

@@ -114,6 +114,10 @@ export const formatSubscript = (value: string): string => {
 };
 
 export const formatCommas = (value: string) => {
+  if (!value || typeof value !== 'string') {
+    return '0';
+  }
+
   const [integerPart, fractionalPart] = value.split('.');
 
   const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
