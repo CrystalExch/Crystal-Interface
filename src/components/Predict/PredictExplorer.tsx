@@ -7412,12 +7412,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                     <div className="trending-cell">
                       <div className="skeleton trending-value-text" />
                     </div>
-                    <div className="trending-cell">
-                      <div className="skeleton trending-value-text" />
-                    </div>
-                    <div className="trending-cell">
-                      <div className="skeleton trending-value-text" />
-                    </div>
                     <div className="trending-cell action-cell" style={{gap: '10px'}}>
                       <div className="skeleton trending-button perps" />
                       <div className="skeleton trending-button perps" />
@@ -7440,28 +7434,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         onMouseEnter={() => handleMarketHover(token.contractId, token.markets?.[0]?.tokenID)}
                         onMouseLeave={handleMarketLeave}
                       >
-                        {/* Favorite Button */}
-                        <button
-                          className="predict-favorite-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFavorite(token.contractId);
-                          }}
-                        >
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill={favoriteMarkets.has(token.contractId) ? '#aaaecf' : 'none'}
-                            stroke={favoriteMarkets.has(token.contractId) ? '#aaaecf' : 'rgba(255,255,255,0.5)'}
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                          </svg>
-                        </button>
-
                         {/* Event Header */}
                         <div className="predict-multi-header">
                           <div className="predict-multi-image-container">
@@ -7489,7 +7461,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '4px',
+                                gap: '6px',
                                 marginTop: '-4px'
                               }}
                             >
@@ -7610,6 +7582,26 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                                     <Search size={14} />
                                   </a>
                                 </Tooltip>
+                                <button
+                                  className="predict-favorite-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleFavorite(token.contractId);
+                                  }}
+                                >
+                                  <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill={favoriteMarkets.has(token.contractId) ? '#aaaecf' : 'none'}
+                                    stroke={favoriteMarkets.has(token.contractId) ? '#aaaecf' : 'rgba(255,255,255,0.5)'}
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                  </svg>
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -7741,27 +7733,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                       onMouseLeave={handleMarketLeave}
                   >
                     <div className="trending-cell pair-info-cell">
-                      {/* Favorite Button */}
-                      <button
-                        className="predict-favorite-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(token.contractId);
-                        }}
-                      >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill={favoriteMarkets.has(token.contractId) ? '#aaaecf' : 'none'}
-                          stroke={favoriteMarkets.has(token.contractId) ? '#aaaecf' : 'rgba(255,255,255,0.5)'}
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                        </svg>
-                      </button>
                       <div className="trending-token-actions">
                         <button
                           className={`explorer-hide-button ${hidden.has(token.contractId) ? 'strikethrough' : ''}`}
@@ -8044,6 +8015,26 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                                 <Search size={14} />
                               </a>
                             </Tooltip>
+                            <button
+                              className="predict-favorite-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFavorite(token.contractId);
+                              }}
+                            >
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill={favoriteMarkets.has(token.contractId) ? '#aaaecf' : 'none'}
+                                stroke={favoriteMarkets.has(token.contractId) ? '#aaaecf' : 'rgba(255,255,255,0.5)'}
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                              </svg>
+                            </button>
                           </div>
                         </div>
                       </div>

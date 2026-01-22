@@ -1,11 +1,9 @@
-/* Predict-specific Grid Layout - doesn't modify original styles */
-
-/* Layout with Trade Stream */
 .predict-layout-with-stream {
     display: flex;
     gap: 0;
     height: 100%;
     width: 100%;
+    justify-content: center;
 }
 
 .predict-trade-stream-sidebar {
@@ -166,8 +164,8 @@
 
 /* Adjust grid container to fit alongside stream */
 .predict-layout-with-stream .predict-grid-container {
-    flex: 1;
     overflow-y: auto;
+    flex: 1;
 }
 
 /* Filter Bar Styles */
@@ -329,9 +327,6 @@
 
 /* Favorite Button */
 .predict-favorite-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
     background: none;
     border: none;
     cursor: pointer;
@@ -340,7 +335,7 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    z-index: 2;
+    flex-shrink: 0;
 }
 
 .predict-favorite-btn:hover {
@@ -354,6 +349,8 @@
     padding: 20px;
     grid-auto-rows: max-content;
     align-items: start;
+    max-width: 1400px;
+    width: 100%;
 }
 
 .predict-grid-container .trending-row.perps {
@@ -500,6 +497,12 @@
     flex: 1;
 }
 
+.trending-token-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .predict-grid-container .trending-row.perps .trending-token-symbol {
     font-size: 0.85rem;
     font-weight: 600;
@@ -591,6 +594,7 @@
 /* Loading state for grid */
 .predict-grid-container .trending-row.loading {
     min-height: 200px;
+    gap: 8px;
 }
 
 .predict-grid-container .trending-row.loading .trending-image {
@@ -627,7 +631,7 @@
 .predict-multi-header {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: 8px;
     padding-bottom: 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
