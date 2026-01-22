@@ -1254,6 +1254,10 @@
   padding: 0.2rem 0;
 }
 
+.explorer-display-settings-dropdown:hover {
+  background: rgba(179, 184, 249, 0.05);
+}
+
 @media(min-width:1021px) {
   .explorer-mobile-display-settings-dropdown {
     display: none;

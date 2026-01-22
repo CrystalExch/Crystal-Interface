@@ -13,6 +13,21 @@ import { formatCommas } from '../../utils/numberDisplayFormat';
 import walleticon from '../../assets/wallet_icon.svg'
 import { settings } from '../../settings.ts';
 
+const formatCompactNumber = (value: number) => {
+  if (!Number.isFinite(value)) return '0';
+  const abs = Math.abs(value);
+  const format = (num: number) => {
+    if (num >= 100) return num.toFixed(0);
+    if (num >= 10) return num.toFixed(1);
+    return num.toFixed(2);
+  };
+
+  if (abs >= 1e9) return `${format(abs / 1e9)}B`;
+  if (abs >= 1e6) return `${format(abs / 1e6)}M`;
+  if (abs >= 1e3) return `${format(abs / 1e3)}K`;
+  return abs.toFixed(0);
+};
+
 interface PredictProps {
   layoutSettings: string;
   orderbookPosition: string;
@@ -2774,12 +2789,10 @@ const Predict: React.FC<PredictProps> = ({
               )}
               <div className="predict-event-meta">
                 <span>
-                  ${formatCommas(Number(activeMarket?.volume24h || 0).toFixed(0))}{' '}
-                  Vol.
+                  ${formatCompactNumber(Number(activeMarket?.volume24h || 0))} Vol.
                 </span>
                 <span>
-                  ${formatCommas(Number(activeMarket?.liquidity || 0).toFixed(0))}{' '}
-                  Liquidity
+                  ${formatCompactNumber(Number(activeMarket?.liquidity || 0))} Liquidity
                 </span>
                 <span>Ends {eventEndLabel}</span>
               </div>

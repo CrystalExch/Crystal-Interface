@@ -2025,14 +2025,14 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               <div className="perps-interface-token-metric">
                 <span className="perps-interface-metric-label">24h Volume</span>
                 <span className="perps-interface-metric-value perps-price-small">
-                  ${formatCommas(Number(perpsTokenInfo.value).toFixed(2))}
+                  ${formatCommas(Number(perpsTokenInfo.value).toFixed(0))}
                 </span>
               </div>
 
               <div className="perps-interface-token-metric">
                 <span className="perps-interface-metric-label">Open Interest</span>
                 <span className="perps-interface-metric-value perps-price-small">
-                  ${formatCommas((Number(perpsTokenInfo.openInterest) * Number(perpsTokenInfo.lastPrice)).toFixed(2))}
+                  ${formatCommas((Number(perpsTokenInfo.openInterest) * Number(perpsTokenInfo.lastPrice)).toFixed(0))}
                 </span>
               </div>
 

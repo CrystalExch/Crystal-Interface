@@ -1416,6 +1416,21 @@ const formatNumberWithCommas = (v: number, d = 2) => {
   return v.toFixed(Math.min(d, 8));
 };
 
+const formatCompactNumber = (value: number) => {
+  if (!Number.isFinite(value)) return '0';
+  const abs = Math.abs(value);
+  const format = (num: number) => {
+    if (num >= 100) return num.toFixed(0);
+    if (num >= 10) return num.toFixed(1);
+    return num.toFixed(2);
+  };
+
+  if (abs >= 1e9) return `${format(abs / 1e9)}B`;
+  if (abs >= 1e6) return `${format(abs / 1e6)}M`;
+  if (abs >= 1e3) return `${format(abs / 1e3)}K`;
+  return abs.toFixed(0);
+};
+
 const DisplayDropdown: React.FC<{
   settings: DisplaySettings;
   onSettingsChange: (settings: DisplaySettings) => void;
@@ -4297,7 +4312,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                   eventTags: event.tags || [],
                   isMultiOutcome: true,
                   active: true,
-                  outcomes: activeMarkets.map((m: any) => m.question),
+                  outcomes: activeMarkets.map((m: any) => m.groupItemTitle || m.question),
                   outcomePrices: activeMarkets.map((m: any) => {
                     const prices = typeof m.outcomePrices === 'string'
                       ? JSON.parse(m.outcomePrices)
@@ -4358,14 +4373,21 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
             if (tagsRes && Array.isArray(tagsRes)) {
               tagsRes.forEach((tag: any) => {
-                // Get markets that have this tag
+                // Get markets that have this tag - use the grouped market IDs
                 const tagMarkets = allEvents
                   .filter((event: any) =>
                     event.tags?.some((t: any) => t.id === tag.id || t.label === tag.label)
                   )
-                  .flatMap((event: any) =>
-                    (event.markets || []).map((m: any) => m.conditionId)
-                  );
+                  .map((event: any) => {
+                    const activeMarkets = (event.markets || []).filter((m: any) => m.active);
+                    // If multi-outcome, return the event ID, otherwise return individual market IDs
+                    if (activeMarkets.length > 2) {
+                      return `event-${event.slug || event.id}`;
+                    } else {
+                      return activeMarkets.map((m: any) => m.conditionId);
+                    }
+                  })
+                  .flat();
 
                 if (tagMarkets.length > 0) {
                   categoriesMap[tag.label || tag.name] = tagMarkets;
@@ -7463,8 +7485,132 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                             <div className="predict-multi-title">
                               {token.eventTitle || token.baseAsset}
                             </div>
-                            <div className="predict-multi-subtitle">
-                              {token.question}
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                marginTop: '-4px'
+                              }}
+                            >
+                              <span
+                                className="trending-time-created"
+                                style={{
+                                  color:
+                                    Math.floor(Date.now() / 1000) - (token.fundingTime / 1000) >
+                                    21600
+                                      ? '#f77f7d'
+                                      : 'rgb(67, 254, 154)',
+                                }}
+                              >
+                                {formatTimeAgo(token.fundingTime / 1000)}
+                              </span>
+                              <div className="token-socials-row">
+                                {token.twitterHandle && (
+                                  <Tooltip content="Twitter">
+                                    <TwitterHover url={token.twitterHandle}>
+                                      <a
+                                        className="explorer-avatar-btn"
+                                        href={token.twitterHandle}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <img
+                                          src={
+                                            token.twitterHandle.includes(
+                                              '/i/communities/',
+                                            )
+                                              ? communities
+                                              : token.twitterHandle.includes(
+                                                    '/status/',
+                                                  )
+                                                ? tweet
+                                                : avatar
+                                          }
+                                          alt={
+                                            token.twitterHandle.includes(
+                                              '/i/communities/',
+                                            )
+                                              ? 'Community'
+                                              : 'Twitter'
+                                          }
+                                          className={
+                                            token.twitterHandle.includes(
+                                              '/i/communities/',
+                                            )
+                                              ? 'community-icon'
+                                              : token.twitterHandle.includes(
+                                                    '/status/',
+                                                  )
+                                                ? 'tweet-icon'
+                                                : 'avatar-icon'
+                                          }
+                                        />
+                                      </a>
+                                    </TwitterHover>
+                                  </Tooltip>
+                                )}
+                                {token.telegram && (
+                                  <Tooltip content="Telegram">
+                                    <a
+                                      href={token.telegram}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="token-social-link"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <img src={telegram} alt="Telegram" />
+                                    </a>
+                                  </Tooltip>
+                                )}
+                                {token.discord && (
+                                  <Tooltip content="Discord">
+                                    <a
+                                      href={token.discord}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="token-social-link"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <img src={discord} alt="Discord" />
+                                    </a>
+                                  </Tooltip>
+                                )}
+                                {token.website && (
+                                  <Tooltip content="Website">
+                                    <a
+                                      className="explorer-website-btn"
+                                      href={token.website}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <Tooltip content={token.website}>
+                                        <svg
+                                          width="16"
+                                          height="16"
+                                          viewBox="0 0 24 24"
+                                          fill="currentColor"
+                                        >
+                                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                                        </svg>
+                                      </Tooltip>
+                                    </a>
+                                  </Tooltip>
+                                )}
+                                <Tooltip content="Search Asset on Twitter">
+                                  <a
+                                    className="explorer-telegram-btn"
+                                    href={`https://twitter.com/search?q=$${token.baseAsset}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Search size={14} />
+                                  </a>
+                                </Tooltip>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -7473,11 +7619,37 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         <div className="predict-multi-outcomes">
                           {outcomes.map((outcome: string, idx: number) => {
                             const probability = Number(outcomePrices[idx] || 0);
+
+                            // Clean up the outcome text to extract the key information
+                            let displayName = outcome;
+
+                            // Try to extract numeric/specific parts: "by 50+ bps", "by 25 bps", etc.
+                            const byMatch = outcome.match(/by\s+([^?\s][^?]*?)(?:\s+after|\s+before|\s+in|\?|$)/i);
+                            if (byMatch) {
+                              displayName = byMatch[1].trim();
+                            } else {
+                              // Try to extract names: "Will Trump nominate Kevin Warsh" -> "Kevin Warsh"
+                              const nominateMatch = outcome.match(/(?:nominate|choose|select|appoint)\s+([A-Z][^?]+?)(?:\s+as|\?|$)/);
+                              if (nominateMatch) {
+                                displayName = nominateMatch[1].trim();
+                              } else if (outcome.includes('?')) {
+                                // Remove question mark and common prefixes
+                                displayName = outcome
+                                  .replace(/\?$/, '')
+                                  .replace(/^Will\s+/i, '')
+                                  .replace(/^Does\s+/i, '')
+                                  .replace(/^Did\s+/i, '')
+                                  .replace(/^Is\s+/i, '')
+                                  .replace(/^Are\s+/i, '')
+                                  .trim();
+                              }
+                            }
+
                             return (
                               <div key={idx} className="predict-multi-outcome-row">
                                 <div className="predict-multi-outcome-info">
                                   <span className="predict-multi-outcome-name">
-                                    {outcome}
+                                    {displayName}
                                   </span>
                                   <span className="predict-multi-outcome-probability">
                                     {(probability * 100).toFixed(0)}%
@@ -7530,10 +7702,28 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                               stroke="currentColor"
                               strokeWidth="2"
                             >
-                              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                              <path d="M4 20V10M10 20V4M16 20v-8M22 20v-12" />
                             </svg>
                             <span className="predict-metric-value">
-                              ${formatCommas(Number(token.value / 1000).toFixed(0))}k Vol.
+                              ${formatCompactNumber(Number(token.value || 0))}
+                            </span>
+                          </div>
+                          <div className="predict-metric metric-liquidity">
+                            <svg
+                              className="predict-metric-icon"
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M12 2.5s4.5 5.2 4.5 8.1a4.5 4.5 0 1 1-9 0c0-2.9 4.5-8.1 4.5-8.1z" />
+                            </svg>
+                            <span className="predict-metric-value">
+                              ${formatCompactNumber(Number(token.liquidity || 0))}
                             </span>
                           </div>
                         </div>
@@ -7725,9 +7915,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         <div
                           className="trending-token-name-row"
                         >
-                          <span className="trending-token-symbol">
-                            {token.baseAsset}
-                          </span>
+                          <div className="predict-multi-title">
+                            {token.eventTitle || token.baseAsset}
+                          </div>
                         </div>
                         <div
                           style={{
@@ -7874,64 +8064,42 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                       </div>
                     </div>
 
-                    {/* Compact Metrics Row - Polymarket Style */}
-                    <div className="predict-metrics-row">
-                      {(() => {
-                        const endDate = new Date(token.endDate);
-                        const now = new Date();
-                        const diffMs = endDate.getTime() - now.getTime();
-                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-                        const isLive = diffHours > 0 && diffHours < 48;
-
-                        return (
-                          <>
-                            {isLive && <span className="predict-live-dot"></span>}
-                            <span className="predict-metric-value">
-                              {(() => {
-                                if (diffDays > 365) {
-                                  return `${Math.floor(diffDays / 365)}y`;
-                                } else if (diffDays > 30) {
-                                  return `${Math.floor(diffDays / 30)}mo`;
-                                } else if (diffDays > 0) {
-                                  return `${diffDays}d`;
-                                } else if (diffHours > 0) {
-                                  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                                  return `${diffHours}:${String(minutes).padStart(2, '0')}`;
-                                } else {
-                                  return 'Ended';
-                                }
-                              })()}
-                            </span>
-                            <span className="predict-metric-separator"></span>
-                          </>
-                        );
-                      })()}
-                      <span className="predict-metric-value">
-                        ${Number(token.value / 1000000) >= 1
-                          ? `${(Number(token.value / 1000000)).toFixed(0)}m`
-                          : `${(Number(token.value / 1000)).toFixed(0)}k`} Vol.
-                      </span>
-                      <svg
-                        className="predict-metric-icon"
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        style={{ marginLeft: '4px' }}
-                      >
-                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                      </svg>
-                      {token.eventTags && token.eventTags[0] && (
-                        <>
-                          <span className="predict-metric-separator"></span>
-                          <span className="predict-metric-tag">{token.eventTags[0].label || token.eventTags[0]}</span>
-                        </>
-                      )}
+                    {/* Volume Footer */}
+                    <div className="predict-multi-footer">
+                      <div className="predict-metric metric-volume">
+                        <svg
+                          className="predict-metric-icon"
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M4 20V10M10 20V4M16 20v-8M22 20v-12" />
+                        </svg>
+                        <span className="predict-metric-value">
+                          ${formatCompactNumber(Number(token.value || 0))}
+                        </span>
+                      </div>
+                      <div className="predict-metric metric-liquidity">
+                        <svg
+                          className="predict-metric-icon"
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M12 2.5s4.5 5.2 4.5 8.1a4.5 4.5 0 1 1-9 0c0-2.9 4.5-8.1 4.5-8.1z" />
+                        </svg>
+                        <span className="predict-metric-value">
+                          ${formatCompactNumber(Number(token.liquidity || 0))}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="trending-cell action-cell" style={{gap: '10px'}}>
