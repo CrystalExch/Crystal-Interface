@@ -90,7 +90,7 @@ const PriceIntervals: React.FC<PriceIntervalsProps> = ({
     };
     if (isOpen) document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
-  }, [isOpen, setOpenDropdown]);
+  }, [isOpen]);
 
   return (
     <div className="interval-selector" ref={selectWrapperRef}>

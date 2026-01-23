@@ -3,7 +3,6 @@ import React, { useContext, useEffect, useRef } from 'react';
 import DropdownContext from '../DropdownContext/DropdownContext';
 
 import {
-  calculateDropdownPosition,
   handleOutsideClick,
 } from '../../utils';
 
@@ -49,26 +48,7 @@ const OrderbookTokenSelect: React.FC<OrderbookTokenSelectProps> = ({
     return () => {
       document.removeEventListener('click', handleClick);
     };
-  }, [isOpen, setOpenDropdown]);
-
-  const CheckmarkIcon = () => (
-    <svg
-      className="token-checkmark"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M20 6L9 17L4 12"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+  }, [isOpen]);
 
   return (
     <div className="interval-token-selector" ref={selectorRef}>
@@ -95,12 +75,6 @@ const OrderbookTokenSelect: React.FC<OrderbookTokenSelectProps> = ({
         <ul
           ref={dropdownRef}
           className={`interval-options-list ${isOpen ? 'open' : ''}`}
-          style={{
-            position: 'fixed',
-            ...calculateDropdownPosition(selectorRef),
-            width: 'auto',
-            minWidth: '60px',
-          }}
         >
           <li
             className={`interval-option ${value === 'Quote' ? 'selected' : ''}`}
@@ -116,7 +90,22 @@ const OrderbookTokenSelect: React.FC<OrderbookTokenSelectProps> = ({
             }}
           >
             <span>{symbolQuote}</span>
-            <CheckmarkIcon />
+              <svg
+                className="token-checkmark"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M20 6L9 17L4 12"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
           </li>
           <li
             className={`interval-option ${value === 'Base' ? 'selected' : ''}`}
@@ -132,7 +121,22 @@ const OrderbookTokenSelect: React.FC<OrderbookTokenSelectProps> = ({
             }}
           >
             <span>{symbolBase}</span>
-            <CheckmarkIcon />
+            <svg
+              className="token-checkmark"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M20 6L9 17L4 12"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </li>
         </ul>
       }

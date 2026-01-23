@@ -34,12 +34,13 @@
   box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
   font-size: 0.75rem;
   list-style-type: none;
-  margin: 0;
-  margin-left: -14px;
-  min-width: 0;
+  min-width: 60px;
   opacity: 1;
   overflow: hidden;
   padding: 0;
+  position: absolute;
+  right: -1px;
+  top: calc(100% + 1px);
   z-index: 4;
 }
 
