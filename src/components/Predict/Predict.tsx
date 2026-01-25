@@ -378,72 +378,72 @@ const Predict: React.FC<PredictProps> = ({
   const countdown = getCountdown(endDate);
 
   return (
-    <div className="predict-page">
+    <div className="predict-event-page">
       {/* HEADER */}
-      <div className="prediction-header">
-        <div className="prediction-header-left">
-          <div className="prediction-image">
+      <div className="predict-event-header">
+        <div className="predict-event-header-left">
+          <div className="predict-event-image">
             {eventImage ? (
               <img src={eventImage} alt={eventTitle} />
             ) : (
               <span>{eventTitle.charAt(0)}</span>
             )}
           </div>
-          <div className="prediction-info">
+          <div className="predict-event-info">
             {eventTags.length > 0 && (
-              <div className="prediction-tags">
+              <div className="predict-event-tags">
                 {eventTags.slice(0, 3).map((tag: any, idx: number) => (
-                  <span key={idx} className="prediction-tag">
+                  <span key={idx} className="predict-event-tag">
                     {tag.label || tag.name || tag}
                   </span>
                 ))}
               </div>
             )}
-            <h1 className="prediction-title">{eventTitle}</h1>
+            <h1 className="predict-event-title">{eventTitle}</h1>
           </div>
         </div>
-        <div className="prediction-header-stats">
-          <div className="prediction-stat">
-            <span className="stat-value">{formatVolume(volume24h)}</span>
-            <span className="stat-label">Vol</span>
+        <div className="predict-event-header-stats">
+          <div className="predict-event-stat">
+            <span className="predict-event-stat-value">{formatVolume(volume24h)}</span>
+            <span className="predict-event-stat-label">Vol</span>
           </div>
-          <div className="prediction-stat">
-            <span className="stat-value">{formatDate(endDate)}</span>
-            <span className="stat-label">End Date</span>
+          <div className="predict-event-stat">
+            <span className="predict-event-stat-value">{formatDate(endDate)}</span>
+            <span className="predict-event-stat-label">End Date</span>
           </div>
           {countdown && (
-            <div className="prediction-stat countdown-stat">
-              <span className="stat-value countdown-value">{countdown}</span>
+            <div className="predict-event-stat predict-event-countdown-stat">
+              <span className="predict-event-stat-value predict-event-countdown-value">{countdown}</span>
             </div>
           )}
         </div>
       </div>
 
-      <div className="predict-main-content">
+      <div className="predict-event-main-content">
         {/* LEFT PANEL */}
-        <div className="predict-left-panel">
+        <div className="predict-event-left-panel">
           {/* Chart Section */}
-          <div className="chart-section">
+          <div className="predict-event-chart-section">
             {/* Chart Legend */}
-            <div className="chart-legend">
+            <div className="predict-event-chart-legend">
               {outcomes.map((outcome, idx) => (
-                <div key={outcome.name} className="legend-item">
-                  <span className="legend-color" style={{ backgroundColor: outcome.color }} />
-                  <span className="legend-name">{outcome.name}</span>
-                  <span className="legend-value">{(outcome.probability * 100).toFixed(0)}%</span>
+                <div key={outcome.name} className="predict-event-legend-item">
+                  <span className="predict-event-legend-color" style={{ backgroundColor: outcome.color }} />
+                  <span className="predict-event-legend-name">{outcome.name}</span>
+                  <span className="predict-event-legend-value">{(outcome.probability * 100).toFixed(0)}%</span>
                 </div>
               ))}
             </div>
 
             {/* Chart Container */}
-            <div className="chart-container" ref={chartContainerRef} />
+            <div className="predict-event-chart-container" ref={chartContainerRef} />
 
             {/* Interval Selector */}
-            <div className="interval-selector">
+            <div className="predict-event-interval-selector">
               {(['1H', '24H', '7D', '30D', 'ALL'] as IntervalType[]).map(interval => (
                 <button
                   key={interval}
-                  className={`interval-btn ${selectedInterval === interval ? 'active' : ''}`}
+                  className={`predict-event-interval-btn ${selectedInterval === interval ? 'active' : ''}`}
                   onClick={() => setSelectedInterval(interval)}
                 >
                   {interval}
@@ -453,47 +453,47 @@ const Predict: React.FC<PredictProps> = ({
           </div>
 
           {/* Outcomes Table */}
-          <div className="outcomes-table">
-            <div className="outcomes-header">
+          <div className="predict-event-outcomes-table">
+            <div className="predict-event-outcomes-header">
               <div
-                className="outcome-col outcome-name-col"
+                className="predict-event-outcome-col predict-event-outcome-name-col"
                 onClick={() => handleSort('name')}
               >
                 OUTCOME
                 {sortConfig.column === 'name' && (
-                  <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  <span className="predict-event-sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                 )}
               </div>
               <div
-                className="outcome-col outcome-prob-col"
+                className="predict-event-outcome-col predict-event-outcome-prob-col"
                 onClick={() => handleSort('probability')}
               >
                 % CHANCE
                 {sortConfig.column === 'probability' && (
-                  <span className="sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                  <span className="predict-event-sort-arrow">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                 )}
               </div>
-              <div className="outcome-col outcome-actions-col">
+              <div className="predict-event-outcome-col predict-event-outcome-actions-col">
                 {/* Empty header for actions */}
               </div>
             </div>
-            <div className="outcomes-body">
+            <div className="predict-event-outcomes-body">
               {sortedOutcomes.map(outcome => (
                 <div
                   key={outcome.name}
-                  className={`outcome-row ${selectedOutcome === outcome.name ? 'selected' : ''}`}
+                  className={`predict-event-outcome-row ${selectedOutcome === outcome.name ? 'selected' : ''}`}
                   onClick={() => setSelectedOutcome(outcome.name)}
                 >
-                  <div className="outcome-col outcome-name-col">
-                    <span className="outcome-label">{outcome.name}</span>
-                    <span className="outcome-volume">{formatVolume(outcome.volume)} Vol</span>
+                  <div className="predict-event-outcome-col predict-event-outcome-name-col">
+                    <span className="predict-event-outcome-label">{outcome.name}</span>
+                    <span className="predict-event-outcome-volume">{formatVolume(outcome.volume)} Vol</span>
                   </div>
-                  <div className="outcome-col outcome-prob-col">
-                    <span className="probability-value">{(outcome.probability * 100).toFixed(0)}%</span>
+                  <div className="predict-event-outcome-col predict-event-outcome-prob-col">
+                    <span className="predict-event-probability-value">{(outcome.probability * 100).toFixed(0)}%</span>
                   </div>
-                  <div className="outcome-col outcome-actions-col">
+                  <div className="predict-event-outcome-col predict-event-outcome-actions-col">
                     <button
-                      className="buy-yes-btn"
+                      className="predict-event-buy-yes-btn"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedOutcome(outcome.name);
@@ -503,7 +503,7 @@ const Predict: React.FC<PredictProps> = ({
                       Buy Yes {(outcome.yesPrice * 100).toFixed(1)}c
                     </button>
                     <button
-                      className="buy-no-btn"
+                      className="predict-event-buy-no-btn"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedOutcome(outcome.name);
@@ -520,30 +520,30 @@ const Predict: React.FC<PredictProps> = ({
         </div>
 
         {/* RIGHT PANEL - Order Panel */}
-        <div className="predict-right-panel">
+        <div className="predict-event-right-panel">
           {/* Selected Outcome */}
           {selectedOutcomeData && (
-            <div className="selected-outcome-display">
-              <div className="selected-outcome-image">
+            <div className="predict-event-selected-outcome-display">
+              <div className="predict-event-selected-outcome-image">
                 {eventImage ? (
                   <img src={eventImage} alt={selectedOutcomeData.name} />
                 ) : (
                   <span>{selectedOutcomeData.name.charAt(0)}</span>
                 )}
               </div>
-              <span className="selected-outcome-name">{selectedOutcomeData.name}</span>
+              <span className="predict-event-selected-outcome-name">{selectedOutcomeData.name}</span>
             </div>
           )}
 
           {/* Buy/Sell Toggle + Order Type */}
-          <div className="trade-header-row">
-            <div className="trade-toggle">
-              <button className="trade-toggle-btn buy active">Buy</button>
-              <button className="trade-toggle-btn sell">Sell</button>
+          <div className="predict-event-trade-header-row">
+            <div className="predict-event-trade-toggle">
+              <button className="predict-event-trade-toggle-btn buy active">Buy</button>
+              <button className="predict-event-trade-toggle-btn sell">Sell</button>
             </div>
-            <div className="order-type-dropdown">
+            <div className="predict-event-order-type-dropdown">
               <button
-                className="order-type-button"
+                className="predict-event-order-type-button"
                 onClick={() => setIsOrderTypeDropdownOpen(!isOrderTypeDropdownOpen)}
               >
                 {orderType}
@@ -552,11 +552,11 @@ const Predict: React.FC<PredictProps> = ({
                 </svg>
               </button>
               {isOrderTypeDropdownOpen && (
-                <div className="order-type-dropdown-menu">
+                <div className="predict-event-order-type-dropdown-menu">
                   {(['Market', 'Limit'] as const).map((option) => (
                     <div
                       key={option}
-                      className={`order-type-option ${orderType === option ? 'active' : ''}`}
+                      className={`predict-event-order-type-option ${orderType === option ? 'active' : ''}`}
                       onClick={() => {
                         setOrderType(option);
                         setIsOrderTypeDropdownOpen(false);
@@ -571,44 +571,44 @@ const Predict: React.FC<PredictProps> = ({
           </div>
 
           {/* Yes/No Selection */}
-          <div className="outcome-selection">
+          <div className="predict-event-outcome-selection">
             <button
-              className={`outcome-btn yes ${selectedSide === 'Yes' ? 'active' : ''}`}
+              className={`predict-event-outcome-btn yes ${selectedSide === 'Yes' ? 'active' : ''}`}
               onClick={() => setSelectedSide('Yes')}
             >
-              <span className="outcome-btn-label">Yes</span>
+              <span className="predict-event-outcome-btn-label">Yes</span>
               {selectedOutcomeData && (
-                <span className="outcome-btn-price">{(selectedOutcomeData.yesPrice * 100).toFixed(1)}c</span>
+                <span className="predict-event-outcome-btn-price">{(selectedOutcomeData.yesPrice * 100).toFixed(1)}c</span>
               )}
             </button>
             <button
-              className={`outcome-btn no ${selectedSide === 'No' ? 'active' : ''}`}
+              className={`predict-event-outcome-btn no ${selectedSide === 'No' ? 'active' : ''}`}
               onClick={() => setSelectedSide('No')}
             >
-              <span className="outcome-btn-label">No</span>
+              <span className="predict-event-outcome-btn-label">No</span>
               {selectedOutcomeData && (
-                <span className="outcome-btn-price">{(selectedOutcomeData.noPrice * 100).toFixed(1)}c</span>
+                <span className="predict-event-outcome-btn-price">{(selectedOutcomeData.noPrice * 100).toFixed(1)}c</span>
               )}
             </button>
           </div>
 
           {/* Amount Section */}
-          <div className="amount-section">
-            <div className="amount-header">
-              <span className="amount-label">Amount</span>
-              <span className="balance-display">Balance $0.00</span>
+          <div className="predict-event-amount-section">
+            <div className="predict-event-amount-header">
+              <span className="predict-event-amount-label">Amount</span>
+              <span className="predict-event-balance-display">Balance $0.00</span>
             </div>
-            <div className="amount-input-wrapper">
-              <span className="amount-currency">$</span>
+            <div className="predict-event-amount-input-wrapper">
+              <span className="predict-event-amount-currency">$</span>
               <input
                 type="text"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
                 placeholder="0.00"
-                className="amount-input"
+                className="predict-event-amount-input"
               />
             </div>
-            <div className="amount-presets">
+            <div className="predict-event-amount-presets">
               <button onClick={() => handlePreset(2)}>+$2</button>
               <button onClick={() => handlePreset(20)}>+$20</button>
               <button onClick={() => handlePreset(100)}>+$100</button>
@@ -617,14 +617,14 @@ const Predict: React.FC<PredictProps> = ({
           </div>
 
           {/* Order Summary */}
-          <div className="order-summary">
-            <div className="summary-row">
-              <span className="summary-label">To win</span>
-              <span className="summary-value to-win">${toWin}</span>
+          <div className="predict-event-order-summary">
+            <div className="predict-event-summary-row">
+              <span className="predict-event-summary-label">To win</span>
+              <span className="predict-event-summary-value to-win">${toWin}</span>
             </div>
-            <div className="summary-row">
-              <span className="summary-label">Avg. Price</span>
-              <span className="summary-value">
+            <div className="predict-event-summary-row">
+              <span className="predict-event-summary-label">Avg. Price</span>
+              <span className="predict-event-summary-value">
                 {selectedOutcomeData
                   ? `${((selectedSide === 'Yes' ? selectedOutcomeData.yesPrice : selectedOutcomeData.noPrice) * 100).toFixed(1)}c`
                   : '--'
@@ -635,39 +635,39 @@ const Predict: React.FC<PredictProps> = ({
 
           {/* Place Order Button */}
           <button
-            className="place-order-btn"
+            className="predict-event-place-order-btn"
             disabled={!selectedOutcome || !amount || Number(amount) <= 0}
             onClick={handlePlaceOrder}
           >
             Place {orderType} Buy
           </button>
 
-          <p className="terms-text">
+          <p className="predict-event-terms-text">
             By trading, you agree to the <a href="#">Terms of Use</a>.
           </p>
 
           {/* Recent Activity */}
-          <div className="recent-activity">
-            <div className="activity-header">
-              <span className="activity-title">Recent Activity</span>
-              <button className="activity-hide-btn">Hide</button>
+          <div className="predict-event-recent-activity">
+            <div className="predict-event-activity-header">
+              <span className="predict-event-activity-title">Recent Activity</span>
+              <button className="predict-event-activity-hide-btn">Hide</button>
             </div>
-            <div className="activity-tabs">
+            <div className="predict-event-activity-tabs">
               <button
-                className={`activity-tab ${activityTab === 'all' ? 'active' : ''}`}
+                className={`predict-event-activity-tab ${activityTab === 'all' ? 'active' : ''}`}
                 onClick={() => setActivityTab('all')}
               >
                 All
               </button>
               <button
-                className={`activity-tab ${activityTab === 'openOrders' ? 'active' : ''}`}
+                className={`predict-event-activity-tab ${activityTab === 'openOrders' ? 'active' : ''}`}
                 onClick={() => setActivityTab('openOrders')}
               >
                 Open Orders
               </button>
             </div>
-            <div className="activity-list">
-              <div className="activity-empty">
+            <div className="predict-event-activity-list">
+              <div className="predict-event-activity-empty">
                 No recent activity
               </div>
             </div>
