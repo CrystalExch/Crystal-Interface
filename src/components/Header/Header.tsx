@@ -1110,52 +1110,6 @@ const Header: React.FC<HeaderProps> = ({
             <span className="crystal-name">CRYSTAL</span>
           </div>
         </div>
-        {!isPredictRoute && (
-          <div className="left-header">
-            <ChartHeader
-              in_icon={tokendict[activeMarket.baseAddress].image}
-              out_icon={tokendict[activeMarket.quoteAddress].image}
-              price={isMemeRoute && memeTokenData ?
-                (memeTokenData.price || 0.000001)?.toString() || 'N/A' :
-                formatSubscript(marketHeader?.currentPrice) || 'N/A'
-              }
-              priceChangeAmount={isMemeRoute && memeTokenData ?
-                memeTokenData.change24h?.toString() || 'N/A' :
-                formatSubscript(marketHeader?.priceChangeAmount) || 'N/A'
-              }
-              priceChangePercent={isMemeRoute && memeTokenData ?
-                `${memeTokenData.change24h >= 0 ? '+' : ''}${memeTokenData.change24h?.toFixed(2)}` :
-                marketHeader?.priceChange || 'N/A'
-              }
-              activeMarket={activeMarket}
-              high24h={formatSubscript(marketHeader?.high24h) || 'N/A'}
-              low24h={formatSubscript(marketHeader?.low24h) || 'N/A'}
-              volume={isMemeRoute && memeTokenData ?
-                memeTokenData.volume24h?.toString() || 'N/A' :
-                marketHeader?.volume || 'N/A'
-              }
-              orderdata={orderdata || {}}
-              tokendict={tokendict}
-              onMarketSelect={onMarketSelect}
-              setpopup={setpopup}
-              marketsData={marketsData}
-              simpleView={simpleView}
-              tradesByMarket={tradesByMarket}
-              memeTokenData={memeTokenData}
-              route={isMemeRoute ? 'meme' : isPerpsRoute ? 'perps' : isPredictRoute ? 'predict' : isTradeRoute ? 'trade' : ''}
-              perpsActiveMarketKey={perpsActiveMarketKey}
-              perpsMarketsData={perpsMarketsData}
-              perpsFilterOptions={perpsFilterOptions}
-              monUsdPrice={monUsdPrice}
-              showLoadingPopup={showLoadingPopup}
-              updatePopup={updatePopup}
-              setperpsActiveMarketKey={setperpsActiveMarketKey}
-              externalUserStats={externalUserStats}
-              onSharePNL={onSharePNL}
-              userAddress={account.address}
-            />
-          </div>
-        )}
         <div className="left-header">
           <ChartHeader
             in_icon={tokendict[activeMarket.baseAddress].image}
