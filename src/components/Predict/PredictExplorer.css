@@ -376,6 +376,18 @@
     transform: translateY(-2px);
 }
 
+.predict-grid-container .trending-row.perps.predict-market-resolved {
+    opacity: 0.55;
+    filter: grayscale(0.6);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.predict-grid-container .trending-row.perps.predict-market-resolved:hover {
+    background: rgba(6, 6, 6);
+    border-color: rgba(255, 255, 255, 0.05);
+    transform: none;
+}
+
 .predict-grid-container .trending-header.perps {
     display: none;
 }
@@ -501,6 +513,33 @@
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.predict-status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.predict-status-pill.live {
+    color: rgba(82, 242, 167, 0.95);
+    border-color: rgba(82, 242, 167, 0.35);
+    background: rgba(82, 242, 167, 0.12);
+}
+
+.predict-status-pill.resolved {
+    color: rgba(255, 255, 255, 0.55);
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .predict-grid-container .trending-row.perps .trending-token-symbol {
@@ -705,6 +744,11 @@
     transition: background 0.15s ease;
 }
 
+.predict-multi-outcome-row.leader {
+    background: rgba(82, 242, 167, 0.08);
+    box-shadow: inset 2px 0 0 rgba(82, 242, 167, 0.7);
+}
+
 .predict-multi-outcome-row:last-child {
     border-bottom: none;
 }
@@ -788,6 +832,13 @@
 .predict-multi-no-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.predict-grid-container .perps-trending-buy-btn:disabled,
+.predict-grid-container .perps-trending-sell-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.4);
 }
 
 .predict-multi-footer {

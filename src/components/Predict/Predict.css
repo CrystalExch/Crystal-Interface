@@ -12,6 +12,12 @@
   color: #ffffffcf;
 }
 
+.predict-event-page.predict-event-resolved .predict-event-header,
+.predict-event-page.predict-event-resolved .predict-event-main-content {
+  opacity: 0.6;
+  filter: grayscale(0.6);
+}
+
 /* ==========================================
    HEADER SECTION
    ========================================== */
@@ -83,6 +89,40 @@
   color: #ffffffcf;
   word-wrap: break-word;
   letter-spacing: -0.3px;
+}
+
+.predict-event-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.predict-event-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.predict-event-status-pill.live {
+  color: rgba(82, 242, 167, 0.95);
+  border-color: rgba(82, 242, 167, 0.35);
+  background: rgba(82, 242, 167, 0.12);
+}
+
+.predict-event-status-pill.resolved {
+  color: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .predict-event-header-stats {
@@ -328,6 +368,19 @@
   background: rgba(179, 184, 249, 0.05);
 }
 
+.predict-event-outcome-row.leader {
+  background: rgba(82, 242, 167, 0.08);
+  box-shadow: inset 2px 0 0 rgba(82, 242, 167, 0.7);
+}
+
+.predict-event-outcome-row.leader:hover {
+  background: rgba(82, 242, 167, 0.12);
+}
+
+.predict-event-outcome-row.leader.selected {
+  background: rgba(82, 242, 167, 0.14);
+}
+
 .predict-event-outcome-label {
   font-size: 0.9rem;
   font-weight: 400;
@@ -381,6 +434,14 @@
 .predict-event-buy-no-btn:hover {
   color: rgb(235, 112, 112);
   border-color: rgba(235, 112, 112, 0.5);
+}
+
+.predict-event-buy-yes-btn:disabled,
+.predict-event-buy-no-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  color: #666;
+  border-color: transparent;
 }
 
 /* ==========================================
@@ -610,6 +671,23 @@
   border: 1.5px solid rgba(235, 112, 112, 0.5);
   color: rgb(235, 112, 112);
   box-shadow: inset 0 0 4px 2px rgba(235, 112, 112, 0.2);
+}
+
+.predict-event-outcome-btn:disabled,
+.predict-event-trade-toggle-btn:disabled,
+.predict-event-order-type-button:disabled,
+.predict-event-amount-presets button:disabled,
+.predict-event-limit-btn:disabled,
+.predict-event-toggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  color: #666;
+  border-color: rgba(179, 184, 249, 0.12);
+}
+
+.predict-event-amount-input:disabled {
+  color: #666;
+  cursor: not-allowed;
 }
 
 /* Amount Section */

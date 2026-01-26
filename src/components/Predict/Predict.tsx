@@ -17,16 +17,62 @@ const OUTCOME_COLORS = [
 ];
 
 interface PredictProps {
+  layoutSettings?: string;
+  orderbookPosition?: string;
   windowWidth: number;
   mobileView: string;
+  isOrderbookVisible?: boolean;
+  orderbookWidth?: number;
+  setOrderbookWidth?: any;
+  viewMode?: 'both' | 'buy' | 'sell';
+  setViewMode?: any;
+  activeTab?: 'orderbook' | 'trades';
+  setActiveTab?: any;
   perpsActiveMarketKey: string;
   setperpsActiveMarketKey: (key: string) => void;
   perpsMarketsData: Record<string, any>;
   setPerpsMarketsData: (data: any) => void;
   address?: string;
   router?: any;
+  orderCenterHeight?: number;
+  setSendTokenIn?: any;
   refetch?: () => void;
   setpopup?: (value: number) => void;
+  sortConfig?: any;
+  onSort?: (config: any) => void;
+  activeSection?: 'balances' | 'orders' | 'tradeHistory' | 'orderHistory';
+  setActiveSection?: any;
+  filter?: 'all' | 'buy' | 'sell';
+  setFilter?: any;
+  onlyThisMarket?: boolean;
+  setOnlyThisMarket?: any;
+  sendUserOperationAsync?: any;
+  setChain?: any;
+  isOrderCenterVisible?: boolean;
+  openEditOrderPopup?: (order: any) => void;
+  openEditOrderSizePopup?: (order: any) => void;
+  wethticker?: any;
+  ethticker?: any;
+  memoizedSortConfig?: any;
+  emptyFunction?: any;
+  handleSetChain?: any;
+  selectedInterval?: string;
+  setSelectedInterval?: any;
+  perpsFilterOptions?: any;
+  setPerpsFilterOptions?: any;
+  signMessageAsync?: any;
+  leverage?: string;
+  setLeverage?: (value: string) => void;
+  signer?: any;
+  setSigner?: any;
+  setOrderCenterHeight?: (height: number) => void;
+  isMarksVisible?: any;
+  setIsMarksVisible?: any;
+  setPerpsLimitChase?: any;
+  perpsLimitChase?: any;
+  handlePerpsMarketSelect?: any;
+  scaAddress?: string;
+  setTempLeverage?: any;
 }
 
 interface OutcomeData {
@@ -51,6 +97,8 @@ const Predict: React.FC<PredictProps> = ({
   setpopup,
 }) => {
   const { marketSlug } = useParams<{ marketSlug?: string }>();
+  const activeRequestRef = useRef<AbortController | null>(null);
+  const selectedOutcomeRef = useRef<string | null>(null);
 
   // Chart state
   const [selectedInterval, setSelectedInterval] = useState<IntervalType>('ALL');
@@ -83,13 +131,102 @@ const Predict: React.FC<PredictProps> = ({
   // Get current market data
   const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};
 
+  useEffect(() => {
+    selectedOutcomeRef.current = selectedOutcome;
+  }, [selectedOutcome]);
+
   // Fetch market data when marketSlug changes
   useEffect(() => {
     if (marketSlug) {
-      const fetchMarketData = async () => {
+      const fetchPolymarketJson = async (path: string, signal: AbortSignal) => {
+        const response = await fetch(path, { signal });
+        if (!response.ok) {
+          const body = await response.text().catch(() => '');
+          throw new Error(`Polymarket request failed (${response.status}) for ${path}: ${body.slice(0, 200)}`);
+        }
+        const text = await response.text();
         try {
-          const response = await fetch(`/predictapi/events?slug=${marketSlug}`);
-          const data = await response.json();
+          return JSON.parse(text);
+        } catch {
+          throw new Error(`Polymarket response not JSON for ${path}: ${text.slice(0, 200)}`);
+        }
+      };
+
+      const parseClobTokenIds = (value: any) => {
+        if (Array.isArray(value)) {
+          return value.filter(Boolean).map((item) => String(item));
+        }
+        if (typeof value === 'string') {
+          try {
+            const parsed = JSON.parse(value);
+            if (Array.isArray(parsed)) {
+              return parsed.filter(Boolean).map((item) => String(item));
+            }
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      };
+
+      const getTokenIdsForMarket = (marketData: any) => {
+        const clobTokenIds = parseClobTokenIds(marketData?.clobTokenIds);
+        if (clobTokenIds.length) return clobTokenIds;
+        const tokens = Array.isArray(marketData?.tokens)
+          ? marketData.tokens.map((token: any) => token?.token_id).filter(Boolean)
+          : [];
+        return tokens.map((item: any) => String(item));
+      };
+
+      const fetchOrderbooks = async (tokenIds: string[], signal: AbortSignal) => {
+        if (!tokenIds.length) return {};
+        try {
+          const response = await fetch('/clob/books', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tokenIds.map((tokenId) => ({ token_id: tokenId }))),
+            signal,
+          });
+          if (!response.ok) {
+            const body = await response.text().catch(() => '');
+            throw new Error(`Orderbook request failed (${response.status}): ${body.slice(0, 200)}`);
+          }
+          const books = await response.json().catch(() => []);
+          if (!Array.isArray(books)) return {};
+          return books.reduce((acc: Record<string, any>, book: any) => {
+            if (book?.asset_id) {
+              acc[String(book.asset_id)] = book;
+            }
+            return acc;
+          }, {});
+        } catch (error) {
+          if ((error as Error).name === 'AbortError') return {};
+          console.warn('Failed to fetch orderbooks:', error);
+          return {};
+        }
+      };
+
+      const getOrderbookPrice = (book: any, fallback: number) => {
+        const bestAsk = book?.asks?.[0]?.price;
+        const bestBid = book?.bids?.[0]?.price;
+        const price = bestAsk ?? bestBid;
+        const parsed = price != null ? Number(price) : fallback;
+        return Number.isFinite(parsed) ? parsed : fallback;
+      };
+
+      const fetchMarketData = async () => {
+        activeRequestRef.current?.abort();
+        const controller = new AbortController();
+        activeRequestRef.current = controller;
+
+        try {
+          const data = await fetchPolymarketJson(
+            `/predictapi/events?active=true&closed=false&slug=${encodeURIComponent(marketSlug)}`,
+            controller.signal,
+          ).catch(() => fetchPolymarketJson(
+            `/predictapi/events?slug=${encodeURIComponent(marketSlug)}`,
+            controller.signal,
+          ));
 
           if (data && data.length > 0) {
             const event = data[0];
@@ -99,6 +236,7 @@ const Predict: React.FC<PredictProps> = ({
               const market = markets[0];
               const conditionId = market.conditionId;
               const tokenID = market.tokenID || market.tokens?.[0]?.token_id;
+              const isMultiOutcome = markets.length > 1;
 
               setperpsActiveMarketKey(conditionId);
 
@@ -107,7 +245,7 @@ const Predict: React.FC<PredictProps> = ({
                 : market.outcomePrices || [];
 
               // Fetch series data for chart
-              const seriesResponse = await fetch(`/clob/series?id=${conditionId}`).catch(() => null);
+              const seriesResponse = await fetch(`/clob/series?id=${conditionId}`, { signal: controller.signal }).catch(() => null);
               const seriesData = seriesResponse ? await seriesResponse.json().catch(() => null) : null;
 
               // Build chart data from series
@@ -125,23 +263,41 @@ const Predict: React.FC<PredictProps> = ({
                 setChartData(chartPoints);
               }
 
+              const baseOutcomePrices = isMultiOutcome
+                ? markets.map((m: any) => {
+                    const prices = typeof m.outcomePrices === 'string'
+                      ? JSON.parse(m.outcomePrices)
+                      : m.outcomePrices || [];
+                    return parseFloat(prices[0] || 0);
+                  })
+                : outcomePrices.map((p: any) => parseFloat(p || 0));
+
+              const orderbookTokenIds = isMultiOutcome
+                ? markets.map((m: any) => getTokenIdsForMarket(m)[0] || '')
+                : getTokenIdsForMarket(market);
+              const orderbookFetchTokenIds = orderbookTokenIds.filter(Boolean);
+
+              const orderbooksByTokenId = await fetchOrderbooks(orderbookFetchTokenIds, controller.signal);
+              const derivedOutcomePrices = orderbookTokenIds.length
+                ? baseOutcomePrices.map((price: number, index: number) => {
+                    const tokenId = orderbookTokenIds[index];
+                    const book = tokenId ? orderbooksByTokenId[tokenId] : null;
+                    return book ? getOrderbookPrice(book, price) : price;
+                  })
+                : baseOutcomePrices;
+
               // Build market data
               const marketData = {
                 contractId: conditionId,
                 baseAsset: event.title || market.question,
                 quoteAsset: 'USD',
-                lastPrice: parseFloat(outcomePrices[0] || 0),
+                lastPrice: derivedOutcomePrices[0] || 0,
                 value: market.volume || market.volume24hr || 0,
                 liquidity: market.liquidity || 0,
-                outcomes: markets.length > 1
+                outcomes: isMultiOutcome
                   ? markets.map((m: any) => m.groupItemTitle || m.question)
                   : (typeof market.outcomes === 'string' ? JSON.parse(market.outcomes) : market.outcomes) || ['Yes', 'No'],
-                outcomePrices: markets.length > 1
-                  ? markets.map((m: any) => {
-                      const prices = typeof m.outcomePrices === 'string' ? JSON.parse(m.outcomePrices) : m.outcomePrices || [];
-                      return parseFloat(prices[0] || 0);
-                    })
-                  : outcomePrices.map((p: any) => parseFloat(p || 0)),
+                outcomePrices: derivedOutcomePrices,
                 eventTitle: event.title,
                 eventSlug: event.slug,
                 iconURL: event.image || event.icon,
@@ -150,7 +306,9 @@ const Predict: React.FC<PredictProps> = ({
                 startDate: market.startDate || market.creationDate,
                 enableDisplay: true,
                 active: market.active,
+                closed: market.closed ?? event.closed ?? false,
                 tokenID: tokenID,
+                orderbooks: orderbooksByTokenId,
                 markets: markets,
                 volume24hr: market.volume24hr || 0,
                 volumeNum: market.volumeNum || 0,
@@ -165,18 +323,28 @@ const Predict: React.FC<PredictProps> = ({
               }));
 
               // Auto-select first outcome
-              if (marketData.outcomes?.length > 0 && !selectedOutcome) {
+              if (marketData.outcomes?.length > 0 && !selectedOutcomeRef.current) {
                 setSelectedOutcome(marketData.outcomes[0]);
               }
             }
           }
         } catch (error) {
-          console.error('Error fetching market data:', error);
+          if ((error as Error).name !== 'AbortError') {
+            console.error('Error fetching market data:', error);
+          }
         }
       };
 
       fetchMarketData();
+
+      // Refresh the currently viewed market on an interval.
+      const refreshId = window.setInterval(fetchMarketData, 60_000);
+      return () => {
+        window.clearInterval(refreshId);
+        activeRequestRef.current?.abort();
+      };
     }
+    return undefined;
   }, [marketSlug, setperpsActiveMarketKey, setPerpsMarketsData]);
 
   // Process outcomes data
@@ -185,7 +353,7 @@ const Predict: React.FC<PredictProps> = ({
     const outcomePrices = Array.isArray(activeMarket?.outcomePrices) ? activeMarket.outcomePrices : [0.5, 0.5];
     const markets = activeMarket?.markets || [];
 
-    return outcomeLabels.map((label: string, idx: number) => {
+    const outcomeData = outcomeLabels.map((label: string, idx: number) => {
       const price = Number(outcomePrices[idx] ?? 0);
       const marketVolume = markets[idx]?.volume24hr || markets[idx]?.volume || 0;
 
@@ -198,6 +366,12 @@ const Predict: React.FC<PredictProps> = ({
         color: OUTCOME_COLORS[idx % OUTCOME_COLORS.length],
       };
     });
+
+    if (outcomeLabels.length > 2) {
+      outcomeData.sort((a: OutcomeData, b: OutcomeData) => b.probability - a.probability);
+    }
+
+    return outcomeData;
   }, [activeMarket]);
 
   // Sort outcomes
@@ -210,6 +384,13 @@ const Predict: React.FC<PredictProps> = ({
       return a.name.localeCompare(b.name) * mult;
     });
   }, [outcomes, sortConfig]);
+
+  const leaderOutcomeName = useMemo(() => {
+    if (!outcomes.length) return null;
+    return outcomes.reduce((leader, current) => (
+      current.probability > leader.probability ? current : leader
+    )).name;
+  }, [outcomes]);
 
   // Get selected outcome data
   const selectedOutcomeData = useMemo(() => {
@@ -382,9 +563,15 @@ const Predict: React.FC<PredictProps> = ({
   const liquidity = activeMarket?.liquidity || 0;
   const endDate = activeMarket?.endDate || '';
   const countdown = getCountdown(endDate);
+  const isResolved = Boolean(activeMarket?.closed || activeMarket?.active === false);
+  const statusLabel = isResolved ? 'Resolved' : 'Live';
+  const statusTitle = endDate
+    ? `${isResolved ? 'Resolved' : 'Ends'} ${formatDate(endDate)}`
+    : statusLabel;
+  const isTradingDisabled = isResolved;
 
   return (
-    <div className="predict-event-page">
+    <div className={`predict-event-page ${isResolved ? 'predict-event-resolved' : ''}`}>
       {/* HEADER */}
       <div className="predict-event-header">
         <div className="predict-event-header-left">
@@ -405,7 +592,15 @@ const Predict: React.FC<PredictProps> = ({
                 ))}
               </div>
             )}
-            <h1 className="predict-event-title">{eventTitle}</h1>
+            <div className="predict-event-title-row">
+              <h1 className="predict-event-title">{eventTitle}</h1>
+              <span
+                className={`predict-event-status-pill ${isResolved ? 'resolved' : 'live'}`}
+                title={statusTitle}
+              >
+                {statusLabel}
+              </span>
+            </div>
           </div>
         </div>
         <div className="predict-event-header-stats">
@@ -500,6 +695,7 @@ const Predict: React.FC<PredictProps> = ({
                   <div className="predict-event-outcome-col predict-event-outcome-actions-col">
                     <button
                       className="predict-event-buy-yes-btn"
+                      disabled={isTradingDisabled}
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedOutcome(outcome.name);
@@ -510,6 +706,7 @@ const Predict: React.FC<PredictProps> = ({
                     </button>
                     <button
                       className="predict-event-buy-no-btn"
+                      disabled={isTradingDisabled}
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedOutcome(outcome.name);
@@ -544,20 +741,24 @@ const Predict: React.FC<PredictProps> = ({
           {/* Buy/Sell Toggle + Order Type */}
           <div className="predict-event-trade-header-row">
             <div className="predict-event-trade-toggle">
-              <button className="predict-event-trade-toggle-btn buy active">Buy</button>
-              <button className="predict-event-trade-toggle-btn sell">Sell</button>
+              <button className="predict-event-trade-toggle-btn buy active" disabled={isTradingDisabled}>Buy</button>
+              <button className="predict-event-trade-toggle-btn sell" disabled={isTradingDisabled}>Sell</button>
             </div>
             <div className="predict-event-order-type-dropdown">
               <button
                 className="predict-event-order-type-button"
-                onClick={() => setIsOrderTypeDropdownOpen(!isOrderTypeDropdownOpen)}
+                disabled={isTradingDisabled}
+                onClick={() => {
+                  if (isTradingDisabled) return;
+                  setIsOrderTypeDropdownOpen(!isOrderTypeDropdownOpen);
+                }}
               >
                 {orderType}
                 <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
-              {isOrderTypeDropdownOpen && (
+              {isOrderTypeDropdownOpen && !isTradingDisabled && (
                 <div className="predict-event-order-type-dropdown-menu">
                   {(['Market', 'Limit'] as const).map((option) => (
                     <div
@@ -580,6 +781,7 @@ const Predict: React.FC<PredictProps> = ({
           <div className="predict-event-outcome-selection">
             <button
               className={`predict-event-outcome-btn yes ${selectedSide === 'Yes' ? 'active' : ''}`}
+              disabled={isTradingDisabled}
               onClick={() => setSelectedSide('Yes')}
             >
               <span className="predict-event-outcome-btn-label">Yes</span>
@@ -589,6 +791,7 @@ const Predict: React.FC<PredictProps> = ({
             </button>
             <button
               className={`predict-event-outcome-btn no ${selectedSide === 'No' ? 'active' : ''}`}
+              disabled={isTradingDisabled}
               onClick={() => setSelectedSide('No')}
             >
               <span className="predict-event-outcome-btn-label">No</span>
@@ -609,6 +812,7 @@ const Predict: React.FC<PredictProps> = ({
                     <input
                       type="text"
                       value={amount}
+                      disabled={isTradingDisabled}
                       onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
                       placeholder="0.00"
                       className="predict-event-amount-input"
@@ -616,10 +820,10 @@ const Predict: React.FC<PredictProps> = ({
                   </div>
                 </div>
                 <div className="predict-event-amount-presets">
-                  <button onClick={() => handlePreset(1)}>+$1</button>
-                  <button onClick={() => handlePreset(20)}>+$20</button>
-                  <button onClick={() => handlePreset(100)}>+$100</button>
-                  <button onClick={() => setAmount('0')}>Max</button>
+                  <button onClick={() => handlePreset(1)} disabled={isTradingDisabled}>+$1</button>
+                  <button onClick={() => handlePreset(20)} disabled={isTradingDisabled}>+$20</button>
+                  <button onClick={() => handlePreset(100)} disabled={isTradingDisabled}>+$100</button>
+                  <button onClick={() => setAmount('0')} disabled={isTradingDisabled}>Max</button>
                 </div>
               </div>
 
@@ -643,6 +847,7 @@ const Predict: React.FC<PredictProps> = ({
                   <div className="predict-event-limit-control">
                     <button
                       className="predict-event-limit-btn"
+                      disabled={isTradingDisabled}
                       onClick={() => setLimitPrice(prev => Math.max(0, prev - 1))}
                     >
                       −
@@ -650,6 +855,7 @@ const Predict: React.FC<PredictProps> = ({
                     <span className="predict-event-limit-value">{limitPrice}¢</span>
                     <button
                       className="predict-event-limit-btn"
+                      disabled={isTradingDisabled}
                       onClick={() => setLimitPrice(prev => Math.min(99, prev + 1))}
                     >
                       +
@@ -667,16 +873,17 @@ const Predict: React.FC<PredictProps> = ({
                   <input
                     type="text"
                     value={shares}
+                    disabled={isTradingDisabled}
                     onChange={(e) => setShares(e.target.value.replace(/[^0-9]/g, ''))}
                     placeholder="0"
                     className="predict-event-amount-input predict-event-shares-input"
                   />
                 </div>
                 <div className="predict-event-amount-presets">
-                  <button onClick={() => setShares(prev => String(Math.max(0, Number(prev || 0) - 100)))}>-100</button>
-                  <button onClick={() => setShares(prev => String(Math.max(0, Number(prev || 0) - 10)))}>-10</button>
-                  <button onClick={() => setShares(prev => String(Number(prev || 0) + 10))}>+10</button>
-                  <button onClick={() => setShares(prev => String(Number(prev || 0) + 100))}>+100</button>
+                  <button onClick={() => setShares(prev => String(Math.max(0, Number(prev || 0) - 100)))} disabled={isTradingDisabled}>-100</button>
+                  <button onClick={() => setShares(prev => String(Math.max(0, Number(prev || 0) - 10)))} disabled={isTradingDisabled}>-10</button>
+                  <button onClick={() => setShares(prev => String(Number(prev || 0) + 10))} disabled={isTradingDisabled}>+10</button>
+                  <button onClick={() => setShares(prev => String(Number(prev || 0) + 100))} disabled={isTradingDisabled}>+100</button>
                 </div>
               </div>
 
@@ -685,6 +892,7 @@ const Predict: React.FC<PredictProps> = ({
                 <span className="predict-event-expiration-label">Set Expiration</span>
                 <button
                   className={`predict-event-toggle ${expirationEnabled ? 'active' : ''}`}
+                  disabled={isTradingDisabled}
                   onClick={() => setExpirationEnabled(!expirationEnabled)}
                 >
                   <span className="predict-event-toggle-knob" />
@@ -712,7 +920,7 @@ const Predict: React.FC<PredictProps> = ({
           {/* Place Order Button */}
           <button
             className="predict-event-place-order-btn"
-            disabled={!selectedOutcome || !amount || Number(amount) <= 0}
+            disabled={isTradingDisabled || !selectedOutcome || !amount || Number(amount) <= 0}
             onClick={handlePlaceOrder}
           >
             Place {orderType} Buy
