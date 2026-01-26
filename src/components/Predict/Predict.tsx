@@ -63,6 +63,11 @@ const Predict: React.FC<PredictProps> = ({
   const [orderType, setOrderType] = useState<'Market' | 'Limit'>('Market');
   const [isOrderTypeDropdownOpen, setIsOrderTypeDropdownOpen] = useState(false);
 
+  // Limit order state
+  const [limitPrice, setLimitPrice] = useState(0);
+  const [shares, setShares] = useState('');
+  const [expirationEnabled, setExpirationEnabled] = useState(false);
+
   // Table state
   const [sortConfig, setSortConfig] = useState<{ column: string; direction: 'asc' | 'desc' }>({
     column: 'probability',
@@ -129,7 +134,7 @@ const Predict: React.FC<PredictProps> = ({
                 value: market.volume || market.volume24hr || 0,
                 liquidity: market.liquidity || 0,
                 outcomes: markets.length > 1
-                  ? markets.map((m: any) => m.question || m.groupItemTitle)
+                  ? markets.map((m: any) => m.groupItemTitle || m.question)
                   : (typeof market.outcomes === 'string' ? JSON.parse(market.outcomes) : market.outcomes) || ['Yes', 'No'],
                 outcomePrices: markets.length > 1
                   ? markets.map((m: any) => {
@@ -354,11 +359,12 @@ const Predict: React.FC<PredictProps> = ({
   };
 
   // Format large numbers
-  const formatVolume = (vol: number) => {
-    if (vol >= 1e9) return `$${(vol / 1e9).toFixed(1)}B`;
-    if (vol >= 1e6) return `$${(vol / 1e6).toFixed(1)}M`;
-    if (vol >= 1e3) return `$${(vol / 1e3).toFixed(1)}K`;
-    return `$${vol.toFixed(0)}`;
+  const formatVolume = (vol: number | string | undefined | null) => {
+    const numVol = Number(vol) || 0;
+    if (numVol >= 1e9) return `$${(numVol / 1e9).toFixed(1)}B`;
+    if (numVol >= 1e6) return `$${(numVol / 1e6).toFixed(1)}M`;
+    if (numVol >= 1e3) return `$${(numVol / 1e3).toFixed(1)}K`;
+    return `$${numVol.toFixed(0)}`;
   };
 
   // Format date
@@ -426,7 +432,7 @@ const Predict: React.FC<PredictProps> = ({
           <div className="predict-event-chart-section">
             {/* Chart Legend */}
             <div className="predict-event-chart-legend">
-              {outcomes.map((outcome, idx) => (
+              {outcomes.slice(0, 4).map((outcome, idx) => (
                 <div key={outcome.name} className="predict-event-legend-item">
                   <span className="predict-event-legend-color" style={{ backgroundColor: outcome.color }} />
                   <span className="predict-event-legend-name">{outcome.name}</span>
@@ -592,46 +598,116 @@ const Predict: React.FC<PredictProps> = ({
             </button>
           </div>
 
-          {/* Amount Section */}
-          <div className="predict-event-amount-section">
-            <div className="predict-event-amount-header">
-              <span className="predict-event-amount-label">Amount</span>
-              <span className="predict-event-balance-display">Balance $0.00</span>
-            </div>
-            <div className="predict-event-amount-input-wrapper">
-              <span className="predict-event-amount-currency">$</span>
-              <input
-                type="text"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
-                placeholder="0.00"
-                className="predict-event-amount-input"
-              />
-            </div>
-            <div className="predict-event-amount-presets">
-              <button onClick={() => handlePreset(2)}>+$2</button>
-              <button onClick={() => handlePreset(20)}>+$20</button>
-              <button onClick={() => handlePreset(100)}>+$100</button>
-              <button onClick={() => setAmount('0')}>Max</button>
-            </div>
-          </div>
+          {/* Market Order - Amount Section */}
+          {orderType === 'Market' && (
+            <>
+              <div className="predict-event-amount-section">
+                <div className="predict-event-amount-header">
+                  <span className="predict-event-amount-label">Amount</span>
+                  <div className="predict-event-amount-input-wrapper">
+                    <span className="predict-event-amount-currency">$</span>
+                    <input
+                      type="text"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+                      placeholder="0.00"
+                      className="predict-event-amount-input"
+                    />
+                  </div>
+                </div>
+                <div className="predict-event-amount-presets">
+                  <button onClick={() => handlePreset(1)}>+$1</button>
+                  <button onClick={() => handlePreset(20)}>+$20</button>
+                  <button onClick={() => handlePreset(100)}>+$100</button>
+                  <button onClick={() => setAmount('0')}>Max</button>
+                </div>
+              </div>
 
-          {/* Order Summary */}
-          <div className="predict-event-order-summary">
-            <div className="predict-event-summary-row">
-              <span className="predict-event-summary-label">To win</span>
-              <span className="predict-event-summary-value to-win">${toWin}</span>
-            </div>
-            <div className="predict-event-summary-row">
-              <span className="predict-event-summary-label">Avg. Price</span>
-              <span className="predict-event-summary-value">
-                {selectedOutcomeData
-                  ? `${((selectedSide === 'Yes' ? selectedOutcomeData.yesPrice : selectedOutcomeData.noPrice) * 100).toFixed(1)}c`
-                  : '--'
-                }
-              </span>
-            </div>
-          </div>
+              {/* Market Order Summary */}
+              <div className="predict-event-order-summary">
+                <div className="predict-event-summary-row">
+                  <span className="predict-event-summary-label">To win</span>
+                  <span className="predict-event-summary-value to-win">${toWin}</span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Limit Order - Price & Shares Section */}
+          {orderType === 'Limit' && (
+            <>
+              {/* Limit Price */}
+              <div className="predict-event-limit-section">
+                <div className="predict-event-limit-row">
+                  <span className="predict-event-limit-label">Limit Price</span>
+                  <div className="predict-event-limit-control">
+                    <button
+                      className="predict-event-limit-btn"
+                      onClick={() => setLimitPrice(prev => Math.max(0, prev - 1))}
+                    >
+                      −
+                    </button>
+                    <span className="predict-event-limit-value">{limitPrice}¢</span>
+                    <button
+                      className="predict-event-limit-btn"
+                      onClick={() => setLimitPrice(prev => Math.min(99, prev + 1))}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Shares */}
+              <div className="predict-event-amount-section">
+                <div className="predict-event-amount-header">
+                  <span className="predict-event-amount-label">Shares</span>
+                </div>
+                <div className="predict-event-amount-input-wrapper">
+                  <input
+                    type="text"
+                    value={shares}
+                    onChange={(e) => setShares(e.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="0"
+                    className="predict-event-amount-input predict-event-shares-input"
+                  />
+                </div>
+                <div className="predict-event-amount-presets">
+                  <button onClick={() => setShares(prev => String(Math.max(0, Number(prev || 0) - 100)))}>-100</button>
+                  <button onClick={() => setShares(prev => String(Math.max(0, Number(prev || 0) - 10)))}>-10</button>
+                  <button onClick={() => setShares(prev => String(Number(prev || 0) + 10))}>+10</button>
+                  <button onClick={() => setShares(prev => String(Number(prev || 0) + 100))}>+100</button>
+                </div>
+              </div>
+
+              {/* Set Expiration */}
+              <div className="predict-event-expiration-row">
+                <span className="predict-event-expiration-label">Set Expiration</span>
+                <button
+                  className={`predict-event-toggle ${expirationEnabled ? 'active' : ''}`}
+                  onClick={() => setExpirationEnabled(!expirationEnabled)}
+                >
+                  <span className="predict-event-toggle-knob" />
+                </button>
+              </div>
+
+              {/* Total */}
+              <div className="predict-event-order-summary">
+                <div className="predict-event-summary-row">
+                  <span className="predict-event-summary-label">Total</span>
+                  <span className="predict-event-summary-value">
+                    ${((Number(shares) || 0) * (limitPrice / 100)).toFixed(0)}
+                  </span>
+                </div>
+                <div className="predict-event-summary-row">
+                  <span className="predict-event-summary-label">To win</span>
+                  <span className="predict-event-summary-value to-win">
+                    ${shares || '0'}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Place Order Button */}
           <button

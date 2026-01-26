@@ -621,7 +621,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .predict-event-amount-label {
@@ -643,10 +643,10 @@
   align-items: center;
   border: 1.5px solid rgba(179, 184, 249, 0.12);
   border-radius: 6px;
-  padding: 10px 12px;
-  margin-bottom: 10px;
+  overflow: hidden;
   background: transparent;
   transition: 0.2s ease;
+  height: 36px;
 }
 
 .predict-event-amount-input-wrapper:focus-within {
@@ -654,10 +654,10 @@
 }
 
 .predict-event-amount-currency {
-  font-size: 1.2rem;
+  font-size: 0.95rem;
   font-weight: 300;
   color: #ffffff7b;
-  margin-right: 8px;
+  padding-left: 10px;
   letter-spacing: -0.3px;
 }
 
@@ -666,11 +666,13 @@
   border: none;
   background: transparent;
   color: #ffffffcf;
-  font-size: 1.3rem;
+  font-size: 0.95rem;
   font-weight: 400;
   outline: none;
   min-width: 0;
   letter-spacing: -0.3px;
+  text-align: right;
+  padding-right: 10px;
 }
 
 .predict-event-amount-input::placeholder {
@@ -701,6 +703,113 @@
   background: rgba(255, 255, 255, 0.03);
   border-color: rgba(179, 184, 249, 0.15);
   color: #ffffffcf;
+}
+
+/* Shares Input - right aligned */
+.predict-event-shares-input {
+  text-align: right;
+}
+
+/* Limit Order Section */
+.predict-event-limit-section {
+  margin-bottom: 16px;
+}
+
+.predict-event-limit-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.predict-event-limit-label {
+  font-size: 0.85rem;
+  font-weight: 300;
+  color: #ffffffcf;
+  letter-spacing: -0.3px;
+}
+
+.predict-event-limit-control {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1.5px solid rgba(179, 184, 249, 0.12);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.predict-event-limit-btn {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  color: #ffffff7b;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.predict-event-limit-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffffcf;
+}
+
+.predict-event-limit-value {
+  min-width: 50px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: #ffffffcf;
+  letter-spacing: -0.3px;
+}
+
+/* Expiration Toggle Row */
+.predict-event-expiration-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.predict-event-expiration-label {
+  font-size: 0.85rem;
+  font-weight: 300;
+  color: #ffffffcf;
+  letter-spacing: -0.3px;
+}
+
+/* Toggle Switch */
+.predict-event-toggle {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: rgba(179, 184, 249, 0.15);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: 0.2s ease;
+  padding: 2px;
+}
+
+.predict-event-toggle.active {
+  background: rgba(67, 254, 154, 0.4);
+}
+
+.predict-event-toggle-knob {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: 0.2s ease;
+}
+
+.predict-event-toggle.active .predict-event-toggle-knob {
+  left: 22px;
 }
 
 /* Order Summary */
