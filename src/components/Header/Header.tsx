@@ -332,6 +332,7 @@ const Header: React.FC<HeaderProps> = ({
   );
   const [copiedTokenBuyAmount, setCopiedTokenBuyAmount] = useState('1');
   const [isEditingCopiedAmount, setIsEditingCopiedAmount] = useState(false);
+
   const copyToClipboard = async (text: string, label = 'Address copied') => {
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
@@ -843,7 +844,7 @@ const Header: React.FC<HeaderProps> = ({
   useEffect(() => {
     const requestClipboardPermission = async () => {
       try {
-        if (navigator.clipboard) {
+        if (navigator.clipboard && false) {
           await navigator.clipboard.readText();
           setClipboardPermission(true);
 
@@ -862,6 +863,7 @@ const Header: React.FC<HeaderProps> = ({
 
     requestClipboardPermission();
   }, []);
+
   const [lastClipboardText, setLastClipboardText] = useState<string>('');
   const [clipboardPermission, setClipboardPermission] = useState<boolean>(false);
 

@@ -18,7 +18,7 @@ const OUTCOME_COLORS = [
 
 interface PredictProps {
   windowWidth: number;
-  mobileView: boolean;
+  mobileView: string;
   perpsActiveMarketKey: string;
   setperpsActiveMarketKey: (key: string) => void;
   perpsMarketsData: Record<string, any>;
