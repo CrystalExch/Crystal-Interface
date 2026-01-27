@@ -1,24 +1,11 @@
-import {
-  BarChart3,
-  Bell,
-  ChevronDown,
-  EyeOff,
-  Hash,
-  Image,
-  Play,
-  RotateCcw,
-  Search,
-  Volume2,
-} from 'lucide-react';
+import { BarChart3, Bell, Play, RotateCcw, Search, Volume2 } from 'lucide-react';
 import React, {
   useCallback,
   useEffect,
   useMemo,
-  useReducer,
   useRef,
   useState,
 } from 'react';
-import { HexColorPicker } from 'react-colorful';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { encodeFunctionData } from 'viem';
@@ -34,17 +21,14 @@ import {
 import { zeroXAbi } from '../../abis/zeroXAbi.ts';
 import { zeroXActionsAbi } from '../../abis/zeroXActionsAbi.ts';
 import avatar from '../../assets/avatar.png';
-import camera from '../../assets/camera.svg';
 import closebutton from '../../assets/close_button.png';
 import communities from '../../assets/community.png';
 import discord from '../../assets/discord1.svg';
 import empty from '../../assets/empty.svg';
-import filtericon from '../../assets/filter.svg';
 import lightning from '../../assets/flash.png';
 import gas from '../../assets/gas.svg';
 import kaching from '../../assets/ka-ching.mp3';
 import monadicon from '../../assets/monadlogo.svg';
-import reset from '../../assets/reset.svg';
 import slippage from '../../assets/slippage.svg';
 import stepaudio from '../../assets/step_audio.mp3';
 import telegram from '../../assets/telegram.png';
@@ -97,174 +81,6 @@ interface Token {
 }
 
 type ColumnKey = 'new' | 'graduating' | 'graduated';
-
-const InteractiveTooltip: React.FC<{
-  content: React.ReactNode;
-  children: React.ReactNode;
-  position?: 'top' | 'bottom' | 'left' | 'right';
-  offset?: number;
-}> = ({ content, children, position = 'top', offset = 10 }) => {
-  const [shouldRender, setShouldRender] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const updatePosition = useCallback(() => {
-    if (!containerRef.current || !tooltipRef.current) return;
-
-    const rect = containerRef.current.getBoundingClientRect();
-    const tooltipRect = tooltipRef.current.getBoundingClientRect();
-    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-
-    let top = 0;
-    let left = 0;
-
-    switch (position) {
-      case 'top':
-        top = rect.top + scrollY - tooltipRect.height - offset - 40;
-        left = rect.left + scrollX + rect.width / 2;
-        break;
-      case 'bottom':
-        top = rect.bottom + scrollY + offset;
-        left = rect.left + scrollX + rect.width / 2;
-        break;
-      case 'left':
-        top = rect.top + scrollY + rect.height / 2;
-        left = rect.left + scrollX - tooltipRect.width - offset;
-        break;
-      case 'right':
-        top = rect.top + scrollY + rect.height / 2;
-        left = rect.right + scrollX + offset;
-        break;
-    }
-
-    const margin = 10;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    if (position === 'top' || position === 'bottom') {
-      left = Math.min(
-        Math.max(left, margin + tooltipRect.width / 2),
-        viewportWidth - margin - tooltipRect.width / 2,
-      );
-    } else {
-      top = Math.min(
-        Math.max(top, margin),
-        viewportHeight - margin - tooltipRect.height,
-      );
-    }
-
-    setTooltipPosition({ top, left });
-  }, [position, offset]);
-
-  const handleMouseEnter = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    setShouldRender(true);
-    timeoutRef.current = setTimeout(() => {
-      setIsVisible(true);
-    }, 10);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(() => {
-        setShouldRender(false);
-      }, 150);
-    }, 100);
-  }, []);
-
-  const handleTooltipMouseEnter = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    setIsVisible(true);
-  }, []);
-
-  const handleTooltipMouseLeave = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(() => {
-        setShouldRender(false);
-      }, 150);
-    }, 100);
-  }, []);
-
-  useEffect(() => {
-    if (shouldRender) {
-      updatePosition();
-      window.addEventListener('scroll', updatePosition);
-      window.addEventListener('resize', updatePosition);
-      return () => {
-        window.removeEventListener('scroll', updatePosition);
-        window.removeEventListener('resize', updatePosition);
-      };
-    }
-  }, [shouldRender, updatePosition]);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <div
-      ref={containerRef}
-      className="tooltip-container"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {children}
-      {shouldRender &&
-        createPortal(
-          <div
-            ref={tooltipRef}
-            className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : 'tooltip-leaving'}`}
-            style={{
-              position: 'absolute',
-              top: `${tooltipPosition.top}px`,
-              left: `${tooltipPosition.left}px`,
-              transform: `${
-                position === 'top' || position === 'bottom'
-                  ? 'translateX(-50%)'
-                  : position === 'left' || position === 'right'
-                    ? 'translateY(-50%)'
-                    : 'none'
-              } scale(${isVisible ? 1 : 0})`,
-              opacity: isVisible ? 1 : 0,
-              zIndex: 9999,
-              pointerEvents: 'auto',
-              transition:
-                'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-              willChange: 'transform, opacity',
-            }}
-            onMouseEnter={handleTooltipMouseEnter}
-            onMouseLeave={handleTooltipMouseLeave}
-          >
-            <div className="tooltip-content">{content}</div>
-          </div>,
-          document.body,
-        )}
-    </div>
-  );
-};
 
 const Tooltip: React.FC<{
   content: string | React.ReactNode;
@@ -1295,112 +1111,6 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
 
 const BLACKLIST_DEFAULTS: BlacklistSettings = { items: [] };
 
-const getMetricColorClasses = (
-  token: Token | undefined,
-  display: DisplaySettings,
-  monUsdPrice: number,
-) => {
-  if (!token || !display?.metricColors || !display?.metricColoring) return null;
-
-  const classes: string[] = [];
-  const cssVars: Record<string, string> = {};
-
-  const thresholds =
-    display?.metricThresholds || DISPLAY_DEFAULTS.metricThresholds;
-
-  const marketCapUsd = token.marketCap * monUsdPrice;
-  if (typeof token.marketCap === 'number' && !isNaN(token.marketCap)) {
-    if (marketCapUsd < thresholds.marketCap.range1) {
-      classes.push('market-cap-range1');
-      cssVars['--metric-market-cap-range1'] =
-        display.metricColors.marketCap.range1;
-    } else if (marketCapUsd < thresholds.marketCap.range2) {
-      classes.push('market-cap-range2');
-      cssVars['--metric-market-cap-range2'] =
-        display.metricColors.marketCap.range2;
-    } else {
-      classes.push('market-cap-range3');
-      cssVars['--metric-market-cap-range3'] =
-        display.metricColors.marketCap.range3;
-    }
-  }
-
-  const volumeUsd = token.volume24h * monUsdPrice;
-  if (typeof token.volume24h === 'number' && !isNaN(token.volume24h)) {
-    if (volumeUsd < thresholds.volume.range1) {
-      classes.push('volume-range1');
-      cssVars['--metric-volume-range1'] = display.metricColors.volume.range1;
-    } else if (volumeUsd < thresholds.volume.range2) {
-      classes.push('volume-range2');
-      cssVars['--metric-volume-range2'] = display.metricColors.volume.range2;
-    } else {
-      classes.push('volume-range3');
-      cssVars['--metric-volume-range3'] = display.metricColors.volume.range3;
-    }
-  }
-
-  if (typeof token.holders === 'number' && !isNaN(token.holders)) {
-    if (token.holders < thresholds.holders.range1) {
-      classes.push('holders-range1');
-      cssVars['--metric-holders-range1'] = display.metricColors.holders.range1;
-    } else if (token.holders < thresholds.holders.range2) {
-      classes.push('holders-range2');
-      cssVars['--metric-holders-range2'] = display.metricColors.holders.range2;
-    } else {
-      classes.push('holders-range3');
-      cssVars['--metric-holders-range3'] = display.metricColors.holders.range3;
-    }
-  }
-
-  return classes.length > 0 ? { classes: classes.join(' '), cssVars } : null;
-};
-
-const hasMetricColoring = (displaySettings: DisplaySettings | undefined) => {
-  return displaySettings?.metricColoring === true;
-};
-
-const getBondingColorClass = (percentage: number) => {
-  if (percentage < 25) return 'bonding-0-25';
-  if (percentage < 50) return 'bonding-25-50';
-  if (percentage < 75) return 'bonding-50-75';
-  return 'bonding-75-100';
-};
-
-const getBondingColor = (b: number) => {
-  if (b < 25) return '#ee5b5bff';
-  if (b < 50) return '#f59e0b';
-  if (b < 75) return '#eab308';
-  return '#43e17dff';
-};
-
-const createColorGradient = (base: string) => {
-  const hex = base.replace('#', '');
-  const [r, g, b] = [
-    parseInt(hex.slice(0, 2), 16),
-    parseInt(hex.slice(2, 4), 16),
-    parseInt(hex.slice(4, 6), 16),
-  ];
-  const lighter = (x: number) => Math.min(255, Math.round(x + (255 - x) * 0.3));
-  const darker = (x: number) => Math.round(x * 0.7);
-  return {
-    start: `rgb(${darker(r)}, ${darker(g)}, ${darker(b)})`,
-    mid: base,
-    end: `rgb(${lighter(r)}, ${lighter(g)}, ${lighter(b)})`,
-  };
-};
-
-const formatPrice = (p: number, noDecimals = false) => {
-  if (p >= 1e12)
-    return `$${noDecimals ? Math.round(p / 1e12) : (p / 1e12).toFixed(1)}T`;
-  if (p >= 1e9)
-    return `$${noDecimals ? Math.round(p / 1e9) : (p / 1e9).toFixed(1)}B`;
-  if (p >= 1e6)
-    return `$${noDecimals ? Math.round(p / 1e6) : (p / 1e6).toFixed(1)}M`;
-  if (p >= 1e3)
-    return `$${noDecimals ? Math.round(p / 1e3) : (p / 1e3).toFixed(1)}K`;
-  return `$${noDecimals ? Math.round(p) : p.toFixed(2)}`;
-};
-
 const formatNumberWithCommas = (v: number, d = 2) => {
   if (v === 0) return '0.00';
   if (v >= 1e11) return `${(v / 1e9).toFixed(0)}B`;
@@ -1431,2434 +1141,6 @@ const formatCompactNumber = (value: number) => {
   return abs.toFixed(0);
 };
 
-const DisplayDropdown: React.FC<{
-  settings: DisplaySettings;
-  onSettingsChange: (settings: DisplaySettings) => void;
-  quickAmountsSecond: Record<Token['status'], string>;
-  setQuickAmountSecond: (status: Token['status'], value: string) => void;
-  activePresetsSecond: Record<Token['status'], number>;
-  setActivePresetSecond: (status: Token['status'], preset: number) => void;
-}> = ({
-  settings,
-  onSettingsChange,
-  quickAmountsSecond,
-  setQuickAmountSecond,
-  activePresetsSecond,
-  setActivePresetSecond,
-}) => {
-  const [showSecondButtonColorPicker, setShowSecondButtonColorPicker] =
-    useState(false);
-  const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
-  const [showMetricColorPicker, setShowMetricColorPicker] = useState(false);
-  const [metricPickerPosition, setMetricPickerPosition] = useState({
-    top: 0,
-    left: 0,
-  });
-  const [hexInputValue, setHexInputValue] = useState(
-    settings.secondQuickBuyColor.replace('#', '').toUpperCase(),
-  );
-  useEffect(() => {
-    setHexInputValue(
-      settings.secondQuickBuyColor.replace('#', '').toUpperCase(),
-    );
-  }, [settings.secondQuickBuyColor]);
-  const [activeMetricPicker, setActiveMetricPicker] = useState<{
-    metric: 'marketCap' | 'volume' | 'holders';
-    range: 'range1' | 'range2' | 'range3';
-  } | null>(null);
-  const handleColorPickerClick = (event: React.MouseEvent) => {
-    event.stopPropagation();
-
-    if (showSecondButtonColorPicker) {
-      setShowSecondButtonColorPicker(false);
-      return;
-    }
-
-    const rect = (event.target as HTMLElement).getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const pickerWidth = 200;
-    const pickerHeight = 250;
-
-    let left = rect.right + 10;
-    let top = rect.top;
-
-    if (left + pickerWidth > viewportWidth) {
-      left = rect.left - pickerWidth - 10;
-    }
-    if (top + pickerHeight > viewportHeight) {
-      top = viewportHeight - pickerHeight - 20;
-    }
-    if (top < 20) {
-      top = 20;
-    }
-
-    setPickerPosition({ top, left });
-    setShowSecondButtonColorPicker(true);
-  };
-
-  const handleMetricColorPickerClick = (
-    event: React.MouseEvent,
-    metric: 'marketCap' | 'volume' | 'holders',
-    range: 'range1' | 'range2' | 'range3',
-  ) => {
-    event.stopPropagation();
-
-    if (
-      showMetricColorPicker &&
-      activeMetricPicker?.metric === metric &&
-      activeMetricPicker?.range === range
-    ) {
-      setShowMetricColorPicker(false);
-      setActiveMetricPicker(null);
-      return;
-    }
-
-    const rect = (event.target as HTMLElement).getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const pickerWidth = 200;
-    const pickerHeight = 250;
-
-    let left = rect.right + 10;
-    let top = rect.top;
-
-    if (left + pickerWidth > viewportWidth) {
-      left = rect.left - pickerWidth - 10;
-    }
-    if (top + pickerHeight > viewportHeight) {
-      top = viewportHeight - pickerHeight - 20;
-    }
-    if (top < 20) {
-      top = 20;
-    }
-
-    setMetricPickerPosition({ top, left });
-    setActiveMetricPicker({ metric, range });
-    setShowMetricColorPicker(true);
-  };
-  const [isOpen, setIsOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    'layout' | 'metrics' | 'row' | 'extras'
-  >('layout');
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
-  const safeOrder: Array<ColumnKey> =
-    Array.isArray(settings?.columnOrder) && settings.columnOrder.length
-      ? settings.columnOrder
-      : (['new', 'graduating', 'graduated'] as Array<ColumnKey>);
-
-  const handleToggle = useCallback(() => {
-    if (isOpen) {
-      setIsVisible(false);
-      setTimeout(() => {
-        setIsOpen(false);
-      }, 200);
-    } else {
-      setIsOpen(true);
-      requestAnimationFrame(() => {
-        setIsVisible(true);
-      });
-    }
-  }, [isOpen]);
-
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverIndex(index);
-  };
-
-  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === dropIndex) return;
-
-    const newOrder = [...safeOrder];
-    const draggedItem = newOrder[draggedIndex];
-    newOrder.splice(draggedIndex, 1);
-    newOrder.splice(dropIndex, 0, draggedItem);
-
-    onSettingsChange({ ...settings, columnOrder: newOrder });
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-  };
-  const [hiddenColumns, setHiddenColumns] = useState<Set<ColumnKey>>(
-    () => new Set(settings.hiddenColumns || []),
-  );
-
-  const handleHide = (e: React.MouseEvent, column: ColumnKey) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const newHidden = new Set(hiddenColumns);
-    if (newHidden.has(column)) {
-      newHidden.delete(column);
-    } else {
-      newHidden.add(column);
-    }
-    setHiddenColumns(newHidden);
-    onSettingsChange({ ...settings, hiddenColumns: Array.from(newHidden) });
-  };
-  const resetMetricThreshold = (metric: 'marketCap' | 'volume' | 'holders') => {
-    onSettingsChange({
-      ...settings,
-      metricThresholds: {
-        ...settings.metricThresholds,
-        [metric]: {
-          range1: DISPLAY_DEFAULTS.metricThresholds[metric].range1,
-          range2: DISPLAY_DEFAULTS.metricThresholds[metric].range2,
-        },
-      },
-    });
-  };
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-
-      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
-        if (isOpen) {
-          setIsVisible(false);
-          setTimeout(() => {
-            setIsOpen(false);
-          }, 200);
-        }
-      }
-
-      if (showSecondButtonColorPicker) {
-        if (
-          !target.closest('.color-picker-dropdown') &&
-          !target.closest('.color-preview')
-        ) {
-          setShowSecondButtonColorPicker(false);
-        }
-      }
-
-      if (showMetricColorPicker) {
-        if (
-          !target.closest('.metric-color-picker-dropdown') &&
-          !target.closest('.metric-color-square')
-        ) {
-          setShowMetricColorPicker(false);
-          setActiveMetricPicker(null);
-        }
-      }
-    };
-
-    if (isOpen || showSecondButtonColorPicker || showMetricColorPicker) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, showSecondButtonColorPicker, showMetricColorPicker]);
-  const updateSetting = <K extends keyof DisplaySettings>(
-    key: K,
-    value: DisplaySettings[K],
-  ) => onSettingsChange({ ...settings, [key]: value });
-
-  const updateMetricColor = (
-    metric: 'marketCap' | 'volume' | 'holders',
-    range: 'range1' | 'range2' | 'range3',
-    color: string,
-  ) => {
-    onSettingsChange({
-      ...settings,
-      metricColors: {
-        ...settings.metricColors,
-        [metric]: {
-          ...settings.metricColors?.[metric],
-          [range]: color,
-        },
-      },
-    });
-  };
-
-  const updateRowSetting = (
-    key: keyof DisplaySettings['visibleRows'],
-    value: boolean,
-  ) => {
-    onSettingsChange({
-      ...settings,
-      visibleRows: { ...settings.visibleRows, [key]: value },
-    });
-  };
-
-  return (
-    <div className="display-dropdown" ref={dropdownRef}>
-      <button
-        className={`display-dropdown-trigger ${isOpen ? 'active' : ''}`}
-        onClick={handleToggle}
-      >
-        <span>Display</span>
-        <ChevronDown
-          size={16}
-          className={`display-dropdown-arrow ${isOpen ? 'open' : ''}`}
-          aria-hidden="true"
-        />
-      </button>
-
-      {isOpen && (
-        <div
-          className={`display-dropdown-content ${isVisible ? 'visible' : ''}`}
-        >
-          <div className="display-section">
-            <h4 className="display-section-title">Metrics</h4>
-            <div className="metrics-size-options">
-              <button
-                className={`small-size-option ${settings.metricSize === 'small' ? 'active' : ''}`}
-                onClick={() => updateSetting('metricSize', 'small')}
-              >
-                MC 123K
-                <br />
-                <span className="size-label">Small</span>
-              </button>
-              <button
-                className={`large-size-option ${settings.metricSize === 'large' ? 'active' : ''}`}
-                onClick={() => updateSetting('metricSize', 'large')}
-              >
-                MC 123K
-                <br />
-                <span className="size-label">Large</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="display-section">
-            <h4 className="display-section-title">Quick Buy</h4>
-            <div className="quickbuy-size-options">
-              <button
-                className={`quickbuy-option ${settings.quickBuySize === 'small' ? 'active' : ''}`}
-                onClick={() => updateSetting('quickBuySize', 'small')}
-              >
-                <div
-                  className={`quickbuy-preview-button-small ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
-                >
-                  <img
-                    className="quickbuy-preview-button-lightning-small"
-                    src={lightning}
-                    alt=""
-                  />
-                  7
-                </div>
-                Small
-              </button>
-              <button
-                className={`quickbuy-option ${settings.quickBuySize === 'large' ? 'active' : ''}`}
-                onClick={() => updateSetting('quickBuySize', 'large')}
-              >
-                <div
-                  className={`quickbuy-preview-button-large ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
-                >
-                  <img
-                    className="quickbuy-preview-button-lightning-large"
-                    src={lightning}
-                    alt=""
-                  />
-                  7
-                </div>
-                Large
-              </button>
-              <button
-                className={`quickbuy-option ${settings.quickBuySize === 'mega' ? 'active' : ''}`}
-                onClick={() => updateSetting('quickBuySize', 'mega')}
-              >
-                <div
-                  className={`quickbuy-preview-button-mega ${settings.quickBuyStyle === 'grey' ? 'grey-style' : ''}`}
-                >
-                  <img
-                    className="quickbuy-preview-button-lightning-mega"
-                    src={lightning}
-                    alt=""
-                  />
-                  7
-                </div>
-                Mega
-              </button>
-              <button
-                className={`quickbuy-option ${settings.quickBuySize === 'ultra' ? 'active' : ''}`}
-                onClick={() => updateSetting('quickBuySize', 'ultra')}
-              >
-                <div
-                  className={`quickbuy-preview-button-ultra ultra-${settings.ultraStyle} ultra-text-${settings.ultraColor}`}
-                >
-                  <img
-                    className="quickbuy-preview-button-lightning-ultra"
-                    src={lightning}
-                    alt=""
-                  />
-                  7
-                </div>
-                Ultra
-              </button>
-            </div>
-
-            {(settings.quickBuySize === 'small' ||
-              settings.quickBuySize === 'large' ||
-              settings.quickBuySize === 'mega') && (
-              <div className="quickbuy-style-toggles">
-                <div className="style-toggle-row">
-                  <span className="style-toggle-label">Style</span>
-                  <div className="style-toggle-buttons">
-                    <button
-                      className={`style-toggle-btn ${settings.quickBuyStyle === 'color' ? 'active' : ''}`}
-                      onClick={() => updateSetting('quickBuyStyle', 'color')}
-                    >
-                      Color
-                    </button>
-                    <button
-                      className={`style-toggle-btn ${settings.quickBuyStyle === 'grey' ? 'active' : ''}`}
-                      onClick={() => updateSetting('quickBuyStyle', 'grey')}
-                    >
-                      Grey
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {settings.quickBuySize === 'ultra' && (
-              <div className="ultra-style-controls">
-                <div className="style-toggle-row">
-                  <span className="style-toggle-label">Ultra Style:</span>
-                  <div className="style-toggle-buttons">
-                    <button
-                      className={`style-toggle-btn ${settings.ultraStyle === 'default' ? 'active' : ''}`}
-                      onClick={() => updateSetting('ultraStyle', 'default')}
-                    >
-                      Default
-                    </button>
-                    <button
-                      className={`style-toggle-btn ${settings.ultraStyle === 'glowing' ? 'active' : ''}`}
-                      onClick={() => updateSetting('ultraStyle', 'glowing')}
-                    >
-                      Glowing
-                    </button>
-                    <button
-                      className={`style-toggle-btn ${settings.ultraStyle === 'border' ? 'active' : ''}`}
-                      onClick={() => updateSetting('ultraStyle', 'border')}
-                    >
-                      Border
-                    </button>
-                  </div>
-                </div>
-                <div className="style-toggle-row">
-                  <span className="style-toggle-label">Text Color:</span>
-                  <div className="style-toggle-buttons">
-                    <button
-                      className={`style-toggle-btn ${settings.ultraColor === 'color' ? 'active' : ''}`}
-                      onClick={() => updateSetting('ultraColor', 'color')}
-                    >
-                      Color
-                    </button>
-                    <button
-                      className={`style-toggle-btn ${settings.ultraColor === 'grey' ? 'active' : ''}`}
-                      onClick={() => updateSetting('ultraColor', 'grey')}
-                    >
-                      Grey
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="display-tabs">
-            <button
-              className={`display-tab ${activeTab === 'layout' ? 'active' : ''}`}
-              onClick={() => setActiveTab('layout')}
-            >
-              Layout
-            </button>
-            <button
-              className={`display-tab ${activeTab === 'metrics' ? 'active' : ''}`}
-              onClick={() => setActiveTab('metrics')}
-            >
-              Metrics
-            </button>
-            <button
-              className={`display-tab ${activeTab === 'row' ? 'active' : ''}`}
-              onClick={() => setActiveTab('row')}
-            >
-              Row
-            </button>
-            <button
-              className={`display-tab ${activeTab === 'extras' ? 'active' : ''}`}
-              onClick={() => setActiveTab('extras')}
-            >
-              Extras
-            </button>
-          </div>
-
-          <div className="display-content">
-            {activeTab === 'layout' && (
-              <div>
-                <div className="display-toggles">
-                  <div className="toggle-item">
-                    <label className="toggle-label">
-                      <Hash size={16} />
-                      No Decimals
-                    </label>
-                    <div
-                      className={`toggle-switch ${settings.noDecimals ? 'active' : ''}`}
-                      onClick={() =>
-                        updateSetting('noDecimals', !settings.noDecimals)
-                      }
-                    >
-                      <div className="toggle-slider" />
-                    </div>
-                  </div>
-
-                  <div className="toggle-item">
-                    <label className="toggle-label">
-                      <EyeOff size={16} />
-                      Hide Hidden Tokens
-                    </label>
-                    <div
-                      className={`toggle-switch ${settings.hideHiddenTokens ? 'active' : ''}`}
-                      onClick={() =>
-                        updateSetting(
-                          'hideHiddenTokens',
-                          !settings.hideHiddenTokens,
-                        )
-                      }
-                    >
-                      <div className="toggle-slider" />
-                    </div>
-                  </div>
-
-                  <div className="toggle-item">
-                    <label className="toggle-label">
-                      <Image size={16} />
-                      Square Images
-                    </label>
-                    <div
-                      className={`toggle-switch ${settings.squareImages ? 'active' : ''}`}
-                      onClick={() =>
-                        updateSetting('squareImages', !settings.squareImages)
-                      }
-                    >
-                      <div className="toggle-slider" />
-                    </div>
-                  </div>
-
-                  <div className="toggle-item">
-                    <label className="toggle-label">
-                      <BarChart3 size={16} />
-                      Progress Ring
-                    </label>
-                    <div
-                      className={`toggle-switch ${settings.progressBar ? 'active' : ''}`}
-                      onClick={() =>
-                        updateSetting('progressBar', !settings.progressBar)
-                      }
-                    >
-                      <div className="toggle-slider" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="customize-section">
-                  <h4 className="display-section-title">Customize rows</h4>
-                  <div className="row-toggles">
-                    {(
-                      [
-                        ['marketCap', 'Market Cap'],
-                        ['volume', 'Volume'],
-                        ['fees', 'Fees'],
-                        ['tx', 'TX'],
-                        ['socials', 'Socials'],
-                        ['holders', 'Holders'],
-                        ['proTraders', 'Pro Traders'],
-                        ['devMigrations', 'Dev Migrations'],
-                        ['top10Holders', 'Top 10 Holders'],
-                        ['devHolding', 'Dev Holding'],
-                        ['snipers', 'Snipers'],
-                        //     ['insiders', 'Insiders'],
-                      ] as Array<[keyof DisplaySettings['visibleRows'], string]>
-                    ).map(([k, label]) => (
-                      <div
-                        key={k}
-                        className={`row-toggle ${settings.visibleRows[k] ? 'active' : ''}`}
-                        onClick={() =>
-                          updateRowSetting(k, !settings.visibleRows[k])
-                        }
-                      >
-                        <span className="row-toggle-label">{label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'metrics' && (
-              <div>
-                {(['marketCap', 'volume', 'holders'] as const).map((metric) => (
-                  <div className="metrics-display-section" key={metric}>
-                    <h4 className="display-section-title">
-                      {metric === 'marketCap'
-                        ? 'Market Cap'
-                        : metric === 'volume'
-                          ? 'Volume'
-                          : 'Holders'}
-                    </h4>
-                    <div className="metric-color-options">
-                      {(['range1', 'range2', 'range3'] as const).map(
-                        (range, idx) => (
-                          <div className="metric-color-option" key={idx}>
-                            <div className="metric-color-item" key={range}>
-                              <input
-                                type="number"
-                                className="display-metric-value"
-                                value={
-                                  range === 'range3'
-                                    ? ''
-                                    : settings.metricThresholds?.[metric]?.[
-                                        range
-                                      ] ||
-                                      DISPLAY_DEFAULTS.metricThresholds[metric][
-                                        range
-                                      ]
-                                }
-                                placeholder={range === 'range3' ? 'Above' : ''}
-                                disabled={range === 'range3'}
-                                onChange={(e) => {
-                                  const value = parseInt(e.target.value) || 0;
-                                  onSettingsChange({
-                                    ...settings,
-                                    metricThresholds: {
-                                      ...settings.metricThresholds,
-                                      [metric]: {
-                                        ...settings.metricThresholds?.[metric],
-                                        [range]: value,
-                                      },
-                                    },
-                                  });
-                                }}
-                                style={{
-                                  background:
-                                    range === 'range3'
-                                      ? 'transparent'
-                                      : undefined,
-                                  cursor:
-                                    range === 'range3' ? 'not-allowed' : 'text',
-                                }}
-                              />
-                              <div className="metric-color-controls">
-                                <button
-                                  className="metric-color-square"
-                                  style={{
-                                    backgroundColor:
-                                      (settings.metricColors as any)?.[
-                                        metric
-                                      ]?.[range] || '#ffffff',
-                                  }}
-                                  onClick={(e) =>
-                                    handleMetricColorPickerClick(
-                                      e,
-                                      metric,
-                                      range,
-                                    )
-                                  }
-                                />
-                                <button
-                                  className="metric-reset-btn"
-                                  onClick={() => {
-                                    updateMetricColor(
-                                      metric,
-                                      range,
-                                      metric === 'marketCap'
-                                        ? range === 'range1'
-                                          ? '#ffffff'
-                                          : range === 'range2'
-                                            ? '#d8dcff'
-                                            : '#82f9a4ff'
-                                        : '#ffffff',
-                                    );
-                                    if (range === 'range1') {
-                                      resetMetricThreshold(metric);
-                                    }
-                                  }}
-                                >
-                                  <img
-                                    src={reset}
-                                    alt="Reset"
-                                    className="reset-icon"
-                                  />
-                                </button>
-                              </div>
-                            </div>
-                            <div className="metric-range-label">
-                              {(() => {
-                                const thresholds =
-                                  settings.metricThresholds?.[metric] ||
-                                  DISPLAY_DEFAULTS.metricThresholds[metric];
-
-                                const formatValue = (
-                                  val: number,
-                                  metric: string,
-                                ) => {
-                                  if (metric === 'holders')
-                                    return val.toString();
-                                  if (val >= 1000000)
-                                    return `${(val / 1000000).toFixed(val % 1000000 === 0 ? 0 : 1)}M`;
-                                  if (val >= 1000)
-                                    return `${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}K`;
-                                  return val.toString();
-                                };
-
-                                if (idx === 0) {
-                                  return `0 - ${formatValue(thresholds.range1, metric)}`;
-                                } else if (idx === 1) {
-                                  return `${formatValue(thresholds.range1, metric)} - ${formatValue(thresholds.range2, metric)}`;
-                                } else {
-                                  return `${formatValue(thresholds.range2, metric)}+`;
-                                }
-                              })()}
-                            </div>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {activeTab === 'row' && (
-              <div>
-                <div className="display-section">
-                  <div className="display-toggles">
-                    <div className="toggle-item">
-                      <label className="toggle-label">
-                        <BarChart3 size={16} />
-                        Color Rows
-                      </label>
-                      <div
-                        className={`toggle-switch ${settings.colorRows ? 'active' : ''}`}
-                        onClick={() =>
-                          updateSetting('colorRows', !settings.colorRows)
-                        }
-                      >
-                        <div className="toggle-slider" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'extras' && (
-              <div>
-                <div className="extras-display-section">
-                  <h4 className="display-section-title">Table Layout</h4>
-                  <div className="column-drag-container">
-                    {safeOrder.map((column, index) => (
-                      <div
-                        key={column}
-                        className={`column-drag-item ${hiddenColumns.has(column) ? 'column-hidden' : ''} ${dragOverIndex === index && draggedIndex !== index ? 'drag-over' : ''}`}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, index)}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDrop={(e) => handleDrop(e, index)}
-                        onDragEnd={handleDragEnd}
-                        onClick={(e) => handleHide(e, column)}
-                      >
-                        {column === 'new'
-                          ? 'New Pairs'
-                          : column === 'graduating'
-                            ? 'Final Stretch'
-                            : 'Migrated'}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="extras-display-section">
-                  <h4 className="display-section-title">
-                    Click Quick Buy Behavior
-                  </h4>
-                  <div className="quickbuy-behavior-options">
-                    {(['nothing', 'openPage', 'openNewTab'] as const).map(
-                      (mode) => (
-                        <div
-                          key={mode}
-                          className={`behavior-option ${settings.quickBuyClickBehavior === mode ? 'active' : ''}`}
-                          onClick={() =>
-                            updateSetting('quickBuyClickBehavior', mode)
-                          }
-                        >
-                          <span className="behavior-label">
-                            {mode === 'nothing'
-                              ? 'Nothing'
-                              : mode === 'openPage'
-                                ? 'Open Page'
-                                : 'Open in New Tab'}
-                          </span>
-                        </div>
-                      ),
-                    )}
-                  </div>
-                </div>
-
-                <div className="extras-display-section">
-                  <div className="toggle-item">
-                    <label className="toggle-label">
-                      Second Quick Buy Button
-                    </label>
-                    <div
-                      className={`toggle-switch ${settings.secondQuickBuyEnabled ? 'active' : ''}`}
-                      onClick={() =>
-                        updateSetting(
-                          'secondQuickBuyEnabled',
-                          !settings.secondQuickBuyEnabled,
-                        )
-                      }
-                    >
-                      <div className="toggle-slider" />
-                    </div>
-                  </div>
-
-                  {settings.secondQuickBuyEnabled && (
-                    <div className="second-quickbuy-controls">
-                      <div className="explorer-quickbuy-container-second">
-                        <span className="explorer-second-quickbuy-label">
-                          Quick Buy
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          value={quickAmountsSecond.new}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            setQuickAmountSecond('new', value);
-                            setQuickAmountSecond('graduating', value);
-                            setQuickAmountSecond('graduated', value);
-                          }}
-                          className="explorer-quickbuy-input-second"
-                        />
-                        <img className="quickbuy-monad-icon" src={monadicon} />
-                        <div className="explorer-preset-controls">
-                          {[1, 2, 3].map((p) => (
-                            <button
-                              key={p}
-                              className={`explorer-preset-pill-second ${activePresetsSecond.new === p ? 'active' : ''}`}
-                              onClick={() => {
-                                setActivePresetSecond('new', p);
-                                setActivePresetSecond('graduating', p);
-                                setActivePresetSecond('graduated', p);
-                              }}
-                            >
-                              P{p}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="color-input-row">
-                        <div className="color-input-container">
-                          <div
-                            className="color-preview"
-                            style={{
-                              backgroundColor: settings.secondQuickBuyColor,
-                            }}
-                            onClick={handleColorPickerClick}
-                          />
-                          <input
-                            type="text"
-                            value={hexInputValue}
-                            onChange={(e) => {
-                              const value = e.target.value
-                                .replace(/[^0-9A-Fa-f]/g, '')
-                                .toUpperCase();
-                              setHexInputValue(value);
-
-                              if (value.length === 6) {
-                                updateSetting(
-                                  'secondQuickBuyColor',
-                                  `#${value}`,
-                                );
-                              }
-                            }}
-                            onBlur={() => {
-                              if (hexInputValue.length === 3) {
-                                const expanded = hexInputValue
-                                  .split('')
-                                  .map((c) => c + c)
-                                  .join('');
-                                updateSetting(
-                                  'secondQuickBuyColor',
-                                  `#${expanded}`,
-                                );
-                                setHexInputValue(expanded);
-                              } else if (hexInputValue.length !== 6) {
-                                setHexInputValue(
-                                  settings.secondQuickBuyColor
-                                    .replace('#', '')
-                                    .toUpperCase(),
-                                );
-                              }
-                            }}
-                            onFocus={(e) => e.target.select()}
-                            className="quickbuy-hex-input"
-                            placeholder="FFFFFF"
-                            maxLength={6}
-                          />
-                          <button
-                            className="refresh-button"
-                            onClick={() =>
-                              updateSetting('secondQuickBuyColor', '#aaaecf')
-                            }
-                            type="button"
-                          >
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {showSecondButtonColorPicker && (
-        <div
-          className="color-picker-dropdown"
-          style={{
-            top: `${pickerPosition.top}px`,
-            left: `${pickerPosition.left}px`,
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <HexColorPicker
-            color={settings.secondQuickBuyColor}
-            onChange={(color) => updateSetting('secondQuickBuyColor', color)}
-          />
-          <div className="rgb-inputs">
-            {['R', 'G', 'B'].map((channel, i) => {
-              const currentColor = settings.secondQuickBuyColor;
-              const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
-              const value = parseInt(slice, 16) || 0;
-
-              return (
-                <div className="rgb-input-group" key={channel}>
-                  <label>{channel}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="255"
-                    value={value}
-                    onChange={(e) => {
-                      const rgb = [0, 0, 0].map((_, idx) =>
-                        idx === i
-                          ? Math.max(0, Math.min(255, Number(e.target.value)))
-                          : parseInt(
-                              currentColor.slice(1 + idx * 2, 3 + idx * 2),
-                              16,
-                            ),
-                      );
-                      const newColor = `#${rgb
-                        .map((c) => c.toString(16).padStart(2, '0'))
-                        .join('')}`;
-                      updateSetting('secondQuickBuyColor', newColor);
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      {showMetricColorPicker && activeMetricPicker && (
-        <div
-          className="color-picker-dropdown"
-          style={{
-            top: `${metricPickerPosition.top}px`,
-            left: `${metricPickerPosition.left}px`,
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <HexColorPicker
-            color={
-              (settings.metricColors as any)?.[activeMetricPicker.metric]?.[
-                activeMetricPicker.range
-              ] || '#ffffff'
-            }
-            onChange={(color) =>
-              updateMetricColor(
-                activeMetricPicker.metric,
-                activeMetricPicker.range,
-                color,
-              )
-            }
-          />
-          <div className="rgb-inputs">
-            {['R', 'G', 'B'].map((channel, i) => {
-              const currentColor = settings.secondQuickBuyColor;
-              const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
-              const value = parseInt(slice, 16) || 0;
-
-              return (
-                <div className="rgb-input-group" key={channel}>
-                  <label>{channel}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="255"
-                    value={value}
-                    onChange={(e) => {
-                      const rgb = [0, 0, 0].map((_, idx) =>
-                        idx === i
-                          ? Math.max(0, Math.min(255, Number(e.target.value)))
-                          : parseInt(
-                              currentColor.slice(1 + idx * 2, 3 + idx * 2),
-                              16,
-                            ),
-                      );
-                      const newColor = `#${rgb
-                        .map((c) => c.toString(16).padStart(2, '0'))
-                        .join('')}`;
-                      updateSetting('secondQuickBuyColor', newColor);
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const MobileTabSelector: React.FC<{
-  activeTab: Token['status'];
-  onTabChange: (tab: Token['status']) => void;
-  tokenCounts: Record<Token['status'], number>;
-}> = ({ activeTab, onTabChange, tokenCounts }) => {
-  const tabs = [
-    { key: 'new', label: 'New Pairs', count: tokenCounts.new },
-    {
-      key: 'graduating',
-      label: 'Final Stretch',
-      count: tokenCounts.graduating,
-    },
-    { key: 'graduated', label: 'Migrated', count: tokenCounts.graduated },
-  ] as const;
-
-  return (
-    <div className="mobile-tab-selector">
-      {tabs.map((tab) => (
-        <button
-          key={tab.key}
-          className={`mobile-tab ${activeTab === tab.key ? 'active' : ''}`}
-          onClick={() => onTabChange(tab.key)}
-        >
-          <span className="mobile-tab-label">{tab.label}</span>
-        </button>
-      ))}
-    </div>
-  );
-};
-
-const useMetricColorClasses = (
-  token: Token | undefined,
-  display: DisplaySettings | undefined,
-  monUsdPrice: number,
-) => {
-  return useMemo(() => {
-    if (!token || !display?.metricColors || !display?.metricColoring)
-      return null;
-
-    const classes: string[] = [];
-    const cssVars: Record<string, string> = {};
-
-    const thresholds =
-      display?.metricThresholds || DISPLAY_DEFAULTS.metricThresholds;
-
-    const marketCapUsd = token.marketCap * monUsdPrice;
-    if (typeof token.marketCap === 'number' && !isNaN(token.marketCap)) {
-      if (marketCapUsd < thresholds.marketCap.range1) {
-        classes.push('market-cap-range1');
-        cssVars['--metric-market-cap-range1'] =
-          display.metricColors.marketCap.range1;
-      } else if (marketCapUsd < thresholds.marketCap.range2) {
-        classes.push('market-cap-range2');
-        cssVars['--metric-market-cap-range2'] =
-          display.metricColors.marketCap.range2;
-      } else {
-        classes.push('market-cap-range3');
-        cssVars['--metric-market-cap-range3'] =
-          display.metricColors.marketCap.range3;
-      }
-    }
-
-    const volumeUsd = token.volume24h * monUsdPrice;
-    if (typeof token.volume24h === 'number' && !isNaN(token.volume24h)) {
-      if (volumeUsd < thresholds.volume.range1) {
-        classes.push('volume-range1');
-        cssVars['--metric-volume-range1'] = display.metricColors.volume.range1;
-      } else if (volumeUsd < thresholds.volume.range2) {
-        classes.push('volume-range2');
-        cssVars['--metric-volume-range2'] = display.metricColors.volume.range2;
-      } else {
-        classes.push('volume-range3');
-        cssVars['--metric-volume-range3'] = display.metricColors.volume.range3;
-      }
-    }
-
-    if (typeof token.holders === 'number' && !isNaN(token.holders)) {
-      if (token.holders < thresholds.holders.range1) {
-        classes.push('holders-range1');
-        cssVars['--metric-holders-range1'] =
-          display.metricColors.holders.range1;
-      } else if (token.holders < thresholds.holders.range2) {
-        classes.push('holders-range2');
-        cssVars['--metric-holders-range2'] =
-          display.metricColors.holders.range2;
-      } else {
-        classes.push('holders-range3');
-        cssVars['--metric-holders-range3'] =
-          display.metricColors.holders.range3;
-      }
-    }
-
-    return classes.length > 0 ? { classes: classes.join(' '), cssVars } : null;
-  }, [
-    token?.id,
-    token?.marketCap,
-    token?.volume24h,
-    token?.holders,
-    display?.metricColoring,
-    display?.metricThresholds,
-    display?.metricColors,
-    monUsdPrice,
-  ]);
-};
-
-export const TokenRow = React.memo<{
-  token: Token;
-  quickbuyAmount: string;
-  quickbuyAmountSecond: string;
-  onHideToken: (tokenId: string) => void;
-  onBlacklistToken: (token: Token) => void;
-  isLoadingPrimary: boolean;
-  isLoadingSecondary: boolean;
-  hoveredToken: string | null;
-  hoveredImage: string | null;
-  onTokenHover: (id: string) => void;
-  onTokenLeave: () => void;
-  onImageHover: (tokenId: string) => void;
-  onImageLeave: () => void;
-  onTokenClick: (token: Token) => void;
-  onQuickBuy: (
-    token: Token,
-    amount: string,
-    buttonType: 'primary' | 'secondary',
-  ) => void;
-  onCopyToClipboard: (text: string) => void;
-  displaySettings: DisplaySettings;
-  isHidden: boolean;
-  isBlacklisted: boolean;
-  monUsdPrice: number;
-  blacklistSettings: any;
-  formatTimeAgo: (timestamp: number) => string;
-}>(
-  (props) => {
-    const {
-      token,
-      quickbuyAmount,
-      quickbuyAmountSecond,
-      onHideToken,
-      onBlacklistToken,
-      isLoadingPrimary,
-      isLoadingSecondary,
-      hoveredToken,
-      hoveredImage,
-      onTokenHover,
-      onTokenLeave,
-      onImageHover,
-      onImageLeave,
-      onTokenClick,
-      onQuickBuy,
-      onCopyToClipboard,
-      displaySettings,
-      isHidden,
-      isBlacklisted,
-      monUsdPrice,
-      formatTimeAgo,
-    } = props;
-
-    const [, forceRerender] = useReducer((x) => x + 1, 0);
-
-    useEffect(() => {
-      const age = Math.floor(Date.now() / 1000) - token.created;
-
-      if (age > 21600) return;
-
-      const tickMs = age < 3600 ? 1000 : 60000;
-
-      const interval = setInterval(forceRerender, tickMs);
-      return () => clearInterval(interval);
-    }, [token.created]);
-
-    const imageContainerRef = useRef<HTMLDivElement>(null);
-
-    const tokenRowRef = useRef<HTMLDivElement>(null);
-    const [bondingPopupPosition, setBondingPopupPosition] = useState({
-      top: 0,
-      left: 0,
-    });
-    type CSSVars = React.CSSProperties & Record<string, string>;
-    const bondingPercentage = token.bondingPercentage * 100;
-    const gradient = useMemo(
-      () => createColorGradient(getBondingColor(bondingPercentage)),
-      [bondingPercentage],
-    );
-
-    const extractTwitterUsername = (url: string): string | null => {
-      if (!url) return null;
-      try {
-        const urlObj = new URL(url);
-        const pathParts = urlObj.pathname.split('/').filter(Boolean);
-        if (pathParts.length > 0) {
-          return pathParts[0];
-        }
-      } catch {
-        return null;
-      }
-      return null;
-    };
-    const imageStyle: CSSVars = {
-      position: 'relative',
-      '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
-      '--progress-color-start': gradient.start,
-      '--progress-color-mid': gradient.mid,
-      '--progress-color-end': gradient.end,
-    };
-    const progressLineStyle: CSSVars = {
-      '--progress-percentage': `${bondingPercentage}%`,
-      '--progress-color': getBondingColor(bondingPercentage),
-    };
-
-    const [previewPosition, setPreviewPosition] = useState({ top: 0, left: 0 });
-    const [showPreview, setShowPreview] = useState(false);
-    const updatePreviewPosition = useCallback(() => {
-      if (!imageContainerRef.current) return;
-
-      const rect = imageContainerRef.current.getBoundingClientRect();
-      const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-      const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      const previewWidth = 220;
-      const previewHeight = 220;
-      const offset = 15;
-
-      let top = 0;
-      let left = 0;
-
-      const leftX = rect.left;
-      const centerY = rect.top + rect.height / 2;
-
-      const spaceBelow = viewportHeight - rect.bottom;
-      const spaceAbove = rect.top;
-      const spaceRight = viewportWidth - rect.right;
-      const spaceLeft = rect.left;
-
-      if (spaceBelow >= previewHeight + offset) {
-        top = rect.bottom + scrollY + offset;
-        left = leftX + scrollX;
-      } else if (spaceAbove >= previewHeight + offset) {
-        top = rect.top + scrollY - previewHeight - offset - 15;
-        left = leftX + scrollX;
-      } else if (spaceRight >= previewWidth + offset) {
-        left = rect.right + scrollX + offset;
-        top = centerY + scrollY - previewHeight / 2;
-      } else if (spaceLeft >= previewWidth + offset) {
-        left = rect.left + scrollX - previewWidth - offset;
-        top = centerY + scrollY - previewHeight / 2;
-      } else {
-        top = rect.bottom + scrollY + offset;
-        left = leftX + scrollX;
-      }
-
-      const margin = 10;
-      if (left < scrollX + margin) left = scrollX + margin;
-      else if (left + previewWidth > scrollX + viewportWidth - margin)
-        left = scrollX + viewportWidth - previewWidth - margin;
-
-      if (top < scrollY + margin) top = scrollY + margin;
-      else if (top + previewHeight > scrollY + viewportHeight - margin)
-        top = scrollY + viewportHeight - previewHeight - margin;
-
-      setPreviewPosition({ top, left });
-    }, []);
-    const updateBondingPopupPosition = useCallback(() => {
-      if (!tokenRowRef.current) return;
-
-      const rect = tokenRowRef.current.getBoundingClientRect();
-      const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-      const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-
-      const popupWidth = 0;
-      const popupHeight = 28;
-      const offset = 4;
-
-      const top = rect.top + scrollY - popupHeight - offset;
-      const left = rect.left + scrollX + rect.width / 2 - popupWidth / 2;
-
-      setBondingPopupPosition({ top, left });
-    }, []);
-
-    useEffect(() => {
-      if (hoveredImage === token.id) {
-        updatePreviewPosition();
-        setShowPreview(true);
-
-        const handleResize = () => updatePreviewPosition();
-        window.addEventListener('scroll', updatePreviewPosition);
-        window.addEventListener('resize', handleResize);
-
-        return () => {
-          window.removeEventListener('scroll', updatePreviewPosition);
-          window.removeEventListener('resize', handleResize);
-        };
-      } else {
-        setShowPreview(false);
-      }
-    }, [hoveredImage, token.id, updatePreviewPosition]);
-
-    useEffect(() => {
-      if (hoveredToken === token.id) {
-        updateBondingPopupPosition();
-
-        const handleResize = () => updateBondingPopupPosition();
-        window.addEventListener('scroll', updateBondingPopupPosition);
-        window.addEventListener('resize', handleResize);
-
-        return () => {
-          window.removeEventListener('scroll', updateBondingPopupPosition);
-          window.removeEventListener('resize', handleResize);
-        };
-      }
-    }, [hoveredToken, token.id, updateBondingPopupPosition]);
-
-    const totalTraders = useMemo(
-      () => token.holders + token.proTraders,
-      [token.holders, token.proTraders],
-    );
-
-    const showBonding =
-      (token.status === 'new' || token.status === 'graduating') &&
-      hoveredToken === token.id;
-
-    const totalTransactions = token.buyTransactions + token.sellTransactions;
-    const buyPct = useMemo(
-      () =>
-        totalTransactions === 0
-          ? 0
-          : (token.buyTransactions / totalTransactions) * 100,
-      [token.buyTransactions, totalTransactions],
-    );
-    const sellPct = useMemo(
-      () =>
-        totalTransactions === 0
-          ? 0
-          : (token.sellTransactions / totalTransactions) * 100,
-      [token.sellTransactions, totalTransactions],
-    );
-    const metricData = useMetricColorClasses(
-      token,
-      displaySettings,
-      monUsdPrice,
-    );
-
-    const cssVariables: CSSVars = metricData?.cssVars || {};
-    const [imageError, setImageError] = useState(false);
-
-    return (
-      <>
-        <div
-          ref={tokenRowRef}
-          className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${isBlacklisted ? 'blacklisted-token' : ''} ${token.source === 'nadfun' ? 'nadfun-token' : ''} ${
-            displaySettings.colorRows && token.status !== 'graduated'
-              ? `colored-row ${getBondingColorClass(bondingPercentage)}`
-              : ''
-          } ${metricData ? `metric-colored ${metricData.classes}` : ''} ${token.status === 'graduated' ? 'graduated' : ''}`}
-          style={cssVariables}
-          onMouseEnter={() => onTokenHover(token.id)}
-          onMouseLeave={onTokenLeave}
-          onClick={() => onTokenClick(token)}
-        >
-          <div className="explorer-token-actions">
-            <button
-              className={`explorer-hide-button ${isHidden ? 'strikethrough' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onHideToken(token.id);
-              }}
-            >
-              <Tooltip content={isHidden ? 'Show Token' : 'Hide Token'}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </Tooltip>
-            </button>
-
-            <button
-              className={`explorer-blacklist-button ${isBlacklisted ? 'strikethrough' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onBlacklistToken(token);
-                onHideToken(token.id);
-              }}
-            >
-              <Tooltip
-                content={isBlacklisted ? 'Unblacklist Dev' : 'Blacklist Dev'}
-              >
-                <svg
-                  className="blacklist-dev-icon"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 30 30"
-                  fill="currentColor"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
-                </svg>
-              </Tooltip>
-            </button>
-          </div>
-          <div
-            className="explorer-token-left"
-            style={!displaySettings.progressBar ? { marginTop: '-3px' } : {}}
-          >
-            <div
-              ref={imageContainerRef}
-              className={`explorer-token-image-container ${token.status === 'graduated' ? 'graduated' : ''} ${!displaySettings.squareImages ? 'circle-mode' : ''} ${!displaySettings.progressBar ? 'no-progress-ring' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(
-                  `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(token.image)}`,
-                  '_blank',
-                  'noopener,noreferrer',
-                );
-              }}
-              style={
-                token.status === 'graduated' || !displaySettings.progressBar
-                  ? { position: 'relative' }
-                  : imageStyle
-              }
-              onMouseEnter={() => onImageHover(token.id)}
-              onMouseLeave={onImageLeave}
-            >
-              <div
-                className={`explorer-progress-spacer ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
-              >
-                <div
-                  className={`explorer-image-wrapper ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
-                >
-                  {token.image &&
-                  token.image.startsWith('https://storage.nadapp.net/coin/') &&
-                  !imageError ? (
-                    <img
-                      src={token.image}
-                      className={`explorer-token-image ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
-                      onError={() => setImageError(true)}
-                    />
-                  ) : (
-                    <div
-                      className={`explorer-token-letter ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        backgroundColor: 'rgb(6,6,6)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: token.symbol.length <= 3 ? '34px' : '28px',
-                        fontWeight: '200',
-                        color: '#ffffff',
-                        letterSpacing: token.symbol.length > 3 ? '-1px' : '0',
-                        borderRadius: displaySettings.squareImages
-                          ? '8px'
-                          : '50%',
-                      }}
-                    >
-                      {token.symbol.slice(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                  <div
-                    className={`explorer-image-overlay ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
-                  >
-                    <img className="camera-icon" src={camera} />
-                  </div>
-                  <div className="token-explorer-launchpad-logo-container">
-                    {token.source === 'nadfun' ? (
-                      <Tooltip content="nad.fun">
-                        <svg
-                          width="10"
-                          height="10"
-                          viewBox="0 0 32 32"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="token-explorer-launchpad-logo"
-                        >
-                          <defs>
-                            <linearGradient
-                              id="nadfun"
-                              x1="0%"
-                              y1="0%"
-                              x2="100%"
-                              y2="0%"
-                            >
-                              <stop
-                                offset="0%"
-                                stopColor="#7C55FF"
-                                stopOpacity="1"
-                              />
-                              <stop
-                                offset="100%"
-                                stopColor="#AD5FFB"
-                                stopOpacity="1"
-                              />
-                            </linearGradient>
-                          </defs>
-                          <path
-                            fill="url(#nadfun)"
-                            d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z"
-                          />
-                        </svg>
-                      </Tooltip>
-                    ) : (
-                      <Tooltip content="crystal.fun">
-                        <img
-                          src={crystal}
-                          className="token-explorer-launchpad-logo crystal"
-                        />
-                      </Tooltip>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {hoveredImage === token.id &&
-                showPreview &&
-                createPortal(
-                  <div
-                    className="explorer-image-preview show"
-                    style={{
-                      position: 'absolute',
-                      top: `${previewPosition.top}px`,
-                      left: `${previewPosition.left}px`,
-                      zIndex: 9999,
-                      pointerEvents: 'none',
-                      opacity: 1,
-                      transition: 'opacity 0.2s ease',
-                    }}
-                  >
-                    <div className="explorer-preview-content">
-                      {token.image && !imageError ? (
-                        <img
-                          src={token.image}
-                          alt={token.name}
-                          style={{
-                            width: '220px',
-                            height: '220px',
-                            borderRadius: '6px',
-                            objectFit: 'cover',
-                            display: 'block',
-                          }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            width: '220px',
-                            height: '220px',
-                            borderRadius: '6px',
-                            backgroundColor: 'rgb(6,6,6)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: '1px solid rgba(179, 184, 249, 0.15)',
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize:
-                                token.symbol.length <= 3 ? '72px' : '56px',
-                              fontWeight: '200',
-                              color: '#ffffff',
-                              letterSpacing:
-                                token.symbol.length > 3 ? '-2px' : '0',
-                              marginBottom: '8px',
-                            }}
-                          >
-                            {token.symbol.slice(0, 3).toUpperCase()}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: '14px',
-                              fontWeight: '300',
-                              color: 'rgba(255, 255, 255, 0.5)',
-                            }}
-                          >
-                            {token.name}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>,
-                  document.body,
-                )}
-            </div>
-
-            {!displaySettings.progressBar && token.status !== 'graduated' && (
-              <div className="explorer-progress-line" style={progressLineStyle}>
-                <div className="explorer-progress-line-fill" />
-              </div>
-            )}
-
-            <span className="explorer-contract-address">
-              {token.id.slice(0, 6)}…{token.id.slice(-4)}
-            </span>
-          </div>
-
-          <div className="explorer-token-details">
-            <div className="explorer-detail-section">
-              <div className="explorer-top-row">
-                <div className="explorer-token-info">
-                  <h3 className="explorer-token-symbol">{token.symbol}</h3>
-                  <div
-                    className="explorer-token-name-container"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCopyToClipboard(token.id);
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <Tooltip content="Click to copy address">
-                      <p
-                        className="explorer-token-name"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onCopyToClipboard(token.id);
-                        }}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        {token.name}
-                      </p>
-                      <button
-                        className="explorer-copy-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onCopyToClipboard(token.id);
-                        }}
-                      >
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                        </svg>
-                      </button>
-                    </Tooltip>
-                  </div>
-                </div>
-              </div>
-
-              <div className="explorer-second-row">
-                <div className="explorer-price-section">
-                  <span
-                    className="explorer-time-created"
-                    style={{
-                      color:
-                        Math.floor(Date.now() / 1000) - token.created > 21600
-                          ? '#f77f7d'
-                          : 'rgb(67, 254, 154)',
-                    }}
-                  >
-                    {formatTimeAgo(token.created)}
-                  </span>
-                  {displaySettings.visibleRows.socials && (
-                    <>
-                      {!!token.twitterHandle && (
-                        <TwitterHover url={token.twitterHandle}>
-                          <a
-                            className="explorer-avatar-btn"
-                            href={token.twitterHandle}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <img
-                              src={
-                                token.twitterHandle.includes('/i/communities/')
-                                  ? communities
-                                  : token.twitterHandle.includes('/status/')
-                                    ? tweet
-                                    : avatar
-                              }
-                              alt={
-                                token.twitterHandle.includes('/i/communities/')
-                                  ? 'Community'
-                                  : 'Twitter'
-                              }
-                              className={
-                                token.twitterHandle.includes('/i/communities/')
-                                  ? 'community-icon'
-                                  : token.twitterHandle.includes('/status/')
-                                    ? 'tweet-icon'
-                                    : 'avatar-icon'
-                              }
-                            />
-                          </a>
-                        </TwitterHover>
-                      )}
-
-                      {!!token.website && (
-                        <a
-                          className="explorer-website-btn"
-                          href={token.website}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Tooltip content={token.website}>
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="currentColor"
-                            >
-                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                            </svg>
-                          </Tooltip>
-                        </a>
-                      )}
-
-                      {!!token.telegramHandle && (
-                        <a
-                          className="explorer-telegram-btn"
-                          href={token.telegramHandle}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Tooltip content="Telegram">
-                            <img src={telegram} />
-                          </Tooltip>
-                        </a>
-                      )}
-
-                      {!!token.discordHandle && (
-                        <a
-                          className="explorer-discord-btn"
-                          href={token.discordHandle}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Tooltip content="Discord">
-                            <img src={discord} />
-                          </Tooltip>
-                        </a>
-                      )}
-
-                      <a
-                        className="explorer-telegram-btn"
-                        href={`https://twitter.com/search?q=${token.id}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Tooltip content="Search CA on Twitter">
-                          <Search size={14} />
-                        </Tooltip>
-                      </a>
-
-                      {token.source === 'nadfun' && (
-                        <Tooltip content="View on nad.fun">
-                          <a
-                            className="token-info-meme-interface-social-btn"
-                            href={`https://nad.fun/tokens/${token.id}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <svg
-                              width="13"
-                              height="13"
-                              viewBox="0 0 32 32"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <defs>
-                                <linearGradient
-                                  id="nadfun"
-                                  x1="0%"
-                                  y1="0%"
-                                  x2="100%"
-                                  y2="0%"
-                                ></linearGradient>
-                              </defs>
-                              <path
-                                fill="url(#nadfun)"
-                                d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z"
-                              />
-                            </svg>
-                          </a>
-                        </Tooltip>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                <div className="explorer-additional-data">
-                  {displaySettings.visibleRows.holders && (
-                    <Tooltip content="Holders">
-                      <div className="explorer-stat-item">
-                        <svg
-                          className="traders-icon"
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path d="M 8.8007812 3.7890625 C 6.3407812 3.7890625 4.3496094 5.78 4.3496094 8.25 C 4.3496094 9.6746499 5.0287619 10.931069 6.0703125 11.748047 C 3.385306 12.836193 1.4902344 15.466784 1.4902344 18.550781 C 1.4902344 18.960781 1.8202344 19.300781 2.2402344 19.300781 C 2.6502344 19.300781 2.9902344 18.960781 2.9902344 18.550781 C 2.9902344 15.330781 5.6000781 12.720703 8.8300781 12.720703 L 8.8203125 12.710938 C 8.9214856 12.710938 9.0168776 12.68774 9.1054688 12.650391 C 9.1958823 12.612273 9.2788858 12.556763 9.3476562 12.488281 C 9.4163056 12.41992 9.4712705 12.340031 9.5097656 12.25 C 9.5480469 12.160469 9.5703125 12.063437 9.5703125 11.960938 C 9.5703125 11.540938 9.2303125 11.210938 8.8203125 11.210938 C 7.1903125 11.210938 5.8691406 9.8897656 5.8691406 8.2597656 C 5.8691406 6.6297656 7.1900781 5.3105469 8.8300781 5.3105469 L 8.7890625 5.2890625 C 9.2090625 5.2890625 9.5507812 4.9490625 9.5507812 4.5390625 C 9.5507812 4.1190625 9.2107813 3.7890625 8.8007812 3.7890625 z M 14.740234 3.8007812 C 12.150234 3.8007812 10.060547 5.9002344 10.060547 8.4902344 L 10.039062 8.4707031 C 10.039063 10.006512 10.78857 11.35736 11.929688 12.212891 C 9.0414704 13.338134 7 16.136414 7 19.429688 C 7 19.839688 7.33 20.179688 7.75 20.179688 C 8.16 20.179688 8.5 19.839688 8.5 19.429688 C 8.5 15.969687 11.29 13.179688 14.75 13.179688 L 14.720703 13.160156 C 14.724012 13.160163 14.727158 13.160156 14.730469 13.160156 C 16.156602 13.162373 17.461986 13.641095 18.519531 14.449219 C 18.849531 14.709219 19.320078 14.640313 19.580078 14.320312 C 19.840078 13.990313 19.769219 13.519531 19.449219 13.269531 C 18.873492 12.826664 18.229049 12.471483 17.539062 12.205078 C 18.674662 11.350091 19.419922 10.006007 19.419922 8.4804688 C 19.419922 5.8904687 17.320234 3.8007812 14.740234 3.8007812 z M 14.730469 5.2890625 C 16.490469 5.2890625 17.919922 6.7104688 17.919922 8.4804688 C 17.919922 10.240469 16.500234 11.669922 14.740234 11.669922 C 12.980234 11.669922 11.560547 10.250234 11.560547 8.4902344 C 11.560547 6.7302344 12.98 5.3105469 14.75 5.3105469 L 14.730469 5.2890625 z M 21.339844 16.230469 C 21.24375 16.226719 21.145781 16.241797 21.050781 16.279297 L 21.039062 16.259766 C 20.649063 16.409766 20.449609 16.840469 20.599609 17.230469 C 20.849609 17.910469 20.990234 18.640156 20.990234 19.410156 C 20.990234 19.820156 21.320234 20.160156 21.740234 20.160156 C 22.150234 20.160156 22.490234 19.820156 22.490234 19.410156 C 22.490234 18.470156 22.319766 17.560703 22.009766 16.720703 C 21.897266 16.428203 21.628125 16.241719 21.339844 16.230469 z" />
-                        </svg>{' '}
-                        <span className="explorer-stat-value">
-                          {totalTraders.toLocaleString()}
-                        </span>
-                      </div>
-                    </Tooltip>
-                  )}
-
-                  {displaySettings.visibleRows.proTraders && (
-                    <Tooltip content="Pro Traders">
-                      <div className="explorer-stat-item">
-                        <svg
-                          className="traders-icon"
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path d="M 12 2 L 12 4 L 11 4 C 10.4 4 10 4.4 10 5 L 10 10 C 10 10.6 10.4 11 11 11 L 12 11 L 12 13 L 14 13 L 14 11 L 15 11 C 15.6 11 16 10.6 16 10 L 16 5 C 16 4.4 15.6 4 15 4 L 14 4 L 14 2 L 12 2 z M 4 9 L 4 11 L 3 11 C 2.4 11 2 11.4 2 12 L 2 17 C 2 17.6 2.4 18 3 18 L 4 18 L 4 20 L 6 20 L 6 18 L 7 18 C 7.6 18 8 17.6 8 17 L 8 12 C 8 11.4 7.6 11 7 11 L 6 11 L 6 9 L 4 9 z M 18 11 L 18 13 L 17 13 C 16.4 13 16 13.4 16 14 L 16 19 C 16 19.6 16.4 20 17 20 L 18 20 L 18 22 L 20 22 L 20 20 L 21 20 C 21.6 20 22 19.6 22 19 L 22 14 C 22 13.4 21.6 13 21 13 L 20 13 L 20 11 L 18 11 z M 4 13 L 6 13 L 6 16 L 4 16 L 4 13 z" />
-                        </svg>{' '}
-                        <span className="pro-explorer-stat-value">
-                          {token.proTraders.toLocaleString()}
-                        </span>
-                      </div>
-                    </Tooltip>
-                  )}
-
-                  {displaySettings.visibleRows.devMigrations && (
-                    <Tooltip content="Dev Migrations ">
-                      <div className="explorer-stat-item">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="graduated-icon"
-                          style={
-                            token.graduatedTokens > 0
-                              ? { color: 'rgba(255, 251, 0, 1)' }
-                              : undefined
-                          }
-                        >
-                          <path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z" />
-                          <path d="M5 21h14" />
-                        </svg>
-                        <div className="dev-migrations-container">
-                          <span className="explorer-dev-migrations">
-                            {token.graduatedTokens.toLocaleString()}
-                          </span>{' '}
-                          <span className="dev-migrations-slash">/</span>
-                          <span className="explorer-dev-migrations">
-                            {token.launchedTokens.toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                    </Tooltip>
-                  )}
-                </div>
-              </div>
-            </div>
-            {token.twitterHandle &&
-              !token.twitterHandle.includes('/i/communities/') &&
-              (() => {
-                const username = extractTwitterUsername(token.twitterHandle);
-                return username ? (
-                  <a
-                    href={`https://x.com/${username}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="explorer-twitter-username"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Tooltip content={`@${username} on X`}>@{username}</Tooltip>
-                  </a>
-                ) : null;
-              })()}
-            <div className="explorer-holdings-section">
-              {displaySettings.visibleRows.devHolding && (
-                <InteractiveTooltip
-                  content={
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        padding: '2px',
-                        gap: '2px',
-                      }}
-                    >
-                      <div
-                        style={{ fontSize: '.8rem', color: '#ffffff' }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Developer Address
-                      </div>
-                      <Tooltip content="View Wallet on Explorer">
-                        <div
-                          className="explorer-dev-holding-tooltip-address"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(
-                              `${settings.chainConfig[activechain].explorer}/address/${token.dev}`,
-                              '_blank',
-                              'noopener noreferrer',
-                            );
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: '0.8rem',
-                              color: 'rgb(206, 208, 223)',
-                              letterSpacing: '0',
-                            }}
-                          >
-                            {token.dev.slice(0, 12)}...{token.dev.slice(-4)}
-                          </div>
-                          <svg
-                            className="wallet-address-link"
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="rgb(206, 208, 223)"
-                          >
-                            <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                            <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                          </svg>
-                        </div>
-                      </Tooltip>
-                    </div>
-                  }
-                >
-                  <div className="explorer-holding-item">
-                    <svg
-                      className="holding-icon"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 30 30"
-                      fill={
-                        token.devHolding * 100 > 25
-                          ? '#eb7070ff'
-                          : 'rgb(67, 254, 154)'
-                      }
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
-                    </svg>{' '}
-                    <span
-                      className="explorer-holding-value"
-                      style={{
-                        color:
-                          token.devHolding * 100 > 25
-                            ? '#eb7070ff'
-                            : 'rgb(67, 254, 154)',
-                      }}
-                    >
-                      {(token.devHolding * 100).toFixed(2)}%
-                    </span>
-                  </div>
-                </InteractiveTooltip>
-              )}
-              {displaySettings.visibleRows.top10Holders && (
-                <Tooltip content="Top 10 holders percentage">
-                  <div className="explorer-holding-item">
-                    <svg
-                      className="holding-icon"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 32 32"
-                      fill={
-                        token.top10Holding > 25
-                          ? '#eb7070ff'
-                          : 'rgb(67, 254, 154)'
-                      }
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path d="M 15 4 L 15 6 L 13 6 L 13 8 L 15 8 L 15 9.1875 C 14.011719 9.554688 13.25 10.433594 13.0625 11.5 C 12.277344 11.164063 11.40625 11 10.5 11 C 6.921875 11 4 13.921875 4 17.5 C 4 19.792969 5.199219 21.8125 7 22.96875 L 7 27 L 25 27 L 25 22.96875 C 26.800781 21.8125 28 19.792969 28 17.5 C 28 13.921875 25.078125 11 21.5 11 C 20.59375 11 19.722656 11.164063 18.9375 11.5 C 18.75 10.433594 17.988281 9.554688 17 9.1875 L 17 8 L 19 8 L 19 6 L 17 6 L 17 4 Z M 16 11 C 16.5625 11 17 11.4375 17 12 C 17 12.5625 16.5625 13 16 13 C 15.4375 13 15 12.5625 15 12 C 15 11.4375 15.4375 11 16 11 Z M 10.5 13 C 12.996094 13 15 15.003906 15 17.5 L 15 22 L 10.5 22 C 8.003906 22 6 19.996094 6 17.5 C 6 15.003906 8.003906 13 10.5 13 Z M 21.5 13 C 23.996094 13 26 15.003906 26 17.5 C 26 19.996094 23.996094 22 21.5 22 L 17 22 L 17 17.5 C 17 15.003906 19.003906 13 21.5 13 Z M 9 24 L 23 24 L 23 25 L 9 25 Z" />
-                    </svg>{' '}
-                    <span
-                      className="explorer-holding-value"
-                      style={{
-                        color:
-                          token.top10Holding > 25
-                            ? '#eb7070ff'
-                            : 'rgb(67, 254, 154)',
-                      }}
-                    >
-                      {token.top10Holding.toFixed(2)}%
-                    </span>
-                  </div>
-                </Tooltip>
-              )}
-              {displaySettings.visibleRows.snipers && (
-                <Tooltip content="Sniper Holding">
-                  <div className="explorer-holding-item">
-                    <svg
-                      className="sniper-icon"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill={
-                        token.sniperHolding > 20
-                          ? '#eb7070ff'
-                          : 'rgb(67, 254, 154)'
-                      }
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path d="M 11.244141 2.0019531 L 11.244141 2.7519531 L 11.244141 3.1542969 C 6.9115518 3.5321749 3.524065 6.919829 3.1445312 11.251953 L 2.7421875 11.251953 L 1.9921875 11.251953 L 1.9921875 12.751953 L 2.7421875 12.751953 L 3.1445312 12.751953 C 3.5225907 17.085781 6.9110367 20.473593 11.244141 20.851562 L 11.244141 21.253906 L 11.244141 22.003906 L 12.744141 22.003906 L 12.744141 21.253906 L 12.744141 20.851562 C 17.076343 20.47195 20.463928 17.083895 20.841797 12.751953 L 21.244141 12.751953 L 21.994141 12.751953 L 21.994141 11.251953 L 21.244141 11.251953 L 20.841797 11.251953 C 20.462285 6.9209126 17.074458 3.5337191 12.744141 3.1542969 L 12.744141 2.7519531 L 12.744141 2.0019531 L 11.244141 2.0019531 z M 11.244141 4.6523438 L 11.244141 8.0742188 C 9.6430468 8.3817751 8.3759724 9.6507475 8.0683594 11.251953 L 4.6425781 11.251953 C 5.0091295 7.7343248 7.7260437 5.0173387 11.244141 4.6523438 z M 12.744141 4.6523438 C 16.25959 5.0189905 18.975147 7.7358303 19.341797 11.251953 L 15.917969 11.251953 C 15.610766 9.6510551 14.344012 8.3831177 12.744141 8.0742188 L 12.744141 4.6523438 z M 11.992188 9.4980469 C 13.371637 9.4980469 14.481489 10.6041 14.492188 11.982422 L 14.492188 12.021484 C 14.481501 13.40006 13.372858 14.503906 11.992188 14.503906 C 10.606048 14.503906 9.4921875 13.389599 9.4921875 12.001953 C 9.4921875 10.614029 10.60482 9.4980469 11.992188 9.4980469 z M 4.6425781 12.751953 L 8.0683594 12.751953 C 8.3760866 14.352973 9.6433875 15.620527 11.244141 15.927734 L 11.244141 19.353516 C 7.7258668 18.988181 5.0077831 16.270941 4.6425781 12.751953 z M 15.917969 12.751953 L 19.34375 12.751953 C 18.97855 16.26893 16.261295 18.986659 12.744141 19.353516 L 12.744141 15.927734 C 14.344596 15.619809 15.610176 14.35218 15.917969 12.751953 z" />
-                    </svg>{' '}
-                    <span
-                      className="explorer-holding-value"
-                      style={{
-                        color:
-                          token.sniperHolding > 20
-                            ? '#eb7070ff'
-                            : 'rgb(67, 254, 154)',
-                      }}
-                    >
-                      {token.sniperHolding.toFixed(2)}%
-                    </span>
-                  </div>
-                </Tooltip>
-              )}
-
-              {displaySettings.visibleRows.insiders && false && (
-                <Tooltip content="Insider Holding">
-                  <div className="explorer-holding-item">
-                    <svg
-                      className="holding-icon"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 32 32"
-                      fill={
-                        token.insiderHolding > 5
-                          ? '#eb7070ff'
-                          : 'rgb(67, 254, 154)'
-                      }
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path d="M 16 3 C 14.0625 3 12.570313 3.507813 11.5 4.34375 C 10.429688 5.179688 9.8125 6.304688 9.375 7.34375 C 8.9375 8.382813 8.65625 9.378906 8.375 10.09375 C 8.09375 10.808594 7.859375 11.085938 7.65625 11.15625 C 4.828125 12.160156 3 14.863281 3 18 L 3 19 L 4 19 C 5.347656 19 6.003906 19.28125 6.3125 19.53125 C 6.621094 19.78125 6.742188 20.066406 6.8125 20.5625 C 6.882813 21.058594 6.847656 21.664063 6.9375 22.34375 C 6.984375 22.683594 7.054688 23.066406 7.28125 23.4375 C 7.507813 23.808594 7.917969 24.128906 8.375 24.28125 C 9.433594 24.632813 10.113281 24.855469 10.53125 25.09375 C 10.949219 25.332031 11.199219 25.546875 11.53125 26.25 C 11.847656 26.917969 12.273438 27.648438 13.03125 28.1875 C 13.789063 28.726563 14.808594 29.015625 16.09375 29 C 18.195313 28.972656 19.449219 27.886719 20.09375 26.9375 C 20.417969 26.460938 20.644531 26.050781 20.84375 25.78125 C 21.042969 25.511719 21.164063 25.40625 21.375 25.34375 C 22.730469 24.9375 23.605469 24.25 24.09375 23.46875 C 24.582031 22.6875 24.675781 21.921875 24.8125 21.40625 C 24.949219 20.890625 25.046875 20.6875 25.375 20.46875 C 25.703125 20.25 26.453125 20 28 20 L 29 20 L 29 19 C 29 17.621094 29.046875 16.015625 28.4375 14.5 C 27.828125 12.984375 26.441406 11.644531 24.15625 11.125 C 24.132813 11.121094 24.105469 11.132813 24 11 C 23.894531 10.867188 23.734375 10.601563 23.59375 10.25 C 23.3125 9.550781 23.042969 8.527344 22.59375 7.46875 C 22.144531 6.410156 21.503906 5.269531 20.4375 4.40625 C 19.371094 3.542969 17.90625 3 16 3 Z M 16 5 C 17.539063 5 18.480469 5.394531 19.1875 5.96875 C 19.894531 6.542969 20.367188 7.347656 20.75 8.25 C 21.132813 9.152344 21.402344 10.128906 21.75 11 C 21.921875 11.433594 22.109375 11.839844 22.40625 12.21875 C 22.703125 12.597656 23.136719 12.96875 23.6875 13.09375 C 25.488281 13.503906 26.15625 14.242188 26.5625 15.25 C 26.871094 16.015625 26.878906 17.066406 26.90625 18.09375 C 25.796875 18.1875 24.886719 18.386719 24.25 18.8125 C 23.40625 19.378906 23.050781 20.25 22.875 20.90625 C 22.699219 21.5625 22.632813 22.042969 22.40625 22.40625 C 22.179688 22.769531 21.808594 23.128906 20.78125 23.4375 C 20.070313 23.652344 19.558594 24.140625 19.21875 24.59375 C 18.878906 25.046875 18.675781 25.460938 18.4375 25.8125 C 17.960938 26.515625 17.617188 26.980469 16.0625 27 C 15.078125 27.011719 14.550781 26.820313 14.1875 26.5625 C 13.824219 26.304688 13.558594 25.929688 13.3125 25.40625 C 12.867188 24.460938 12.269531 23.765625 11.53125 23.34375 C 10.792969 22.921875 10.023438 22.714844 9 22.375 C 8.992188 22.359375 8.933594 22.285156 8.90625 22.09375 C 8.855469 21.710938 8.886719 21.035156 8.78125 20.28125 C 8.675781 19.527344 8.367188 18.613281 7.5625 17.96875 C 7 17.515625 6.195313 17.289063 5.25 17.15625 C 5.542969 15.230469 6.554688 13.65625 8.3125 13.03125 C 9.375 12.65625 9.898438 11.730469 10.25 10.84375 C 10.601563 9.957031 10.851563 8.96875 11.21875 8.09375 C 11.585938 7.21875 12.019531 6.480469 12.71875 5.9375 C 13.417969 5.394531 14.402344 5 16 5 Z M 13 9 C 12.449219 9 12 9.671875 12 10.5 C 12 11.328125 12.449219 12 13 12 C 13.550781 12 14 11.328125 14 10.5 C 14 9.671875 13.550781 9 13 9 Z M 17 9 C 16.449219 9 16 9.671875 16 10.5 C 16 11.328125 16.449219 12 17 12 C 17.550781 12 18 11.328125 18 10.5 C 18 9.671875 17.550781 9 17 9 Z" />
-                    </svg>{' '}
-                    <span
-                      className="explorer-holding-value"
-                      style={{
-                        color:
-                          token.insiderHolding > 5
-                            ? '#eb7070ff'
-                            : 'rgb(67, 254, 154)',
-                      }}
-                    >
-                      {token.insiderHolding.toFixed(1)}%
-                    </span>
-                  </div>
-                </Tooltip>
-              )}
-            </div>
-          </div>
-
-          {displaySettings.quickBuySize === 'ultra' &&
-            displaySettings.secondQuickBuyEnabled && (
-              <div
-                className={`explorer-second-ultra-container ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor} ${isLoadingSecondary ? 'disabled' : ''}`}
-                style={
-                  displaySettings.ultraStyle === 'border'
-                    ? {
-                        border: `1px solid ${displaySettings.secondQuickBuyColor}`,
-                        boxShadow: `inset 0 0 0 1px ${displaySettings.secondQuickBuyColor}99`,
-                      }
-                    : undefined
-                }
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (isLoadingSecondary) return;
-                  onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-                }}
-                onMouseMove={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const x = ((e.clientX - rect.left) / rect.width) * 100;
-                  const y = ((e.clientY - rect.top) / rect.height) * 100;
-                  e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
-                  e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
-                }}
-              >
-                <div className="explorer-actions-section">
-                  <button
-                    className={`explorer-quick-buy-btn size-ultra ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`}
-                    style={{ color: displaySettings.secondQuickBuyColor }}
-                    disabled={isLoadingSecondary}
-                  >
-                    {isLoadingSecondary ? (
-                      <div
-                        style={{
-                          border: `1.5px solid ${displaySettings.secondQuickBuyColor}`,
-                          borderTop: `1.5px solid transparent`,
-                        }}
-                        className="ultra-quickbuy-loading-spinner"
-                      />
-                    ) : (
-                      <>
-                        <svg
-                          fill={displaySettings.secondQuickBuyColor}
-                          className="second-ultra-quickbuy-icon"
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 72 72"
-                          width="64px"
-                          height="64px"
-                        >
-                          <path d="M30.992,60.145c-0.599,0.753-1.25,1.126-1.952,1.117c-0.702-0.009-1.245-0.295-1.631-0.86	c-0.385-0.565-0.415-1.318-0.09-2.26l5.752-16.435H20.977c-0.565,0-1.036-0.175-1.412-0.526C19.188,40.83,19,40.38,19,39.833	c0-0.565,0.223-1.121,0.668-1.669l21.34-26.296c0.616-0.753,1.271-1.13,1.965-1.13s1.233,0.287,1.618,0.86	c0.385,0.574,0.415,1.331,0.09,2.273l-5.752,16.435h12.095c0.565,0,1.036,0.175,1.412,0.526C52.812,31.183,53,31.632,53,32.18	c0,0.565-0.223,1.121-0.668,1.669L30.992,60.145z" />
-                        </svg>{' '}
-                        {quickbuyAmountSecond} MON
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-
-          <div
-            className={`explorer-third-row metrics-size-${displaySettings.metricSize} ${displaySettings.quickBuySize === 'large' ? 'large-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'mega' ? 'mega-quickbuy-mode' : ''} ${displaySettings.quickBuySize === 'ultra' ? `ultra-quickbuy-mode ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}` : ''} ${displaySettings.quickBuySize === 'ultra' && displaySettings.secondQuickBuyEnabled ? 'ultra-dual-buttons' : ''} ${isLoadingPrimary ? 'disabled' : ''}`}
-            onClick={(e) => {
-              if (displaySettings.quickBuySize != 'ultra') return;
-              e.stopPropagation();
-              if (isLoadingPrimary) return;
-              onQuickBuy(token, quickbuyAmount, 'primary');
-              if (displaySettings.quickBuyClickBehavior === 'openPage') {
-                onTokenClick(token);
-              } else if (
-                displaySettings.quickBuyClickBehavior === 'openNewTab'
-              ) {
-                window.open(`/meme/${token.id}`, '_blank');
-              }
-            }}
-            onMouseMove={
-              displaySettings.quickBuySize === 'ultra'
-                ? (e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const x = ((e.clientX - rect.left) / rect.width) * 100;
-                    const y = ((e.clientY - rect.top) / rect.height) * 100;
-                    e.currentTarget.style.setProperty('--mouse-x', `${x}%`);
-                    e.currentTarget.style.setProperty('--mouse-y', `${y}%`);
-                  }
-                : undefined
-            }
-          >
-            <div className="explorer-metrics-container">
-              {displaySettings.visibleRows.volume && (
-                <div>
-                  <Tooltip content="Volume">
-                    <div className="explorer-volume">
-                      <span className="mc-label">V</span>
-                      <span className="mc-value">
-                        {formatPrice(
-                          token.volume24h * monUsdPrice,
-                          displaySettings.noDecimals,
-                        )}
-                      </span>
-                    </div>
-                  </Tooltip>
-                </div>
-              )}
-              {displaySettings.visibleRows.marketCap && (
-                <div>
-                  <Tooltip content="Market Cap">
-                    <div className="explorer-market-cap">
-                      <span className="mc-label">MC</span>
-                      <span className="mc-value">
-                        {formatPrice(
-                          token.marketCap * monUsdPrice,
-                          displaySettings.noDecimals,
-                        )}
-                      </span>
-                    </div>
-                  </Tooltip>
-                </div>
-              )}
-            </div>
-
-            <div className="explorer-third-row-section">
-              {displaySettings.visibleRows.fees && (
-                <Tooltip content="Global Fees Paid">
-                  <div className="explorer-stat-item">
-                    <span className="explorer-fee-label">F</span>
-                    <span className="explorer-fee-total">
-                      {formatPrice(
-                        (token.volume24h * monUsdPrice) / 100,
-                        displaySettings.noDecimals,
-                      )}
-                    </span>
-                  </div>
-                </Tooltip>
-              )}
-
-              {displaySettings.visibleRows.tx && (
-                <Tooltip content="Transactions">
-                  <div className="explorer-tx-bar">
-                    <div className="explorer-tx-header">
-                      <span className="explorer-tx-label">TX</span>
-                      <span className="explorer-tx-total">
-                        {totalTransactions.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="explorer-tx-visual-bar">
-                      {totalTransactions === 0 ? (
-                        <div
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            backgroundColor: '#252526ff',
-                            borderRadius: '1px',
-                          }}
-                        />
-                      ) : (
-                        <>
-                          <div
-                            className="explorer-tx-buy-portion"
-                            style={{ width: `${buyPct}%` }}
-                          />
-                          <div
-                            className="explorer-tx-sell-portion"
-                            style={{ width: `${sellPct}%` }}
-                          />
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </Tooltip>
-              )}
-            </div>
-
-            <div
-              className={`explorer-actions-section ${displaySettings.quickBuySize === 'ultra' ? 'ultra-mode' : ''}`}
-            >
-              {displaySettings.secondQuickBuyEnabled &&
-                displaySettings.quickBuySize !== 'ultra' && (
-                  <button
-                    className={`explorer-quick-buy-btn second-button size-${displaySettings.quickBuySize} style-${displaySettings.quickBuyStyle}`}
-                    style={{
-                      ['--second-quickbuy-color' as any]:
-                        displaySettings.secondQuickBuyColor,
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onQuickBuy(token, quickbuyAmountSecond, 'secondary');
-                    }}
-                    disabled={isLoadingSecondary}
-                  >
-                    {isLoadingSecondary ? (
-                      <>
-                        <div className="quickbuy-loading-spinner" />
-                        <img
-                          className="explorer-quick-buy-icon"
-                          src={lightning}
-                          style={{ opacity: 0 }}
-                        />
-                        <span style={{ opacity: 0 }}>
-                          {quickbuyAmountSecond} MON
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <img
-                          className="explorer-quick-buy-icon"
-                          src={lightning}
-                        />
-                        {quickbuyAmountSecond} MON
-                      </>
-                    )}
-                  </button>
-                )}
-
-              {(() => {
-                const sizeClass = `size-${displaySettings.quickBuySize}`;
-                const modeClass =
-                  displaySettings.quickBuySize !== 'ultra'
-                    ? `style-${displaySettings.quickBuyStyle}`
-                    : `ultra-${displaySettings.ultraStyle} ultra-text-${displaySettings.ultraColor}`;
-                const buttonClass = `explorer-quick-buy-btn ${sizeClass} ${modeClass}`;
-
-                return (
-                  <button
-                    className={buttonClass}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onQuickBuy(token, quickbuyAmount, 'primary');
-
-                      if (
-                        displaySettings.quickBuyClickBehavior === 'openPage'
-                      ) {
-                        onTokenClick(token);
-                      } else if (
-                        displaySettings.quickBuyClickBehavior === 'openNewTab'
-                      ) {
-                        window.open(`/meme/${token.id}`, '_blank');
-                      }
-                    }}
-                    disabled={isLoadingPrimary}
-                  >
-                    {isLoadingPrimary ? (
-                      <>
-                        <div className="quickbuy-loading-spinner" />
-                        <img
-                          className="explorer-quick-buy-icon"
-                          src={lightning}
-                          style={{ opacity: 0 }}
-                        />
-                        <span style={{ opacity: 0 }}>{quickbuyAmount} MON</span>
-                      </>
-                    ) : (
-                      <>
-                        <img
-                          className="explorer-quick-buy-icon"
-                          src={lightning}
-                        />
-                        {quickbuyAmount} MON
-                      </>
-                    )}
-                  </button>
-                );
-              })()}
-            </div>
-          </div>
-        </div>
-        {showBonding &&
-          createPortal(
-            <div
-              className="bonding-amount-display visible"
-              style={{
-                position: 'absolute',
-                top: `${bondingPopupPosition.top}px`,
-                left: `${bondingPopupPosition.left}px`,
-                color: getBondingColor(bondingPercentage),
-                zIndex: 1,
-                pointerEvents: 'none',
-              }}
-            >
-              Bonding: {bondingPercentage.toFixed(1)}%
-            </div>,
-            document.body,
-          )}
-      </>
-    );
-  },
-  (prevProps, nextProps) => {
-    if (prevProps.token.id !== nextProps.token.id) return false;
-
-    if (
-      prevProps.token.price !== nextProps.token.price ||
-      prevProps.token.marketCap !== nextProps.token.marketCap ||
-      prevProps.token.volume24h !== nextProps.token.volume24h ||
-      prevProps.token.bondingPercentage !== nextProps.token.bondingPercentage
-    )
-      return false;
-
-    if (
-      prevProps.isLoadingPrimary !== nextProps.isLoadingPrimary ||
-      prevProps.isLoadingSecondary !== nextProps.isLoadingSecondary ||
-      prevProps.isHidden !== nextProps.isHidden ||
-      prevProps.isBlacklisted !== nextProps.isBlacklisted
-    )
-      return false;
-
-    const wasTokenHovered = prevProps.hoveredToken === prevProps.token.id;
-    const isTokenHovered = nextProps.hoveredToken === nextProps.token.id;
-    if (wasTokenHovered !== isTokenHovered) return false;
-
-    const wasImageHovered = prevProps.hoveredImage === prevProps.token.id;
-    const isImageHovered = nextProps.hoveredImage === nextProps.token.id;
-    if (wasImageHovered !== isImageHovered) return false;
-
-    if (
-      prevProps.quickbuyAmount !== nextProps.quickbuyAmount ||
-      prevProps.quickbuyAmountSecond !== nextProps.quickbuyAmountSecond
-    )
-      return false;
-
-    const prevDS = prevProps.displaySettings;
-    const nextDS = nextProps.displaySettings;
-    if (
-      prevDS.quickBuySize !== nextDS.quickBuySize ||
-      prevDS.metricSize !== nextDS.metricSize ||
-      prevDS.progressBar !== nextDS.progressBar ||
-      prevDS.squareImages !== nextDS.squareImages ||
-      prevDS.noDecimals !== nextDS.noDecimals ||
-      prevDS.metricColoring !== nextDS.metricColoring
-    )
-      return false;
-    if (prevDS.visibleRows !== nextDS.visibleRows) return false;
-
-    return true;
-  },
-);
 
 interface PredictExplorerProps {
   setpopup: (popup: number) => void;
@@ -3951,10 +1233,8 @@ interface PredictExplorerProps {
 
 const PredictExplorer: React.FC<PredictExplorerProps> = ({
   appliedFilters,
-  onOpenFiltersForColumn,
   sendUserOperationAsync,
   setTokenData,
-  monUsdPrice,
   setpopup,
   subWallets = [],
   walletTokenBalances = {},
@@ -3965,7 +1245,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   quickAmounts,
   setQuickAmounts,
   alertSettingsRef,
-  pausedColumnRef,
   dispatch,
   hidden,
   tokensByStatus,
@@ -3978,74 +1257,13 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   setSelectedWallets,
   createSubWallet,
   setOneCTDepositAddress,
-  layoutSettings,
-  orderbookPosition,
-  windowWidth,
-  mobileView,
-  isOrderbookVisible,
-  orderbookWidth,
-  setOrderbookWidth,
-  viewMode,
-  setViewMode,
-  activeTab,
-  setActiveTab,
-  router,
-  address,
-  orderCenterHeight,
-  hideMarketFilter = false,
-  setSendTokenIn,
-  sortConfig,
-  onSort,
-  activeSection,
-  setActiveSection,
-  filter,
-  setFilter,
-  onlyThisMarket,
-  setOnlyThisMarket,
-  isPortfolio,
-  refetch,
-  setChain,
-  isOrderCenterVisible,
-  openEditOrderPopup,
-  openEditOrderSizePopup,
-  wethticker,
-  ethticker,
-  memoizedSortConfig,
-  emptyFunction,
-  handleSetChain,
-  sliderIncrement = 10,
-  selectedInterval,
-  setSelectedInterval,
-  predictActiveMarketKey,
   setPredictActiveMarketKey,
   predictMarketsData,
   setPredictMarketsData,
   predictFilterOptions,
   setPredictFilterOptions,
-  signMessageAsync,
-  leverage,
-  setLeverage,
-  signer,
-  setSigner,
-  setOrderCenterHeight,
-  isMarksVisible,
-  setIsMarksVisible,
-  scaAddress,
-  setTempLeverage,
+  setOnlyThisMarket,
 }) => {
-  const [isQuickBuying, setIsQuickBuying] = useState<Record<string, boolean>>(
-    {},
-  );
-
-  const pausedTokenSnapshotRef = useRef<{
-    new: Set<string>;
-    graduating: Set<string>;
-    graduated: Set<string>;
-  }>({
-    new: new Set(),
-    graduating: new Set(),
-    graduated: new Set(),
-  });
 
   const getMaxSpendableWei = useCallback(
     (addr: string): bigint => {
@@ -4070,32 +1288,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     },
     [walletTokenBalances, activechain],
   );
-  const [quickAmountsSecond, setQuickAmountsSecond] = useState<
-    Record<Token['status'], string>
-  >(() => ({
-    new: localStorage.getItem('explorer-quickbuy-second-new') ?? '1',
-    graduating:
-      localStorage.getItem('explorer-quickbuy-second-graduating') ?? '1',
-    graduated:
-      localStorage.getItem('explorer-quickbuy-second-graduated') ?? '1',
-  }));
-  const setQuickAmountSecond = useCallback((s: Token['status'], v: string) => {
-    const clean = v.replace(/[^0-9.]/g, '');
-    setQuickAmountsSecond((p) => ({ ...p, [s]: clean }));
-    localStorage.setItem(`explorer-quickbuy-second-${s}`, clean);
-  }, []);
-
-  const setActivePresetSecond = useCallback(
-    (status: Token['status'], preset: number) => {
-      setActivePresetsSecond((p) => ({ ...p, [status]: preset }));
-      localStorage.setItem(
-        `explorer-preset-second-${status}`,
-        preset.toString(),
-      );
-    },
-    [],
-  );
-
   const [activePresetsSecond, setActivePresetsSecond] = useState<
     Record<Token['status'], number>
   >(() => ({
@@ -4107,14 +1299,15 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       localStorage.getItem('explorer-preset-second-graduated') ?? '1',
     ),
   }));
-  const [wsReady, setWsReady] = useState(false);
-  const [exchangeConfig, setExchangeConfig] = useState<any>();
-  const [orderdata, setorderdata] = useState<any>([]);
-  const subRefs = useRef<any>([]);
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const realtimeCallbackRef = useRef<any>({});
+  const isPredictLoadingRef = useRef(false);
+  const selectedCategoryRef = useRef<string>('All');
+  const perpsCurrentPageRef = useRef(1);
+  const itemsPerPageRef = useRef(40);
+  const multiOutcomeHoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
       let liveStreamCancelled = false;
@@ -4283,9 +1476,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
           return;
         }
 
-        if (allEvents.length < EVENTS_PAGE_SIZE) {
-          hasMoreVolumeMarketsRef.current = false;
-        }
+        hasMoreVolumeMarketsRef.current = false;
 
         volumeOffsetRef.current += EVENTS_PAGE_SIZE;
 
@@ -4356,10 +1547,18 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         if (liveStreamCancelled || currentPageMarkets.length === 0) return;
 
         try {
-          // Only fetch a single page with the markets we need
+          const category = selectedCategoryRef.current || 'All';
+          const slug =
+            category !== 'All' ? slugifyTag(category) : '';
+          const tagParam = slug ? `&tag_slug=${encodeURIComponent(slug)}` : '';
+          const offset =
+            Math.max(0, perpsCurrentPageRef.current - 1) *
+            itemsPerPageRef.current;
+
+          // Fetch the exact current page for the active category
           const endDateMin = encodeURIComponent(new Date().toISOString());
           const eventsRes = await fetchPolymarketJson(
-            `/predictapi/events?active=true&archived=false&closed=false&order=volume24hr&ascending=false&limit=${EVENTS_PAGE_SIZE}&offset=0&end_date_min=${endDateMin}`,
+            `/predictapi/events?active=true&archived=false&closed=false&order=volume24hr&ascending=false&limit=${itemsPerPageRef.current}&offset=${offset}&end_date_min=${endDateMin}${tagParam}`,
           );
 
         if (liveStreamCancelled || !eventsRes) return;
@@ -4384,19 +1583,12 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                   : market.outcomePrices || [];
 
                 const primaryPrice = parseFloat(outcomePrices[0] || 0);
-                const previousPrice = updated[market.conditionId].lastPrice || primaryPrice;
-
-                // Calculate price change percent
-                const priceChangePercent = previousPrice !== 0
-                  ? (primaryPrice - previousPrice) / previousPrice
-                  : 0;
 
                 updated[market.conditionId] = {
                   ...updated[market.conditionId],
                   outcomes: outcomes,
                   outcomePrices: outcomePrices,
                   lastPrice: primaryPrice,
-                  priceChangePercent: priceChangePercent,
                   value: market.volume24hr || market.volume || 0,
                   volume24h: market.volume24hr || 0,
                   volume: market.volume || 0,
@@ -4419,11 +1611,11 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       await fetchInitialData();
 
       if (!liveStreamCancelled) {
-        setWsReady(true);
         startTradeStream();
 
         // Start polling for price updates every second
         priceUpdateInterval = setInterval(() => {
+          if (isPredictLoadingRef.current) return;
           // Get current page markets from realtimeCallbackRef
           const currentMarkets = realtimeCallbackRef.current.getCurrentPageMarkets?.() || [];
           updatePrices(currentMarkets);
@@ -4607,9 +1799,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   }, [selectedWallets, walletTokenBalances]);
 
   const navigate = useNavigate();
-  const [activeMobileTab, setActiveMobileTab] =
-    useState<Token['status']>('new');
-  const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(
+  const [displaySettings] = useState<DisplaySettings>(
     () => {
       const saved = localStorage.getItem('explorer-display-settings');
       if (!saved) return DISPLAY_DEFAULTS;
@@ -4693,8 +1883,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       localStorage.getItem('explorer-preset-graduated') ?? '1',
     ),
   }));
-  const [hoveredToken, setHoveredToken] = useState<string | null>(null);
-  const [hoveredImage, setHoveredImage] = useState<string | null>(null);
   const [buyPresets, setBuyPresets] = useState(() => loadBuyPresets());
 
   const formatTimeAgo = (timestamp: number) => {
@@ -4714,6 +1902,67 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       }
     };
     return formatTimeAgoStatic(timestamp, Math.floor(Date.now() / 1000));
+  };
+
+  const isTimeOutcome = (text: string) => {
+    const value = text.trim();
+    if (!value) return false;
+    const monthPattern =
+      /^(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\s+\d{1,2}(?:,?\s+\d{2,4})?$/i;
+    const numericDatePattern = /^\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?$/;
+    return monthPattern.test(value) || numericDatePattern.test(value);
+  };
+
+  const isTimeBasedMarket = (outcomes: unknown) => {
+    if (!Array.isArray(outcomes) || outcomes.length === 0) return false;
+    const matches = outcomes.filter(
+      (outcome) => typeof outcome === 'string' && isTimeOutcome(outcome),
+    ).length;
+    return matches >= Math.max(1, Math.ceil(outcomes.length / 2));
+  };
+
+  const formatResolutionDate = (
+    endMs: number,
+    includeTime: boolean,
+    includeYear: boolean,
+  ) => {
+    const date = new Date(endMs);
+    if (!Number.isFinite(date.getTime())) return null;
+    const options: Intl.DateTimeFormatOptions = {
+      month: 'short',
+      day: 'numeric',
+    };
+    if (includeYear) {
+      options.year = 'numeric';
+    }
+    if (includeTime) {
+      options.hour = 'numeric';
+      options.minute = '2-digit';
+    }
+    return date.toLocaleString('en-US', options);
+  };
+
+  const getResolutionDate = (
+    endDate: string | number | undefined,
+    outcomes: unknown,
+  ) => {
+    if (!endDate) return null;
+    const endMs =
+      typeof endDate === 'number'
+        ? endDate < 1e12
+          ? endDate * 1000
+          : endDate
+        : new Date(endDate).getTime();
+    if (!Number.isFinite(endMs)) return null;
+    if (endMs <= Date.now()) return null;
+    const sameYear = new Date(endMs).getFullYear() === new Date().getFullYear();
+    const timeBased = isTimeBasedMarket(outcomes);
+    const label = formatResolutionDate(endMs, sameYear && !timeBased, !sameYear);
+    if (!label) return null;
+    return {
+      label,
+      isSoon: endMs - Date.now() <= 21600000,
+    };
   };
 
   useEffect(() => {
@@ -4770,14 +2019,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     [],
   );
 
-  const [pausedColumn, setPausedColumn] = useState<Token['status'] | null>(
-    null,
-  );
-
-  const handleTokenHover = useCallback((id: string) => setHoveredToken(id), []);
-  const handleTokenLeave = useCallback(() => setHoveredToken(null), []);
-  const handleImageHover = useCallback((id: string) => setHoveredImage(id), []);
-  const handleImageLeave = useCallback(() => setHoveredImage(null), []);
   const handleInputFocus = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {
       if (e.target.value === '0') e.target.select();
@@ -5656,84 +2897,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const graduatingTokens = visibleTokens.graduating;
   const graduatedTokens = visibleTokens.graduated;
 
-  const handleColumnHover = useCallback(
-    (columnType: Token['status']) => {
-      if (isLoading) return;
-
-      pausedColumnRef.current = columnType;
-      setPausedColumn(columnType);
-
-      const currentTokens =
-        columnType === 'new'
-          ? newTokens
-          : columnType === 'graduating'
-            ? graduatingTokens
-            : graduatedTokens;
-
-      pausedTokenSnapshotRef.current[columnType] = new Set(
-        currentTokens.map((t) => t.id),
-      );
-    },
-    [newTokens, graduatingTokens, graduatedTokens, isLoading],
-  );
-
-  useEffect(() => {
-    if (!isLoading && pausedColumn) {
-      const currentTokens =
-        pausedColumn === 'new'
-          ? newTokens
-          : pausedColumn === 'graduating'
-            ? graduatingTokens
-            : graduatedTokens;
-
-      if (
-        pausedTokenSnapshotRef.current[pausedColumn].size === 0 &&
-        currentTokens.length > 0
-      ) {
-        pausedTokenSnapshotRef.current[pausedColumn] = new Set(
-          currentTokens.map((t) => t.id),
-        );
-      }
-    }
-  }, [isLoading, pausedColumn, newTokens, graduatingTokens, graduatedTokens]);
-
-  const handleColumnLeave = useCallback(() => {
-    const wasPaused = pausedColumnRef.current;
-    pausedColumnRef.current = null;
-    setPausedColumn(null);
-
-    if (wasPaused) {
-      pausedTokenSnapshotRef.current[wasPaused as Token['status']].clear();
-    }
-  }, []);
-
-  const displayTokens = useMemo(() => {
-    if (!pausedColumn) {
-      return {
-        new: newTokens,
-        graduating: graduatingTokens,
-        graduated: graduatedTokens,
-      };
-    }
-
-    const snapshot = pausedTokenSnapshotRef.current[pausedColumn];
-
-    return {
-      new:
-        pausedColumn === 'new' && snapshot.size > 0
-          ? newTokens.filter((t) => snapshot.has(t.id))
-          : newTokens,
-      graduating:
-        pausedColumn === 'graduating' && snapshot.size > 0
-          ? graduatingTokens.filter((t) => snapshot.has(t.id))
-          : graduatingTokens,
-      graduated:
-        pausedColumn === 'graduated' && snapshot.size > 0
-          ? graduatedTokens.filter((t) => snapshot.has(t.id))
-          : graduatedTokens,
-    };
-  }, [pausedColumn, newTokens, graduatingTokens, graduatedTokens]);
-
   const [perpsSortField, setPerpsSortField] = useState<'market' | 'change' | 'volume' | 'openInterest' | 'trades' | 'endDate' | null>('volume');
   const [perpsSortDirection, setPerpsSortDirection] = useState<'asc' | 'desc' | undefined>('desc');
   const [perpsCurrentPage, setPerpsCurrentPage] = useState(1);
@@ -5741,20 +2904,20 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const hasSetDefaultCategoryRef = useRef(false);
   const [liveTrades, setLiveTrades] = useState<any[]>([]);
-  const [hoveredMarket, setHoveredMarket] = useState<string | null>(null);
+  const [tradeMinSize, setTradeMinSize] = useState('');
+  const [tradeSideFilter, setTradeSideFilter] = useState<'all' | 'buy' | 'sell'>('all');
+  const [activeMultiScrollCard, setActiveMultiScrollCard] = useState<string | null>(null);
   const [isPredictLoading, setIsPredictLoading] = useState(
     () => Object.keys(predictMarketsData || {}).length === 0,
   );
+  const initialPredictLoadRef = useRef(true);
   const predictMarketsRef = useRef<any>({});
     const [marketHoverData, setMarketHoverData] = useState<Record<string, { orderbook?: any; series?: any }>>({});
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const ITEMS_PER_PAGE = 60;
+    const [itemsPerPage, setItemsPerPage] = useState(40);
     const MAX_LIVE_TRADES = 50;
-    const EVENTS_PAGE_SIZE = 60;
-    const TAGS_PAGE_SIZE = 100;
-    const MIN_TAGS_INITIAL = 100;
+    const EVENTS_PAGE_SIZE = 100;
     const TAG_EVENTS_LIMIT = 100;
-    const TAG_BATCH_SIZE = 6;
     const DEFAULT_TAG_ORDER = [
       'Politics',
       'Sports',
@@ -5770,9 +2933,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       'Elections',
     ];
     const tagMetaRef = useRef<Record<string, { id?: number; slug?: string }>>({});
-    const tagIndexRef = useRef<Record<string, { id?: number; slug?: string }>>({});
-    const tagIndexPromiseRef = useRef<Promise<void> | null>(null);
-    const tagIndexLoadedRef = useRef(false);
     const tagFetchInFlightRef = useRef<Set<string>>(new Set());
     const tagFetchedRef = useRef<Set<string>>(new Set());
     const marketIdsRef = useRef<string[]>([]);
@@ -5780,8 +2940,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     const volumeOffsetRef = useRef(0);
     const hasMoreVolumeMarketsRef = useRef(true);
     const volumeFetchInFlightRef = useRef(false);
-    const volumeSentinelRef = useRef<HTMLDivElement | null>(null);
-    const predictGridRef = useRef<HTMLDivElement | null>(null);
+    const trendingListRef = useRef<HTMLDivElement | null>(null);
     const fetchVolumePageRef = useRef<(() => void) | null>(null);
 
     const normalizeTagName = (value: string) =>
@@ -5792,19 +2951,52 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         .trim()
         .replace(/\s+/g, ' ');
 
+    useEffect(() => {
+      const updateItemsPerPage = () => {
+        const width = window.innerWidth;
+        const columns =
+          width <= 768 ? 1 : width <= 1200 ? 2 : width <= 1600 ? 3 : 4;
+        setItemsPerPage(columns * 10);
+      };
+
+      updateItemsPerPage();
+      window.addEventListener('resize', updateItemsPerPage);
+      return () => window.removeEventListener('resize', updateItemsPerPage);
+    }, []);
+
     const slugifyTag = (value: string) =>
       normalizeTagName(value).replace(/\s+/g, '-');
 
     useEffect(() => {
       if (!isPredictLoading) return;
-      if (Object.keys(predictMarketsData || {}).length > 0) {
+      if (
+        initialPredictLoadRef.current &&
+        Object.keys(predictMarketsData || {}).length > 0
+      ) {
         setIsPredictLoading(false);
+        initialPredictLoadRef.current = false;
       }
     }, [isPredictLoading, predictMarketsData]);
 
-    useEffect(() => {
-      predictMarketsRef.current = predictMarketsData || {};
-    }, [predictMarketsData]);
+  useEffect(() => {
+    predictMarketsRef.current = predictMarketsData || {};
+  }, [predictMarketsData]);
+
+  useEffect(() => {
+    isPredictLoadingRef.current = isPredictLoading;
+  }, [isPredictLoading]);
+
+  useEffect(() => {
+    selectedCategoryRef.current = selectedCategory;
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    perpsCurrentPageRef.current = perpsCurrentPage;
+  }, [perpsCurrentPage]);
+
+  useEffect(() => {
+    itemsPerPageRef.current = itemsPerPage;
+  }, [itemsPerPage]);
 
     const fetchPolymarketJson = useCallback(async (path: string) => {
       const response = await fetch(path, {
@@ -5829,63 +3021,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       return response.json();
     }, []);
 
-    const loadTagIndex = useCallback(async () => {
-      if (tagIndexLoadedRef.current) return;
-      if (tagIndexPromiseRef.current) {
-        await tagIndexPromiseRef.current;
-        return;
-      }
-
-      tagIndexPromiseRef.current = (async () => {
-        const index: Record<string, { id?: number; slug?: string }> = {};
-        let offset = 0;
-        let loaded = 0;
-
-        while (true) {
-          const page = await fetchPolymarketJson(
-            `/predictapi/tags?limit=${TAGS_PAGE_SIZE}&offset=${offset}`,
-          );
-          if (!Array.isArray(page) || page.length === 0) break;
-
-          page.forEach((tag: any) => {
-            const tagName = String(
-              tag?.name || tag?.title || tag?.tag || '',
-            ).trim();
-            const tagSlug = String(
-              tag?.slug || tag?.tag_slug || tag?.tagSlug || '',
-            ).trim();
-            const tagId = tag?.id != null ? Number(tag.id) : undefined;
-
-            const nameKey = normalizeTagName(tagName || tagSlug);
-            const slugKey = normalizeTagName(tagSlug);
-
-            if (nameKey && !index[nameKey]) {
-              index[nameKey] = { id: tagId, slug: tagSlug || undefined };
-            }
-            if (slugKey && !index[slugKey]) {
-              index[slugKey] = { id: tagId, slug: tagSlug || undefined };
-            }
-          });
-
-          loaded += page.length;
-          if (page.length < TAGS_PAGE_SIZE) break;
-          if (loaded >= MIN_TAGS_INITIAL) break;
-          offset += TAGS_PAGE_SIZE;
-        }
-
-        if (Object.keys(index).length > 0) {
-          tagIndexRef.current = { ...tagIndexRef.current, ...index };
-        }
-        tagIndexLoadedRef.current = true;
-      })();
-
-      try {
-        await tagIndexPromiseRef.current;
-      } finally {
-        tagIndexPromiseRef.current = null;
-      }
-    }, [fetchPolymarketJson, normalizeTagName, TAGS_PAGE_SIZE, MIN_TAGS_INITIAL]);
-
     const resolveTagMeta = useCallback(async (category: string) => {
       let tagMeta = tagMetaRef.current[category];
 
@@ -5897,25 +3032,8 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         }
       }
 
-      if (tagMeta?.id != null) return tagMeta;
-
-      try {
-        await loadTagIndex();
-      } catch (error) {
-        console.warn('Polymarket tag lookup failed:', error);
-        return tagMeta;
-      }
-
-      const lookupKey = normalizeTagName(category);
-      const indexedMeta = tagIndexRef.current[lookupKey];
-
-      if (indexedMeta?.id != null || indexedMeta?.slug) {
-        tagMetaRef.current[category] = indexedMeta;
-        return indexedMeta;
-      }
-
       return tagMeta;
-    }, [loadTagIndex, normalizeTagName, slugifyTag]);
+    }, [slugifyTag]);
 
     const isMarketOpen = useCallback((market: any, event?: any) => {
       if (!market) return false;
@@ -5965,7 +3083,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
             markets: activeMarkets,
             volume24hr: activeMarkets.reduce((sum: number, m: any) => sum + (m.volume24hr || 0), 0),
             volume: activeMarkets.reduce((sum: number, m: any) => sum + (m.volume || 0), 0),
-            liquidity: activeMarkets.reduce((sum: number, m: any) => sum + (m.liquidity || 0), 0),
+            liquidity: activeMarkets.reduce((sum: number, m: any) => sum + (Number(m.liquidity) || 0), 0),
             endDate: activeMarkets[0]?.endDate,
             startDate: activeMarkets[0]?.startDate,
             fundingTime: new Date(activeMarkets[0]?.startDate || activeMarkets[0]?.creationDate || Date.now()).getTime(),
@@ -6034,7 +3152,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
           outcomePrices: outcomePrices,
           // Price fields
           lastPrice: primaryPrice,
-          priceChangePercent: market.priceChangePercent || 0,
+          priceChangePercent: market.oneDayPriceChange || 0,
           // Volume fields - Polymarket uses volume in USD
           value: market.volume24hr || market.volume || 0,
           volume: market.volume || 0,
@@ -6162,8 +3280,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
     // Set new timeout to fetch data after 300ms hover
     hoverTimeoutRef.current = setTimeout(() => {
-      setHoveredMarket(conditionId);
-
       // Only fetch if we don't already have the data
       if (!marketHoverData[conditionId]) {
         fetchMarketHoverData(conditionId, tokenId);
@@ -6176,7 +3292,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
-      setHoveredMarket(null);
     }, []);
 
     const fetchAllMarketsForTag = useCallback(async (category: string) => {
@@ -6194,25 +3309,21 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
           : '';
       if (!tagParam) return;
 
+      setIsPredictLoading(true);
       tagFetchInFlightRef.current.add(category);
 
       try {
         const endDateMin = encodeURIComponent(new Date().toISOString());
-        const allEvents: any[] = [];
-        let offset = 0;
+        const page = await fetchPolymarketJson(
+          `/predictapi/events?active=true&archived=false&closed=false&${tagParam}&order=volume24hr&ascending=false&limit=${TAG_EVENTS_LIMIT}&offset=0&end_date_min=${endDateMin}`,
+        );
 
-        while (true) {
-          const page = await fetchPolymarketJson(
-            `/predictapi/events?active=true&archived=false&closed=false&${tagParam}&order=volume24hr&ascending=false&limit=${TAG_EVENTS_LIMIT}&offset=${offset}&end_date_min=${endDateMin}`,
-          );
-
-          if (!Array.isArray(page) || page.length === 0) break;
-          allEvents.push(...page);
-          if (page.length < TAG_EVENTS_LIMIT) break;
-          offset += TAG_EVENTS_LIMIT;
+        if (!Array.isArray(page) || page.length === 0) {
+          tagFetchedRef.current.add(category);
+          return;
         }
 
-        const groupedMarkets = buildGroupedMarkets(allEvents);
+        const groupedMarkets = buildGroupedMarkets(page);
         const entries = groupedMarkets
           .map((market: any) => formatMarketEntry(market))
           .filter(Boolean) as [string, any][];
@@ -6242,18 +3353,46 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         console.error('Error fetching full tag markets:', error);
       } finally {
         tagFetchInFlightRef.current.delete(category);
+        setIsPredictLoading(false);
       }
     }, [buildGroupedMarkets, fetchPolymarketJson, formatMarketEntry, resolveTagMeta, setPredictFilterOptions, setPredictMarketsData]);
 
+    const scrollTrendingListToTop = useCallback(() => {
+      const grid = trendingListRef.current;
+      if (grid) {
+        grid.scrollTop = 0;
+      }
+    }, []);
+
     const handleCategoryClick = useCallback((category: string) => {
+      const isSameCategory = category === selectedCategory;
       setSelectedCategory(category);
       setPerpsCurrentPage(1);
+      if (isSameCategory) {
+        scrollTrendingListToTop();
+        return;
+      }
       if (category !== 'All') {
         setPerpsSortField('volume');
         setPerpsSortDirection('desc');
+        const cachedIds = predictFilterOptions?.[category];
+        const hasCachedIds = Array.isArray(cachedIds) && cachedIds.length > 0;
+
+        if (hasCachedIds) {
+          setIsPredictLoading(false);
+          return;
+        }
+
+        setIsPredictLoading(true);
+        setPredictFilterOptions((prev: any) => ({
+          ...(prev || {}),
+          [category]: [],
+        }));
         fetchAllMarketsForTag(category);
+      } else {
+        setIsPredictLoading(false);
       }
-    }, [fetchAllMarketsForTag]);
+    }, [fetchAllMarketsForTag, predictFilterOptions, scrollTrendingListToTop, selectedCategory]);
 
   const trendingTokens = useMemo(() => {
     // Filter by category first
@@ -6282,16 +3421,73 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   }, [predictFilterOptions]);
 
   const paginatedTokens = useMemo(() => {
-    const endIndex = perpsCurrentPage * ITEMS_PER_PAGE;
-    return trendingTokens.slice(0, endIndex);
-  }, [trendingTokens, perpsCurrentPage, ITEMS_PER_PAGE]);
+    const startIndex = (perpsCurrentPage - 1) * itemsPerPage;
+    const endIndex = perpsCurrentPage * itemsPerPage;
+    return trendingTokens.slice(startIndex, endIndex);
+  }, [trendingTokens, perpsCurrentPage, itemsPerPage]);
 
   const totalPages = useMemo(() => {
-    return Math.ceil(trendingTokens.length / ITEMS_PER_PAGE);
-  }, [trendingTokens, ITEMS_PER_PAGE]);
+    return Math.ceil(trendingTokens.length / itemsPerPage);
+  }, [trendingTokens, itemsPerPage]);
   const hasMoreVolumePages =
     selectedCategory === 'All' && hasMoreVolumeMarketsRef.current;
   const showPagination = totalPages > 1 || hasMoreVolumePages;
+  const showPredictLoading = isPredictLoading && paginatedTokens.length === 0;
+  const categoryList = useMemo(() => {
+    const keys = Object.keys(predictFilterOptions || {}).filter(
+      (category) =>
+        category !== 'Trending' && category !== '24hr Highest Volume',
+    );
+    if (keys.length > 0) return keys;
+    return ['All', ...DEFAULT_TAG_ORDER];
+  }, [predictFilterOptions]);
+
+  useEffect(() => {
+    if (!totalPages || perpsCurrentPage <= totalPages) return;
+    setPerpsCurrentPage(totalPages);
+  }, [perpsCurrentPage, totalPages]);
+
+  const handleMultiOutcomeEnter = useCallback((contractId: string) => {
+    if (multiOutcomeHoverTimeoutRef.current) {
+      clearTimeout(multiOutcomeHoverTimeoutRef.current);
+    }
+    multiOutcomeHoverTimeoutRef.current = setTimeout(() => {
+      setActiveMultiScrollCard(contractId);
+    }, 400);
+  }, []);
+
+  const handleMultiOutcomeLeave = useCallback(() => {
+    if (multiOutcomeHoverTimeoutRef.current) {
+      clearTimeout(multiOutcomeHoverTimeoutRef.current);
+      multiOutcomeHoverTimeoutRef.current = null;
+    }
+    setActiveMultiScrollCard(null);
+  }, []);
+
+  const getTradeAmount = useCallback((trade: any) => {
+    const raw = trade?.amount ?? trade?.size ?? trade?.quantity ?? 0;
+    const parsed = typeof raw === 'string' ? parseFloat(raw) : Number(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }, []);
+
+  const isTradeBuy = useCallback((trade: any) => {
+    return trade?.side === 'BUY' || trade?.type === 'buy' || trade?.isBuy;
+  }, []);
+
+  const filteredLiveTrades = useMemo(() => {
+    const min = parseFloat(tradeMinSize);
+    const minSize = Number.isFinite(min) ? min : 0;
+
+    return liveTrades.filter((trade) => {
+      const amount = getTradeAmount(trade);
+      if (minSize > 0 && amount < minSize) return false;
+
+      const isBuy = isTradeBuy(trade);
+      if (tradeSideFilter === 'buy' && !isBuy) return false;
+      if (tradeSideFilter === 'sell' && isBuy) return false;
+      return true;
+    });
+  }, [getTradeAmount, isTradeBuy, liveTrades, tradeMinSize, tradeSideFilter]);
 
   // Update the callback with current page markets for real-time price updates
   useEffect(() => {
@@ -6299,35 +3495,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       return paginatedTokens.map((token: any) => token.contractId);
     };
   }, [paginatedTokens]);
-
-  useEffect(() => {
-    const sentinel = volumeSentinelRef.current;
-    if (!sentinel) return;
-    const root = predictGridRef.current ?? null;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const isVisible = entries.some((entry) => entry.isIntersecting);
-        if (!isVisible) return;
-        if (selectedCategory !== 'All') return;
-        if (volumeFetchInFlightRef.current) return;
-
-        const hasMoreLoaded = paginatedTokens.length < trendingTokens.length;
-        const canFetchMore = hasMoreVolumeMarketsRef.current;
-        if (!hasMoreLoaded && !canFetchMore) return;
-
-        if (canFetchMore) {
-          fetchVolumePageRef.current?.();
-        }
-
-        setPerpsCurrentPage((prev) => prev + 1);
-      },
-      { root, rootMargin: '400px 0px' },
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [selectedCategory, paginatedTokens.length, trendingTokens.length]);
 
   const toggleFavorite = (contractId: string) => {
     setFavoriteMarkets(prev => {
@@ -6341,436 +3508,66 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     });
   };
 
-  const tokenCounts = useMemo(
-    () => ({
-      new: newTokens.length,
-      graduating: graduatingTokens.length,
-      graduated: graduatedTokens.length,
-    }),
-    [newTokens.length, graduatingTokens.length, graduatedTokens.length],
-  );
-
-  const renderOrder: Array<ColumnKey> =
-    Array.isArray(displaySettings?.columnOrder) &&
-    displaySettings.columnOrder.length
-      ? displaySettings.columnOrder
-      : (['new', 'graduating', 'graduated'] as Array<ColumnKey>);
-
   return (
     <div className="explorer-main">
-      <div className="explorer-header-row">
-        <div className="explorer-header-left">
-          <h1 className="explorer-app-title">Trending</h1>
-        </div>
-
-        <div className="explorer-header-right">
-          <div className="explorer-quickbuy-container">
-            <img
-              className="explorer-quick-buy-search-icon"
-              src={lightning}
-              alt=""
-            />
-            <input
-              type="text"
-              placeholder="0.0"
-              value={quickAmounts.new}
-              onChange={(e) => setQuickAmount('new', e.target.value)}
-              onFocus={handleInputFocus}
-              className="explorer-quickbuy-input"
-            />
-            <img className="quickbuy-monad-icon" src={monadicon} />
-            <div className="explorer-preset-controls">
-              {[1, 2, 3].map((p) => (
-                <Tooltip
-                  key={p}
-                  offset={35}
-                  content={
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px',
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                        }}
-                      >
-                        <img
-                          src={slippage}
-                          style={{
-                            width: '14px',
-                            height: '14px',
-                          }}
-                          alt="Slippage"
-                        />
-                        <span>{buyPresets[p]?.slippage || '0'}%</span>
-                      </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                        }}
-                      >
-                        <img
-                          src={gas}
-                          style={{
-                            width: '14px',
-                            height: '14px',
-                          }}
-                        />
-                        <span>{buyPresets[p]?.priority || '0'} </span>
-                      </div>
-                    </div>
-                  }
-                >
-                  <button
-                    className={`explorer-preset-pill ${activePresets.new === p ? 'active' : ''}`}
-                    onClick={() => setActivePreset('new', p)}
-                  >
-                    P{p}
-                  </button>
-                </Tooltip>
-              ))}
-            </div>
-          </div>
-          <Tooltip content="Alerts">
-            <button
-              className="alerts-popup-trigger"
-              onClick={() => setShowAlertsPopup(true)}
-            >
-              <Bell size={18} />
-            </button>
-          </Tooltip>
-          <Tooltip content="Blacklist dev, handle, keywords">
-            <button
-              className="alerts-popup-trigger"
-              onClick={() => setShowBlacklistPopup(true)}
-            >
-              <svg
-                className="blacklist-dev-icon"
-                width="18"
-                height="18"
-                viewBox="0 0 30 30"
-                fill="#7f808d"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
-              </svg>
-            </button>
-          </Tooltip>
-
-          <div className="wallet-dropdown-container" ref={walletDropdownRef}>
-            <button
-              type="button"
-              className="explorer-transparent-button"
-              onClick={handleWalletButtonClick}
-            >
-              <div className="connect-content">
-                <span className="transparent-button-container">
-                  <img src={walleticon} className="img-wallet-icon" />
-                  <span
-                    className={`wallet-count ${selectedSet.size ? 'has-active' : ''}`}
-                  >
-                    {selectedWallets.size == 0 || !activeWalletPrivateKey ? (
-                      <Tooltip content="Primary Wallet">
-                        {
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="#d8dcff"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            style={{ verticalAlign: 'middle' }}
-                          >
-                            <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-                            <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
-                            <path d="m20 9-3 9" />
-                            <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
-                            <path d="M7 18 4 9" />
-                            <circle cx="12" cy="4" r="2" />
-                            <circle cx="20" cy="7" r="2" />
-                            <circle cx="4" cy="7" r="2" />
-                          </svg>
-                        }
-                      </Tooltip>
-                    ) : (
-                      <span style={{ fontSize: '0.85rem', fontWeight: '300' }}>
-                        {selectedWallets.size}
-                      </span>
-                    )}
-                  </span>
-                  <span className="subwallet-total-balance">
-                    <img
-                      src={monadicon}
-                      className="wallet-dropdown-mon-icon"
-                      style={{
-                        width: '15px',
-                        height: '15px',
-                        marginRight: '4px',
-                      }}
-                    />
-                    {formatNumberWithCommas(totalSelectedBalance, 2)}
-                  </span>
-                  <svg
-                    className={`wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </span>
-              </div>
-            </button>
-            {account.connected && (
-              <div
-                className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}
-              >
-                {subWallets.length > 0 && activeWalletPrivateKey && (
-                  <div className="footer-wallet-dropdown-header">
-                    <div className="footer-wallet-dropdown-actions">
-                      <button
-                        className="wallet-action-btn"
-                        onClick={
-                          selectedWallets.size === subWallets.length
-                            ? unselectAllWallets
-                            : selectAllWallets
-                        }
-                        disabled={!activeWalletPrivateKey}
-                      >
-                        {selectedWallets.size === subWallets.length
-                          ? 'Unselect All'
-                          : 'Select All'}
-                      </button>
-                      <button
-                        className="wallet-action-btn"
-                        onClick={selectAllWithBalance}
-                        disabled={!activeWalletPrivateKey}
-                      >
-                        Select All with Balance
-                      </button>
-                    </div>
-                    <button
-                      className="wallet-dropdown-close"
-                      onClick={() => setIsWalletDropdownOpen(false)}
-                    >
-                      <img
-                        src={closebutton}
-                        className="wallet-dropdown-close-icon"
-                      />
-                    </button>
-                  </div>
-                )}
-                <div
-                  className="wallet-dropdown-list"
-                  style={{ position: 'relative' }}
-                >
-                  <div>
-                    {(!activeWalletPrivateKey ? [] : subWallets).map(
-                      (wallet: any, index: any) => {
-                        const balance = getWalletBalance(wallet.address);
-                        const isActive = isWalletActive(wallet.privateKey);
-                        const isSelected = selectedWallets.has(wallet.address);
-
-                        return (
-                          <div
-                            key={wallet.address}
-                            className={`quickbuy-wallet-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`}
-                            onClick={() =>
-                              toggleWalletSelection(wallet.address)
-                            }
-                          >
-                            <div className="quickbuy-wallet-checkbox-container">
-                              <input
-                                type="checkbox"
-                                className="quickbuy-wallet-checkbox selection"
-                                checked={isSelected}
-                                readOnly
-                              />
-                            </div>
-                            <div className="wallet-dropdown-info">
-                              <div className="wallet-dropdown-name">
-                                {getWalletName(wallet.address, index)}
-                                <Tooltip content="Primary Wallet">
-                                  {isActive && (
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      width="14"
-                                      height="14"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      style={{
-                                        marginLeft: '4px',
-                                        verticalAlign: 'middle',
-                                      }}
-                                    >
-                                      <path d="M4 20a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-                                      <path d="m12.474 5.943 1.567 5.34a1 1 0 0 0 1.75.328l2.616-3.402" />
-                                      <path d="m20 9-3 9" />
-                                      <path d="m5.594 8.209 2.615 3.403a1 1 0 0 0 1.75-.329l1.567-5.34" />
-                                      <path d="M7 18 4 9" />
-                                      <circle cx="12" cy="4" r="2" />
-                                      <circle cx="20" cy="7" r="2" />
-                                      <circle cx="4" cy="7" r="2" />
-                                    </svg>
-                                  )}
-                                </Tooltip>
-                              </div>
-                              <div
-                                className="wallet-dropdown-address"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  copyToClipboard(wallet.address);
-                                }}
-                                style={{ cursor: 'pointer' }}
-                              >
-                                {wallet.address.slice(0, 6)}...
-                                {wallet.address.slice(-4)}
-                                <svg
-                                  className="wallet-dropdown-address-copy-icon"
-                                  width="11"
-                                  height="11"
-                                  viewBox="0 0 24 24"
-                                  fill="currentColor"
-                                  style={{ marginLeft: '2px' }}
-                                >
-                                  <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
-                                </svg>
-                              </div>
-                            </div>
-                            <div className="wallet-dropdown-balance">
-                              {(() => {
-                                const gasReserve = BigInt(
-                                  settings.chainConfig[activechain].gasamount ??
-                                    0,
-                                );
-                                const balanceWei =
-                                  walletTokenBalances[wallet.address]?.[
-                                    settings.chainConfig[activechain]?.eth
-                                  ] || 0n;
-                                const hasInsufficientGas =
-                                  balanceWei > 0n && balanceWei <= gasReserve;
-
-                                return (
-                                  <Tooltip
-                                    content={
-                                      hasInsufficientGas
-                                        ? 'Not enough for gas, transactions will revert'
-                                        : 'MON Balance'
-                                    }
-                                  >
-                                    <div
-                                      className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''} ${hasInsufficientGas ? 'insufficient-gas' : ''}`}
-                                    >
-                                      <img
-                                        src={monadicon}
-                                        className="wallet-dropdown-mon-icon"
-                                        alt="MON"
-                                      />
-                                      {formatNumberWithCommas(balance, 2)}
-                                    </div>
-                                  </Tooltip>
-                                );
-                              })()}
-                            </div>
-                            <Tooltip content="Tokens">
-                              <div className="wallet-drag-tokens">
-                                <div className="wallet-token-count">
-                                  <div className="wallet-token-structure-icons">
-                                    <div className="token1"></div>
-                                    <div className="token2"></div>
-                                    <div className="token3"></div>
-                                  </div>
-                                  <span className="wallet-total-tokens">
-                                    {getWalletTokenCount(wallet.address)}
-                                  </span>
-                                </div>
-                              </div>
-                            </Tooltip>
-                          </div>
-                        );
-                      },
-                    )}
-                    {(subWallets.length < 10 || !activeWalletPrivateKey) && (
-                      <div
-                        className="quickbuy-add-wallet-button"
-                        onClick={async () => {
-                          let isSuccess = await createSubWallet(
-                            true,
-                            !activeWalletPrivateKey,
-                          );
-                          if (isSuccess) {
-                            setOneCTDepositAddress(isSuccess);
-                            setpopup(25);
-                          }
-                        }}
-                      >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <line x1="12" y1="5" x2="12" y2="19"></line>
-                          <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        <span>
-                          {!activeWalletPrivateKey
-                            ? 'Enable 1CT'
-                            : 'Add Wallet'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       <div className="explorer-container">
         <div className="predict-layout-with-stream">
             {/* Live Trade Stream Sidebar */}
             <div className="predict-trade-stream-sidebar">
               <div className="predict-trade-stream-header">
-                <h3>Live Trades</h3>
-                <div className="predict-trade-stream-count">{liveTrades.length}</div>
+                <div className="predict-trade-stream-title-row">
+                  <h3>Live Trades</h3>
+                  <div className="predict-trade-stream-filters">
+                    <div className="predict-trade-filter-group">
+                      <label
+                        className="predict-trade-filter-label"
+                        htmlFor="predict-trade-min-size"
+                      >
+                        Min $
+                      </label>
+                      <input
+                        id="predict-trade-min-size"
+                        className="predict-trade-filter-input"
+                        inputMode="decimal"
+                        placeholder="0"
+                        value={tradeMinSize}
+                        onChange={(e) =>
+                          setTradeMinSize(
+                            e.target.value.replace(/[^0-9.]/g, ''),
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="predict-trade-filter-group">
+                      <select
+                        className="predict-trade-filter-select"
+                        value={tradeSideFilter}
+                        onChange={(e) =>
+                          setTradeSideFilter(e.target.value as 'all' | 'buy' | 'sell')
+                        }
+                      >
+                        <option value="all">All</option>
+                        <option value="buy">Buy</option>
+                        <option value="sell">Sell</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="predict-trade-stream-list">
-                {liveTrades.length === 0 ? (
+                {filteredLiveTrades.length === 0 ? (
                   <div className="predict-trade-stream-empty">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2">
                       <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                     </svg>
-                    <p>Waiting for trades...</p>
+                    <p>{liveTrades.length === 0 ? 'Waiting for trades...' : 'No trades match filters.'}</p>
                   </div>
                 ) : (
-                  liveTrades.map((trade, idx) => {
+                  filteredLiveTrades.map((trade, idx) => {
                     const timestamp = trade?.timestamp ?? trade?.time ?? trade?.ts ?? trade?.createdAt ?? Date.now();
                     const timeAgo = formatTimeAgo(typeof timestamp === 'string' ? new Date(timestamp).getTime() : timestamp);
-                    const isBuy = trade?.side === 'BUY' || trade?.type === 'buy' || trade?.isBuy;
-                    const amount = trade?.amount || trade?.size || trade?.quantity || 0;
+                    const isBuy = isTradeBuy(trade);
+                    const amount = getTradeAmount(trade);
                     const price = trade?.price || 0;
                     const market = trade?.market || trade?.marketName || trade?.eventName || 'Unknown';
 
@@ -6794,35 +3591,23 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
               </div>
             </div>
 
-            <div className="trending-container predict-grid-container" ref={predictGridRef}>
+            <div className="trending-container predict-grid-container predict-trending-container">
             {/* Filter and Sort Bar */}
             <div className="predict-filter-bar">
               {/* Category Filters */}
               <div className="predict-category-filters">
-                {isPredictLoading ? (
-                  // Loading skeletons
-                  Array(6).fill(0).map((_, i) => (
-                    <div key={i} className="predict-category-skeleton skeleton" />
-                  ))
-                ) : (
-                    Object.keys(predictFilterOptions)
-                      .filter(
-                        (category) =>
-                          category !== 'Trending' && category !== '24hr Highest Volume',
-                      )
-                      .map((category) => {
-                      const label = category === 'All' ? 'Trending' : category;
-                      return (
-                        <button
-                          key={category}
-                          className={`predict-category-btn ${selectedCategory === category ? 'active' : ''}`}
-                          onClick={() => handleCategoryClick(category)}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })
-                )}
+                {categoryList.map((category) => {
+                  const label = category === 'All' ? 'Trending' : category;
+                  return (
+                    <button
+                      key={category}
+                      className={`predict-category-btn ${selectedCategory === category ? 'active' : ''}`}
+                      onClick={() => handleCategoryClick(category)}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Sort Dropdown */}
@@ -6863,74 +3648,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                 </button>
               </div>
             </div>
-
-            <div className="trending-header perps">
-              <div className="trending-header-cell perps pair-info-header" onClick={() => handlePerpsSort('market')}>
-                Event
-                <SortArrow
-                  sortDirection={perpsSortField === 'market' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
-                  onClick={(e) => {
-                      e.stopPropagation();
-                      handlePerpsSort('market');
-                  }}
-                />
-              </div>
-              <div className="trending-header-cell perps" onClick={() => handlePerpsSort('change')}>
-                Probability
-                <SortArrow
-                  sortDirection={perpsSortField === 'change' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
-                  onClick={(e) => {
-                      e.stopPropagation();
-                      handlePerpsSort('change');
-                  }}
-                />
-              </div>
-              <div className="trending-header-cell perps" onClick={() => handlePerpsSort('volume')}>
-                Volume 24h
-                <SortArrow
-                  sortDirection={perpsSortField === 'volume' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
-                  onClick={(e) => {
-                      e.stopPropagation();
-                      handlePerpsSort('volume');
-                  }}
-                />
-              </div>
-              <div className="trending-header-cell perps" onClick={() => handlePerpsSort('openInterest')}>
-                Liquidity
-                <SortArrow
-                  sortDirection={perpsSortField === 'openInterest' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
-                  onClick={(e) => {
-                      e.stopPropagation();
-                      handlePerpsSort('openInterest');
-                  }}
-                />
-              </div>
-              <div className="trending-header-cell perps" onClick={() => handlePerpsSort('trades')}>
-                Traders
-                <SortArrow
-                  sortDirection={perpsSortField === 'trades' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
-                  onClick={(e) => {
-                      e.stopPropagation();
-                      handlePerpsSort('trades');
-                  }}
-                />
-              </div>
-              <div className="trending-header-cell perps" onClick={() => handlePerpsSort('endDate')}>
-                Ends
-                <SortArrow
-                  sortDirection={perpsSortField === 'endDate' ? perpsSortDirection === 'asc' ? 'desc' : 'asc' : undefined}
-                  onClick={(e) => {
-                      e.stopPropagation();
-                      handlePerpsSort('endDate');
-                  }}
-                />
-              </div>
-              <div className="trending-header-cell perps action-cell">Trade</div>
-            </div>
-
-            <div className="trending-list">
-              {isPredictLoading ? (
-                Array.from({ length: 12 }).map((_, index) => (
+            <div className="trending-list" ref={trendingListRef}>
+              {showPredictLoading ? (
+                Array.from({ length: itemsPerPage }).map((_, index) => (
                   <div
                     key={`skeleton-trending-${index}`}
                     className="trending-row perps loading"
@@ -6970,6 +3690,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                     : endLabel
                       ? `Ends ${endLabel}`
                       : 'Active market';
+                  const resolution = !isResolved
+                    ? getResolutionDate(token.endDate, token.outcomes)
+                    : null;
                   const sortedOutcomes = isMultiOutcome
                     ? outcomes
                         .map((outcome: string, index: number) => ({
@@ -6987,60 +3710,139 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         key={token.contractId}
                         className={`trending-row perps multi-outcome ${hidden.has(token.contractId) ? 'hidden-token' : ''} ${token.isBlacklisted ? 'blacklisted-token' : ''} ${isResolved ? 'predict-market-resolved' : ''}`}
                         onClick={() => handleTokenClick(token)}
-                        onMouseEnter={() => handleMarketHover(token.contractId, token.markets?.[0]?.tokenID)}
-                        onMouseLeave={handleMarketLeave}
+                        onMouseEnter={() => {
+                          handleMarketHover(token.contractId, token.tokenID);
+                          handleMultiOutcomeEnter(token.contractId);
+                        }}
+                        onMouseLeave={() => {
+                          handleMarketLeave();
+                          handleMultiOutcomeLeave();
+                        }}
                       >
                         {/* Event Header */}
-                        <div className="predict-multi-header">
-                          <div className="predict-multi-image-container">
-                            {token.iconURL && (token.iconURL.startsWith('https://static') || token.iconURL.startsWith('https://polymarket') || token.iconURL.startsWith('http')) ? (
-                              <img
-                                src={token.iconURL}
-                                className="predict-multi-image"
-                                alt={token.baseAsset}
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                }}
-                              />
-                            ) : (
-                              <div className="predict-multi-image-placeholder">
-                                {token.baseAsset.slice(0, 2).toUpperCase()}
+                        <div className="trending-cell pair-info-cell">
+                          <div
+                            className={`perps-trending-token-image-container ${token.status === 'graduated' ? 'graduated' : ''} ${!displaySettings.squareImages ? 'circle-mode' : ''} ${!displaySettings.progressBar ? 'no-progress-ring' : ''} ${token.source === 'nadfun' ? 'nadfun-token' : ''}`}
+                            style={
+                              token.status === 'graduated' ||
+                              !displaySettings.progressBar
+                                ? { position: 'relative' }
+                                : ({
+                                    position: 'relative',
+                                    '--progress-angle': `${((token.bondingPercentage * 100) / 100) * 360}deg`,
+                                  } as React.CSSProperties & {
+                                    '--progress-angle': string;
+                                  })
+                            }
+                          >
+                            <div
+                              className={`perps-trending-progress-spacer ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+                            >
+                              <div
+                                className={`trending-image-wrapper ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+                              >
+                                {token.iconURL && (token.iconURL.startsWith('https://static') || token.iconURL.startsWith('https://polymarket') || token.iconURL.startsWith('http')) ? (
+                                  <img
+                                    src={token.iconURL}
+                                    className={`perps-trending-token-image ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+                                    alt={token.baseAsset}
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      if (target.nextElementSibling) {
+                                        (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                                      }
+                                    }}
+                                  />
+                                ) : null}
+                                <div
+                                  className={`trending-token-letter ${!displaySettings.squareImages ? 'circle-mode' : ''}`}
+                                  style={{ display: (token.iconURL && (token.iconURL.startsWith('https://static') || token.iconURL.startsWith('https://polymarket') || token.iconURL.startsWith('http'))) ? 'none' : 'flex' }}
+                                >
+                                  {token.baseAsset.slice(0, 2).toUpperCase()}
+                                </div>
                               </div>
-                            )}
+                            </div>
+                            {/* Removed Polymarket badge - it's the default */}
+                            <div className="perps-token-explorer-launchpad-logo-container" style={{ display: 'none' }}>
+                              {token.iconURL.startsWith(
+                                  'https://static',
+                                ) ? (
+                                <Tooltip content="edgeX">
+                                  <svg
+                                    width="10"
+                                    height="10"
+                                    viewBox="0 0 32 32"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="perps-token-explorer-launchpad-logo"
+                                  >
+                                    <defs>
+                                      <linearGradient
+                                        id="nadfun"
+                                        x1="0%"
+                                        y1="0%"
+                                        x2="100%"
+                                        y2="0%"
+                                      >
+                                        <stop
+                                          offset="0%"
+                                          stopColor="#7C55FF"
+                                          stopOpacity="1"
+                                        />
+                                        <stop
+                                          offset="100%"
+                                          stopColor="#AD5FFB"
+                                          stopOpacity="1"
+                                        />
+                                      </linearGradient>
+                                    </defs>
+                                    <path
+                                      fill="url(#nadfun)"
+                                      d="m29.202 10.664-4.655-3.206-3.206-4.653A6.48 6.48 0 0 0 16.004 0a6.48 6.48 0 0 0-5.337 2.805L7.46 7.458l-4.654 3.206a6.474 6.474 0 0 0 0 10.672l4.654 3.206 3.207 4.653A6.48 6.48 0 0 0 16.004 32a6.5 6.5 0 0 0 5.337-2.805l3.177-4.616 4.684-3.236A6.49 6.49 0 0 0 32 16.007a6.47 6.47 0 0 0-2.806-5.335zm-6.377 5.47c-.467 1.009-1.655.838-2.605 1.06-2.264.528-2.502 6.813-3.05 8.35-.424 1.484-1.916 1.269-2.272 0-.631-1.53-.794-6.961-2.212-7.993-.743-.542-2.502-.267-3.177-.95-.668-.675-.698-1.729-.023-2.412l5.3-5.298a1.734 1.734 0 0 1 2.45 0l5.3 5.298c.505.505.586 1.306.297 1.937z"
+                                    />
+                                  </svg>
+                                </Tooltip>
+                              ) : (
+                                <Tooltip content="crystal.fun">
+                                  <img
+                                    src={crystal}
+                                    className="token-explorer-launchpad-logo crystal"
+                                  />
+                                </Tooltip>
+                              )}
+                            </div>
                           </div>
-                          <div className="predict-multi-title-container">
-                            <div className="trending-token-name-row">
+
+                          <div className="perps-trending-token-info">
+                            <div
+                              className="trending-token-name-row"
+                            >
                               <div className="predict-multi-title">
                                 {token.eventTitle || token.baseAsset}
                               </div>
-                              <span
-                                className={`predict-status-pill ${isResolved ? 'resolved' : 'live'}`}
-                                title={statusTitle}
-                              >
-                                {statusLabel}
-                              </span>
                             </div>
                             <div
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '6px',
+                                gap: '4px',
                                 marginTop: '-4px'
                               }}
                             >
-                              <span
-                                className="trending-time-created"
-                                style={{
-                                  color:
-                                    Math.floor(Date.now() / 1000) - (token.fundingTime / 1000) >
-                                    21600
-                                      ? '#f77f7d'
-                                      : 'rgb(67, 254, 154)',
-                                }}
-                              >
-                                {formatTimeAgo(token.fundingTime / 1000)}
-                              </span>
+                              {resolution && (
+                                <span
+                                  className="trending-time-created"
+                                  style={{
+                                    color:
+                                      resolution.isSoon
+                                        ? '#f77f7d'
+                                        : 'rgb(67, 254, 154)',
+                                  }}
+                                >
+                                  {resolution.label}
+                                </span>
+                              )}
                               <div className="token-socials-row">
                                 {token.twitterHandle && (
                                   <Tooltip content="Twitter">
@@ -7172,7 +3974,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         </div>
 
                         {/* Outcomes List */}
-                        <div className="predict-multi-outcomes">
+                        <div
+                          className={`predict-multi-outcomes ${activeMultiScrollCard === token.contractId ? 'scroll-enabled' : ''}`}
+                        >
                           {sortedOutcomes.map((entry: { outcome: string; probability: number; index: number }, rank: number) => {
                             const probability = entry.probability;
                             const outcome = entry.outcome;
@@ -7254,17 +4058,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         {/* Volume Footer */}
                         <div className="predict-multi-footer">
                           <div className="predict-metric metric-volume">
-                            <svg
-                              className="predict-metric-icon"
-                              width="12"
-                              height="12"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path d="M4 20V10M10 20V4M16 20v-8M22 20v-12" />
-                            </svg>
+                            <BarChart3 className="predict-metric-icon" size={14} />
                             <span className="predict-metric-value">
                               ${formatCompactNumber(Number(token.value || 0))}
                             </span>
@@ -7281,7 +4075,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                               strokeLinecap="round"
                               strokeLinejoin="round"
                             >
-                              <path d="M12 2.5s4.5 5.2 4.5 8.1a4.5 4.5 0 1 1-9 0c0-2.9 4.5-8.1 4.5-8.1z" />
+                              <path d="M14 2C14 2 8 9 8 13a6 6 0 0 0 12 0c0-4-6-11-6-11z" />
                             </svg>
                             <span className="predict-metric-value">
                               ${formatCompactNumber(Number(token.liquidity || 0))}
@@ -7458,12 +4252,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                           <div className="predict-multi-title">
                             {token.eventTitle || token.baseAsset}
                           </div>
-                          <span
-                            className={`predict-status-pill ${isResolved ? 'resolved' : 'live'}`}
-                            title={statusTitle}
-                          >
-                            {statusLabel}
-                          </span>
                         </div>
                         <div
                           style={{
@@ -7473,18 +4261,19 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                             marginTop: '-4px'
                           }}
                         >
-                          <span
-                            className="trending-time-created"
-                            style={{
-                              color:
-                                Math.floor(Date.now() / 1000) - (token.fundingTime / 1000) >
-                                21600
-                                  ? '#f77f7d'
-                                  : 'rgb(67, 254, 154)',
-                            }}
-                          >
-                            {formatTimeAgo(token.fundingTime / 1000)}
-                          </span>
+                          {resolution && (
+                            <span
+                              className="trending-time-created"
+                              style={{
+                                color:
+                                  resolution.isSoon
+                                    ? '#f77f7d'
+                                    : 'rgb(67, 254, 154)',
+                              }}
+                            >
+                              {resolution.label}
+                            </span>
+                          )}
                           <div className="token-socials-row">
                             {token.twitterHandle && (
                               <Tooltip content="Twitter">
@@ -7615,7 +4404,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                       </div>
                     </div>
 
-                    {/* Probability */}
                     <div className="perps-trending-cell">
                       <div className="predict-probability">
                         <div className="predict-probability-main">
@@ -7626,44 +4414,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         >
                           {token.priceChangePercent >= 0 ? '+' : ''}
                           {(token.priceChangePercent * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Volume Footer */}
-                    <div className="predict-multi-footer">
-                      <div className="predict-metric metric-volume">
-                        <svg
-                          className="predict-metric-icon"
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M4 20V10M10 20V4M16 20v-8M22 20v-12" />
-                        </svg>
-                        <span className="predict-metric-value">
-                          ${formatCompactNumber(Number(token.value || 0))}
-                        </span>
-                      </div>
-                      <div className="predict-metric metric-liquidity">
-                        <svg
-                          className="predict-metric-icon"
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M12 2.5s4.5 5.2 4.5 8.1a4.5 4.5 0 1 1-9 0c0-2.9 4.5-8.1 4.5-8.1z" />
-                        </svg>
-                        <span className="predict-metric-value">
-                          ${formatCompactNumber(Number(token.liquidity || 0))}
                         </span>
                       </div>
                     </div>
@@ -7711,6 +4461,33 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         );
                       })()}
                     </div>
+
+                    <div className="predict-multi-footer">
+                      <div className="predict-metric metric-volume">
+                        <BarChart3 className="predict-metric-icon" size={14} />
+                        <span className="predict-metric-value">
+                          ${formatCompactNumber(Number(token.value || 0))}
+                        </span>
+                      </div>
+                      <div className="predict-metric metric-liquidity">
+                        <svg
+                          className="predict-metric-icon"
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M14 2C14 2 8 9 8 13a6 6 0 0 0 12 0c0-4-6-11-6-11z" />
+                        </svg>
+                        <span className="predict-metric-value">
+                          ${formatCompactNumber(Number(token.liquidity || 0))}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 );
                 })
@@ -7720,46 +4497,52 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                   No trending tokens found
                 </div>
               )}
-            </div>
-            <div ref={volumeSentinelRef} className="predict-volume-sentinel" aria-hidden="true" />
-
-            {/* Pagination Controls */}
-            {showPagination && (
-              <div className="predict-pagination">
-                <button
-                  className="predict-pagination-btn"
-                  onClick={() => {
-                    setPerpsCurrentPage(prev => Math.max(1, prev - 1));
-                    document.querySelector('.predict-grid-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }}
-                  disabled={perpsCurrentPage === 1}
-                >
-                  Previous
-                </button>
-                <span className="predict-pagination-info">
-                  Page {perpsCurrentPage} of {hasMoreVolumePages ? `${totalPages}+` : totalPages} ({trendingTokens.length} markets)
-                </span>
-                <button
-                  className="predict-pagination-btn"
-                  onClick={() => {
-                    const canAdvanceBeyond = selectedCategory === 'All' && hasMoreVolumeMarketsRef.current;
-                    if (canAdvanceBeyond) {
-                      fetchVolumePageRef.current?.();
+              {showPagination && (
+                <div className="predict-pagination predict-pagination-in-grid">
+                  <button
+                    className="predict-pagination-btn"
+                    onClick={() => {
+                      setPerpsCurrentPage((prev) => Math.max(1, prev - 1));
+                      scrollTrendingListToTop();
+                    }}
+                    disabled={perpsCurrentPage === 1}
+                  >
+                    Previous
+                  </button>
+                  <span className="predict-pagination-info">
+                    Page {perpsCurrentPage} of{' '}
+                    {hasMoreVolumePages ? `${totalPages}+` : totalPages} (
+                    {trendingTokens.length} markets)
+                  </span>
+                  <button
+                    className="predict-pagination-btn"
+                    onClick={() => {
+                      const canAdvanceBeyond =
+                        selectedCategory === 'All' &&
+                        hasMoreVolumeMarketsRef.current;
+                      if (canAdvanceBeyond) {
+                        fetchVolumePageRef.current?.();
+                      }
+                      setPerpsCurrentPage((prev) =>
+                        canAdvanceBeyond
+                          ? prev + 1
+                          : Math.min(totalPages, prev + 1),
+                      );
+                      scrollTrendingListToTop();
+                    }}
+                    disabled={
+                      perpsCurrentPage === totalPages &&
+                      !(
+                        selectedCategory === 'All' &&
+                        hasMoreVolumeMarketsRef.current
+                      )
                     }
-                    setPerpsCurrentPage(prev =>
-                      canAdvanceBeyond ? prev + 1 : Math.min(totalPages, prev + 1),
-                    );
-                    document.querySelector('.predict-grid-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }}
-                  disabled={
-                    perpsCurrentPage === totalPages &&
-                    !(selectedCategory === 'All' && hasMoreVolumeMarketsRef.current)
-                  }
-                >
-                  Next
-                </button>
-              </div>
-            )}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
