@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { useParams } from 'react-router-dom';
 import { createChart, ColorType, IChartApi, ISeriesApi } from 'lightweight-charts';
 import { formatCommas } from '../../utils/numberDisplayFormat';
+import OrderBook from '../Orderbook/Orderbook';
 import './Predict.css';
 
 // Color palette for outcome lines
@@ -15,6 +16,8 @@ const OUTCOME_COLORS = [
   '#06B6D4', // cyan
   '#84CC16', // lime
 ];
+const DEFAULT_TICK_SIZE = 0.01;
+const SERIES_REFRESH_MS = 5 * 60 * 1000;
 
 interface PredictProps {
   layoutSettings?: string;
@@ -28,10 +31,10 @@ interface PredictProps {
   setViewMode?: any;
   activeTab?: 'orderbook' | 'trades';
   setActiveTab?: any;
-  perpsActiveMarketKey: string;
-  setperpsActiveMarketKey: (key: string) => void;
-  perpsMarketsData: Record<string, any>;
-  setPerpsMarketsData: (data: any) => void;
+  predictActiveMarketKey: string;
+  setPredictActiveMarketKey: (key: string) => void;
+  predictMarketsData: Record<string, any>;
+  setPredictMarketsData: (data: any) => void;
   address?: string;
   router?: any;
   orderCenterHeight?: number;
@@ -58,8 +61,8 @@ interface PredictProps {
   handleSetChain?: any;
   selectedInterval?: string;
   setSelectedInterval?: any;
-  perpsFilterOptions?: any;
-  setPerpsFilterOptions?: any;
+  predictFilterOptions?: any;
+  setPredictFilterOptions?: any;
   signMessageAsync?: any;
   leverage?: string;
   setLeverage?: (value: string) => void;
@@ -87,18 +90,25 @@ interface OutcomeData {
 type IntervalType = '1H' | '24H' | '7D' | '30D' | 'ALL';
 
 const Predict: React.FC<PredictProps> = ({
+  layoutSettings,
+  orderbookPosition,
+  viewMode,
+  setViewMode,
+  activeTab,
+  setActiveTab,
   windowWidth,
   mobileView,
-  perpsActiveMarketKey,
-  setperpsActiveMarketKey,
-  perpsMarketsData,
-  setPerpsMarketsData,
+  predictActiveMarketKey,
+  setPredictActiveMarketKey,
+  predictMarketsData,
+  setPredictMarketsData,
   address,
   setpopup,
 }) => {
   const { marketSlug } = useParams<{ marketSlug?: string }>();
   const activeRequestRef = useRef<AbortController | null>(null);
   const selectedOutcomeRef = useRef<string | null>(null);
+  const seriesCacheRef = useRef<{ conditionId: string; fetchedAt: number; history: any[] } | null>(null);
 
   // Chart state
   const [selectedInterval, setSelectedInterval] = useState<IntervalType>('ALL');
@@ -122,6 +132,13 @@ const Predict: React.FC<PredictProps> = ({
     direction: 'desc'
   });
   const [activityTab, setActivityTab] = useState<'all' | 'openOrders'>('all');
+  const [obInterval, setOBInterval] = useState<number>(DEFAULT_TICK_SIZE);
+  const [amountsQuote, setAmountsQuote] = useState<string>(() => {
+    const stored = localStorage.getItem('predict_ob_amounts_quote');
+    return stored === 'Quote' || stored === 'Base' ? stored : 'Quote';
+  });
+  const [localViewMode, setLocalViewMode] = useState<'both' | 'buy' | 'sell'>('both');
+  const [localActiveTab, setLocalActiveTab] = useState<'orderbook' | 'trades'>('orderbook');
 
   // Chart refs
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -129,7 +146,12 @@ const Predict: React.FC<PredictProps> = ({
   const seriesRefs = useRef<Map<string, ISeriesApi<'Line'>>>(new Map());
 
   // Get current market data
-  const activeMarket = perpsMarketsData[perpsActiveMarketKey] || {};
+  const activeMarket = predictMarketsData[predictActiveMarketKey] || {};
+  const effectiveViewMode = viewMode ?? localViewMode;
+  const handleViewMode = setViewMode ?? setLocalViewMode;
+  const effectiveActiveTab = activeTab ?? localActiveTab;
+  const handleActiveTab = setActiveTab ?? setLocalActiveTab;
+  const effectiveOrderbookPosition = orderbookPosition ?? 'right';
 
   useEffect(() => {
     selectedOutcomeRef.current = selectedOutcome;
@@ -152,7 +174,7 @@ const Predict: React.FC<PredictProps> = ({
         }
       };
 
-      const parseClobTokenIds = (value: any) => {
+      const parseClobTokenIds = (value: any): string[] => {
         if (Array.isArray(value)) {
           return value.filter(Boolean).map((item) => String(item));
         }
@@ -169,7 +191,7 @@ const Predict: React.FC<PredictProps> = ({
         return [];
       };
 
-      const getTokenIdsForMarket = (marketData: any) => {
+      const getTokenIdsForMarket = (marketData: any): string[] => {
         const clobTokenIds = parseClobTokenIds(marketData?.clobTokenIds);
         if (clobTokenIds.length) return clobTokenIds;
         const tokens = Array.isArray(marketData?.tokens)
@@ -214,19 +236,49 @@ const Predict: React.FC<PredictProps> = ({
         return Number.isFinite(parsed) ? parsed : fallback;
       };
 
-      const fetchMarketData = async () => {
+      const fetchEvent = async (signal: AbortSignal, includeChat: boolean) => {
+        const includeChatParam = includeChat ? '&include_chat=true' : '';
+        const slugParam = `slug=${encodeURIComponent(marketSlug)}${includeChatParam}`;
+        try {
+          const activeData = await fetchPolymarketJson(
+            `/predictapi/events?active=true&closed=false&${slugParam}`,
+            signal,
+          );
+          if (Array.isArray(activeData) && activeData.length > 0) {
+            return activeData;
+          }
+        } catch {
+          // Fall through to non-filtered lookup.
+        }
+        return fetchPolymarketJson(`/predictapi/events?${slugParam}`, signal);
+      };
+
+      const fetchSeriesHistory = async (conditionId: string, signal: AbortSignal) => {
+        const cached = seriesCacheRef.current;
+        const now = Date.now();
+        if (cached && cached.conditionId === conditionId && now - cached.fetchedAt < SERIES_REFRESH_MS) {
+          return cached.history;
+        }
+        const seriesResponse = await fetch(`/clob/series?id=${conditionId}`, { signal }).catch(() => null);
+        const seriesData = seriesResponse ? await seriesResponse.json().catch(() => null) : null;
+        if (seriesData?.history) {
+          seriesCacheRef.current = {
+            conditionId,
+            fetchedAt: now,
+            history: seriesData.history,
+          };
+          return seriesData.history;
+        }
+        return null;
+      };
+
+      const fetchMarketData = async (options: { includeChat: boolean; includeSeries: boolean }) => {
         activeRequestRef.current?.abort();
         const controller = new AbortController();
         activeRequestRef.current = controller;
 
         try {
-          const data = await fetchPolymarketJson(
-            `/predictapi/events?active=true&closed=false&slug=${encodeURIComponent(marketSlug)}`,
-            controller.signal,
-          ).catch(() => fetchPolymarketJson(
-            `/predictapi/events?slug=${encodeURIComponent(marketSlug)}`,
-            controller.signal,
-          ));
+          const data = await fetchEvent(controller.signal, options.includeChat);
 
           if (data && data.length > 0) {
             const event = data[0];
@@ -238,29 +290,23 @@ const Predict: React.FC<PredictProps> = ({
               const tokenID = market.tokenID || market.tokens?.[0]?.token_id;
               const isMultiOutcome = markets.length > 1;
 
-              setperpsActiveMarketKey(conditionId);
+              setPredictActiveMarketKey(conditionId);
 
               const outcomePrices = typeof market.outcomePrices === 'string'
                 ? JSON.parse(market.outcomePrices)
                 : market.outcomePrices || [];
 
-              // Fetch series data for chart
-              const seriesResponse = await fetch(`/clob/series?id=${conditionId}`, { signal: controller.signal }).catch(() => null);
-              const seriesData = seriesResponse ? await seriesResponse.json().catch(() => null) : null;
-
-              // Build chart data from series
-              if (seriesData?.history) {
-                const chartPoints: Record<string, { time: number; value: number }[]> = {};
-
-                // For multi-outcome markets, we'd need separate series per outcome
-                // For now, use the primary outcome
-                const primaryPoints = seriesData.history.map((point: any) => ({
-                  time: point.t,
-                  value: parseFloat(point.p) * 100, // Convert to percentage
-                }));
-
-                chartPoints['Primary'] = primaryPoints;
-                setChartData(chartPoints);
+              if (options.includeSeries) {
+                const seriesHistory = await fetchSeriesHistory(conditionId, controller.signal);
+                if (seriesHistory) {
+                  const chartPoints: Record<string, { time: number; value: number }[]> = {};
+                  const primaryPoints = seriesHistory.map((point: any) => ({
+                    time: point.t,
+                    value: parseFloat(point.p) * 100,
+                  }));
+                  chartPoints['Primary'] = primaryPoints;
+                  setChartData(chartPoints);
+                }
               }
 
               const baseOutcomePrices = isMultiOutcome
@@ -272,21 +318,31 @@ const Predict: React.FC<PredictProps> = ({
                   })
                 : outcomePrices.map((p: any) => parseFloat(p || 0));
 
-              const orderbookTokenIds = isMultiOutcome
-                ? markets.map((m: any) => getTokenIdsForMarket(m)[0] || '')
-                : getTokenIdsForMarket(market);
-              const orderbookFetchTokenIds = orderbookTokenIds.filter(Boolean);
+              const orderbookTokenIdGroups: string[][] = isMultiOutcome
+                ? markets.map((m: any) => getTokenIdsForMarket(m))
+                : [getTokenIdsForMarket(market)];
+              const orderbookFetchTokenIds = Array.from(
+                new Set(orderbookTokenIdGroups.flat().filter(Boolean)),
+              );
 
               const orderbooksByTokenId = await fetchOrderbooks(orderbookFetchTokenIds, controller.signal);
-              const derivedOutcomePrices = orderbookTokenIds.length
+              const priceLookupTokenIds: string[] = isMultiOutcome
+                ? orderbookTokenIdGroups.map((ids: string[]) => ids[0] || '')
+                : orderbookTokenIdGroups[0] ?? [];
+              const derivedOutcomePrices = priceLookupTokenIds.length
                 ? baseOutcomePrices.map((price: number, index: number) => {
-                    const tokenId = orderbookTokenIds[index];
+                    const tokenId = priceLookupTokenIds[index];
                     const book = tokenId ? orderbooksByTokenId[tokenId] : null;
                     return book ? getOrderbookPrice(book, price) : price;
                   })
                 : baseOutcomePrices;
 
-              // Build market data
+              const chatChannels = Array.isArray(event.series)
+                ? event.series.flatMap((series: any) => series?.chats || [])
+                : [];
+              const openInterestValue = Number(event.openInterest ?? market.openInterest ?? 0);
+              const holdersValue = market.holders ?? event.holders;
+
               const marketData = {
                 contractId: conditionId,
                 baseAsset: event.title || market.question,
@@ -294,6 +350,10 @@ const Predict: React.FC<PredictProps> = ({
                 lastPrice: derivedOutcomePrices[0] || 0,
                 value: market.volume || market.volume24hr || 0,
                 liquidity: market.liquidity || 0,
+                openInterest: Number.isFinite(openInterestValue) ? openInterestValue : 0,
+                holders: holdersValue,
+                commentCount: Number(event.commentCount ?? 0),
+                chats: chatChannels,
                 outcomes: isMultiOutcome
                   ? markets.map((m: any) => m.groupItemTitle || m.question)
                   : (typeof market.outcomes === 'string' ? JSON.parse(market.outcomes) : market.outcomes) || ['Yes', 'No'],
@@ -309,6 +369,7 @@ const Predict: React.FC<PredictProps> = ({
                 closed: market.closed ?? event.closed ?? false,
                 tokenID: tokenID,
                 orderbooks: orderbooksByTokenId,
+                orderbookTokenIds: orderbookTokenIdGroups,
                 markets: markets,
                 volume24hr: market.volume24hr || 0,
                 volumeNum: market.volumeNum || 0,
@@ -317,12 +378,11 @@ const Predict: React.FC<PredictProps> = ({
                 source: 'polymarket',
               };
 
-              setPerpsMarketsData((prev: any) => ({
+              setPredictMarketsData((prev: any) => ({
                 ...prev,
                 [conditionId]: marketData,
               }));
 
-              // Auto-select first outcome
               if (marketData.outcomes?.length > 0 && !selectedOutcomeRef.current) {
                 setSelectedOutcome(marketData.outcomes[0]);
               }
@@ -335,17 +395,18 @@ const Predict: React.FC<PredictProps> = ({
         }
       };
 
-      fetchMarketData();
+      fetchMarketData({ includeChat: true, includeSeries: true });
 
-      // Refresh the currently viewed market on an interval.
-      const refreshId = window.setInterval(fetchMarketData, 60_000);
+      const refreshId = window.setInterval(() => {
+        fetchMarketData({ includeChat: false, includeSeries: true });
+      }, 60_000);
       return () => {
         window.clearInterval(refreshId);
         activeRequestRef.current?.abort();
       };
     }
     return undefined;
-  }, [marketSlug, setperpsActiveMarketKey, setPerpsMarketsData]);
+  }, [marketSlug, setPredictActiveMarketKey, setPredictMarketsData]);
 
   // Process outcomes data
   const outcomes: OutcomeData[] = useMemo(() => {
@@ -396,6 +457,111 @@ const Predict: React.FC<PredictProps> = ({
   const selectedOutcomeData = useMemo(() => {
     return outcomes.find(o => o.name === selectedOutcome);
   }, [outcomes, selectedOutcome]);
+
+  useEffect(() => {
+    localStorage.setItem('predict_ob_amounts_quote', amountsQuote);
+  }, [amountsQuote]);
+
+  const baseInterval = useMemo(() => {
+    const market = activeMarket?.markets?.[0];
+    const tickSizeRaw = market?.minimum_tick_size ?? market?.tickSize ?? market?.minTickSize;
+    const tickSize = Number(tickSizeRaw ?? DEFAULT_TICK_SIZE);
+    return Number.isFinite(tickSize) && tickSize > 0 ? tickSize : DEFAULT_TICK_SIZE;
+  }, [activeMarket?.markets, activeMarket?.contractId]);
+
+  useEffect(() => {
+    setOBInterval(baseInterval);
+  }, [baseInterval]);
+
+  const orderbookInfo = useMemo(() => {
+    const tokenGroups = activeMarket?.orderbookTokenIds;
+    const outcomesList = Array.isArray(activeMarket?.outcomes) ? activeMarket.outcomes : [];
+    const outcomeIndex = outcomesList.indexOf(selectedOutcome ?? '');
+    const safeOutcomeIndex = outcomeIndex >= 0 ? outcomeIndex : 0;
+    const isMultiOutcome = Array.isArray(activeMarket?.markets) && activeMarket.markets.length > 1;
+    if (!Array.isArray(tokenGroups) || tokenGroups.length === 0) {
+      return { book: null, tokenId: null };
+    }
+
+    const tokenSet = isMultiOutcome ? tokenGroups[safeOutcomeIndex] : tokenGroups[0];
+    const yesTokenId = tokenSet?.[0];
+    const noTokenId = tokenSet?.[1];
+    const tokenId = isMultiOutcome
+      ? (selectedSide === 'No' ? noTokenId : yesTokenId)
+      : (outcomeIndex === 1 ? noTokenId : yesTokenId) ?? (selectedSide === 'No' ? noTokenId : yesTokenId);
+
+    const book = tokenId ? activeMarket?.orderbooks?.[tokenId] : null;
+    return { book, tokenId };
+  }, [
+    activeMarket?.orderbookTokenIds,
+    activeMarket?.orderbooks,
+    activeMarket?.markets,
+    activeMarket?.outcomes,
+    selectedOutcome,
+    selectedSide,
+  ]);
+
+  const orderbookData = useMemo(() => {
+    const book = orderbookInfo.book;
+    const normalizeOrders = (orders: any[]) =>
+      orders
+        .map((order) => {
+          const price = Number(order?.price ?? order?.[0]);
+          const size = Number(order?.size ?? order?.[1]);
+          if (!Number.isFinite(price) || !Number.isFinite(size)) return null;
+          return { price, size };
+        })
+        .filter(Boolean) as Array<{ price: number; size: number }>;
+
+    const bids = Array.isArray(book?.bids) ? normalizeOrders(book.bids) : [];
+    const asks = Array.isArray(book?.asks) ? normalizeOrders(book.asks) : [];
+
+    let runningBid = 0;
+    const processedBids = bids.map((order) => {
+      const sizeVal = amountsQuote === 'Quote' ? order.size * order.price : order.size;
+      runningBid += sizeVal;
+      return { ...order, size: sizeVal, totalSize: runningBid, shouldFlash: false, userPrice: false };
+    });
+
+    let runningAsk = 0;
+    const processedAsks = asks.map((order) => {
+      const sizeVal = amountsQuote === 'Quote' ? order.size * order.price : order.size;
+      runningAsk += sizeVal;
+      return { ...order, size: sizeVal, totalSize: runningAsk, shouldFlash: false, userPrice: false };
+    });
+
+    const highestBid = processedBids[0]?.price;
+    const lowestAsk = processedAsks[0]?.price;
+    const avgPrice =
+      highestBid !== undefined && lowestAsk !== undefined
+        ? (highestBid + lowestAsk) / 2
+        : null;
+    const decimals = Math.max(0, Math.floor(Math.log10(1 / baseInterval)));
+    const spreadData = {
+      spread:
+        highestBid !== undefined && lowestAsk !== undefined && avgPrice
+          ? `${(((lowestAsk - highestBid) / avgPrice) * 100).toFixed(2)}%`
+          : '',
+      averagePrice:
+        highestBid !== undefined && lowestAsk !== undefined && avgPrice
+          ? formatCommas(avgPrice.toFixed(decimals))
+          : '',
+    };
+
+    return {
+      roundedBuyOrders: processedBids,
+      roundedSellOrders: processedAsks,
+      spreadData,
+    };
+  }, [orderbookInfo.book, amountsQuote, baseInterval]);
+
+  const orderbookIsLoading = Boolean(orderbookInfo.tokenId && !orderbookInfo.book);
+  const orderbookSymbol = selectedOutcome || 'Shares';
+  const handleOrderbookLimit = useCallback((price: number) => {
+    if (!Number.isFinite(price)) return;
+    setOrderType('Limit');
+    setLimitPrice(Math.round(price * 100));
+  }, []);
 
   // Calculate potential win
   const toWin = useMemo(() => {
@@ -569,6 +735,11 @@ const Predict: React.FC<PredictProps> = ({
     ? `${isResolved ? 'Resolved' : 'Ends'} ${formatDate(endDate)}`
     : statusLabel;
   const isTradingDisabled = isResolved;
+  const commentsCount = Number(activeMarket?.commentCount ?? NaN);
+  const holdersCount = Number(activeMarket?.holders ?? NaN);
+  const commentsAvailable = Number.isFinite(commentsCount);
+  const holdersAvailable = Number.isFinite(holdersCount);
+  const chatChannels = Array.isArray(activeMarket?.chats) ? activeMarket.chats : [];
 
   return (
     <div className={`predict-event-page ${isResolved ? 'predict-event-resolved' : ''}`}>
@@ -650,6 +821,93 @@ const Predict: React.FC<PredictProps> = ({
                   {interval}
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div className="predict-event-community-card">
+            <div className="predict-event-section-header">
+              <span>Community</span>
+              <span className="predict-event-section-subtitle">
+                {commentsAvailable ? `${formatCommas(String(commentsCount))} comments` : 'No comments'}
+              </span>
+            </div>
+            <div className="predict-event-community-metrics">
+              <div className="predict-event-community-metric">
+                <span className="predict-event-community-label">Comments</span>
+                <span className="predict-event-community-value">
+                  {commentsAvailable ? formatCommas(String(commentsCount)) : 'N/A'}
+                </span>
+              </div>
+              <div className="predict-event-community-metric">
+                <span className="predict-event-community-label">Holders</span>
+                <span className="predict-event-community-value">
+                  {holdersAvailable ? formatCommas(String(holdersCount)) : 'N/A'}
+                </span>
+              </div>
+            </div>
+            {chatChannels.length > 0 ? (
+              <div className="predict-event-community-channels">
+                {chatChannels.slice(0, 3).map((channel: any, idx: number) => (
+                  <div key={channel?.id ?? channel?.channelId ?? idx} className="predict-event-channel">
+                    <div className="predict-event-channel-avatar">
+                      {channel?.channelImage ? (
+                        <img src={channel.channelImage} alt={channel.channelName || 'Chat'} />
+                      ) : (
+                        <span>{(channel?.channelName || 'C').slice(0, 1)}</span>
+                      )}
+                    </div>
+                    <div className="predict-event-channel-info">
+                      <span className="predict-event-channel-name">{channel?.channelName || channel?.channelId || 'Chat'}</span>
+                      <span className={`predict-event-channel-status ${channel?.live ? 'live' : 'scheduled'}`}>
+                        {channel?.live ? 'Live' : 'Scheduled'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="predict-event-community-empty">
+                No community channels available
+              </div>
+            )}
+          </div>
+
+          <div className="predict-event-orderbook-section">
+            <div className="predict-event-section-header">
+              <span>Orderbook</span>
+              <span className="predict-event-section-subtitle">
+                {orderbookSymbol} {selectedSide === 'No' ? 'No' : 'Yes'}
+              </span>
+            </div>
+            <div className="predict-event-orderbook-body">
+              <OrderBook
+                trades={[]}
+                orderdata={{
+                  roundedBuyOrders: orderbookData.roundedBuyOrders,
+                  roundedSellOrders: orderbookData.roundedSellOrders,
+                  spreadData: orderbookData.spreadData,
+                  priceFactor: baseInterval > 0 ? 1 / baseInterval : 1,
+                  symbolIn: 'USD',
+                  symbolOut: orderbookSymbol,
+                  marketType: 0,
+                }}
+                layoutSettings={layoutSettings ?? 'tab'}
+                orderbookPosition={effectiveOrderbookPosition}
+                hideHeader={true}
+                interval={baseInterval}
+                amountsQuote={amountsQuote}
+                setAmountsQuote={setAmountsQuote}
+                obInterval={obInterval}
+                setOBInterval={setOBInterval}
+                viewMode={effectiveViewMode}
+                setViewMode={handleViewMode}
+                activeTab={effectiveActiveTab}
+                setActiveTab={handleActiveTab}
+                updateLimitAmount={handleOrderbookLimit}
+                reserveQuote={0n}
+                reserveBase={0n}
+                isOrderbookLoading={orderbookIsLoading}
+              />
             </div>
           </div>
 

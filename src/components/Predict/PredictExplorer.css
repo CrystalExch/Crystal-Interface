@@ -325,6 +325,11 @@
     font-weight: 400;
 }
 
+.predict-volume-sentinel {
+    width: 100%;
+    height: 1px;
+}
+
 /* Favorite Button */
 .predict-favorite-btn {
     background: none;

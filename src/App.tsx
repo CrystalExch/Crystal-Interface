@@ -1207,6 +1207,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [perpsMarketsData, setPerpsMarketsData] = useState<{ [key: string]: any }>({});
   const [perpsLimitChase, setPerpsLimitChase] = useState(true);
   const [perpsFilterOptions, setPerpsFilterOptions] = useState({});
+  const [predictActiveMarketKey, setPredictActiveMarketKey] = useState('');
+  const [predictMarketsData, setPredictMarketsData] = useState<{ [key: string]: any }>({});
+  const [predictFilterOptions, setPredictFilterOptions] = useState({});
   const [perpsKeystore, setPerpsKeystore] = useState<any>(() => {
     const signatureKey = `crystal_perps_signer_${scaAddress?.toLowerCase() || 'default'}`;
     const saved = localStorage.getItem(signatureKey);
@@ -29397,12 +29400,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 handleSetChain={handleSetChain}
                 selectedInterval={selectedInterval}
                 setSelectedInterval={setSelectedInterval}
-                perpsActiveMarketKey={perpsActiveMarketKey}
-                setperpsActiveMarketKey={setperpsActiveMarketKey}
-                perpsMarketsData={perpsMarketsData}
-                setPerpsMarketsData={setPerpsMarketsData}
-                perpsFilterOptions={perpsFilterOptions}
-                setPerpsFilterOptions={setPerpsFilterOptions}
+                predictActiveMarketKey={predictActiveMarketKey}
+                setPredictActiveMarketKey={setPredictActiveMarketKey}
+                predictMarketsData={predictMarketsData}
+                setPredictMarketsData={setPredictMarketsData}
+                predictFilterOptions={predictFilterOptions}
+                setPredictFilterOptions={setPredictFilterOptions}
                 signMessageAsync={signMessageAsync}
                 leverage={perpsLeverage}
                 setLeverage={setPerpsLeverage}
@@ -29411,9 +29414,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setOrderCenterHeight={setOrderCenterHeight}
                 isMarksVisible={isMarksVisible}
                 setIsMarksVisible={setIsMarksVisible}
-                setPerpsLimitChase={setPerpsLimitChase}
-                perpsLimitChase={perpsLimitChase}
-                handlePerpsMarketSelect={handlePerpsMarketSelect}
                 scaAddress={scaAddress}
                 setTempLeverage={setTempLeverage}
               />
@@ -29425,8 +29425,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 appliedFilters={appliedExplorerFilters}
                 onOpenFiltersForColumn={handleOpenFiltersForColumn}
                 sendUserOperationAsync={sendUserOperationAsync}
-                terminalQueryData={terminalQueryData}
-                terminalRefetch={terminalRefetch}
                 setTokenData={setTokenData}
                 monUsdPrice={monUsdPrice}
                 subWallets={subWallets}
@@ -29490,12 +29488,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 handleSetChain={handleSetChain}
                 selectedInterval={selectedInterval}
                 setSelectedInterval={setSelectedInterval}
-                perpsActiveMarketKey={perpsActiveMarketKey}
-                setperpsActiveMarketKey={setperpsActiveMarketKey}
-                perpsMarketsData={perpsMarketsData}
-                setPerpsMarketsData={setPerpsMarketsData}
-                perpsFilterOptions={perpsFilterOptions}
-                setPerpsFilterOptions={setPerpsFilterOptions}
+                predictActiveMarketKey={predictActiveMarketKey}
+                setPredictActiveMarketKey={setPredictActiveMarketKey}
+                predictMarketsData={predictMarketsData}
+                setPredictMarketsData={setPredictMarketsData}
+                predictFilterOptions={predictFilterOptions}
+                setPredictFilterOptions={setPredictFilterOptions}
                 signMessageAsync={signMessageAsync}
                 leverage={perpsLeverage}
                 setLeverage={setPerpsLeverage}
@@ -29504,9 +29502,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setOrderCenterHeight={setOrderCenterHeight}
                 isMarksVisible={isMarksVisible}
                 setIsMarksVisible={setIsMarksVisible}
-                setPerpsLimitChase={setPerpsLimitChase}
-                perpsLimitChase={perpsLimitChase}
-                handlePerpsMarketSelect={handlePerpsMarketSelect}
                 scaAddress={scaAddress}
                 setTempLeverage={setTempLeverage}
               />
