@@ -1148,6 +1148,45 @@ const formatMarketPercent = (value: number, precision = 1) => {
   return formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted;
 };
 
+const toFiniteNumber = (value: unknown) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getBuySellCounts = (token: any) => {
+  const readCounts = (source: any) => ({
+    buy: toFiniteNumber(
+      source?.buyTransactions ??
+        source?.buyTxs ??
+        source?.tx?.buy ??
+        source?.buyCount ??
+        source?.buy_count,
+    ),
+    sell: toFiniteNumber(
+      source?.sellTransactions ??
+        source?.sellTxs ??
+        source?.tx?.sell ??
+        source?.sellCount ??
+        source?.sell_count,
+    ),
+  });
+
+  if (Array.isArray(token?.markets) && token.markets.length > 0) {
+    return token.markets.reduce(
+      (acc: { buyCount: number; sellCount: number }, market: any) => {
+        const counts = readCounts(market);
+        acc.buyCount += counts.buy;
+        acc.sellCount += counts.sell;
+        return acc;
+      },
+      { buyCount: 0, sellCount: 0 },
+    );
+  }
+
+  const counts = readCounts(token);
+  return { buyCount: counts.buy, sellCount: counts.sell };
+};
+
 const parseOutcomeDate = (label: string) => {
   const trimmed = label.trim();
   if (!trimmed) return null;
@@ -1197,6 +1236,27 @@ const parseOutcomeNumber = (label: string) => {
 
 const escapeRegExp = (value: string) => {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+const normalizeOutcomeLabel = (value: string) => {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '');
+};
+
+const getMatchupPiece = (value: string, outcomeIndex?: number) => {
+  if (outcomeIndex == null) return '';
+  const lower = value.toLowerCase();
+  const separators = [' vs. ', ' vs ', ' v. ', ' v '];
+  for (const separator of separators) {
+    const idx = lower.indexOf(separator);
+    if (idx > 0) {
+      const left = value.slice(0, idx).trim();
+      const right = value.slice(idx + separator.length).trim();
+      if (left && right) {
+        return outcomeIndex === 0 ? left : right;
+      }
+    }
+  }
+  return '';
 };
 
 const getOutcomeDisplayName = (outcome: string, contextTitle?: string) => {
@@ -1256,6 +1316,49 @@ const getOutcomeDisplayName = (outcome: string, contextTitle?: string) => {
   label = label.replace(/\s+/g, ' ').trim();
 
   return label || raw;
+};
+
+const getMarketOutcomeLabel = (
+  market: any,
+  contextTitle?: string,
+  fallback?: string,
+  outcomeIndex?: number,
+) => {
+  const context = (contextTitle || '').toString().trim();
+  const normalizedContext = normalizeOutcomeLabel(context);
+  const candidates = [
+    market?.groupItemTitle,
+    market?.shortTitle,
+    market?.title,
+    market?.name,
+    market?.question,
+    fallback,
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const raw = String(candidate).trim();
+    if (!raw) continue;
+    const matchupRaw = getMatchupPiece(raw, outcomeIndex);
+    if (matchupRaw) return matchupRaw;
+
+    const cleaned = getOutcomeDisplayName(raw, context);
+    const matchupCleaned = getMatchupPiece(cleaned, outcomeIndex);
+    if (matchupCleaned) return matchupCleaned;
+
+    const normalizedRaw = normalizeOutcomeLabel(raw);
+    const normalizedCleaned = normalizeOutcomeLabel(cleaned);
+
+    if (cleaned && normalizedCleaned && normalizedCleaned !== normalizedContext) {
+      return cleaned;
+    }
+    if (normalizedRaw && normalizedRaw !== normalizedContext) {
+      return raw;
+    }
+  }
+
+  const fallbackLabel = fallback ? getOutcomeDisplayName(fallback, context) : '';
+  return fallbackLabel || fallback || '';
 };
 
 
@@ -3539,6 +3642,23 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       filtered = filtered.filter((t: any) => categoryMarketIds.includes(t.contractId));
     }
 
+    const groupedKeys = new Set<string>();
+    filtered.forEach((token: any) => {
+      if (Array.isArray(token.markets) && token.markets.length > 0) {
+        const key = token.eventSlug || token.eventTitle;
+        if (key) groupedKeys.add(key);
+      }
+    });
+
+    if (groupedKeys.size > 0) {
+      filtered = filtered.filter((token: any) => {
+        if (Array.isArray(token.markets) && token.markets.length > 0) return true;
+        const key = token.eventSlug || token.eventTitle;
+        if (!key) return true;
+        return !groupedKeys.has(key);
+      });
+    }
+
     if (perpsSortField && perpsSortDirection) {
       filtered.sort((a, b) => compareTokens(a, b, perpsSortField, perpsSortDirection));
     }
@@ -3913,6 +4033,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         );
                       })()
                     : [];
+                  const { buyCount, sellCount } = getBuySellCounts(token);
 
                   // For multi-outcome markets, render a special card layout
                   if (isMultiOutcome) {
@@ -4134,7 +4255,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                                       rel="noreferrer"
                                       onClick={(e) => e.stopPropagation()}
                                     >
-                                      <Tooltip content={token.website}>
+                                      <Tooltip content="View on Polymarket">
                                         <svg
                                           width="16"
                                           height="16"
@@ -4147,10 +4268,10 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                                     </a>
                                   </Tooltip>
                                 )}
-                                <Tooltip content="Search Asset on Twitter">
+                                <Tooltip content="Search Event on Twitter">
                                   <a
                                     className="explorer-telegram-btn"
-                                    href={`https://twitter.com/search?q=$${token.baseAsset}`}
+                                    href={`https://twitter.com/search?q=${token.baseAsset}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     onClick={(e) => e.stopPropagation()}
@@ -4286,14 +4407,56 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                               ${formatCompactNumber(Number(token.liquidity || 0))}
                             </span>
                           </div>
+                          <div className="predict-metric metric-transactions">
+                            <span className="predict-metric-label buy">B</span>
+                            <span className="predict-metric-value">
+                              {formatCompactNumber(buyCount)}
+                            </span>
+                            <span className="predict-metric-divider">/</span>
+                            <span className="predict-metric-label sell">S</span>
+                            <span className="predict-metric-value">
+                              {formatCompactNumber(sellCount)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     );
                   }
 
                   // Standard 2-outcome market
-                  const yesPrice = Number(outcomePrices[0] ?? token.lastPrice ?? 0.5);
-                  const noPrice = Number(outcomePrices[1] ?? (1 - yesPrice));
+                  const outcomeEntries: {
+                    label: string;
+                    price: number;
+                    isYes: boolean;
+                    isNo: boolean;
+                  }[] = outcomes.map((label: string, index: number) => {
+                    const rawPrice =
+                      outcomePrices[index] ??
+                      (index === 0
+                        ? token.lastPrice
+                        : 1 - Number(outcomePrices[0] ?? token.lastPrice ?? 0.5));
+                    const price = Number(rawPrice);
+                    const normalized = label.trim().toLowerCase();
+                    return {
+                      label,
+                      price: Number.isFinite(price) ? price : 0,
+                      isYes: normalized === 'yes',
+                      isNo: normalized === 'no',
+                    };
+                  });
+                  const yesEntry = outcomeEntries.find((entry) => entry.isYes);
+                  const noEntry = outcomeEntries.find((entry) => entry.isNo);
+                  const orderedOutcomes =
+                    yesEntry && noEntry
+                      ? [yesEntry, noEntry]
+                      : [...outcomeEntries].sort((a, b) => b.price - a.price);
+                  const leftOutcome = orderedOutcomes[0] || { label: 'Yes', price: 0.5 };
+                  const rightOutcome = orderedOutcomes[1] || { label: 'No', price: 0.5 };
+                  const outcome1 = leftOutcome.label || 'Yes';
+                  const outcome2 = rightOutcome.label || 'No';
+                  const yesPrice = leftOutcome.price;
+                  const noPrice = rightOutcome.price;
+                  const probabilityValue = yesPrice;
                   const impliedYesFromNo = 1 - noPrice;
                   const spreadCents = Math.abs(yesPrice - impliedYesFromNo) * 100;
                   const rawChangePercent = Number(token.priceChangePercent);
@@ -4532,7 +4695,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                                   rel="noreferrer"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <Tooltip content={token.website}>
+                                  <Tooltip content="View on Polymarket">
                                     <svg
                                       width="16"
                                       height="16"
@@ -4545,10 +4708,10 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                                 </a>
                               </Tooltip>
                             )}
-                            <Tooltip content="Search Asset on Twitter">
+                            <Tooltip content="Search Event on Twitter">
                               <a
                                 className="explorer-telegram-btn"
-                                href={`https://twitter.com/search?q=$${token.baseAsset}`}
+                                href={`https://twitter.com/search?q=${token.baseAsset}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 onClick={(e) => e.stopPropagation()}
@@ -4584,7 +4747,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                     <div className="perps-trending-cell">
                       <div className="predict-probability">
                         <div className={probabilityClassName}>
-                          {formatMarketPercent(Number(token.lastPrice))}%
+                          {formatMarketPercent(probabilityValue)}%
                         </div>
                         <span
                           className={`predict-probability-change ${changeClass}`}
@@ -4596,57 +4759,44 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                     </div>
 
                     <div className="trending-cell action-cell" style={{gap: '10px'}}>
-                      {(() => {
-                        const outcomes = token.outcomes || ['Yes', 'No'];
-                        const outcomePrices = token.outcomePrices || [token.lastPrice, 1 - token.lastPrice];
-                        const outcome1 = outcomes[0] || 'Yes';
-                        const outcome2 = outcomes[1] || 'No';
-                        const yesPrice = Number(outcomePrices[0] || token.lastPrice || 0.5);
-                        const noPrice = Number(outcomePrices[1] || (1 - yesPrice));
-
-                        return (
-                          <>
-                            <button
-                              className={`perps-trending-buy-btn`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleQuickBuy(token, quickAmounts.new, 'primary');
-                              }}
-                              disabled={isResolved || loading.has(`${token.contractId}-primary`)}
-                            >
-                              {loading.has(`${token.contractId}-primary`) ? (
-                                <div className="quickbuy-loading-spinner" />
-                              ) : (
-                                <span className="mon-text">
-                                  <span className="mon-text-title">{outcome1}</span>
-                                  <span className="mon-text-price">
-                                    {formatMarketPercent(yesPrice)}¢
-                                  </span>
-                                </span>
-                              )}
-                            </button>
-                            <button
-                              className={`perps-trending-sell-btn`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleQuickBuy(token, quickAmounts.new, 'secondary');
-                              }}
-                              disabled={isResolved || loading.has(`${token.contractId}-secondary`)}
-                            >
-                              {loading.has(`${token.contractId}-secondary`) ? (
-                                <div className="quickbuy-loading-spinner" />
-                              ) : (
-                                <span className="mon-text">
-                                  <span className="mon-text-title">{outcome2}</span>
-                                  <span className="mon-text-price">
-                                    {formatMarketPercent(noPrice)}¢
-                                  </span>
-                                </span>
-                              )}
-                            </button>
-                          </>
-                        );
-                      })()}
+                      <button
+                        className={`perps-trending-buy-btn`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleQuickBuy(token, quickAmounts.new, 'primary');
+                        }}
+                        disabled={isResolved || loading.has(`${token.contractId}-primary`)}
+                      >
+                        {loading.has(`${token.contractId}-primary`) ? (
+                          <div className="quickbuy-loading-spinner" />
+                        ) : (
+                          <span className="mon-text">
+                            <span className="mon-text-title">{outcome1}</span>
+                            <span className="mon-text-price">
+                              {formatMarketPercent(yesPrice)}¢
+                            </span>
+                          </span>
+                        )}
+                      </button>
+                      <button
+                        className={`perps-trending-sell-btn`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleQuickBuy(token, quickAmounts.new, 'secondary');
+                        }}
+                        disabled={isResolved || loading.has(`${token.contractId}-secondary`)}
+                      >
+                        {loading.has(`${token.contractId}-secondary`) ? (
+                          <div className="quickbuy-loading-spinner" />
+                        ) : (
+                          <span className="mon-text">
+                            <span className="mon-text-title">{outcome2}</span>
+                            <span className="mon-text-price">
+                              {formatMarketPercent(noPrice)}¢
+                            </span>
+                          </span>
+                        )}
+                      </button>
                     </div>
 
                     <div className="predict-multi-footer">
@@ -4672,6 +4822,17 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         </svg>
                         <span className="predict-metric-value">
                           ${formatCompactNumber(Number(token.liquidity || 0))}
+                        </span>
+                      </div>
+                      <div className="predict-metric metric-transactions">
+                        <span className="predict-metric-label buy">B</span>
+                        <span className="predict-metric-value">
+                          {formatCompactNumber(buyCount)}
+                        </span>
+                        <span className="predict-metric-divider">/</span>
+                        <span className="predict-metric-label sell">S</span>
+                        <span className="predict-metric-value">
+                          {formatCompactNumber(sellCount)}
                         </span>
                       </div>
                     </div>
