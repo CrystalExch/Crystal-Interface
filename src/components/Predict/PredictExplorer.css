@@ -9,8 +9,8 @@
 .predict-trade-stream-sidebar {
     width: 300px;
     min-width: 300px;
-    background: transparent;
-    border-right: 1px solid rgba(179, 184, 249, 0.1);
+    background: linear-gradient(180deg, rgba(12, 12, 14, 0.85), rgba(8, 8, 10, 0.92));
+    border-right: 1px solid rgba(179, 184, 249, 0.12);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -21,8 +21,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 20px 8px 20px;
-    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+    padding: 14px 16px 12px 16px;
+    border-bottom: 1px solid rgba(179, 184, 249, 0.12);
+    background: linear-gradient(180deg, rgba(18, 18, 22, 0.95), rgba(12, 12, 14, 0.6));
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .predict-trade-stream-title-row {
@@ -37,12 +39,15 @@
 .predict-trade-stream-title-row h3 {
     margin: 0;
     white-space: nowrap;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    color: rgba(255, 255, 255, 0.95);
 }
 
 .predict-trade-stream-filters {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     padding: 0;
     flex-wrap: nowrap;
     align-items: center;
@@ -54,41 +59,54 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(179, 184, 249, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.predict-trade-filter-group:focus-within {
+    border-color: rgba(179, 184, 249, 0.38);
+    box-shadow: 0 0 0 2px rgba(179, 184, 249, 0.12);
 }
 
 .predict-trade-filter-label {
-    font-size: 0.65rem;
-    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 0.03em;
 }
 
 .predict-trade-filter-input {
-    width: 56px;
-    padding: 4px 6px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(179, 184, 249, 0.18);
-    border-radius: 6px;
+    width: 48px;
+    padding: 0;
+    background: transparent;
+    border: none;
     color: rgba(255, 255, 255, 0.9);
     font-size: 0.75rem;
 }
 
 .predict-trade-filter-input:focus {
     outline: none;
-    border-color: rgba(179, 184, 249, 0.4);
+}
+
+.predict-trade-filter-input::placeholder {
+    color: rgba(255, 255, 255, 0.35);
 }
 
 .predict-trade-filter-select {
-    padding: 3px 6px;
-    border-radius: 6px;
-    border: 1px solid rgba(179, 184, 249, 0.18);
-    background: rgba(12, 12, 12, 0.7);
+    padding: 0 18px 0 2px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
     color: rgba(255, 255, 255, 0.85);
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     cursor: pointer;
 }
 
 .predict-trade-filter-select:focus {
     outline: none;
-    border-color: rgba(179, 184, 249, 0.4);
 }
 
 .predict-trade-stream-header h3 {
@@ -110,10 +128,10 @@
 .predict-trade-stream-list {
     flex: 1;
     overflow-y: auto;
-    padding: 8px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .predict-trade-stream-list::-webkit-scrollbar {
@@ -130,15 +148,23 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 40px 20px;
+    padding: 28px 18px;
     color: rgba(255, 255, 255, 0.3);
     text-align: center;
     gap: 12px;
+    margin: 8px;
+    border-radius: 12px;
+    border: 1px dashed rgba(179, 184, 249, 0.18);
+    background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
+}
+
+.predict-trade-stream-empty svg {
+    opacity: 0.5;
 }
 
 .predict-trade-stream-empty p {
     margin: 0;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 .predict-trade-stream-item {
@@ -357,12 +383,8 @@
     padding: 6px 14px;
     border-top: 1px solid rgba(179, 184, 249, 0.06);
     background: transparent;
-    opacity: 0.55;
+    opacity: 1;
     transition: opacity 0.2s ease;
-}
-
-.predict-pagination:hover {
-    opacity: 0.9;
 }
 
 .predict-pagination-btn {
@@ -421,7 +443,7 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
-    padding: 20px;
+    padding: 16px;
     grid-auto-rows: max-content;
     align-items: start;
     max-width: 1400px;
@@ -433,7 +455,7 @@
 }
 
 .predict-grid-container .trending-row.perps {
-    padding: 12px;
+    padding: 4px 12px 8px 12px;
     display: flex;
     flex-direction: column;
     gap: 0px;
@@ -492,22 +514,44 @@
     flex-direction: row !important;
     gap: 6px;
     margin-top: auto;
-    padding-top: 4px;
+    padding-bottom: 6px;
     flex-shrink: 0;
 }
 
 .predict-grid-container .trending-row.perps .action-cell button {
     flex: 1;
+    min-width: 0;
 }
 
-/* Hide action buttons in cards, hide/blacklist buttons */
+.predict-grid-container .trending-row.perps .action-cell .perps-trending-buy-btn,
+.predict-grid-container .trending-row.perps .action-cell .perps-trending-sell-btn {
+    padding: 0.3rem 0.6rem;
+}
+
+.predict-grid-container .trending-row.perps .action-cell .mon-text {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.predict-grid-container .trending-row.perps .action-cell .mon-text-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.predict-grid-container .trending-row.perps .action-cell .mon-text-price {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
 .predict-grid-container .trending-token-actions {
     display: none;
 }
 
-/* Remove text labels - will use icons instead */
-
-/* Compact Metrics Row - Polymarket Style */
 .predict-metrics-row {
     display: flex;
     gap: 8px;
@@ -662,9 +706,18 @@
     color: rgba(255, 255, 255, 0.95);
 }
 
+.predict-probability-main.predict-probability-spread-mid {
+    color: #f2c94c;
+}
+
+.predict-probability-main.predict-probability-spread-high {
+    color: #ff7b7b;
+}
+
 .predict-probability-change {
-    font-size: 0.72rem;
-    font-weight: 600;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-top: -4px;
 }
 
 .predict-probability-change.positive {
@@ -673,6 +726,10 @@
 
 .predict-probability-change.negative {
     color: #ff7b7b;
+}
+
+.predict-probability-change.neutral {
+    color: rgba(255, 255, 255, 0.85);
 }
 
 /* Match image size to skeleton - SQUARE not circular */
@@ -736,13 +793,6 @@
     border-radius: 8px;
 }
 
-/* Multi-outcome Market Styles */
-.predict-grid-container .trending-row.perps.multi-outcome {
-    height: 220px;
-    padding: 16px;
-    gap: 0px;
-}
-
 .predict-multi-header {
     display: flex;
     align-items: flex-start;
@@ -785,12 +835,16 @@
 
 .predict-multi-title {
     font-size: 0.88rem;
+    display: flex;
+    align-items: flex-end;
     font-weight: 600;
     color: #ffffff;
-    margin-bottom: 4px;
     overflow-wrap: break-word;
     word-break: break-word;
     line-height: 1.35;
+    overflow: hidden;
+    box-sizing: border-box;
+    min-height: calc(2 * 1.35em);
 }
 
 .predict-multi-subtitle {
@@ -818,7 +872,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
+    gap: 7px;
     padding: 6px 8px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     transition: background 0.15s ease;
@@ -864,6 +918,31 @@
     letter-spacing: -0.3px;
 }
 
+.predict-multi-outcome-metrics {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.predict-multi-outcome-change {
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.predict-multi-outcome-change.positive {
+    color: #52f2a7;
+}
+
+.predict-multi-outcome-change.negative {
+    color: #ff7b7b;
+}
+
+.predict-multi-outcome-change.neutral {
+    color: rgba(255, 255, 255, 0.85);
+}
+
 .predict-multi-outcome-actions {
     display: flex;
     gap: 5px;
@@ -872,15 +951,13 @@
 
 .predict-multi-yes-btn,
 .predict-multi-no-btn {
-    padding: 3px 12px;
+    padding: 3px 8px;
     border-radius: 5px;
     border: none;
     font-size: 0.72rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s ease;
-    min-width: 38px;
-    height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -927,7 +1004,7 @@
     justify-content: flex-start;
     gap: 12px;
     flex-wrap: nowrap;
-    padding-top: 10px;
+    padding-top: 7px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 

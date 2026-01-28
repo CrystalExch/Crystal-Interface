@@ -1141,6 +1141,123 @@ const formatCompactNumber = (value: number) => {
   return abs.toFixed(0);
 };
 
+const formatMarketPercent = (value: number, precision = 1) => {
+  if (!Number.isFinite(value)) return '0';
+  const scaled = value * 100;
+  const formatted = scaled.toFixed(precision);
+  return formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted;
+};
+
+const parseOutcomeDate = (label: string) => {
+  const trimmed = label.trim();
+  if (!trimmed) return null;
+
+  const hasYear = /\b(19|20)\d{2}\b/.test(trimmed);
+  const hasMonthName = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i.test(
+    trimmed,
+  );
+  const hasMonthNumber = /\b\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?\b/.test(
+    trimmed,
+  );
+
+  if (!hasMonthName && !hasMonthNumber) return null;
+
+  const currentYear = new Date().getFullYear();
+  const dateString = hasYear ? trimmed : `${trimmed} ${currentYear}`;
+  const parsed = Date.parse(dateString);
+
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const parseOutcomeNumber = (label: string) => {
+  const trimmed = label.trim();
+  if (!trimmed) return null;
+
+  const normalized = trimmed.replace(/,/g, '');
+  const match = normalized.match(/([+-]?\d*\.?\d+)\s*(k|m|b|t)?/i);
+  if (!match) return null;
+
+  const base = Number.parseFloat(match[1]);
+  if (!Number.isFinite(base)) return null;
+
+  const suffix = (match[2] || '').toLowerCase();
+  const multiplier =
+    suffix === 'k'
+      ? 1e3
+      : suffix === 'm'
+        ? 1e6
+        : suffix === 'b'
+          ? 1e9
+          : suffix === 't'
+            ? 1e12
+            : 1;
+
+  return base * multiplier;
+};
+
+const escapeRegExp = (value: string) => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+const getOutcomeDisplayName = (outcome: string, contextTitle?: string) => {
+  const raw = (outcome || '').toString().trim();
+  if (!raw) return '';
+
+  let label = raw;
+  const context = (contextTitle || '').toString().trim();
+
+  if (context) {
+    const lowerLabel = label.toLowerCase();
+    const lowerContext = context.toLowerCase();
+
+    if (lowerLabel.startsWith(lowerContext)) {
+      label = label.slice(context.length).trim();
+    } else if (lowerLabel.includes(lowerContext)) {
+      const contextRegex = new RegExp(escapeRegExp(context), 'ig');
+      label = label.replace(contextRegex, '').trim();
+    }
+
+    label = label.replace(/^[\s:|\-]+/, '').trim();
+  }
+
+  const byMatch = label.match(
+    /by\s+([^?\s][^?]*?)(?:\s+after|\s+before|\s+in|\?|$)/i,
+  );
+  if (byMatch) {
+    return byMatch[1].trim();
+  }
+
+  const nominateMatch = label.match(
+    /(?:nominate|choose|select|appoint)\s+([A-Z][^?]+?)(?:\s+as|\?|$)/,
+  );
+  if (nominateMatch) {
+    return nominateMatch[1].trim();
+  }
+
+  if (label.includes('?')) {
+    label = label
+      .replace(/\?$/, '')
+      .replace(/^Will\s+/i, '')
+      .replace(/^Does\s+/i, '')
+      .replace(/^Did\s+/i, '')
+      .replace(/^Is\s+/i, '')
+      .replace(/^Are\s+/i, '')
+      .trim();
+  }
+
+  const segments = label
+    .split(/\s+-\s+|\s+\|\s+|:\s+/)
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+  if (segments.length > 1) {
+    label = segments[segments.length - 1];
+  }
+
+  label = label.replace(/\s+/g, ' ').trim();
+
+  return label || raw;
+};
+
 
 interface PredictExplorerProps {
   setpopup: (popup: number) => void;
@@ -2897,7 +3014,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const graduatingTokens = visibleTokens.graduating;
   const graduatedTokens = visibleTokens.graduated;
 
-  const [perpsSortField, setPerpsSortField] = useState<'market' | 'change' | 'volume' | 'openInterest' | 'trades' | 'endDate' | null>('volume');
+  const [perpsSortField, setPerpsSortField] = useState<'market' | 'change' | 'priceChange' | 'volume' | 'openInterest' | 'trades' | 'endDate' | null>('volume');
   const [perpsSortDirection, setPerpsSortDirection] = useState<'asc' | 'desc' | undefined>('desc');
   const [perpsCurrentPage, setPerpsCurrentPage] = useState(1);
   const [favoriteMarkets, setFavoriteMarkets] = useState<Set<string>>(new Set());
@@ -3059,7 +3176,20 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
           eventArchived: event.archived ?? false,
         };
 
-        if (activeMarkets.length > 2) {
+        const hasGroupItems = activeMarkets.some(
+          (market: any) => market.groupItemTitle,
+        );
+        const shouldGroup =
+          activeMarkets.length > 2 || (hasGroupItems && activeMarkets.length > 1);
+
+        if (shouldGroup) {
+          const changeValues = activeMarkets
+            .map((m: any) => Number(m.oneDayPriceChange))
+            .filter((val: number) => Number.isFinite(val));
+          const oneDayPriceChange = changeValues.length
+            ? Math.max(...changeValues)
+            : 0;
+
           groupedMarkets.push({
             conditionId: `event-${event.slug || event.id}`,
             eventId: event.slug || event.id,
@@ -3084,6 +3214,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
             volume24hr: activeMarkets.reduce((sum: number, m: any) => sum + (m.volume24hr || 0), 0),
             volume: activeMarkets.reduce((sum: number, m: any) => sum + (m.volume || 0), 0),
             liquidity: activeMarkets.reduce((sum: number, m: any) => sum + (Number(m.liquidity) || 0), 0),
+            oneDayPriceChange,
             endDate: activeMarkets[0]?.endDate,
             startDate: activeMarkets[0]?.startDate,
             fundingTime: new Date(activeMarkets[0]?.startDate || activeMarkets[0]?.creationDate || Date.now()).getTime(),
@@ -3150,9 +3281,10 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
           question: market.question,
           outcomes: outcomes,
           outcomePrices: outcomePrices,
+          markets: market.markets || [],
           // Price fields
           lastPrice: primaryPrice,
-          priceChangePercent: market.oneDayPriceChange || 0,
+          priceChangePercent: Number(market.oneDayPriceChange) || 0,
           // Volume fields - Polymarket uses volume in USD
           value: market.volume24hr || market.volume || 0,
           volume: market.volume || 0,
@@ -3191,7 +3323,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     const compareTokens = useCallback((
       a: any,
       b: any,
-      field: 'market' | 'change' | 'volume' | 'openInterest' | 'trades' | 'endDate' | null,
+      field: 'market' | 'change' | 'priceChange' | 'volume' | 'openInterest' | 'trades' | 'endDate' | null,
       direction: 'asc' | 'desc' | undefined,
     ) => {
       if (!field || !direction) return 0;
@@ -3208,6 +3340,10 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         case 'change':
           aValue = parseFloat((a.lastPrice || 0).toString());
           bValue = parseFloat((b.lastPrice || 0).toString());
+          break;
+        case 'priceChange':
+          aValue = parseFloat((a.priceChangePercent || 0).toString());
+          bValue = parseFloat((b.priceChangePercent || 0).toString());
           break;
         case 'volume':
           aValue = parseFloat((a.value || 0).toString().replace(/,/g, ''));
@@ -3232,7 +3368,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       return direction === 'asc' ? aValue - bValue : bValue - aValue;
     }, []);
 
-    const handlePerpsSort = (field: 'market' | 'change' | 'volume' | 'openInterest' | 'trades' | 'endDate') => {
+    const handlePerpsSort = (field: 'market' | 'change' | 'priceChange' | 'volume' | 'openInterest' | 'trades' | 'endDate') => {
       if (perpsSortField === field) {
         setPerpsSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
       } else {
@@ -3581,7 +3717,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                           <span className={`predict-trade-stream-side ${isBuy ? 'buy' : 'sell'}`}>
                             {isBuy ? 'YES' : 'NO'}
                           </span>
-                          <span className="predict-trade-stream-price">{(price * 100).toFixed(1)}¢</span>
+                          <span className="predict-trade-stream-price">{formatMarketPercent(price)}¢</span>
                           <span className="predict-trade-stream-amount">${formatCommas(amount.toFixed(0))}</span>
                         </div>
                       </div>
@@ -3621,6 +3757,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                   <option value="volume">Highest Volume</option>
                   <option value="openInterest">Highest Liquidity</option>
                   <option value="change">Highest Probability</option>
+                  <option value="priceChange">Highest Price Change</option>
                   <option value="trades">Most Traders</option>
                   <option value="endDate">Ending Soon</option>
                 </select>
@@ -3694,13 +3831,87 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                     ? getResolutionDate(token.endDate, token.outcomes)
                     : null;
                   const sortedOutcomes = isMultiOutcome
-                    ? outcomes
-                        .map((outcome: string, index: number) => ({
-                          outcome,
-                          probability: Number(outcomePrices[index] || 0),
-                          index,
-                        }))
-                        .sort((a: { probability: number }, b: { probability: number }) => b.probability - a.probability)
+                    ? (() => {
+                        const entries = token.markets && token.markets.length
+                          ? token.markets.map((market: any, index: number) => {
+                              const prices = typeof market.outcomePrices === 'string'
+                                ? JSON.parse(market.outcomePrices)
+                                : market.outcomePrices || [];
+                              const probability = Number(
+                                prices[0] ?? outcomePrices[index] ?? 0,
+                              );
+                              const rawChange = Number(
+                                market.oneDayPriceChange ?? market.priceChangePercent,
+                              );
+                              const changePercent = Number.isFinite(rawChange)
+                                ? rawChange
+                                : 0;
+                              const fallbackLabel = outcomes[index] || '';
+                              const label =
+                                market.groupItemTitle ||
+                                market.question ||
+                                fallbackLabel;
+                              const displayName = market.groupItemTitle
+                                ? market.groupItemTitle
+                                : getOutcomeDisplayName(
+                                    label,
+                                    token.eventTitle || token.question,
+                                  );
+                              const resolvedLabel =
+                                displayName || label || `Outcome ${index + 1}`;
+
+                              return {
+                                outcome: resolvedLabel,
+                                probability,
+                                changePercent,
+                                dateSort: parseOutcomeDate(resolvedLabel),
+                                numberSort: parseOutcomeNumber(resolvedLabel),
+                                index,
+                              };
+                            })
+                          : outcomes.map((outcome: string, index: number) => {
+                              const resolvedLabel = getOutcomeDisplayName(
+                                outcome,
+                                token.eventTitle || token.question,
+                              );
+                              return {
+                                outcome: resolvedLabel,
+                                probability: Number(outcomePrices[index] || 0),
+                                changePercent: 0,
+                                dateSort: parseOutcomeDate(resolvedLabel),
+                                numberSort: parseOutcomeNumber(resolvedLabel),
+                                index,
+                              };
+                            });
+
+                        const allDateSort = entries.length > 1 && entries.every(
+                          (entry: any) => Number.isFinite(entry.dateSort),
+                        );
+                        const allNumberSort = entries.length > 1 && entries.every(
+                          (entry: any) => Number.isFinite(entry.numberSort),
+                        );
+                        const titleHint = (token.eventTitle || token.question || '')
+                          .toString()
+                          .toLowerCase();
+                        const isPriceMarket =
+                          /\bprice\b|\$|\busd\b|\busdc\b|\busdt\b/.test(titleHint) ||
+                          entries.some((entry: any) =>
+                            /\$|\busd\b|\busdc\b|\busdt\b/.test(
+                              String(entry.outcome || '').toLowerCase(),
+                            ),
+                          );
+
+                        return [...entries].sort(
+                          allDateSort
+                            ? (a: any, b: any) => a.dateSort - b.dateSort
+                            : allNumberSort
+                              ? isPriceMarket
+                                ? (a: any, b: any) => b.numberSort - a.numberSort
+                                : (a: any, b: any) => a.numberSort - b.numberSort
+                              : (a: { probability: number }, b: { probability: number }) =>
+                                  b.probability - a.probability,
+                        );
+                      })()
                     : [];
 
                   // For multi-outcome markets, render a special card layout
@@ -3827,7 +4038,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '4px',
-                                marginTop: '-4px'
                               }}
                             >
                               {resolution && (
@@ -3977,35 +4187,22 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         <div
                           className={`predict-multi-outcomes ${activeMultiScrollCard === token.contractId ? 'scroll-enabled' : ''}`}
                         >
-                          {sortedOutcomes.map((entry: { outcome: string; probability: number; index: number }, rank: number) => {
+                          {sortedOutcomes.map((entry: { outcome: string; probability: number; changePercent: number; index: number }, rank: number) => {
                             const probability = entry.probability;
-                            const outcome = entry.outcome;
+                            const displayName = entry.outcome;
                             const outcomeIndex = entry.index;
-
-                            // Clean up the outcome text to extract the key information
-                            let displayName = outcome;
-
-                            // Try to extract numeric/specific parts: "by 50+ bps", "by 25 bps", etc.
-                            const byMatch = outcome.match(/by\s+([^?\s][^?]*?)(?:\s+after|\s+before|\s+in|\?|$)/i);
-                            if (byMatch) {
-                              displayName = byMatch[1].trim();
-                            } else {
-                              // Try to extract names: "Will Trump nominate Kevin Warsh" -> "Kevin Warsh"
-                              const nominateMatch = outcome.match(/(?:nominate|choose|select|appoint)\s+([A-Z][^?]+?)(?:\s+as|\?|$)/);
-                              if (nominateMatch) {
-                                displayName = nominateMatch[1].trim();
-                              } else if (outcome.includes('?')) {
-                                // Remove question mark and common prefixes
-                                displayName = outcome
-                                  .replace(/\?$/, '')
-                                  .replace(/^Will\s+/i, '')
-                                  .replace(/^Does\s+/i, '')
-                                  .replace(/^Did\s+/i, '')
-                                  .replace(/^Is\s+/i, '')
-                                  .replace(/^Are\s+/i, '')
-                                  .trim();
-                              }
-                            }
+                            const changePercent = entry.changePercent;
+                            const isOutcomeChangeZero = Math.abs(changePercent) < 1e-9;
+                            const outcomeChangeClass = isOutcomeChangeZero
+                              ? 'neutral'
+                              : changePercent >= 0
+                                ? 'positive'
+                                : 'negative';
+                            const outcomeChangePrefix = isOutcomeChangeZero
+                              ? ''
+                              : changePercent >= 0
+                                ? '+'
+                                : '';
 
                             return (
                               <div
@@ -4016,9 +4213,17 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                                   <span className="predict-multi-outcome-name">
                                     {displayName}
                                   </span>
-                                  <span className="predict-multi-outcome-probability">
-                                    {(probability * 100).toFixed(0)}%
-                                  </span>
+                                  <div className="predict-multi-outcome-metrics">
+                                    <span
+                                      className={`predict-multi-outcome-change ${outcomeChangeClass}`}
+                                    >
+                                      {outcomeChangePrefix}
+                                      {(changePercent * 100).toFixed(1)}%
+                                    </span>
+                                    <span className="predict-multi-outcome-probability">
+                                      {formatMarketPercent(probability)}%
+                                    </span>
+                                  </div>
                                 </div>
                                 <div className="predict-multi-outcome-actions">
                                   <button
@@ -4032,7 +4237,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                                     {loading.has(`${token.contractId}-${outcomeIndex}`) ? (
                                       <div className="quickbuy-loading-spinner" />
                                     ) : (
-                                      'Yes'
+                                      'Y'
                                     )}
                                   </button>
                                   <button
@@ -4046,7 +4251,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                                     {loading.has(`${token.contractId}-${outcomeIndex}-no`) ? (
                                       <div className="quickbuy-loading-spinner" />
                                     ) : (
-                                      'No'
+                                      'N'
                                     )}
                                   </button>
                                 </div>
@@ -4087,6 +4292,35 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                   }
 
                   // Standard 2-outcome market
+                  const yesPrice = Number(outcomePrices[0] ?? token.lastPrice ?? 0.5);
+                  const noPrice = Number(outcomePrices[1] ?? (1 - yesPrice));
+                  const impliedYesFromNo = 1 - noPrice;
+                  const spreadCents = Math.abs(yesPrice - impliedYesFromNo) * 100;
+                  const rawChangePercent = Number(token.priceChangePercent);
+                  const priceChangePercent = Number.isFinite(rawChangePercent)
+                    ? rawChangePercent
+                    : 0;
+                  const isChangeZero = Math.abs(priceChangePercent) < 1e-9;
+                  const changeClass = isChangeZero
+                    ? 'neutral'
+                    : priceChangePercent >= 0
+                      ? 'positive'
+                      : 'negative';
+                  const changePrefix = isChangeZero
+                    ? ''
+                    : priceChangePercent >= 0
+                      ? '+'
+                      : '';
+                  const spreadClass =
+                    spreadCents >= 10
+                      ? 'predict-probability-spread-high'
+                      : spreadCents >= 3
+                        ? 'predict-probability-spread-mid'
+                        : '';
+                  const probabilityClassName = spreadClass
+                    ? `predict-probability-main ${spreadClass}`
+                    : 'predict-probability-main';
+
                   return (
                     <div
                       key={token.contractId}
@@ -4096,62 +4330,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                       onMouseLeave={handleMarketLeave}
                   >
                     <div className="trending-cell pair-info-cell">
-                      <div className="trending-token-actions">
-                        <button
-                          className={`explorer-hide-button ${hidden.has(token.contractId) ? 'strikethrough' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            hideToken(token.contractId);
-                          }}
-                        >
-                          <Tooltip
-                            content={
-                              hidden.has(token.contractId) ? 'Show Token' : 'Hide Token'
-                            }
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
-                              <circle cx="12" cy="12" r="3" />
-                            </svg>
-                          </Tooltip>
-                        </button>
-                        <button
-                          className={`explorer-blacklist-button ${token.isBlacklisted ? 'strikethrough' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBlacklistToken(token);
-                            hideToken(token.contractId);
-                          }}
-                        >
-                          <Tooltip
-                            content={
-                              token.isBlacklisted
-                                ? 'Unblacklist Dev'
-                                : 'Blacklist Dev'
-                            }
-                          >
-                            <svg
-                              className="blacklist-dev-icon"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 30 30"
-                              fill="currentColor"
-                            >
-                              <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
-                            </svg>
-                          </Tooltip>
-                        </button>
-                      </div>
                       <div
                         className={`perps-trending-token-image-container ${token.status === 'graduated' ? 'graduated' : ''} ${!displaySettings.squareImages ? 'circle-mode' : ''} ${!displaySettings.progressBar ? 'no-progress-ring' : ''} ${token.source === 'nadfun' ? 'nadfun-token' : ''}`}
                         style={
@@ -4258,7 +4436,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                             display: 'flex',
                             alignItems: 'center',
                             gap: '4px',
-                            marginTop: '-4px'
                           }}
                         >
                           {resolution && (
@@ -4406,14 +4583,14 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
                     <div className="perps-trending-cell">
                       <div className="predict-probability">
-                        <div className="predict-probability-main">
-                          {(Number(token.lastPrice) * 100).toFixed(0)}%
+                        <div className={probabilityClassName}>
+                          {formatMarketPercent(Number(token.lastPrice))}%
                         </div>
                         <span
-                          className={`predict-probability-change ${token.priceChangePercent >= 0 ? 'positive' : 'negative'}`}
+                          className={`predict-probability-change ${changeClass}`}
                         >
-                          {token.priceChangePercent >= 0 ? '+' : ''}
-                          {(token.priceChangePercent * 100).toFixed(1)}%
+                          {changePrefix}
+                          {(priceChangePercent * 100).toFixed(1)}%
                         </span>
                       </div>
                     </div>
@@ -4440,7 +4617,12 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                               {loading.has(`${token.contractId}-primary`) ? (
                                 <div className="quickbuy-loading-spinner" />
                               ) : (
-                                <span className="mon-text">{outcome1.length > 10 ? outcome1.substring(0, 10) + '...' : outcome1} {(yesPrice * 100).toFixed(0)}¢</span>
+                                <span className="mon-text">
+                                  <span className="mon-text-title">{outcome1}</span>
+                                  <span className="mon-text-price">
+                                    {formatMarketPercent(yesPrice)}¢
+                                  </span>
+                                </span>
                               )}
                             </button>
                             <button
@@ -4454,7 +4636,12 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                               {loading.has(`${token.contractId}-secondary`) ? (
                                 <div className="quickbuy-loading-spinner" />
                               ) : (
-                                <span className="mon-text">{outcome2.length > 10 ? outcome2.substring(0, 10) + '...' : outcome2} {(noPrice * 100).toFixed(0)}¢</span>
+                                <span className="mon-text">
+                                  <span className="mon-text-title">{outcome2}</span>
+                                  <span className="mon-text-price">
+                                    {formatMarketPercent(noPrice)}¢
+                                  </span>
+                                </span>
                               )}
                             </button>
                           </>
