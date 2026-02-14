@@ -179,7 +179,7 @@ import Predict from './components/Predict/Predict.tsx';
 import PNLComponent from './components/PNLComponent/PNLComponent.tsx';
 import ImportWalletsPopup from './components/Tracker/ImportWalletsPopup.tsx';
 import TradingPresetsPopup from './components/Tracker/TradingPresetsPopup/TradingPresetsPopup';
-import LiveTradesSettingsPopup from './components/Tracker/ LiveTradesSettingsPopup/LiveTradesSettingsPopup.tsx';
+import LiveTradesSettingsPopup from './components/Tracker/LiveTradesSettingsPopup/LiveTradesSettingsPopup.tsx';
 import MemeSearch from './components/MemeSearch/MemeSearch.tsx';
 import { showLoadingPopup, updatePopup } from './components/MemeTransactionPopup/MemeTransactionPopupManager';
 import TrackerWidget from './components/TrackerWidget/TrackerWidget.tsx';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import closebutton from '../../../assets/close_button.png';
-import './ LiveTradesSettingsPopup.css';
+import './LiveTradesSettingsPopup.css';
 
 interface LiveTradesSettingsPopupProps {
   onClose: () => void;

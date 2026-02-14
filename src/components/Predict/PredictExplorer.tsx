@@ -1522,7 +1522,11 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const realtimeCallbackRef = useRef<any>({});
+  const currentPageMarketsRef = useRef<string[]>([]);
+  const priceUpdateInFlightRef = useRef(false);
+  const eventsQueryRef = useRef<string>('');
+  const eventsQueryByCategoryRef = useRef<Record<string, string>>({});
+  const outcomePulseTimeoutsRef = useRef<Record<string, NodeJS.Timeout>>({});
   const isPredictLoadingRef = useRef(false);
   const selectedCategoryRef = useRef<string>('All');
   const perpsCurrentPageRef = useRef(1);
@@ -1684,9 +1688,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
       try {
         const endDateMin = encodeURIComponent(new Date().toISOString());
-        const eventsRes = await fetchPolymarketJson(
-          `/predictapi/events?active=true&archived=false&closed=false&order=volume24hr&ascending=false&limit=${EVENTS_PAGE_SIZE}&offset=${volumeOffsetRef.current}&end_date_min=${endDateMin}`,
-        );
+        const eventsQuery = `/predictapi/events?active=true&archived=false&closed=false&order=volume24hr&ascending=false&limit=${EVENTS_PAGE_SIZE}&offset=${volumeOffsetRef.current}&end_date_min=${endDateMin}`;
+        updateEventsQuery('All', eventsQuery);
+        const eventsRes = await fetchPolymarketJson(eventsQuery);
 
         if (liveStreamCancelled) return;
 
@@ -1763,37 +1767,111 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       }
     };
 
-      const updatePrices = async (currentPageMarkets: string[]) => {
+    const updatePrices = async (currentPageMarkets: string[]) => {
         if (liveStreamCancelled || currentPageMarkets.length === 0) return;
+        if (priceUpdateInFlightRef.current) return;
+        priceUpdateInFlightRef.current = true;
+        const currentMarketSet = new Set(currentPageMarkets);
+        const pulseKeys: string[] = [];
+        const registerOutcomeChanges = (
+          tokenKey: string,
+          prevToken: any,
+          nextOutcomePrices: number[],
+        ) => {
+          const prevPrices = Array.isArray(prevToken?.outcomePrices)
+            ? prevToken.outcomePrices
+            : [];
+          if (prevPrices.length === 0) return;
+          const len = Math.max(prevPrices.length, nextOutcomePrices.length);
+          for (let i = 0; i < len; i += 1) {
+            const prevValue = Number(prevPrices[i]);
+            const nextValue = Number(nextOutcomePrices[i]);
+            if (!Number.isFinite(prevValue) || !Number.isFinite(nextValue)) continue;
+            if (Math.abs(prevValue - nextValue) > 1e-4) {
+              pulseKeys.push(`${tokenKey}:${i}`);
+            }
+          }
+        };
 
         try {
-          const category = selectedCategoryRef.current || 'All';
-          const slug =
-            category !== 'All' ? slugifyTag(category) : '';
-          const tagParam = slug ? `&tag_slug=${encodeURIComponent(slug)}` : '';
-          const offset =
-            Math.max(0, perpsCurrentPageRef.current - 1) *
-            itemsPerPageRef.current;
+          const baseQuery = eventsQueryRef.current;
+          if (!baseQuery) return;
+          const eventsQuery = applyEndDateMin(baseQuery);
+          const eventsRes = await fetchPolymarketJson(eventsQuery);
+          const allEvents: any[] = Array.isArray(eventsRes) ? eventsRes : [];
 
-          // Fetch the exact current page for the active category
-          const endDateMin = encodeURIComponent(new Date().toISOString());
-          const eventsRes = await fetchPolymarketJson(
-            `/predictapi/events?active=true&archived=false&closed=false&order=volume24hr&ascending=false&limit=${itemsPerPageRef.current}&offset=${offset}&end_date_min=${endDateMin}${tagParam}`,
-          );
-
-        if (liveStreamCancelled || !eventsRes) return;
-
-        const allEvents = Array.isArray(eventsRes) ? eventsRes : [];
+        if (liveStreamCancelled || allEvents.length === 0) return;
 
         // Update market prices only for currently visible markets
         setPredictMarketsData((prev: any) => {
           const updated = { ...prev };
 
           allEvents.forEach((event: any) => {
-            (event.markets || []).forEach((market: any) => {
-              if (!isMarketOpen(market, event)) return;
+            const activeMarkets = (event.markets || []).filter((market: any) =>
+              isMarketOpen(market, event),
+            );
+
+            if (activeMarkets.length === 0) return;
+
+            const eventKey = `event-${event.slug || event.id}`;
+            if (currentMarketSet.has(eventKey) && updated[eventKey]) {
+              const { buyCount, sellCount } = getBuySellCounts({ markets: activeMarkets });
+              const outcomes = activeMarkets.map(
+                (market: any) => market.groupItemTitle || market.question,
+              );
+              const outcomePrices = activeMarkets.map((market: any) => {
+                const prices = typeof market.outcomePrices === 'string'
+                  ? JSON.parse(market.outcomePrices)
+                  : market.outcomePrices || [];
+                return parseFloat(prices[0] || 0);
+              });
+              registerOutcomeChanges(eventKey, prev[eventKey], outcomePrices);
+              const numericOutcomePrices = outcomePrices.filter((price: number) =>
+                Number.isFinite(price),
+              );
+              const primaryPrice = numericOutcomePrices.length
+                ? Math.max(...numericOutcomePrices)
+                : 0;
+              const changeValues = activeMarkets
+                .map((market: any) => Number(market.oneDayPriceChange))
+                .filter((value: number) => Number.isFinite(value));
+              const oneDayPriceChange = changeValues.length
+                ? Math.max(...changeValues)
+                : 0;
+              const volume24hr = activeMarkets.reduce(
+                (sum: number, market: any) => sum + (market.volume24hr || 0),
+                0,
+              );
+              const volume = activeMarkets.reduce(
+                (sum: number, market: any) => sum + (market.volume || 0),
+                0,
+              );
+              const liquidity = activeMarkets.reduce(
+                (sum: number, market: any) => sum + (Number(market.liquidity) || 0),
+                0,
+              );
+
+              updated[eventKey] = {
+                ...updated[eventKey],
+                outcomes,
+                outcomePrices,
+                markets: activeMarkets,
+                lastPrice: primaryPrice,
+                priceChangePercent: oneDayPriceChange,
+                value: volume24hr || volume,
+                volume24h: volume24hr,
+                volume,
+                liquidity,
+                openInterest: liquidity,
+                trades: Math.floor((volume24hr || volume || 0) / 100) || 0,
+                buyTransactions: buyCount,
+                sellTransactions: sellCount,
+              };
+            }
+
+            activeMarkets.forEach((market: any) => {
               // Only update if this market is in the current page
-              if (updated[market.conditionId] && currentPageMarkets.includes(market.conditionId)) {
+              if (updated[market.conditionId] && currentMarketSet.has(market.conditionId)) {
                 const outcomes = typeof market.outcomes === 'string'
                   ? JSON.parse(market.outcomes)
                   : market.outcomes || [];
@@ -1801,8 +1879,25 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                 const outcomePrices = typeof market.outcomePrices === 'string'
                   ? JSON.parse(market.outcomePrices)
                   : market.outcomePrices || [];
+                registerOutcomeChanges(market.conditionId, prev[market.conditionId], outcomePrices);
 
                 const primaryPrice = parseFloat(outcomePrices[0] || 0);
+                const buyTransactions = Number(
+                  market.buyTransactions ??
+                    market.buyTxs ??
+                    market.tx?.buy ??
+                    market.buyCount ??
+                    market.buy_count ??
+                    0,
+                );
+                const sellTransactions = Number(
+                  market.sellTransactions ??
+                    market.sellTxs ??
+                    market.tx?.sell ??
+                    market.sellCount ??
+                    market.sell_count ??
+                    0,
+                );
 
                 updated[market.conditionId] = {
                   ...updated[market.conditionId],
@@ -1815,6 +1910,8 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                   liquidity: market.liquidity || 0,
                   openInterest: market.liquidity || 0,
                   trades: Math.floor((market.volume24hr || 0) / 100) || 0,
+                  buyTransactions: Number.isFinite(buyTransactions) ? buyTransactions : 0,
+                  sellTransactions: Number.isFinite(sellTransactions) ? sellTransactions : 0,
                 };
               }
             });
@@ -1822,8 +1919,13 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
           return updated;
         });
+        if (pulseKeys.length) {
+          triggerOutcomePulse(pulseKeys);
+        }
       } catch (error) {
         console.error('Error updating Polymarket prices:', error);
+      } finally {
+        priceUpdateInFlightRef.current = false;
       }
     };
 
@@ -1836,9 +1938,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         // Start polling for price updates every second
         priceUpdateInterval = setInterval(() => {
           if (isPredictLoadingRef.current) return;
-          // Get current page markets from realtimeCallbackRef
-          const currentMarkets = realtimeCallbackRef.current.getCurrentPageMarkets?.() || [];
-          updatePrices(currentMarkets);
+          updatePrices(currentPageMarketsRef.current);
         }, 1000);
       }
     };
@@ -3127,6 +3227,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const [tradeMinSize, setTradeMinSize] = useState('');
   const [tradeSideFilter, setTradeSideFilter] = useState<'all' | 'buy' | 'sell'>('all');
   const [activeMultiScrollCard, setActiveMultiScrollCard] = useState<string | null>(null);
+  const [outcomePulseMap, setOutcomePulseMap] = useState<Record<string, number>>({});
   const [isPredictLoading, setIsPredictLoading] = useState(
     () => Object.keys(predictMarketsData || {}).length === 0,
   );
@@ -3186,6 +3287,22 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
     const slugifyTag = (value: string) =>
       normalizeTagName(value).replace(/\s+/g, '-');
+
+    const updateEventsQuery = (category: string, query: string) => {
+      if (!query) return;
+      eventsQueryRef.current = query;
+      eventsQueryByCategoryRef.current[category] = query;
+    };
+
+    const applyEndDateMin = (query: string) => {
+      if (!query) return '';
+      const endDateMin = encodeURIComponent(new Date().toISOString());
+      if (query.includes('end_date_min=')) {
+        return query.replace(/end_date_min=[^&]*/g, `end_date_min=${endDateMin}`);
+      }
+      const separator = query.includes('?') ? '&' : '?';
+      return `${query}${separator}end_date_min=${endDateMin}`;
+    };
 
     useEffect(() => {
       if (!isPredictLoading) return;
@@ -3286,6 +3403,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
           activeMarkets.length > 2 || (hasGroupItems && activeMarkets.length > 1);
 
         if (shouldGroup) {
+          const { buyCount, sellCount } = getBuySellCounts({ markets: activeMarkets });
           const changeValues = activeMarkets
             .map((m: any) => Number(m.oneDayPriceChange))
             .filter((val: number) => Number.isFinite(val));
@@ -3317,6 +3435,8 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
             volume24hr: activeMarkets.reduce((sum: number, m: any) => sum + (m.volume24hr || 0), 0),
             volume: activeMarkets.reduce((sum: number, m: any) => sum + (m.volume || 0), 0),
             liquidity: activeMarkets.reduce((sum: number, m: any) => sum + (Number(m.liquidity) || 0), 0),
+            buyTransactions: buyCount,
+            sellTransactions: sellCount,
             oneDayPriceChange,
             endDate: activeMarkets[0]?.endDate,
             startDate: activeMarkets[0]?.startDate,
@@ -3372,6 +3492,22 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         .replace(/^Is\s+/i, '')
         .replace(/\?.*$/, '')
         .substring(0, 50);
+      const buyTransactions = Number(
+        market.buyTransactions ??
+          market.buyTxs ??
+          market.tx?.buy ??
+          market.buyCount ??
+          market.buy_count ??
+          0,
+      );
+      const sellTransactions = Number(
+        market.sellTransactions ??
+          market.sellTxs ??
+          market.tx?.sell ??
+          market.sellCount ??
+          market.sell_count ??
+          0,
+      );
 
       return [
         market.conditionId,
@@ -3400,6 +3536,8 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
           fundingTime: new Date(market.startDate || market.creationDate || Date.now()).getTime(),
           // Trade count (use a reasonable estimate based on volume)
           trades: Math.floor((market.volume24hr || 0) / 100) || 0,
+          buyTransactions: Number.isFinite(buyTransactions) ? buyTransactions : 0,
+          sellTransactions: Number.isFinite(sellTransactions) ? sellTransactions : 0,
           // Status
           enableDisplay: isOpen,
           status: 'graduated', // All Polymarket markets are "active"
@@ -3553,9 +3691,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
       try {
         const endDateMin = encodeURIComponent(new Date().toISOString());
-        const page = await fetchPolymarketJson(
-          `/predictapi/events?active=true&archived=false&closed=false&${tagParam}&order=volume24hr&ascending=false&limit=${TAG_EVENTS_LIMIT}&offset=0&end_date_min=${endDateMin}`,
-        );
+        const eventsQuery = `/predictapi/events?active=true&archived=false&closed=false&${tagParam}&order=volume24hr&ascending=false&limit=${TAG_EVENTS_LIMIT}&offset=0&end_date_min=${endDateMin}`;
+        updateEventsQuery(category, eventsQuery);
+        const page = await fetchPolymarketJson(eventsQuery);
 
         if (!Array.isArray(page) || page.length === 0) {
           tagFetchedRef.current.add(category);
@@ -3592,7 +3730,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         console.error('Error fetching full tag markets:', error);
       } finally {
         tagFetchInFlightRef.current.delete(category);
-        setIsPredictLoading(false);
+        if (selectedCategoryRef.current === category) {
+          setIsPredictLoading(false);
+        }
       }
     }, [buildGroupedMarkets, fetchPolymarketJson, formatMarketEntry, resolveTagMeta, setPredictFilterOptions, setPredictMarketsData]);
 
@@ -3616,6 +3756,10 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         setPerpsSortDirection('desc');
         const cachedIds = predictFilterOptions?.[category];
         const hasCachedIds = Array.isArray(cachedIds) && cachedIds.length > 0;
+        const cachedQuery = eventsQueryByCategoryRef.current[category];
+        if (cachedQuery) {
+          eventsQueryRef.current = cachedQuery;
+        }
 
         if (hasCachedIds) {
           setIsPredictLoading(false);
@@ -3629,6 +3773,10 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         }));
         fetchAllMarketsForTag(category);
       } else {
+        const cachedQuery = eventsQueryByCategoryRef.current.All;
+        if (cachedQuery) {
+          eventsQueryRef.current = cachedQuery;
+        }
         setIsPredictLoading(false);
       }
     }, [fetchAllMarketsForTag, predictFilterOptions, scrollTrendingListToTop, selectedCategory]);
@@ -3745,11 +3893,107 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     });
   }, [getTradeAmount, isTradeBuy, liveTrades, tradeMinSize, tradeSideFilter]);
 
-  // Update the callback with current page markets for real-time price updates
+  const liveTradeCounts = useMemo(() => {
+    const counts: Record<string, { buy: number; sell: number }> = {};
+    liveTrades.forEach((trade) => {
+      const rawMarket =
+        trade?.conditionId ??
+        trade?.market ??
+        trade?.marketId ??
+        trade?.condition_id ??
+        trade?.market_id ??
+        trade?.marketID ??
+        trade?.conditionID ??
+        '';
+      const resolvedMarket =
+        typeof rawMarket === 'object'
+          ? rawMarket?.conditionId ?? rawMarket?.id ?? rawMarket?.marketId
+          : rawMarket;
+      if (!resolvedMarket) return;
+      const id = String(resolvedMarket);
+      const entry = counts[id] || { buy: 0, sell: 0 };
+      if (isTradeBuy(trade)) {
+        entry.buy += 1;
+      } else {
+        entry.sell += 1;
+      }
+      counts[id] = entry;
+    });
+    return counts;
+  }, [isTradeBuy, liveTrades]);
+
+  const getBuySellCountsForToken = useCallback(
+    (token: any) => {
+      const counts = getBuySellCounts(token);
+      if (counts.buyCount > 0 || counts.sellCount > 0) return counts;
+
+      const readFromMap = (id?: string) => {
+        if (!id) return { buy: 0, sell: 0 };
+        return liveTradeCounts[id] || { buy: 0, sell: 0 };
+      };
+
+      if (Array.isArray(token?.markets) && token.markets.length > 0) {
+        return token.markets.reduce(
+          (acc: { buyCount: number; sellCount: number }, market: any) => {
+            const entry = readFromMap(
+              market?.conditionId ?? market?.id ?? market?.marketId,
+            );
+            acc.buyCount += entry.buy;
+            acc.sellCount += entry.sell;
+            return acc;
+          },
+          { buyCount: 0, sellCount: 0 },
+        );
+      }
+
+      const fallbackEntry = readFromMap(token?.contractId);
+      return { buyCount: fallbackEntry.buy, sellCount: fallbackEntry.sell };
+    },
+    [liveTradeCounts],
+  );
+
+  const triggerOutcomePulse = useCallback((keys: string[]) => {
+    if (!keys.length) return;
+    const uniqueKeys = Array.from(new Set(keys));
+    const now = Date.now();
+    setOutcomePulseMap((prev) => {
+      const next = { ...prev };
+      uniqueKeys.forEach((key) => {
+        next[key] = now;
+      });
+      return next;
+    });
+
+    uniqueKeys.forEach((key) => {
+      if (outcomePulseTimeoutsRef.current[key]) {
+        clearTimeout(outcomePulseTimeoutsRef.current[key]);
+      }
+      outcomePulseTimeoutsRef.current[key] = setTimeout(() => {
+        setOutcomePulseMap((prev) => {
+          if (!prev[key]) return prev;
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+        delete outcomePulseTimeoutsRef.current[key];
+      }, 900);
+    });
+  }, []);
+
   useEffect(() => {
-    realtimeCallbackRef.current.getCurrentPageMarkets = () => {
-      return paginatedTokens.map((token: any) => token.contractId);
+    return () => {
+      Object.values(outcomePulseTimeoutsRef.current).forEach((timeoutId) =>
+        clearTimeout(timeoutId),
+      );
+      outcomePulseTimeoutsRef.current = {};
     };
+  }, []);
+
+  // Update the current page market ids for real-time price updates
+  useEffect(() => {
+    currentPageMarketsRef.current = paginatedTokens.map(
+      (token: any) => token.contractId,
+    );
   }, [paginatedTokens]);
 
   const toggleFavorite = (contractId: string) => {
@@ -3947,6 +4191,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                     : endLabel
                       ? `Ends ${endLabel}`
                       : 'Active market';
+                  const titleHint = (token.eventTitle || token.question || '').toString();
+                  const titleHintLower = titleHint.toLowerCase();
+                  const isMatchupMarket = /(^|\s)(vs\.?|v\.?)(\s|$)/i.test(titleHint);
                   const resolution = !isResolved
                     ? getResolutionDate(token.endDate, token.outcomes)
                     : null;
@@ -3967,18 +4214,13 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                                 ? rawChange
                                 : 0;
                               const fallbackLabel = outcomes[index] || '';
-                              const label =
-                                market.groupItemTitle ||
-                                market.question ||
-                                fallbackLabel;
-                              const displayName = market.groupItemTitle
-                                ? market.groupItemTitle
-                                : getOutcomeDisplayName(
-                                    label,
-                                    token.eventTitle || token.question,
-                                  );
+                              const displayName = getMarketOutcomeLabel(
+                                market,
+                                token.eventTitle || token.question,
+                                fallbackLabel,
+                              );
                               const resolvedLabel =
-                                displayName || label || `Outcome ${index + 1}`;
+                                displayName || fallbackLabel || `Outcome ${index + 1}`;
 
                               return {
                                 outcome: resolvedLabel,
@@ -4010,16 +4252,17 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         const allNumberSort = entries.length > 1 && entries.every(
                           (entry: any) => Number.isFinite(entry.numberSort),
                         );
-                        const titleHint = (token.eventTitle || token.question || '')
-                          .toString()
-                          .toLowerCase();
                         const isPriceMarket =
-                          /\bprice\b|\$|\busd\b|\busdc\b|\busdt\b/.test(titleHint) ||
+                          /\bprice\b|\$|\busd\b|\busdc\b|\busdt\b/.test(titleHintLower) ||
                           entries.some((entry: any) =>
                             /\$|\busd\b|\busdc\b|\busdt\b/.test(
                               String(entry.outcome || '').toLowerCase(),
                             ),
                           );
+
+                        if (isMatchupMarket) {
+                          return entries;
+                        }
 
                         return [...entries].sort(
                           allDateSort
@@ -4033,7 +4276,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         );
                       })()
                     : [];
-                  const { buyCount, sellCount } = getBuySellCounts(token);
+                  const { buyCount, sellCount } = getBuySellCountsForToken(token);
 
                   // For multi-outcome markets, render a special card layout
                   if (isMultiOutcome) {
@@ -4313,6 +4556,8 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                             const displayName = entry.outcome;
                             const outcomeIndex = entry.index;
                             const changePercent = entry.changePercent;
+                            const pulseKey = `${token.contractId}:${outcomeIndex}`;
+                            const isPulse = Boolean(outcomePulseMap[pulseKey]);
                             const isOutcomeChangeZero = Math.abs(changePercent) < 1e-9;
                             const outcomeChangeClass = isOutcomeChangeZero
                               ? 'neutral'
@@ -4341,7 +4586,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                                       {outcomeChangePrefix}
                                       {(changePercent * 100).toFixed(1)}%
                                     </span>
-                                    <span className="predict-multi-outcome-probability">
+                                    <span className={`predict-multi-outcome-probability${isPulse ? ' predict-outcome-pulse' : ''}`}>
                                       {formatMarketPercent(probability)}%
                                     </span>
                                   </div>
@@ -4429,6 +4674,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                     price: number;
                     isYes: boolean;
                     isNo: boolean;
+                    index: number;
                   }[] = outcomes.map((label: string, index: number) => {
                     const rawPrice =
                       outcomePrices[index] ??
@@ -4442,6 +4688,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                       price: Number.isFinite(price) ? price : 0,
                       isYes: normalized === 'yes',
                       isNo: normalized === 'no',
+                      index,
                     };
                   });
                   const yesEntry = outcomeEntries.find((entry) => entry.isYes);
@@ -4450,13 +4697,19 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                     yesEntry && noEntry
                       ? [yesEntry, noEntry]
                       : [...outcomeEntries].sort((a, b) => b.price - a.price);
-                  const leftOutcome = orderedOutcomes[0] || { label: 'Yes', price: 0.5 };
-                  const rightOutcome = orderedOutcomes[1] || { label: 'No', price: 0.5 };
+                  const leftOutcome = orderedOutcomes[0] || { label: 'Yes', price: 0.5, index: 0 };
+                  const rightOutcome = orderedOutcomes[1] || { label: 'No', price: 0.5, index: 1 };
                   const outcome1 = leftOutcome.label || 'Yes';
                   const outcome2 = rightOutcome.label || 'No';
                   const yesPrice = leftOutcome.price;
                   const noPrice = rightOutcome.price;
                   const probabilityValue = yesPrice;
+                  const leftOutcomeIndex = leftOutcome.index ?? 0;
+                  const rightOutcomeIndex = rightOutcome.index ?? 1;
+                  const leftPulseKey = `${token.contractId}:${leftOutcomeIndex}`;
+                  const rightPulseKey = `${token.contractId}:${rightOutcomeIndex}`;
+                  const leftPulse = Boolean(outcomePulseMap[leftPulseKey]);
+                  const rightPulse = Boolean(outcomePulseMap[rightPulseKey]);
                   const impliedYesFromNo = 1 - noPrice;
                   const spreadCents = Math.abs(yesPrice - impliedYesFromNo) * 100;
                   const rawChangePercent = Number(token.priceChangePercent);
@@ -4481,8 +4734,8 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         ? 'predict-probability-spread-mid'
                         : '';
                   const probabilityClassName = spreadClass
-                    ? `predict-probability-main ${spreadClass}`
-                    : 'predict-probability-main';
+                    ? `predict-probability-main ${spreadClass}${leftPulse ? ' predict-outcome-pulse' : ''}`
+                    : `predict-probability-main${leftPulse ? ' predict-outcome-pulse' : ''}`;
 
                   return (
                     <div
@@ -4760,7 +5013,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
                     <div className="trending-cell action-cell" style={{gap: '10px'}}>
                       <button
-                        className={`perps-trending-buy-btn`}
+                        className={`perps-trending-buy-btn${leftPulse ? ' predict-outcome-pulse' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleQuickBuy(token, quickAmounts.new, 'primary');
@@ -4779,7 +5032,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         )}
                       </button>
                       <button
-                        className={`perps-trending-sell-btn`}
+                        className={`perps-trending-sell-btn${rightPulse ? ' predict-outcome-pulse' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleQuickBuy(token, quickAmounts.new, 'secondary');
