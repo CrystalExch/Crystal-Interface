@@ -1014,7 +1014,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       else {
         tempsig = await signTypedDataAsync({
           typedData: {
+            domain: {
+              chainId: activechain,
+            },
             types: {
+              EIP712Domain: [
+                { name: 'chainId', type: 'uint256' },
+              ],
               CrystalOneCT: [
                 { name: 'version', type: 'string' },
                 { name: 'account', type: 'uint256' },
@@ -1024,8 +1030,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             message: {
               version: 'Crystal v0.0.1 Mainnet',
               account: 1,
-            }
-          }
+            },
+          },
         })
         localStorage.setItem(signatureKey, tempsig)
         setOneCTSig(tempsig)
