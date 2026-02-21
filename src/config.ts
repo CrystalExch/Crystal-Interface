@@ -15,13 +15,10 @@ const uiConfig: AlchemyAccountsUIConfig = {
 export const alchemyconfig = createConfig({
   transport: alchemy({ apiKey: "SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng" }),
   policyId: "3333f9e7-1a5d-4306-ae3a-8f358a07e8ab",
-  chain: settings.chains[1],
+  chain: settings.chains[0],
   chains: [
     {
       chain: settings.chains[0],
-    },
-    {
-      chain: settings.chains[1],
     },
     {
       chain: arbitrum

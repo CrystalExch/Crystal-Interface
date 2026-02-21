@@ -165,9 +165,8 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
   const [attemptedExceedLimit, setAttemptedExceedLimit] = useState(false);
   const hasInitializedFavorites = useRef(false);
 
-  const chainId = 10143;
-  const chainTokenDict = settings.chainConfig[chainId].tokendict;
-  const chainMarkets = settings.chainConfig[chainId].markets;
+  const chainTokenDict = settings.chainConfig[activechain].tokendict;
+  const chainMarkets = settings.chainConfig[activechain].markets;
   const earnAvailableTokens: EarnToken[] = Object.values(chainTokenDict).map((token: any) => ({
     symbol: token.ticker,
     icon: token.image,
@@ -1012,7 +1011,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
       const inputBigInt = BigInt(Math.floor(parseFloat(inputAmount) * (10 ** decimals)));
 
       if (tokenSymbol === 'ETH' && mode === 'supply') {
-        const gasReserve = settings.chainConfig[chainId].gasamount;
+        const gasReserve = settings.chainConfig[activechain].gasamount;
         const availableBalance = balance > gasReserve ? balance - gasReserve : BigInt(0);
         return inputBigInt > availableBalance;
       }
@@ -1104,8 +1103,8 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
         let amount = balance;
 
         if (earnSelectedVaultData.tokens.first.symbol === 'ETH') {
-          amount = balance - settings.chainConfig[chainId].gasamount > BigInt(0)
-            ? balance - settings.chainConfig[chainId].gasamount
+          amount = balance - settings.chainConfig[activechain].gasamount > BigInt(0)
+            ? balance - settings.chainConfig[activechain].gasamount
             : BigInt(0);
         }
 
@@ -1132,8 +1131,8 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
         let amount = balance;
 
         if (earnSelectedCollateral.symbol === 'ETH') {
-          amount = balance - settings.chainConfig[chainId].gasamount > BigInt(0)
-            ? balance - settings.chainConfig[chainId].gasamount
+          amount = balance - settings.chainConfig[activechain].gasamount > BigInt(0)
+            ? balance - settings.chainConfig[activechain].gasamount
             : BigInt(0);
         }
 
@@ -1757,8 +1756,8 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
 
                                         let amount = balance;
                                         if (earnSelectedVaultData.tokens.first.symbol === 'ETH') {
-                                          amount = balance - settings.chainConfig[chainId].gasamount > BigInt(0)
-                                            ? balance - settings.chainConfig[chainId].gasamount
+                                          amount = balance - settings.chainConfig[activechain].gasamount > BigInt(0)
+                                            ? balance - settings.chainConfig[activechain].gasamount
                                             : BigInt(0);
                                         }
 
@@ -1932,8 +1931,8 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
 
                                         let amount = balance;
                                         if (earnSelectedCollateral.symbol === 'ETH') {
-                                          amount = balance - settings.chainConfig[chainId].gasamount > BigInt(0)
-                                            ? balance - settings.chainConfig[chainId].gasamount
+                                          amount = balance - settings.chainConfig[activechain].gasamount > BigInt(0)
+                                            ? balance - settings.chainConfig[activechain].gasamount
                                             : BigInt(0);
                                         }
 

@@ -28,7 +28,7 @@ interface LaunchpadProps {
   setpopup: (n: number) => void;
 }
 
-const ROUTER_ADDRESS = settings.chainConfig[10143].launchpadRouter.toLowerCase();
+const ROUTER_ADDRESS = settings.chainConfig[activechain].launchpadRouter.toLowerCase();
 const UPLOADER_URL = 'https://launchpad-api.bhealthyfences.workers.dev/';
 
 async function uploadToR2(
@@ -119,7 +119,7 @@ const handleLaunch = async () => {
     return;
   }
   if (!account.connected) return setpopup(4);
-  if (account.chainId !== 10143) return setChain();
+  if (account.chainId !== activechain) return setChain();
 
   setIsLaunching(true);
   try {
@@ -310,7 +310,7 @@ const handleLaunch = async () => {
 
             <button className={`launchpad-launch-button ${isFormValid && !isLaunching ? 'enabled' : ''}`} onClick={handleLaunch} disabled={!isFormValid || isLaunching}>
               {isLaunching && (<div className="loading-spinner" />)}
-              {isLaunching ? 'Sign Transaction' : account.connected ? (account.chainId === 10143 ? 'Launch Token' : `Switch to ${settings.chainConfig[10143].name}`) : 'Connect Wallet'}
+              {isLaunching ? 'Sign Transaction' : account.connected ? (account.chainId === activechain ? 'Launch Token' : `Switch to ${settings.chainConfig[activechain].name}`) : 'Connect Wallet'}
             </button>
           </div>
         </div>
