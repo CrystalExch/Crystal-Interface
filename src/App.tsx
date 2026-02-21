@@ -29567,6 +29567,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 }}
                 setChain={handleSetChain}
                 setpopup={setpopup}
+                activechain={activechain}
               />
             } />
           <Route path="/sneakylending"

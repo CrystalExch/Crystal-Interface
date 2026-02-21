@@ -26,9 +26,9 @@ interface LaunchpadProps {
   account: any;
   setChain: () => void;
   setpopup: (n: number) => void;
+  activechain: number;
 }
 
-const ROUTER_ADDRESS = settings.chainConfig[activechain].launchpadRouter.toLowerCase();
 const UPLOADER_URL = 'https://launchpad-api.bhealthyfences.workers.dev/';
 
 async function uploadToR2(
@@ -51,6 +51,7 @@ const Launchpad: React.FC<LaunchpadProps> = ({
   account,
   setChain,
   setpopup,
+  activechain
 }) => {
   const navigate = useNavigate()
   const [formData, setFormData] = useState<LaunchpadFormData>({
@@ -135,20 +136,19 @@ const handleLaunch = async () => {
       buyAmount = BigInt(Math.floor(parseFloat(prebuyAmount) * 1e18));
     }
     
-    const txId = `create-token-${Date.now()}`;                         // NEW
+    const txId = `create-token-${Date.now()}`;
     
-    // Show loading popup                                               // NE    
-    if (showLoadingPopup) {                                            // NEW
-      showLoadingPopup(txId, {                                         // NEW
-        title: 'Creating Token',                                       // NEW
-        subtitle: `Launching ${formData.name} (${formData.ticker})`,  // NEW
-        tokenImage: uploadedImageUrl,                                  // NEW
-      });                                                              // NEW
-    }                                                                  // NEW
+    if (showLoadingPopup) { 
+      showLoadingPopup(txId, {
+        title: 'Creating Token',
+        subtitle: `Launching ${formData.name} (${formData.ticker})`,
+        tokenImage: uploadedImageUrl,
+      });
+    }
     
-    const result = await sendUserOperationAsync({                      // CHANGED
+    const result = await sendUserOperationAsync({ 
       uo: {
-        target: ROUTER_ADDRESS,
+        target: settings.chainConfig[activechain].launchpadRouter,
         data: encodeFunctionData({
           abi: CrystalRouterAbi,
           functionName: 'createToken',
