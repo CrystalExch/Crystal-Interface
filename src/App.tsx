@@ -1390,6 +1390,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     } else if (path === 'swap' && !simpleView) {
       setSimpleView(true);
     }
+
+    if (path === 'send' || path === 'scale') {
+      setCurrentProText(path);
+    } else if (path === 'swap' || path === 'market' || path === 'limit') {
+      setCurrentProText('pro');
+    }
   }, [location.pathname, simpleView]);
   const [previewPosition, setPreviewPosition] = useState<string | null>(null);
   const [previewTimer, setPreviewTimer] = useState<NodeJS.Timeout | null>(null);
