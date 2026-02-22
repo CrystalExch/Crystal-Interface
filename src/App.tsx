@@ -1371,7 +1371,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [usedRefAddress, setUsedRefAddress] = useState(
     '0x0000000000000000000000000000000000000000' as `0x${string}`,
   );
-  const [simpleView, setSimpleView] = useState(true);
+  const [simpleView, setSimpleView] = useState(() => location.pathname.slice(1) !== 'market');
   const [hideNotificationPopups, setHideNotificationPopups] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_hide_notification_popups') || 'false');
   });
@@ -1382,6 +1382,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return saved || 'bottom-right';
   });
   const [showPreview, setShowPreview] = useState(false);
+
+  useEffect(() => {
+    const path = location.pathname.slice(1);
+    if (path === 'market' && simpleView) {
+      setSimpleView(false);
+    } else if (path === 'swap' && !simpleView) {
+      setSimpleView(true);
+    }
+  }, [location.pathname, simpleView]);
   const [previewPosition, setPreviewPosition] = useState<string | null>(null);
   const [previewTimer, setPreviewTimer] = useState<NodeJS.Timeout | null>(null);
   const [previewExiting, setPreviewExiting] = useState(false);
@@ -3406,7 +3415,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   };
 
   // data loop, reuse to have every single rpc call method in this loop
-  /* const { data: rpcQueryData, isLoading, dataUpdatedAt, refetch } = useQuery({
+  const { data: rpcQueryData, isLoading, dataUpdatedAt, refetch } = useQuery({
     queryKey: [
       'crystal_rpc_reads',
       switched,
@@ -3743,7 +3752,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     enabled: !!activeMarket && !!tokendict && !!markets,
     refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 300 : 5000,
     gcTime: 0,
-  }) */
+  })
 
   const handleImportWallets = (walletsText: string, addToSingleGroup: boolean) => {
     try {
@@ -8462,7 +8471,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [amountsQuote, orders.length > 0]); */
 
   // process data
-  /* useLayoutEffect(() => {
+  useLayoutEffect(() => {
     const data = rpcQueryData?.readContractData?.mainGroup;
     const refData = rpcQueryData?.readContractData?.refGroup;
     const oneCTDepositData = rpcQueryData?.readContractData?.oneCTDepositGroup;
@@ -8790,10 +8799,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
     } else {
     }
-  }, [rpcQueryData?.readContractData, activechain, isLoading, dataUpdatedAt, location.pathname.slice(1)]); */
+  }, [rpcQueryData?.readContractData, activechain, isLoading, dataUpdatedAt, location.pathname.slice(1)]);
 
   // update display values when loading is finished
-  /* useLayoutEffect(() => {
+  useLayoutEffect(() => {
     if (!isLoading && !stateIsLoading && Object.keys(mids).length > 0) {
       setDisplayValuesLoading(false);
       if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
@@ -9155,12 +9164,12 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     scaleEnd,
     scaleOrders,
     scaleSkew,
-  ]); */
+  ]);
 
   // temp vars
-  const refetch = () => { };
-  const isLoading = false;
-  const rpcQueryData = { gasEstimate: 0n };
+  // const refetch = () => { };
+  // const isLoading = false;
+  // const rpcQueryData = { gasEstimate: 0n };
   const tempsendPopupButton = connected && userchain == activechain
     ? sendAmountIn === BigInt(0)
       ? 0
@@ -11259,7 +11268,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [tokenIn, tokenOut, location.pathname.slice(1), amountIn, amountOutSwap, switched]);
 
   // update active tab
-  useLayoutEffect(() => {
+  /* useLayoutEffect(() => {
     const path = location.pathname.slice(1);
     if (path === 'swap') {
       setSimpleView(true);
@@ -11891,7 +11900,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [tempQueryData, activechain, isQuoteFetching, quoteUpdatedAt, location.pathname.slice(1)]);
 
   // temp update display values when loading is finished
-  useLayoutEffect(() => {
+  /* useLayoutEffect(() => {
     if (!isLoading && !stateIsLoading && tempQueryData?.aggregatorRes) {
       setDisplayValuesLoading(false);
       if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
@@ -12044,7 +12053,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     walletTokenBalances[address],
     multihop,
     recipient,
-  ]);
+  ]); */
 
   // changed to quoteRefetch
   const handleRefreshQuote = useCallback(async (e: any) => {
@@ -21069,7 +21078,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     </>
   );
 
-  const tempswap = (
+  /* const tempswap = (
     <div className="rectangle">
       <div className="navlinkwrapper" onClick={() => {
         if (windowWidth <= 1020 && !simpleView && !showTrade) {
@@ -22358,7 +22367,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           ))}
       </div>
     </div>
-  );
+  ); */
 
   // trade ui component
   const swap = (
@@ -29600,10 +29609,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 setChain={handleSetChain}
               />
             } />
-          <Route path="/swap" element={TradeLayout(tempswap)} />
+          <Route path="/swap" element={TradeLayout(swap)} />
+          <Route path="/market" element={TradeLayout(swap)} />
           <Route path="/sneakymarket" element={TradeLayout(swap)} />
+          <Route path="/limit" element={TradeLayout(limit)} />
           <Route path="/sneakylimit" element={TradeLayout(limit)} />
           <Route path="/send" element={TradeLayout(send)} />
+          <Route path="/scale" element={TradeLayout(scale)} />
           <Route path="/sneakyscale" element={TradeLayout(scale)} />
         </Routes>
         <TransactionPopupManager

@@ -117,8 +117,8 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [mobileMenuOpen]);
 
-  const isTradingPage = ['/swap', '/limit', '/send', '/scale', '/market'].some(tradePath =>
-    path === tradePath || path.startsWith(tradePath)
+  const isTradingPage = ['/swap', '/limit', '/send', '/scale', '/market', '/sneakymarket', '/sneakylimit', '/sneakyscale'].some(
+    (tradePath) => path === tradePath || path.startsWith(tradePath),
   );
 
   return (
@@ -136,21 +136,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             </Link>
           )}
           <div className="sidebar-links">
-            {/*(<Link
-              to="/market"
-              className={`view-mode-button ${path === '/market' || (isTradingPage && !simpleView) ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
-              onClick={(e) => {
-                if (location.pathname === '/market') {
-                  e.preventDefault();
-                } else {
-                  setSimpleView(false);
-                }
-                handleLinkClick();
-              }}
-            >
-              <img src={candlestick} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Trade')}</span>
-            </Link>) */}
             <Link
               to="/spectra"
               className={`page-mode-button ${path === '/spectra' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -184,7 +169,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               to="/swap"
               className={`view-mode-button ${path === '/swap' || (isTradingPage && simpleView) ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
               onClick={(e) => {
-                if (location.pathname === '/swap') {
+                if (location.pathname === '/swap' && simpleView) {
                   e.preventDefault();
                 } else {
                   setSimpleView(true);
@@ -195,6 +180,21 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={swap} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Swap')}</span>
             </Link>}
+            <Link
+              to="/market"
+              className={`view-mode-button ${path === '/market' || (isTradingPage && !simpleView) ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              onClick={(e) => {
+                if (location.pathname === '/market' && !simpleView) {
+                  e.preventDefault();
+                } else {
+                  setSimpleView(false);
+                }
+                handleLinkClick();
+              }}
+            >
+              <img src={candlestick} className="sidebar-icon" />
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Trade')}</span>
+            </Link>
             {/* !isMobile && (
               <Link
                 to="/earn/liquidity"
