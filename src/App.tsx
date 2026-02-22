@@ -8400,7 +8400,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [trades, location.pathname, activeMarket, perpsMarketsData, perpsActiveMarketKey]);
 
   // process ob on orders or amountsquote change
-  /* useEffect(() => {
+  useEffect(() => {
     if (prevOrderData && Array.isArray(prevOrderData) && prevOrderData.length >= 4) {
       try {
         const buyOrdersRaw: bigint[] = [];
@@ -8474,7 +8474,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         console.error(error);
       }
     }
-  }, [amountsQuote, orders.length > 0]); */
+  }, [amountsQuote, orders.length > 0]);
 
   // process data
   useLayoutEffect(() => {
@@ -9176,7 +9176,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   // const refetch = () => { };
   // const isLoading = false;
   // const rpcQueryData = { gasEstimate: 0n };
-  const tempsendPopupButton = connected && userchain == activechain
+  /* const tempsendPopupButton = connected && userchain == activechain
     ? sendAmountIn === BigInt(0)
       ? 0
       : !/^(0x[0-9a-fA-F]{40})$/.test(recipient)
@@ -9186,9 +9186,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           : 3
     : connected
       ? 4
-      : 5
+      : 5 */
 
-  // // trades processing
+  // trades processing
   useEffect(() => {
     const temp: Trade[] | undefined = tradesByMarket[activeMarketKey];
 
@@ -9216,7 +9216,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     setTrades(processed);
   }, [tradesByMarket?.[activeMarketKey]?.[0]])
 
-  // // fetch initial address info and event stream
+  // fetch initial address info and event stream
   useEffect(() => {
     let liveStreamCancelled = false;
     let isAddressInfoFetching = false;
@@ -10864,7 +10864,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     };
   }, [activechain, address]);
 
-  // // klines + trades
+  // klines + trades
   useEffect(() => {
     (async () => {
       try {
@@ -11274,7 +11274,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [tokenIn, tokenOut, location.pathname.slice(1), amountIn, amountOutSwap, switched]);
 
   // update active tab
-  /* useLayoutEffect(() => {
+  useLayoutEffect(() => {
     const path = location.pathname.slice(1);
     if (path === 'swap') {
       setSimpleView(true);
@@ -11652,7 +11652,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [location.pathname.slice(1)]);
 
   // limit chase
-  /* useEffect(() => {
+  useEffect(() => {
     if (limitChase && !isLimitEditing) {
       let price = mids?.[activeMarketKey]?.[0] ? (tokenIn === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]) : 0n
       setlimitPrice(price);
@@ -11762,7 +11762,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         );
       }
     }
-  }, [limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn, location.pathname.slice(1), isLimitEditing]); */
+  }, [limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn, location.pathname.slice(1), isLimitEditing]);
 
   // tx popup time
   useEffect(() => {
@@ -11812,18 +11812,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           else if (!oneCTSigner) {
             setpopup(28)
           }
-          // if (window.location.hostname == 'test.crystal.exchange' && address != '0x16A6AD07571a73b1C043Db515EC29C4FCbbbBb5d') {
-          //   (async () => {
-          //     const amountInWei = BigInt(Math.round(30 * 10 ** 18));
-          //     await sendUserOperationAsync({
-          //       uo: {
-          //         target: address as `0x${string}`,
-          //         value: amountInWei,
-          //         data: '0x'
-          //       }
-          //     }, 100000n, 0n, false, '', await getTransactionCount(config, { address: ('0x14e60c954f13df0c1cc7e96dd485a245485c8813' as any), }))
-          //   })()
-          // }
         }
         else {
           if (scaAddress && popup === 11) {
@@ -11834,7 +11822,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     }
   }, [popup, connected, scaAddress, typedRefCode, user != null, loading]);
 
-  const { data: tempQueryData, isFetching: isQuoteFetching, dataUpdatedAt: quoteUpdatedAt, refetch: quoteRefetch } = useQuery({
+  /* const { data: tempQueryData, isFetching: isQuoteFetching, dataUpdatedAt: quoteUpdatedAt, refetch: quoteRefetch } = useQuery({
     queryKey: ['madhouse_quote', tokenIn, tokenOut, address, activechain, slippage.toString(), amountIn ? amountIn.toString() : null],
     queryFn: async () => {
       const allowanceBody = address ? JSON.stringify({
@@ -11886,9 +11874,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     enabled: !!tokenIn && !!tokenOut && !!activechain && !!amountIn && ['swap'].includes(location.pathname.split('/')[1]),
     refetchInterval: 3000,
     gcTime: 0
-  })
+  }) */
 
-  useLayoutEffect(() => {
+  /* useLayoutEffect(() => {
     if (!isQuoteFetching && tempQueryData?.aggregatorRes) {
       if (!txPending.current && !debounceTimerRef.current) {
         if (tempQueryData?.allowanceRes != null) {
@@ -11903,7 +11891,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       }
     } else {
     }
-  }, [tempQueryData, activechain, isQuoteFetching, quoteUpdatedAt, location.pathname.slice(1)]);
+  }, [tempQueryData, activechain, isQuoteFetching, quoteUpdatedAt, location.pathname.slice(1)]); */
 
   // temp update display values when loading is finished
   /* useLayoutEffect(() => {
@@ -12067,9 +12055,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     if (isRefreshing) return;
     setIsRefreshing(true);
     setStateIsLoading(true);
-    await quoteRefetch()
+    await refetch()
     setIsRefreshing(false);
-  }, [isRefreshing, quoteRefetch]);
+  }, [isRefreshing, refetch]);
 
   const handleSetRef = async (used: string) => {
     let lookup
@@ -12180,7 +12168,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return key;
   };
 
-  /* const handleCancelTopOrder = useCallback(async () => {
+  const handleCancelTopOrder = useCallback(async () => {
     if (!connected || userchain !== activechain || orders.length === 0 || isSigning) {
       return;
     }
@@ -12292,9 +12280,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         }
         break;
     }
-  }, [popup, location.pathname, swapButtonDisabled, displayValuesLoading, isSigning, connected, userchain, activechain, limitButtonDisabled, sendButtonDisabled, scaleButtonDisabled]); */
+  }, [popup, location.pathname, swapButtonDisabled, displayValuesLoading, isSigning, connected, userchain, activechain, limitButtonDisabled, sendButtonDisabled, scaleButtonDisabled]);
 
-  /* useEffect(() => {
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isListeningForKey && editingKeybind) {
         event.preventDefault();
@@ -12486,7 +12474,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     handleCancelAllOrders,
     handleCancelTopOrder,
     setpopup
-  ]); */
+  ]);
 
   const renderKeybindButton = (keybindKey: string, labelText: string, descriptionText: string) => (
     <>
@@ -12585,7 +12573,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   }, [popup, scaAddress]);
 
   // input tokenlist
-  /* const TokenList1 = (
+  const TokenList1 = (
     <div className="tokenlistcontainer">
       <ul className="tokenlist">
         {Object.values(tokendict).filter(
@@ -13914,10 +13902,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         )}
       </ul>
     </div>
-  ); */
+  );
 
   // input tokenlist
-  const tempTokenList1 = (
+  /* const tempTokenList1 = (
     <div className="tokenlistcontainer">
       <ul className="tokenlist">
         {Object.values(tokendict).filter(
@@ -15246,7 +15234,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         )}
       </ul>
     </div>
-  );
+  ); */
 
   const [displayNotifications, setDisplayNotifications] = useState(true);
   const [toastPosition, setToastPosition] = useState<string>(() => {
@@ -15403,7 +15391,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 </button>
               )}
             </div>
-            {tempTokenList1}
+            {TokenList1}
           </div>
         ) : null}
         {popup === 2 ? ( // token select
@@ -15446,7 +15434,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 </button>
               )}
             </div>
-            {tempTokenList2}
+            {TokenList2}
           </div>
         ) : null}
         {popup === 3 ? ( // send popup
@@ -15814,18 +15802,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   </div>
                 ) : !connected ? (
                   t('connectWallet')
-                ) : tempsendPopupButton == 0 ? (
+                ) : sendPopupButton == 0 ? (
                   t('enterAmount')
-                ) : tempsendPopupButton == 1 ? (
+                ) : sendPopupButton == 1 ? (
                   t('enterWalletAddress')
-                ) : tempsendPopupButton == 2 ? (
+                ) : sendPopupButton == 2 ? (
                   t('send')
-                ) : tempsendPopupButton == 3 ? (
+                ) : sendPopupButton == 3 ? (
                   t('insufficient') +
                   (tokendict[sendTokenIn].ticker || '?') +
                   ' ' +
                   t('bal')
-                ) : tempsendPopupButton == 4 ? (
+                ) : sendPopupButton == 4 ? (
                   `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
                 ) : (
                   t('connectWallet')
