@@ -1,15 +1,16 @@
 import iconmonad from './assets/iconmonad.png';
-import iconsol from './assets/iconsol.png';
+import iconwmonad from './assets/iconwmonad.png';
 import iconusdc from './assets/iconusdc.png';
 import iconusdt from './assets/iconusdt.png';
+import iconausd from './assets/iconausd.png';
 import iconwbtc from './assets/iconwbtc.png';
 import iconweth from './assets/iconweth.png';
-import iconwmonad from './assets/iconwmonad.png';
-import iconshmon from './assets/iconshmon.png';
+import iconsol from './assets/iconsol.png';
 import icondak from './assets/icondak.png';
 import iconchog from './assets/iconchog.png';
-import iconsmon from './assets/iconsmon.png';
 import iconyaki from './assets/iconyaki.png';
+import iconsmon from './assets/iconsmon.png';
+import iconshmon from './assets/iconshmon.png';
 import iconaprmon from './assets/iconaprmon.png';
 import MonadLogo from './assets/monad.svg';
 
@@ -51,18 +52,17 @@ export const settings: any = {
   chainConfig: {
     143: {
       name: 'Monad',
-      httpurl:
-        'https://rpc.monad.xyz',
+      httpurl: 'https://rpc.monad.xyz',
       wssurl: `wss://rpc-mainnet.monadinfra.com`,
       eth: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
       weth: '0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A',
       usdc: '0x754704Bc059F8C67012fEd69BC8A327a5aafb603',
       balancegetter:
-        '0x10D52311a48bAE11Cf355b8a0e260F757ef5C9DB' as `0x${string}`,
-      router: '0xed8FeB0b185bf7842F46Ed0Ee4DBD0A13F68E3C7' as `0x${string}`,
-      referralManager: '0x10D52311a48bAE11Cf355b8a0e260F757ef5C9DB' as `0x${string}`,
-      launchpadRouter: '0xed8FeB0b185bf7842F46Ed0Ee4DBD0A13F68E3C7' as `0x${string}`,
-      crystalVaults: "0x9FbbC911E84b78cb40439DF7d7065Eb1b68b527D" as `0x${string}`,
+        '0x545D53D5f6c77c85dd8f94d21f0Ac47118C5643b' as `0x${string}`,
+      router: '0x2Cd24c8230618e26C149dce9cfb3fBb3d0a9ed54' as `0x${string}`,
+      referralManager: '0x545D53D5f6c77c85dd8f94d21f0Ac47118C5643b' as `0x${string}`,
+      launchpadRouter: '0x2Cd24c8230618e26C149dce9cfb3fBb3d0a9ed54' as `0x${string}`,
+      crystalVaults: "0xA26393399b426658423597DfE12930BaE1a2F9da" as `0x${string}`,
       multicall3: '0xcA11bde05977b3631167028862bE2a173976CA11' as `0x${string}`,
       firstblock: 0,
       ethticker: 'MON',
@@ -92,7 +92,7 @@ export const settings: any = {
           baseAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
           quoteDecimals: BigInt(6),
           baseDecimals: BigInt(18),
-          address: '0xA4dCef430fc8056713e6865fe64b6150e541Ef23'.toLowerCase(),
+          address: '0x235D84fA575B0370d47433A5b94e7547aA2f023d'.toLowerCase(),
           marketType: 2,
           precision: 5,
           scaleFactor: BigInt(10 ** 21),
@@ -101,7 +101,7 @@ export const settings: any = {
           minSize: BigInt(1000000),
           maxPrice: BigInt(1000000000000000),
           fee: BigInt(99970),
-          makerRebate: BigInt(99990),
+          makerRebate: BigInt(99995),
           image: iconmonad,
           website: 'https://www.monad.xyz/',
         },
@@ -116,7 +116,7 @@ export const settings: any = {
           baseAddress: '0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A',
           quoteDecimals: BigInt(6),
           baseDecimals: BigInt(18),
-          address: '0xA4dCef430fc8056713e6865fe64b6150e541Ef23'.toLowerCase(),
+          address: '0x235D84fA575B0370d47433A5b94e7547aA2f023d'.toLowerCase(),
           marketType: 2,
           precision: 5,
           scaleFactor: BigInt(10 ** 21),
@@ -125,13 +125,37 @@ export const settings: any = {
           minSize: BigInt(1000000),
           maxPrice: BigInt(1000000000000000),
           fee: BigInt(99970),
-          makerRebate: BigInt(99990),
+          makerRebate: BigInt(99995),
           image: iconwmonad,
           website: 'https://www.monad.xyz/',
         },
+        AUSDUSDC: {
+          quoteAsset: 'USDC',
+          baseAsset: 'WMON',
+          path: [
+            '0x754704Bc059F8C67012fEd69BC8A327a5aafb603',
+            '0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a',
+          ],
+          quoteAddress: '0x754704Bc059F8C67012fEd69BC8A327a5aafb603',
+          baseAddress: '0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a',
+          quoteDecimals: BigInt(6),
+          baseDecimals: BigInt(6),
+          address: '0x8A34f54F0f5F2fEDfe2BEB1E46cFC7a25c0Df99b'.toLowerCase(),
+          marketType: 0,
+          scaleFactor: BigInt(10 ** 4),
+          priceFactor: BigInt(10000),
+          tickSize: BigInt(1),
+          minSize: BigInt(1000000),
+          maxPrice: BigInt(100000),
+          fee: BigInt(99990),
+          makerRebate: BigInt(100000),
+          image: iconausd,
+          website: 'https://www.agora.finance/',
+        },
       },
       addresstomarket: Object.fromEntries([
-        ['0xA4dCef430fc8056713e6865fe64b6150e541Ef23', 'MONUSDC'],
+        ['0x235D84fA575B0370d47433A5b94e7547aA2f023d', 'MONUSDC'],
+        ['0x8A34f54F0f5F2fEDfe2BEB1E46cFC7a25c0Df99b', 'AUSDUSDC']
       ].map(([key, value]) => [key.toLowerCase(), value])),
       tokendict: {
         '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE': {
@@ -156,6 +180,13 @@ export const settings: any = {
           address: '0x754704Bc059F8C67012fEd69BC8A327a5aafb603',
           decimals: BigInt(6),
           image: iconusdc,
+        },
+        '0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a': {
+          ticker: 'AUSD',
+          name: 'Agora Dollar',
+          address: '0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a',
+          decimals: BigInt(6),
+          image: iconausd,
         },
       },
       nadFunBondingCurve: '0xA7283d07812a02AFB7C09B60f8896bCEA3F90aCE' as `0x${string}`,

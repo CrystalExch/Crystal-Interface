@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/ws': {
-        target: 'wss://rpc.monad.xyz',
+        target: 'wss://rpc-mainnet.monadinfra.com',
         ws: true,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ws/, ''),
