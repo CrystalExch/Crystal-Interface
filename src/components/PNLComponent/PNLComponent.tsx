@@ -11,7 +11,7 @@ import monadsvg from '../../assets/monad.svg';
 import './PNLComponent.css';
 import { ref } from 'process';
 
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/95767afd668f34593027c5487b67523e/subgraphs/id/CbkzZ5sJ9sTMExCXGTxKkhZpd5CTUKGkNcuCxiNgiApx';
 
 interface PNLData {
   balance: number;
