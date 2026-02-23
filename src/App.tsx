@@ -28980,8 +28980,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
               />
             }
           />
-          <Route path="/sneakyearn" element={<Navigate to="/earn/vaults" replace />} />
-          <Route path="/sneakyearn/*"
+          <Route path="/earn" element={<Navigate to="/earn/vaults" replace />} />
+          <Route path="/earn/*"
             element={
               <Earn
                 setpopup={setpopup}
@@ -29041,7 +29041,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 chartData={vaultChartData}
               />
             } />
-          <Route path="/sneakyearn/vaults/:vaultAddress"
+          <Route path="/earn/vaults/:vaultAddress"
             element={
               <Earn
                 setpopup={setpopup}
