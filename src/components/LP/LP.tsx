@@ -48,6 +48,8 @@ const defaultPerformanceData = [
   { name: 'Jul', value: 24.5 },
 ];
 
+const BACKEND_BASE_URL = 'http://localhost:8000';
+
 const LP: React.FC<LPProps> = ({
   setpopup,
   onSelectToken,
@@ -177,7 +179,7 @@ const LP: React.FC<LPProps> = ({
         const poolAddress = marketInfo.address as `0x${string}`;
         const poolAddressLower = poolAddress.toLowerCase();
 
-        const res = await fetch(`https://api.crystal.exchange/pools/${poolAddressLower}`);
+        const res = await fetch(`${BACKEND_BASE_URL}/pools/${poolAddressLower}`);
         if (!res.ok) {
           console.error('failed to fetch pool stats for', poolAddressLower);
           setSelectedVaultData({
@@ -827,7 +829,7 @@ const LP: React.FC<LPProps> = ({
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('https://api.crystal.exchange/pools/list');
+        const res = await fetch(`${BACKEND_BASE_URL}/pools/list`);
         if (!res.ok) {
           setPoolsInitialized(true);
           return;
