@@ -44,6 +44,7 @@ interface EarnProps {
   vaultListSortBy: 'latest_deposit' | 'tvl' | 'user_position';
   vaultListSortOrder: 'asc' | 'desc';
   onVaultListSortChange: (sortBy: 'latest_deposit' | 'tvl' | 'user_position', order: 'asc' | 'desc') => void;
+  onVaultActionSettled?: () => void;
   isLoading: any;
   depositors: any;
   depositHistory: any;
@@ -163,6 +164,7 @@ const Earn: React.FC<EarnProps> = (props) => {
             vaultListSortBy={props.vaultListSortBy}
             vaultListSortOrder={props.vaultListSortOrder}
             onVaultListSortChange={props.onVaultListSortChange}
+            onVaultActionSettled={props.onVaultActionSettled}
             isLoading={props.isLoading}
             depositors={props.depositors}
             depositHistory={props.depositHistory}

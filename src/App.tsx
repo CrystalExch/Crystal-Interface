@@ -2312,6 +2312,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [vaultListStatusFilter, setVaultListStatusFilter] = useState<'Active' | 'Closed' | 'All'>('Active');
   const [vaultListSortBy, setVaultListSortBy] = useState<'latest_deposit' | 'tvl' | 'user_position'>('tvl');
   const [vaultListSortOrder, setVaultListSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [vaultRefreshNonce, setVaultRefreshNonce] = useState(0);
+  const vaultRefreshTimersRef = useRef<number[]>([]);
+  const vaultListHasLoadedRef = useRef(false);
   const [depositors, setDepositors] = useState<any[]>([]);
   const [depositHistory, setDepositHistory] = useState<any[]>([]);
   const [withdrawHistory, setWithdrawHistory] = useState<any[]>([]);
@@ -2524,6 +2527,104 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return () => clearTimeout(t);
   }, [vaultListSearchQuery]);
 
+  const requestVaultLiveBalanceRefresh = useCallback(async () => {
+    const vaddr = selectedVaultStrategy;
+    if (!vaddr) return;
+    const uaddr = (address ?? '0x0000000000000000000000000000000000000000').toLowerCase();
+    try {
+      const qs = new URLSearchParams({ user: uaddr });
+      const res = await fetch(`${BACKEND_URL}/vaults/${vaddr}/refresh-balance?${qs.toString()}`, {
+        method: 'POST',
+      });
+      if (!res.ok) return;
+      const j = await res.json();
+      if (!j?.ok) return;
+      const latest = j?.latestBalance ?? {};
+      const quoteBalance = BigInt(String(latest?.quoteBalance ?? 0));
+      const baseBalance = BigInt(String(latest?.baseBalance ?? 0));
+      const usdValueRaw = latest?.usdValue;
+      const tvlUsd = Number.isFinite(Number(usdValueRaw)) ? Number(usdValueRaw) : null;
+      const userBal = j?.userBalance ?? null;
+      const userShares = userBal ? BigInt(String(userBal?.shares ?? 0)) : null;
+      const userLastDeposit = userBal ? Number(userBal?.lastDeposit ?? 0) : null;
+      const userLastWithdraw = userBal ? Number(userBal?.lastWithdraw ?? 0) : null;
+      const withdrawLocked = userBal ? Boolean(userBal?.withdrawLocked) : null;
+      const withdrawUnlockAt = userBal ? Number(userBal?.withdrawUnlockAt ?? 0) : null;
+      const withdrawLockupRemaining = userBal ? Number(userBal?.withdrawLockupRemaining ?? 0) : null;
+
+      setselectedVault((prev: any) => {
+        if (!prev) return prev;
+        if (String(prev?.address || '').toLowerCase() !== String(vaddr).toLowerCase()) return prev;
+        return {
+          ...prev,
+          quoteBalance,
+          baseBalance,
+          ...(userShares !== null ? { userShares } : {}),
+          ...(userLastDeposit !== null ? { userLastDeposit } : {}),
+          ...(userLastWithdraw !== null ? { userLastWithdraw } : {}),
+          ...(withdrawLocked !== null ? { withdrawLocked } : {}),
+          ...(withdrawUnlockAt !== null ? { withdrawUnlockAt } : {}),
+          ...(withdrawLockupRemaining !== null ? { withdrawLockupRemaining } : {}),
+          ...(tvlUsd !== null ? { tvlUsd } : {}),
+        };
+      });
+
+      setVaultList((prev: any[]) =>
+        (Array.isArray(prev) ? prev : []).map((v: any) =>
+          String(v?.address || '').toLowerCase() === String(vaddr).toLowerCase()
+            ? {
+              ...v,
+              quoteBalance,
+              baseBalance,
+              ...(userShares !== null ? { userShares } : {}),
+              ...(userLastDeposit !== null ? { userLastDeposit } : {}),
+              ...(userLastWithdraw !== null ? { userLastWithdraw } : {}),
+              ...(withdrawLocked !== null ? { withdrawLocked } : {}),
+              ...(withdrawUnlockAt !== null ? { withdrawUnlockAt } : {}),
+              ...(withdrawLockupRemaining !== null ? { withdrawLockupRemaining } : {}),
+              ...(tvlUsd !== null ? { tvlUsd } : {}),
+              latestBalance: {
+                ...(v?.latestBalance || {}),
+                quoteBalance: String(quoteBalance),
+                baseBalance: String(baseBalance),
+                ...(tvlUsd !== null ? { usdValue: tvlUsd } : {}),
+              },
+            }
+            : v
+        )
+      );
+    } catch {
+    }
+  }, [selectedVaultStrategy, address, setselectedVault, setVaultList]);
+
+  const requestVaultRefreshBurst = useCallback(() => {
+    void (async () => {
+      await requestVaultLiveBalanceRefresh();
+      setVaultRefreshNonce((n) => n + 1);
+    })();
+    if (vaultRefreshTimersRef.current.length) {
+      for (const id of vaultRefreshTimersRef.current) {
+        window.clearTimeout(id);
+      }
+      vaultRefreshTimersRef.current = [];
+    }
+    for (const ms of [1500, 5000, 15000, 32000]) {
+      const id = window.setTimeout(() => {
+        setVaultRefreshNonce((n) => n + 1);
+      }, ms);
+      vaultRefreshTimersRef.current.push(id);
+    }
+  }, [requestVaultLiveBalanceRefresh]);
+
+  useEffect(() => {
+    return () => {
+      for (const id of vaultRefreshTimersRef.current) {
+        window.clearTimeout(id);
+      }
+      vaultRefreshTimersRef.current = [];
+    };
+  }, []);
+
   const vaultChartData = vaultStrategyChartType === 'value' ? valueSeries : pnlSeries;
 
   const calculateSharesFromPercentage = (percentage: string, userShares: any) => {
@@ -2727,6 +2828,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       };
 
       await sendUserOperationAsync({ uo: depositUo });
+      window.setTimeout(() => {
+        try {
+          requestVaultRefreshBurst();
+        } catch (e) {
+          console.error('Vault post-deposit refresh failed:', e);
+        }
+      }, 0);
 
       // Step 5: Success
       setDepositVaultStep('success');
@@ -2791,6 +2899,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       };
 
       await sendUserOperationAsync({ uo: withdrawUo });
+      window.setTimeout(() => {
+        try {
+          requestVaultRefreshBurst();
+        } catch (e) {
+          console.error('Vault post-withdraw refresh failed:', e);
+        }
+      }, 0);
 
       // Step 3: Success
       setWithdrawVaultStep('success');
@@ -2831,9 +2946,16 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   useEffect(() => {
     if (!['earn'].includes(location.pathname.split('/')[1])) return;
     let cancelled = false;
+    let loadingTimer: ReturnType<typeof setTimeout> | null = null;
 
     (async () => {
-      setIsVaultsLoading(true);
+      if (vaultListHasLoadedRef.current) {
+        loadingTimer = setTimeout(() => {
+          if (!cancelled) setIsVaultsLoading(true);
+        }, 180);
+      } else {
+        setIsVaultsLoading(true);
+      }
       try {
         const viewerAddressLower = (address ?? '0x0000000000000000000000000000000000000000').toLowerCase();
 
@@ -3050,14 +3172,19 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         console.error('backend vaults fetch failed', err);
         if (!cancelled) setVaultList([]);
       } finally {
-        if (!cancelled) setIsVaultsLoading(false);
+        if (loadingTimer) clearTimeout(loadingTimer);
+        if (!cancelled) {
+          setIsVaultsLoading(false);
+          vaultListHasLoadedRef.current = true;
+        }
       }
     })();
 
     return () => {
       cancelled = true;
+      if (loadingTimer) clearTimeout(loadingTimer);
     };
-  }, [address, activechain, tokendict, vaultListSearchQueryDebounced, vaultListStatusFilter, vaultListSortBy, vaultListSortOrder, !['earn'].includes(location.pathname.split('/')[1])]);
+  }, [address, activechain, tokendict, vaultListSearchQueryDebounced, vaultListStatusFilter, vaultListSortBy, vaultListSortOrder, vaultRefreshNonce, !['earn'].includes(location.pathname.split('/')[1])]);
 
   // details when a vault is selected
   useEffect(() => {
@@ -3184,8 +3311,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             quoteBalance: latestQuote,
             baseBalance: latestBase,
             userShares: userSharesBI,
+            userLastDeposit: Number(data?.userBalance?.lastDeposit ?? 0),
+            userLastWithdraw: Number(data?.userBalance?.lastWithdraw ?? 0),
+            withdrawLocked: Boolean(data?.userBalance?.withdrawLocked ?? false),
+            withdrawUnlockAt: Number(data?.userBalance?.withdrawUnlockAt ?? 0),
+            withdrawLockupRemaining: Number(data?.userBalance?.withdrawLockupRemaining ?? 0),
             locked: !!data?.status?.locked,
             closed: !!data?.status?.closed,
+            lockup: Number(data?.vault?.params?.lockup ?? baseVault?.lockup ?? 0),
             tvlUsd: data?.tvlUsd ?? data?.latestBalance?.usdValue,
             userQuoteBalance: BigInt(String(data?.userBalance?.quoteBalance ?? 0)),
             userBaseBalance: BigInt(String(data?.userBalance?.baseBalance ?? 0)),
@@ -3207,8 +3340,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   quoteBalance: latestQuote,
                   baseBalance: latestBase,
                   userShares: userSharesBI,
+                  userLastDeposit: Number(data?.userBalance?.lastDeposit ?? v.userLastDeposit ?? 0),
+                  userLastWithdraw: Number(data?.userBalance?.lastWithdraw ?? v.userLastWithdraw ?? 0),
+                  withdrawLocked: Boolean(data?.userBalance?.withdrawLocked ?? v.withdrawLocked ?? false),
+                  withdrawUnlockAt: Number(data?.userBalance?.withdrawUnlockAt ?? v.withdrawUnlockAt ?? 0),
+                  withdrawLockupRemaining: Number(data?.userBalance?.withdrawLockupRemaining ?? v.withdrawLockupRemaining ?? 0),
                   locked: !!data?.status?.locked,
                   closed: !!data?.status?.closed,
+                  lockup: Number(data?.vault?.params?.lockup ?? v.lockup ?? 0),
                   tvlUsd: nextSelected.tvlUsd,
                   quoteDecimals: nextSelected.quoteDecimals,
                   baseDecimals: nextSelected.baseDecimals,
@@ -3309,7 +3448,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [selectedVaultStrategy, address, vaultStrategyTimeRange, !['earn'].includes(location.pathname.split('/')[1])]);
+  }, [selectedVaultStrategy, address, vaultStrategyTimeRange, vaultRefreshNonce, !['earn'].includes(location.pathname.split('/')[1])]);
 
   useEffect(() => {
     if (!['earn'].includes(location.pathname.split('/')[1])) return;
@@ -20357,6 +20496,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                       };
 
                       await sendUserOperationAsync({ uo: deployUo });
+                      window.setTimeout(() => {
+                        try {
+                          requestVaultRefreshBurst();
+                        } catch (e) {
+                          console.error('Vault post-create refresh failed:', e);
+                        }
+                      }, 0);
 
                       // Step 5: Success
                       setCreateVaultStep('success');
@@ -29174,10 +29320,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 vaultListSortBy={vaultListSortBy}
                 vaultListSortOrder={vaultListSortOrder}
                 onVaultListSortChange={(sortBy, order) => {
-                  setIsVaultsLoading(true);
                   setVaultListSortBy(sortBy);
                   setVaultListSortOrder(order);
                 }}
+                onVaultActionSettled={requestVaultRefreshBurst}
                 isLoading={isVaultsLoading}
                 depositors={depositors}
                 depositHistory={depositHistory}
@@ -29245,10 +29391,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 vaultListSortBy={vaultListSortBy}
                 vaultListSortOrder={vaultListSortOrder}
                 onVaultListSortChange={(sortBy, order) => {
-                  setIsVaultsLoading(true);
                   setVaultListSortBy(sortBy);
                   setVaultListSortOrder(order);
                 }}
+                onVaultActionSettled={requestVaultRefreshBurst}
                 isLoading={isVaultsLoading}
                 depositors={depositors}
                 depositHistory={depositHistory}

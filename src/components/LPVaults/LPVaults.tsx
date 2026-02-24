@@ -56,6 +56,7 @@ interface LPVaultsProps {
   vaultListSortBy: 'latest_deposit' | 'tvl' | 'user_position';
   vaultListSortOrder: 'asc' | 'desc';
   onVaultListSortChange: (sortBy: 'latest_deposit' | 'tvl' | 'user_position', order: 'asc' | 'desc') => void;
+  onVaultActionSettled?: () => void;
   isLoading: any;
   depositors: any;
   depositHistory: any;
@@ -180,6 +181,36 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({
       </div>
     </div>
   );
+};
+
+const formatLockupDuration = (secs: number) => {
+  const s = Math.max(0, Math.floor(Number(secs || 0)));
+  if (s <= 0) return '0s';
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0) return h > 0 ? `${d}d ${h}h` : `${d}d`;
+  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  if (m > 0) return `${m}m`;
+  return `${s}s`;
+};
+
+const formatLockupTimestamp = (ts: number) => {
+  if (!Number.isFinite(ts) || ts <= 0) return '';
+  const d = new Date(ts * 1000);
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const formatLockupCountdown = (secs: number) => {
+  const s = Math.max(0, Math.floor(Number(secs || 0)));
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m ${sec}s`;
+  return `${m}m ${sec}s`;
 };
 
 const TooltipLabel: React.FC<{
@@ -360,6 +391,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   vaultListSortBy,
   vaultListSortOrder,
   onVaultListSortChange,
+  onVaultActionSettled,
   isLoading,
   depositors,
   depositHistory,
@@ -387,6 +419,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     'Balances' | 'Open Orders' | 'Depositors' | 'Deposit History' | 'Withdraw History'
   >('Balances');
   const [showTimeRangeDropdown, setShowTimeRangeDropdown] = useState(false);
+  const [vaultNowTs, setVaultNowTs] = useState(() => Math.floor(Date.now() / 1000));
 
   const vaultStrategyIndicatorRef = useRef<HTMLDivElement>(null);
   const vaultStrategyTabsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -431,6 +464,55 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     if (next) selectedVaultRef.current = next;
     return next;
   }, [vaultList, selectedVaultStrategy, selectedVault]);
+
+  const stableSelectedVaultUserShares = React.useMemo(() => {
+    try {
+      return BigInt(String(stableSelectedVault?.userShares ?? 0));
+    } catch {
+      return 0n;
+    }
+  }, [stableSelectedVault]);
+
+  const stableSelectedVaultUserHasShares = stableSelectedVaultUserShares > 0n;
+  const stableSelectedVaultWithdrawLockRemainingRaw = Math.max(0, Number(stableSelectedVault?.withdrawLockupRemaining ?? 0));
+  const stableSelectedVaultWithdrawLockRemaining = Number(stableSelectedVault?.withdrawUnlockAt ?? 0) > 0
+    ? Math.max(0, Number(stableSelectedVault?.withdrawUnlockAt ?? 0) - vaultNowTs)
+    : stableSelectedVaultWithdrawLockRemainingRaw;
+  const stableSelectedVaultWithdrawLocked =
+    !!stableSelectedVault?.withdrawLocked && stableSelectedVaultWithdrawLockRemaining > 0;
+  const stableSelectedVaultWithdrawUnlockAt = Number(stableSelectedVault?.withdrawUnlockAt ?? 0);
+  const stableSelectedVaultOwnerIsViewer =
+    !!address &&
+    !!stableSelectedVault?.owner &&
+    String(stableSelectedVault.owner).toLowerCase() === String(address).toLowerCase();
+  const stableSelectedVaultCanClose =
+    !stableSelectedVault?.closed &&
+    stableSelectedVaultOwnerIsViewer &&
+    stableSelectedVaultUserHasShares &&
+    !stableSelectedVaultWithdrawLocked;
+  const stableSelectedVaultCloseDisabledReason =
+    !stableSelectedVaultOwnerIsViewer
+      ? ''
+      : stableSelectedVault?.closed
+        ? 'Vault is closed'
+        : !stableSelectedVaultUserHasShares
+          ? 'Close requires owner shares'
+          : stableSelectedVaultWithdrawLocked
+            ? `Lockup active until ${formatLockupTimestamp(stableSelectedVaultWithdrawUnlockAt)}`
+            : '';
+  const stableSelectedVaultCloseLockedByTimer =
+    stableSelectedVaultOwnerIsViewer &&
+    !stableSelectedVault?.closed &&
+    stableSelectedVaultUserHasShares &&
+    stableSelectedVaultWithdrawLocked;
+
+  useEffect(() => {
+    if (!stableSelectedVaultWithdrawLocked) return;
+    const id = window.setInterval(() => {
+      setVaultNowTs(Math.floor(Date.now() / 1000));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [stableSelectedVaultWithdrawLocked]);
 
   const getTokenIcon = (tokenIdentifier: string) => {
     return tokendict[tokenIdentifier]?.image;
@@ -502,6 +584,23 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   };
 
   const handleVaultManagement = async (action: string) => {
+    if (!selectedVault?.address || selectedVault?.closed) {
+      setShowManagementMenu(false);
+      return;
+    }
+    if (action === 'close') {
+      let ownerShares = 0n;
+      try {
+        ownerShares = BigInt(String(selectedVault?.userShares ?? 0));
+      } catch {
+        ownerShares = 0n;
+      }
+      const withdrawLocked = !!selectedVault?.withdrawLocked && Number(selectedVault?.withdrawLockupRemaining ?? 0) > 0;
+      if (ownerShares <= 0n || withdrawLocked) {
+        setShowManagementMenu(false);
+        return;
+      }
+    }
     setShowManagementMenu(false);
     await setChain();
 
@@ -525,7 +624,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
           }));
         break;
       case 'decrease':
-        true
+        !selectedVault?.decreaseOnWithdraw
           ? (deployUo.data = encodeFunctionData({
             abi: CrystalVaultsAbi,
             functionName: 'changeDecreaseOnWithdraw',
@@ -547,6 +646,13 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     }
 
     await sendUserOperationAsync({ uo: deployUo });
+    window.setTimeout(() => {
+      try {
+        onVaultActionSettled?.();
+      } catch (e) {
+        console.error('Vault post-action refresh failed:', e);
+      }
+    }, 0);
   };
 
   const updateVaultStrategyIndicatorPosition = useCallback(
@@ -950,36 +1056,51 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     Deposit
                   </button>
 
-                  <button
-                    className={`vault-detail-withdraw-btn ${!connected || parseFloat(stableSelectedVault.userShares || '0') === 0 ? 'disabled' : ''}`}
-                    onClick={() => {
-                      if (!connected) {
-                        setpopup(4);
-                      } else if (
-                        parseFloat(stableSelectedVault.userShares || '0') > 0
-                      ) {
-                        setselectedVault(stableSelectedVault);
-                        setpopup(23);
-                      }
-                    }}
-                    disabled={
-                      !connected ||
-                      parseFloat(stableSelectedVault.userShares || '0') === 0
-                    }
+                  <div
+                    className={`vault-withdraw-lock-wrapper ${stableSelectedVaultWithdrawLocked ? 'locked' : ''}`}
                   >
-                    Withdraw
-                  </button>
+                    <button
+                      className={`vault-detail-withdraw-btn ${!connected || !stableSelectedVaultUserHasShares || stableSelectedVaultWithdrawLocked ? 'disabled' : ''}`}
+                      onClick={() => {
+                        if (!connected) {
+                          setpopup(4);
+                        } else if (stableSelectedVaultWithdrawLocked) {
+                          return;
+                        } else if (
+                          stableSelectedVaultUserHasShares
+                        ) {
+                          setselectedVault(stableSelectedVault);
+                          setpopup(23);
+                        }
+                      }}
+                      disabled={
+                        !connected ||
+                        !stableSelectedVaultUserHasShares ||
+                        stableSelectedVaultWithdrawLocked
+                      }
+                    >
+                      Withdraw
+                    </button>
+                    {stableSelectedVaultWithdrawLocked && (
+                      <div className="vault-withdraw-lock-countdown">
+                        Unlocks in {formatLockupCountdown(stableSelectedVaultWithdrawLockRemaining)}
+                      </div>
+                    )}
+                  </div>
 
                   {address &&
                     stableSelectedVault.owner.toLowerCase() ===
                     address.toLowerCase() && (
                       <>
                         <button
-                          className="vault-management-trigger"
+                          className={`vault-management-trigger ${stableSelectedVault?.closed ? 'disabled' : ''}`}
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (stableSelectedVault?.closed) return;
                             setShowManagementMenu(!showManagementMenu);
                           }}
+                          disabled={!!stableSelectedVault?.closed}
+                          title={stableSelectedVault?.closed ? 'Vault is closed' : undefined}
                         >
                           Vault Actions
                           <ChevronDown size={14} className={showManagementMenu ? 'open' : ''} />
@@ -987,27 +1108,38 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
                         <div className={`vault-management-menu ${showManagementMenu ? 'visible' : ''}`}>
                           <button
-                            className="vault-management-option"
+                            className={`vault-management-option ${stableSelectedVault?.closed ? 'disabled' : ''}`}
                             onClick={() => handleVaultManagement('disable-deposits')}
+                            disabled={!!stableSelectedVault?.closed}
                           >
                             {stableSelectedVault?.locked
                               ? t('Enable Deposits')
                               : t('Disable Deposits')}
                           </button>
                           <button
-                            className="vault-management-option"
+                            className={`vault-management-option ${stableSelectedVault?.closed ? 'disabled' : ''}`}
                             onClick={() => handleVaultManagement('decrease')}
+                            disabled={!!stableSelectedVault?.closed}
                           >
-                            {true
-                              ? t('Enable Decrease On Withdraw')
-                              : t('Disable Decrease On Withdraw')}
+                            {stableSelectedVault?.decreaseOnWithdraw
+                              ? t('Disable Decrease On Withdraw')
+                              : t('Enable Decrease On Withdraw')}
                           </button>
-                          <button
-                            className="vault-management-option vault-close-option"
-                            onClick={() => handleVaultManagement('close')}
-                          >
-                            Close Vault
-                          </button>
+                          <div className={`vault-close-lock-wrapper ${stableSelectedVaultCloseLockedByTimer ? 'locked' : ''}`}>
+                            <button
+                              className={`vault-management-option vault-close-option ${!stableSelectedVaultCanClose ? 'disabled' : ''}`}
+                              onClick={() => handleVaultManagement('close')}
+                              disabled={!stableSelectedVaultCanClose}
+                              title={stableSelectedVaultCloseDisabledReason || undefined}
+                            >
+                              Close Vault
+                            </button>
+                            {stableSelectedVaultCloseLockedByTimer && (
+                              <div className="vault-close-lock-countdown">
+                                Unlocks in {formatLockupCountdown(stableSelectedVaultWithdrawLockRemaining)}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </>
                     )}
@@ -1092,6 +1224,22 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   </div>
                   <span className="vault-description">Description</span>
                   <p className="description-text">{stableSelectedVault.desc}</p>
+                  {Number(stableSelectedVault?.lockup ?? 0) > 0 && (
+                    <>
+                      <span className="vault-description">Lockup</span>
+                      <p className="description-text vault-lockup-description-text">
+                        {formatLockupDuration(Number(stableSelectedVault?.lockup ?? 0))}
+                      </p>
+                    </>
+                  )}
+                  {stableSelectedVaultOwnerIsViewer && (
+                    <>
+                      <span className="vault-description">Decrease on Withdraw</span>
+                      <p className="description-text vault-lockup-description-text">
+                        {stableSelectedVault?.decreaseOnWithdraw ? 'On' : 'Off'}
+                      </p>
+                    </>
+                  )}
                   <div className="vault-socials">
                     {(stableSelectedVault.social1 || stableSelectedVault.social2) && (
                       <span className="vault-description">Socials</span>
@@ -1103,7 +1251,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                         rel="noopener noreferrer"
                         className="twitter-link-description"
                       >
-                        <span>Social 1:</span>
                         {stableSelectedVault.social1}
                       </a>
                     )}
@@ -1114,7 +1261,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                         rel="noopener noreferrer"
                         className="twitter-link-description"
                       >
-                        <span>Social 2:</span>
                         {stableSelectedVault.social2}
                       </a>
                     )}
