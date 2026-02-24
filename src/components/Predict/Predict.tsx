@@ -88,6 +88,165 @@ interface OutcomeData {
 }
 
 type IntervalType = '1H' | '24H' | '7D' | '30D' | 'ALL';
+type ChartPoint = { time: number; value: number };
+
+const toEpochSeconds = (value: any): number | null => {
+  if (value == null) return null;
+  const numeric = Number(value);
+  let parsed = Number.isFinite(numeric) ? numeric : Date.parse(String(value));
+  if (!Number.isFinite(parsed)) return null;
+  if (parsed > 1e12) parsed /= 1000;
+  return Math.floor(parsed);
+};
+
+const toProbabilityPercent = (value: any): number | null => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  let normalized = numeric;
+  if (normalized <= 1.000001) normalized *= 100;
+  else if (normalized > 100 && normalized <= 10000) normalized /= 100;
+  return Math.max(0, Math.min(100, normalized));
+};
+
+const toProbabilityUnit = (value: any): number => {
+  const percent = toProbabilityPercent(value);
+  if (percent == null) return 0;
+  return Math.max(0, Math.min(1, percent / 100));
+};
+
+const normalizeSeriesHistory = (value: any): ChartPoint[] => {
+  const zipSeriesArrays = (times: any[], probs: any[]): ChartPoint[] => {
+    const size = Math.min(times.length, probs.length);
+    if (!size) return [];
+    const points: ChartPoint[] = [];
+    for (let i = 0; i < size; i += 1) {
+      const time = toEpochSeconds(times[i]);
+      const prob = toProbabilityPercent(probs[i]);
+      if (time == null || prob == null) continue;
+      points.push({ time, value: prob });
+    }
+    return points;
+  };
+
+  const rawPoints = Array.isArray(value)
+    ? value
+    : Array.isArray(value?.history)
+      ? value.history
+      : Array.isArray(value?.history?.points)
+        ? value.history.points
+      : Array.isArray(value?.data)
+        ? value.data
+        : Array.isArray(value?.series)
+          ? value.series
+        : [];
+
+  const deduped = new Map<number, number>();
+
+  if (!rawPoints.length) {
+    const container = value?.history && !Array.isArray(value.history)
+      ? value.history
+      : value?.data && !Array.isArray(value.data)
+        ? value.data
+        : value;
+
+    const timeArr =
+      (Array.isArray(container?.t) && container.t) ||
+      (Array.isArray(container?.time) && container.time) ||
+      (Array.isArray(container?.ts) && container.ts) ||
+      (Array.isArray(container?.timestamps) && container.timestamps) ||
+      (Array.isArray(container?.x) && container.x) ||
+      [];
+    const probArr =
+      (Array.isArray(container?.p) && container.p) ||
+      (Array.isArray(container?.price) && container.price) ||
+      (Array.isArray(container?.prices) && container.prices) ||
+      (Array.isArray(container?.value) && container.value) ||
+      (Array.isArray(container?.values) && container.values) ||
+      (Array.isArray(container?.y) && container.y) ||
+      (Array.isArray(container?.probability) && container.probability) ||
+      (Array.isArray(container?.probabilities) && container.probabilities) ||
+      [];
+
+    const zipped = zipSeriesArrays(timeArr, probArr);
+    zipped.forEach((point) => deduped.set(point.time, point.value));
+  } else {
+    rawPoints.forEach((point: any) => {
+      const time = toEpochSeconds(
+        point?.t ??
+        point?.time ??
+        point?.timestamp ??
+        point?.ts ??
+        point?.x ??
+        point?.date ??
+        point?.[0],
+      );
+      const prob = toProbabilityPercent(
+        point?.p ??
+        point?.price ??
+        point?.value ??
+        point?.y ??
+        point?.probability ??
+        point?.close ??
+        point?.[1],
+      );
+      if (time == null || prob == null) return;
+      deduped.set(time, prob);
+    });
+  }
+
+  if (!deduped.size) return [];
+
+  return Array.from(deduped.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([time, value]) => ({ time, value }));
+};
+
+const getIntervalStart = (interval: IntervalType, nowSec: number): number | null => {
+  switch (interval) {
+    case '1H':
+      return nowSec - 60 * 60;
+    case '24H':
+      return nowSec - 24 * 60 * 60;
+    case '7D':
+      return nowSec - 7 * 24 * 60 * 60;
+    case '30D':
+      return nowSec - 30 * 24 * 60 * 60;
+    default:
+      return null;
+  }
+};
+
+const filterSeriesByInterval = (points: ChartPoint[], interval: IntervalType): ChartPoint[] => {
+  if (!points.length || interval === 'ALL') return points;
+  const start = getIntervalStart(interval, Math.floor(Date.now() / 1000));
+  if (start == null) return points;
+  const filtered = points.filter((point) => point.time >= start);
+  if (filtered.length >= 2) return filtered;
+  return points.slice(-Math.min(points.length, 200));
+};
+
+const getOutcomeLabel = (market: any, index: number): string => {
+  const label =
+    market?.groupItemTitle ??
+    market?.shortTitle ??
+    market?.title ??
+    market?.name ??
+    market?.question;
+  if (label) return String(label);
+  return `Outcome ${index + 1}`;
+};
+
+const getSeriesRange = (points: ChartPoint[]): number => {
+  if (points.length < 2) return 0;
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+  points.forEach((point) => {
+    if (point.value < min) min = point.value;
+    if (point.value > max) max = point.value;
+  });
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return 0;
+  return max - min;
+};
 
 const Predict: React.FC<PredictProps> = ({
   layoutSettings,
@@ -108,11 +267,11 @@ const Predict: React.FC<PredictProps> = ({
   const { marketSlug } = useParams<{ marketSlug?: string }>();
   const activeRequestRef = useRef<AbortController | null>(null);
   const selectedOutcomeRef = useRef<string | null>(null);
-  const seriesCacheRef = useRef<{ conditionId: string; fetchedAt: number; history: any[] } | null>(null);
+  const seriesCacheRef = useRef<Map<string, { fetchedAt: number; history: ChartPoint[] }>>(new Map());
 
   // Chart state
   const [selectedInterval, setSelectedInterval] = useState<IntervalType>('ALL');
-  const [chartData, setChartData] = useState<Record<string, { time: number; value: number }[]>>({});
+  const [chartData, setChartData] = useState<Record<string, ChartPoint[]>>({});
 
   // Order state
   const [selectedOutcome, setSelectedOutcome] = useState<string | null>(null);
@@ -144,6 +303,7 @@ const Predict: React.FC<PredictProps> = ({
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRefs = useRef<Map<string, ISeriesApi<'Line'>>>(new Map());
+  const chartYRangeRef = useRef<{ min: number; max: number } | null>(null);
 
   // Get current market data
   const activeMarket = predictMarketsData[predictActiveMarketKey] || {};
@@ -160,6 +320,7 @@ const Predict: React.FC<PredictProps> = ({
   // Fetch market data when marketSlug changes
   useEffect(() => {
     if (marketSlug) {
+      setChartData({});
       const fetchPolymarketJson = async (path: string, signal: AbortSignal) => {
         const response = await fetch(path, { signal });
         if (!response.ok) {
@@ -253,23 +414,43 @@ const Predict: React.FC<PredictProps> = ({
         return fetchPolymarketJson(`/predictapi/events?${slugParam}`, signal);
       };
 
-      const fetchSeriesHistory = async (conditionId: string, signal: AbortSignal) => {
-        const cached = seriesCacheRef.current;
+      const fetchSeriesHistory = async (seriesId: string, signal: AbortSignal) => {
+        const cached = seriesCacheRef.current.get(seriesId);
         const now = Date.now();
-        if (cached && cached.conditionId === conditionId && now - cached.fetchedAt < SERIES_REFRESH_MS) {
+        if (cached && now - cached.fetchedAt < SERIES_REFRESH_MS) {
           return cached.history;
         }
-        const seriesResponse = await fetch(`/clob/series?id=${conditionId}`, { signal }).catch(() => null);
+        const seriesResponse = await fetch(`/clob/series?id=${encodeURIComponent(seriesId)}`, { signal }).catch(() => null);
         const seriesData = seriesResponse ? await seriesResponse.json().catch(() => null) : null;
-        if (seriesData?.history) {
-          seriesCacheRef.current = {
-            conditionId,
+        const normalizedHistory = normalizeSeriesHistory(seriesData);
+        if (normalizedHistory.length > 0) {
+          seriesCacheRef.current.set(seriesId, {
             fetchedAt: now,
-            history: seriesData.history,
-          };
-          return seriesData.history;
+            history: normalizedHistory,
+          });
+          return normalizedHistory;
         }
-        return null;
+        return [];
+      };
+
+      const fetchBestSeriesHistory = async (marketItem: any, signal: AbortSignal) => {
+        const conditionKey = String(marketItem?.conditionId || marketItem?.condition_id || '').trim();
+        const tokenKeys = getTokenIdsForMarket(marketItem);
+        const candidateIds = Array.from(new Set([...tokenKeys, conditionKey].filter(Boolean)));
+        if (!candidateIds.length) return [];
+
+        const histories = await Promise.all(
+          candidateIds.map((id) => fetchSeriesHistory(id, signal)),
+        );
+        const nonEmpty = histories.filter((history) => history.length > 1);
+        if (!nonEmpty.length) return [];
+
+        nonEmpty.sort((a, b) => {
+          const rangeDelta = getSeriesRange(b) - getSeriesRange(a);
+          if (Math.abs(rangeDelta) > 0.0001) return rangeDelta;
+          return b.length - a.length;
+        });
+        return nonEmpty[0];
       };
 
       const fetchMarketData = async (options: { includeChat: boolean; includeSeries: boolean }) => {
@@ -297,15 +478,37 @@ const Predict: React.FC<PredictProps> = ({
                 : market.outcomePrices || [];
 
               if (options.includeSeries) {
-                const seriesHistory = await fetchSeriesHistory(conditionId, controller.signal);
-                if (seriesHistory) {
-                  const chartPoints: Record<string, { time: number; value: number }[]> = {};
-                  const primaryPoints = seriesHistory.map((point: any) => ({
-                    time: point.t,
-                    value: parseFloat(point.p) * 100,
-                  }));
-                  chartPoints['Primary'] = primaryPoints;
+                const seriesEntries = await Promise.all(
+                  markets.map(async (marketItem: any, index: number) => {
+                    const history = await fetchBestSeriesHistory(marketItem, controller.signal);
+                    if (history.length === 0) return null;
+                    return {
+                      index,
+                      label: getOutcomeLabel(marketItem, index),
+                      history,
+                    };
+                  }),
+                );
+
+                const chartPoints = seriesEntries
+                  .filter(Boolean)
+                  .reduce((acc: Record<string, ChartPoint[]>, item: any) => {
+                    acc[item.label] = item.history;
+                    acc[`__index_${item.index}`] = item.history;
+                    return acc;
+                  }, {});
+
+                if (Object.keys(chartPoints).length > 0) {
+                  const firstSeries = (seriesEntries.find(Boolean) as any)?.history;
+                  if (firstSeries?.length) {
+                    chartPoints.Primary = firstSeries;
+                  }
                   setChartData(chartPoints);
+                } else {
+                  const fallbackSeries = await fetchSeriesHistory(conditionId, controller.signal);
+                  if (fallbackSeries.length > 0) {
+                    setChartData({ Primary: fallbackSeries });
+                  }
                 }
               }
 
@@ -314,9 +517,9 @@ const Predict: React.FC<PredictProps> = ({
                     const prices = typeof m.outcomePrices === 'string'
                       ? JSON.parse(m.outcomePrices)
                       : m.outcomePrices || [];
-                    return parseFloat(prices[0] || 0);
+                    return toProbabilityUnit(prices[0] ?? 0);
                   })
-                : outcomePrices.map((p: any) => parseFloat(p || 0));
+                : outcomePrices.map((p: any) => toProbabilityUnit(p ?? 0));
 
               const orderbookTokenIdGroups: string[][] = isMultiOutcome
                 ? markets.map((m: any) => getTokenIdsForMarket(m))
@@ -326,16 +529,7 @@ const Predict: React.FC<PredictProps> = ({
               );
 
               const orderbooksByTokenId = await fetchOrderbooks(orderbookFetchTokenIds, controller.signal);
-              const priceLookupTokenIds: string[] = isMultiOutcome
-                ? orderbookTokenIdGroups.map((ids: string[]) => ids[0] || '')
-                : orderbookTokenIdGroups[0] ?? [];
-              const derivedOutcomePrices = priceLookupTokenIds.length
-                ? baseOutcomePrices.map((price: number, index: number) => {
-                    const tokenId = priceLookupTokenIds[index];
-                    const book = tokenId ? orderbooksByTokenId[tokenId] : null;
-                    return book ? getOrderbookPrice(book, price) : price;
-                  })
-                : baseOutcomePrices;
+              const derivedOutcomePrices = baseOutcomePrices;
 
               const chatChannels = Array.isArray(event.series)
                 ? event.series.flatMap((series: any) => series?.chats || [])
@@ -434,6 +628,7 @@ const Predict: React.FC<PredictProps> = ({
 
     return outcomeData;
   }, [activeMarket]);
+  const chartOutcomes = useMemo(() => outcomes.slice(0, 4), [outcomes]);
 
   // Sort outcomes
   const sortedOutcomes = useMemo(() => {
@@ -628,14 +823,24 @@ const Predict: React.FC<PredictProps> = ({
 
     chartRef.current = chart;
 
-    // Add line series for each outcome
-    outcomes.forEach((outcome, idx) => {
+    // Add line series for top outcomes only
+    chartOutcomes.forEach((outcome) => {
       const lineSeries = chart.addLineSeries({
         color: outcome.color,
         lineWidth: 2,
         priceFormat: {
           type: 'custom',
           formatter: (price: number) => `${price.toFixed(0)}%`,
+        },
+        autoscaleInfoProvider: () => {
+          const range = chartYRangeRef.current;
+          if (!range) return null;
+          return {
+            priceRange: {
+              minValue: range.min,
+              maxValue: range.max,
+            },
+          };
         },
       });
       seriesRefs.current.set(outcome.name, lineSeries);
@@ -661,29 +866,76 @@ const Predict: React.FC<PredictProps> = ({
         chartRef.current = null;
       }
     };
-  }, [outcomes.length]);
+  }, [chartOutcomes]);
 
   // Update chart data
   useEffect(() => {
-    if (!chartRef.current || Object.keys(chartData).length === 0) return;
+    if (!chartRef.current || chartOutcomes.length === 0) return;
+    const primaryData = filterSeriesByInterval(chartData['Primary'] || [], selectedInterval);
+    const now = Math.floor(Date.now() / 1000);
+    const plottedValues: number[] = [];
+    const isBinaryMarket = chartOutcomes.length === 2;
 
-    // For now, apply same data to all series (would be per-outcome in full implementation)
-    const primaryData = chartData['Primary'] || [];
-
-    outcomes.forEach((outcome, idx) => {
+    chartOutcomes.forEach((outcome, index) => {
       const series = seriesRefs.current.get(outcome.name);
-      if (series && primaryData.length > 0) {
-        // Simulate different lines by offsetting based on current probability
-        const adjustedData = primaryData.map(point => ({
-          time: point.time as any,
-          value: Math.max(0, Math.min(100, point.value + (outcome.probability * 100 - 50) * 0.5)),
-        }));
-        series.setData(adjustedData);
+      if (!series) return;
+
+      const directByIndex = filterSeriesByInterval(chartData[`__index_${index}`] || [], selectedInterval);
+      const directByLabel = filterSeriesByInterval(chartData[outcome.name] || [], selectedInterval);
+      const directOutcomeData = directByIndex.length > 1 ? directByIndex : directByLabel;
+      let pointsToPlot: ChartPoint[] = [];
+      const directRange = getSeriesRange(directOutcomeData);
+      const primaryRange = getSeriesRange(primaryData);
+
+      if (directOutcomeData.length > 1 && (!isBinaryMarket || directRange > 0.2 || primaryRange <= 0.2)) {
+        pointsToPlot = directOutcomeData;
+      } else if (isBinaryMarket && primaryData.length > 1) {
+        pointsToPlot = index === 0
+          ? primaryData
+          : primaryData.map((point) => ({
+              time: point.time,
+              value: Math.max(0, Math.min(100, 100 - point.value)),
+            }));
+      } else {
+        const fallbackValue = toProbabilityPercent(outcome.probability) ?? 0;
+        pointsToPlot = [
+          { time: now - 3600, value: fallbackValue },
+          { time: now, value: fallbackValue },
+        ];
       }
+
+      const data = pointsToPlot.map((point) => ({
+        time: point.time as any,
+        value: Math.max(0, Math.min(100, point.value)),
+      }));
+
+      data.forEach((point) => plottedValues.push(point.value));
+      series.setData(data);
     });
 
+    if (plottedValues.length > 0) {
+      let min = Math.min(...plottedValues);
+      let max = Math.max(...plottedValues);
+      if (!Number.isFinite(min) || !Number.isFinite(max)) {
+        chartYRangeRef.current = null;
+      } else {
+        if (max === min) {
+          min = Math.max(0, min - 1.5);
+          max = Math.min(100, max + 1.5);
+        }
+        const span = max - min;
+        const pad = Math.max(span * 0.18, 1.1);
+        chartYRangeRef.current = {
+          min: Math.max(0, min - pad),
+          max: Math.min(100, max + pad),
+        };
+      }
+    } else {
+      chartYRangeRef.current = null;
+    }
+
     chartRef.current.timeScale().fitContent();
-  }, [chartData, outcomes]);
+  }, [chartData, chartOutcomes, selectedInterval]);
 
   // Handle sort
   const handleSort = (column: string) => {
@@ -798,7 +1050,7 @@ const Predict: React.FC<PredictProps> = ({
           <div className="predict-event-chart-section">
             {/* Chart Legend */}
             <div className="predict-event-chart-legend">
-              {outcomes.slice(0, 4).map((outcome, idx) => (
+              {chartOutcomes.map((outcome, idx) => (
                 <div key={outcome.name} className="predict-event-legend-item">
                   <span className="predict-event-legend-color" style={{ backgroundColor: outcome.color }} />
                   <span className="predict-event-legend-name">{outcome.name}</span>
@@ -821,93 +1073,6 @@ const Predict: React.FC<PredictProps> = ({
                   {interval}
                 </button>
               ))}
-            </div>
-          </div>
-
-          <div className="predict-event-community-card">
-            <div className="predict-event-section-header">
-              <span>Community</span>
-              <span className="predict-event-section-subtitle">
-                {commentsAvailable ? `${formatCommas(String(commentsCount))} comments` : 'No comments'}
-              </span>
-            </div>
-            <div className="predict-event-community-metrics">
-              <div className="predict-event-community-metric">
-                <span className="predict-event-community-label">Comments</span>
-                <span className="predict-event-community-value">
-                  {commentsAvailable ? formatCommas(String(commentsCount)) : 'N/A'}
-                </span>
-              </div>
-              <div className="predict-event-community-metric">
-                <span className="predict-event-community-label">Holders</span>
-                <span className="predict-event-community-value">
-                  {holdersAvailable ? formatCommas(String(holdersCount)) : 'N/A'}
-                </span>
-              </div>
-            </div>
-            {chatChannels.length > 0 ? (
-              <div className="predict-event-community-channels">
-                {chatChannels.slice(0, 3).map((channel: any, idx: number) => (
-                  <div key={channel?.id ?? channel?.channelId ?? idx} className="predict-event-channel">
-                    <div className="predict-event-channel-avatar">
-                      {channel?.channelImage ? (
-                        <img src={channel.channelImage} alt={channel.channelName || 'Chat'} />
-                      ) : (
-                        <span>{(channel?.channelName || 'C').slice(0, 1)}</span>
-                      )}
-                    </div>
-                    <div className="predict-event-channel-info">
-                      <span className="predict-event-channel-name">{channel?.channelName || channel?.channelId || 'Chat'}</span>
-                      <span className={`predict-event-channel-status ${channel?.live ? 'live' : 'scheduled'}`}>
-                        {channel?.live ? 'Live' : 'Scheduled'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="predict-event-community-empty">
-                No community channels available
-              </div>
-            )}
-          </div>
-
-          <div className="predict-event-orderbook-section">
-            <div className="predict-event-section-header">
-              <span>Orderbook</span>
-              <span className="predict-event-section-subtitle">
-                {orderbookSymbol} {selectedSide === 'No' ? 'No' : 'Yes'}
-              </span>
-            </div>
-            <div className="predict-event-orderbook-body">
-              <OrderBook
-                trades={[]}
-                orderdata={{
-                  roundedBuyOrders: orderbookData.roundedBuyOrders,
-                  roundedSellOrders: orderbookData.roundedSellOrders,
-                  spreadData: orderbookData.spreadData,
-                  priceFactor: baseInterval > 0 ? 1 / baseInterval : 1,
-                  symbolIn: 'USD',
-                  symbolOut: orderbookSymbol,
-                  marketType: 0,
-                }}
-                layoutSettings={layoutSettings ?? 'tab'}
-                orderbookPosition={effectiveOrderbookPosition}
-                hideHeader={true}
-                interval={baseInterval}
-                amountsQuote={amountsQuote}
-                setAmountsQuote={setAmountsQuote}
-                obInterval={obInterval}
-                setOBInterval={setOBInterval}
-                viewMode={effectiveViewMode}
-                setViewMode={handleViewMode}
-                activeTab={effectiveActiveTab}
-                setActiveTab={handleActiveTab}
-                updateLimitAmount={handleOrderbookLimit}
-                reserveQuote={0n}
-                reserveBase={0n}
-                isOrderbookLoading={orderbookIsLoading}
-              />
             </div>
           </div>
 
