@@ -388,7 +388,7 @@ const BlacklistPopup: React.FC<{
   if (!isOpen) return null;
 
   return (
-    <div className="blacklist-popup-overlay" onClick={onClose}>
+    <div className="alerts-popup-overlay" onClick={onClose}>
       <div className="blacklist-popup" onClick={(e) => e.stopPropagation()}>
         <div className="blacklist-popup-header">
           <h3 className="blacklist-popup-title">Blacklist</h3>

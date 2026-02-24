@@ -20744,7 +20744,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           </div>
         ) : null}
         {popup === 37 ? ( // presets settings popup
-          <div ref={popupref} className="presets-settings-popup-bg" style={{ zIndex: 10001 }}>
+          <div className="presets-settings-popup-bg" ref={popupref} >
             <div className="presets-settings-popup-header">
               <h3 className="presets-settings-popup-title">Trade Settings</h3>
               <button
@@ -20887,226 +20887,224 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         ) : null}
 
         {popup === 38 ? (
-          <div className="alerts-popup-overlay" onClick={() => setpopup(0)}>
-            <div className="notification-manager-popup" ref={popupref} onClick={(e) => e.stopPropagation()}>
-              <div className="alerts-popup-header">
-                <h3 className="alerts-popup-title">Notification Settings</h3>
-                <button className="alerts-close-button" onClick={() => setpopup(0)}>
-                  <img src={closebutton} className="explorer-close-button" />
-                </button>
+          <div className="notification-manager-popup" ref={popupref}>
+            <div className="alerts-popup-header">
+              <h3 className="alerts-popup-title">Notification Settings</h3>
+              <button className="alerts-close-button" onClick={() => setpopup(0)}>
+                <img src={closebutton} className="explorer-close-button" />
+              </button>
+            </div>
+
+            <div className="notification-manager-content">
+              <div className="alerts-section">
+                <div className="alerts-main-toggle">
+                  <div>
+                    <h4 className="notifications-main-label">Display notifications</h4>
+                    <p className="alerts-description">
+                      Display wallet tracker toasts, and notification cards
+                    </p>
+                  </div>
+                  <div
+                    className={`toggle-switch ${displayNotifications ? 'active' : ''}`}
+                    onClick={() => setDisplayNotifications(!displayNotifications)}
+                  >
+                    <div className="toggle-slider" />
+                  </div>
+                </div>
               </div>
 
-              <div className="notification-manager-content">
-                <div className="alerts-section">
-                  <div className="alerts-main-toggle">
-                    <div>
-                      <h4 className="notifications-main-label">Display notifications</h4>
-                      <p className="alerts-description">
-                        Display wallet tracker toasts, and notification cards
-                      </p>
-                    </div>
-                    <div
-                      className={`toggle-switch ${displayNotifications ? 'active' : ''}`}
-                      onClick={() => setDisplayNotifications(!displayNotifications)}
+              <div className="alerts-section">
+                <h4 className="notifications-main-label">Toast Position</h4>
+                <div className="position-grid">
+                  {['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'].map((pos) => (
+                    <button
+                      key={pos}
+                      className={`position-option ${toastPosition === pos ? 'active' : ''}`}
+                      onClick={() => {
+                        setToastPosition(pos);
+                        localStorage.setItem('crystal_toast_position', pos);
+                        window.dispatchEvent(new Event('toast-position-updated'));
+                      }}
                     >
-                      <div className="toggle-slider" />
-                    </div>
-                  </div>
+                      <div className="position-preview">
+                        <div className="toast-indicator"></div>
+                      </div>
+                      <span>{pos.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
+                    </button>
+                  ))}
                 </div>
+              </div>
 
-                <div className="alerts-section">
-                  <h4 className="notifications-main-label">Toast Position</h4>
-                  <div className="position-grid">
-                    {['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'].map((pos) => (
-                      <button
-                        key={pos}
-                        className={`position-option ${toastPosition === pos ? 'active' : ''}`}
-                        onClick={() => {
-                          setToastPosition(pos);
-                          localStorage.setItem('crystal_toast_position', pos);
-                          window.dispatchEvent(new Event('toast-position-updated'));
-                        }}
-                      >
-                        <div className="position-preview">
-                          <div className="toast-indicator"></div>
-                        </div>
-                        <span>{pos.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="alerts-section">
-                  <div className="alerts-main-toggle">
-                    <div>
-                      <h4 className="notifications-main-label">Transaction Sounds</h4>
-                    </div>
-                    <div
-                      className={`toggle-switch ${transactionSounds ? 'active' : ''}`}
-                      onClick={() => setTransactionSounds(!transactionSounds)}
-                    >
-                      <div className="toggle-slider" />
-                    </div>
-                  </div>
-                </div>
-
-                {transactionSounds && (
+              <div className="alerts-section">
+                <div className="alerts-main-toggle">
                   <div>
-                    <div className="alerts-volume-slider">
-                      <div className="volume-label">
-                        <span className="volume-text">Notification Volume</span>
-                        <span className="volume-value">{volume}%</span>
-                      </div>
+                    <h4 className="notifications-main-label">Transaction Sounds</h4>
+                  </div>
+                  <div
+                    className={`toggle-switch ${transactionSounds ? 'active' : ''}`}
+                    onClick={() => setTransactionSounds(!transactionSounds)}
+                  >
+                    <div className="toggle-slider" />
+                  </div>
+                </div>
+              </div>
 
-                      <div
-                        className="meme-slider-container meme-slider-mode"
-                        style={{ position: 'relative' }}
-                      >
-                        <input
-                          type="range"
-                          className={`meme-balance-amount-slider ${isDragging ? 'dragging' : ''}`}
-                          min="0"
-                          max="100"
-                          step="1"
-                          value={volume}
-                          onChange={handleVolumeSliderChange}
-                          onMouseDown={() => setIsDragging(true)}
-                          onMouseUp={handleVolumeChangeEnd}
-                          onTouchStart={() => setIsDragging(true)}
-                          onTouchEnd={handleVolumeChangeEnd}
-                          style={{
-                            background: `linear-gradient(to right, rgb(171,176,224) ${volume}%, rgb(28,28,31) ${volume}%)`,
-                          }}
-                        />
-
-                        <div className="meme-volume-slider-marks">
-                          {[0, 25, 50, 75, 100].map((mark) => (
-                            <span
-                              key={mark}
-                              className="meme-volume-slider-mark"
-                              data-active={volume >= mark}
-                              data-percentage={mark}
-                              onClick={() => {
-                                setVolume(mark)
-                              }}
-                            >
-                              {mark}%
-                            </span>
-                          ))}
-                        </div>
-                      </div>
+              {transactionSounds && (
+                <div>
+                  <div className="alerts-volume-slider">
+                    <div className="volume-label">
+                      <span className="volume-text">Notification Volume</span>
+                      <span className="volume-value">{volume}%</span>
                     </div>
 
-                    <div className="alerts-section">
-                      <div className="sound-options">
-                        {(['buy', 'sell'] as const).map((key) => (
-                          <div className="sound-option" key={key}>
-                            <span className="sound-option-label">
-                              {key === 'buy' ? 'Buy Sound' : 'Sell Sound'}
-                            </span>
-                            <div className="sound-controls">
-                              <div className="sound-selector-dropdown">
-                                <div
-                                  className="sound-selector"
-                                  onClick={() => toggleDropdown(key)}
-                                  onBlur={(e) => {
-                                    if (
-                                      !e.currentTarget.parentElement?.contains(
-                                        e.relatedTarget as Node,
-                                      )
-                                    ) {
-                                      closeDropdown(key);
-                                    }
-                                  }}
-                                >
-                                  <Volume2 size={14} />
-                                  <span>
-                                    {getSoundDisplayName(
-                                      key === 'buy' ? buySound : sellSound
-                                    )}
-                                  </span>
-                                  <div className="sound-action-button-container">
-                                    <button
-                                      className="sound-action-btn"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        playSound(key);
-                                      }}
-                                    >
-                                      <Play size={14} />
-                                    </button>
+                    <div
+                      className="meme-slider-container meme-slider-mode"
+                      style={{ position: 'relative' }}
+                    >
+                      <input
+                        type="range"
+                        className={`meme-balance-amount-slider ${isDragging ? 'dragging' : ''}`}
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={volume}
+                        onChange={handleVolumeSliderChange}
+                        onMouseDown={() => setIsDragging(true)}
+                        onMouseUp={handleVolumeChangeEnd}
+                        onTouchStart={() => setIsDragging(true)}
+                        onTouchEnd={handleVolumeChangeEnd}
+                        style={{
+                          background: `linear-gradient(to right, rgb(171,176,224) ${volume}%, rgb(28,28,31) ${volume}%)`,
+                        }}
+                      />
 
+                      <div className="meme-volume-slider-marks">
+                        {[0, 25, 50, 75, 100].map((mark) => (
+                          <span
+                            key={mark}
+                            className="meme-volume-slider-mark"
+                            data-active={volume >= mark}
+                            data-percentage={mark}
+                            onClick={() => {
+                              setVolume(mark)
+                            }}
+                          >
+                            {mark}%
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="alerts-section">
+                    <div className="sound-options">
+                      {(['buy', 'sell'] as const).map((key) => (
+                        <div className="sound-option" key={key}>
+                          <span className="sound-option-label">
+                            {key === 'buy' ? 'Buy Sound' : 'Sell Sound'}
+                          </span>
+                          <div className="sound-controls">
+                            <div className="sound-selector-dropdown">
+                              <div
+                                className="sound-selector"
+                                onClick={() => toggleDropdown(key)}
+                                onBlur={(e) => {
+                                  if (
+                                    !e.currentTarget.parentElement?.contains(
+                                      e.relatedTarget as Node,
+                                    )
+                                  ) {
+                                    closeDropdown(key);
+                                  }
+                                }}
+                              >
+                                <Volume2 size={14} />
+                                <span>
+                                  {getSoundDisplayName(
+                                    key === 'buy' ? buySound : sellSound
+                                  )}
+                                </span>
+                                <div className="sound-action-button-container">
+                                  <button
+                                    className="sound-action-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      playSound(key);
+                                    }}
+                                  >
+                                    <Play size={14} />
+                                  </button>
+
+                                  <button
+                                    className="sound-action-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (key === 'buy') {
+                                        setBuySound(stepaudio);
+                                      } else {
+                                        setSellSound(stepaudio);
+                                      }
+                                    }}
+                                  >
+                                    <RotateCcw size={14} />
+                                  </button>
+                                </div>
+                                {openDropdowns[key] && (
+                                  <div className="sound-dropdown-content">
                                     <button
-                                      className="sound-action-btn"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (key === 'buy') {
-                                          setBuySound(stepaudio);
-                                        } else {
-                                          setSellSound(stepaudio);
-                                        }
+                                      className={`sound-dropdown-item ${(key === 'buy' ? buySound : sellSound) === stepaudio
+                                        ? 'active'
+                                        : ''
+                                        }`}
+                                      onMouseDown={(e) => e.preventDefault()}
+                                      onClick={() => {
+                                        selectSound(key, stepaudio);
                                       }}
                                     >
-                                      <RotateCcw size={14} />
+                                      Step Audio
                                     </button>
+                                    <button
+                                      className={`sound-dropdown-item ${(key === 'buy' ? buySound : sellSound) === kaching
+                                        ? 'active'
+                                        : ''
+                                        }`}
+                                      onMouseDown={(e) => e.preventDefault()}
+                                      onClick={() => {
+                                        selectSound(key, kaching);
+                                      }}
+                                    >
+                                      Ka-ching
+                                    </button>
+                                    <label className="sound-dropdown-item">
+                                      Upload Other
+                                      <input
+                                        type="file"
+                                        accept="audio/*"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => {
+                                          handleFileUpload(key, e);
+                                        }}
+                                      />
+                                    </label>
                                   </div>
-                                  {openDropdowns[key] && (
-                                    <div className="sound-dropdown-content">
-                                      <button
-                                        className={`sound-dropdown-item ${(key === 'buy' ? buySound : sellSound) === stepaudio
-                                          ? 'active'
-                                          : ''
-                                          }`}
-                                        onMouseDown={(e) => e.preventDefault()}
-                                        onClick={() => {
-                                          selectSound(key, stepaudio);
-                                        }}
-                                      >
-                                        Step Audio
-                                      </button>
-                                      <button
-                                        className={`sound-dropdown-item ${(key === 'buy' ? buySound : sellSound) === kaching
-                                          ? 'active'
-                                          : ''
-                                          }`}
-                                        onMouseDown={(e) => e.preventDefault()}
-                                        onClick={() => {
-                                          selectSound(key, kaching);
-                                        }}
-                                      >
-                                        Ka-ching
-                                      </button>
-                                      <label className="sound-dropdown-item">
-                                        Upload Other
-                                        <input
-                                          type="file"
-                                          accept="audio/*"
-                                          style={{ display: 'none' }}
-                                          onChange={(e) => {
-                                            handleFileUpload(key, e);
-                                          }}
-                                        />
-                                      </label>
-                                    </div>
-                                  )}
-                                </div>
+                                )}
                               </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
-
-                      <p className="alerts-file-info">
-                        Maximum 5 seconds and 0.2MB file size
-                      </p>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                )}
 
-                <button className="alerts-continue-btn" onClick={() => setpopup(0)}>
-                  Done
-                </button>
-              </div>
+                    <p className="alerts-file-info">
+                      Maximum 5 seconds and 0.2MB file size
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <button className="alerts-continue-btn" onClick={() => setpopup(0)}>
+                Done
+              </button>
             </div>
           </div>
         ) : null}

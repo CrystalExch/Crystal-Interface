@@ -868,6 +868,8 @@
   right: 0;
   top: 0;
   z-index: 10000;
+  transition: opacity .25s ease-out;
+  animation: fadeIn .2s ease-out;
 }
 
 .alerts-popup {

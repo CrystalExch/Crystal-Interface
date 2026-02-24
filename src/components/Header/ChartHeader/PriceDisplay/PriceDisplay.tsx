@@ -38,7 +38,7 @@ const PriceDisplay: React.FC<PriceDisplayProps> = ({
 
   if (isLoading) {
     return (
-      <div className="perps-skeleton-text" style={{ width: '80px', height: '20px' }}></div>
+      <div className="perps-skeleton-text" style={{ width: '85px', height: '20px' }}></div>
     );
   }
 

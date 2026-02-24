@@ -2167,19 +2167,6 @@
   transform: scale(0.98);
 }
 
-.blacklist-popup-overlay {
-  align-items: center;
-  background: rgba(0, 0, 0, 0.7);
-  bottom: 0;
-  display: flex;
-  justify-content: center;
-  left: 0;
-  position: fixed;
-  right: 0;
-  top: 0;
-  z-index: 100;
-}
-
 .blacklist-popup {
   animation: modalSlideIn 0.2s ease-out;
   background: rgb(6, 6, 6);

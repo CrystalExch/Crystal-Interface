@@ -2488,16 +2488,14 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       </div>
 
       {shouldShowFullHeader && (
-        <>
-          <div className="token-info-right-section">
-            <PriceDisplay
-              price={price}
-              activeMarket={activeMarket}
-              isLoading={isLoading}
-              priceColor={priceColor}
-            />
-          </div>
-        </>
+        <div className="token-info-right-section">
+          <PriceDisplay
+            price={price}
+            activeMarket={activeMarket}
+            isLoading={isLoading}
+            priceColor={priceColor}
+          />
+        </div>
       )}
     </div>
   );
