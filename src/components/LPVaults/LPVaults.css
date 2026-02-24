@@ -4688,3 +4688,897 @@
   align-items: center;
   justify-content: center;
 }
+
+@media (max-width: 900px) {
+  .vaults-list {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding-bottom: 2px;
+  }
+
+  .vaults-list-header {
+    align-items: center;
+    display: flex;
+    gap: 0;
+    min-width: 900px;
+    width: 900px;
+  }
+
+  .vault-row {
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    display: flex;
+    gap: 0;
+    grid-template-columns: none;
+    margin-bottom: 2px;
+    min-width: 900px;
+    padding: 0.2rem;
+    width: 900px;
+  }
+
+  .vault-row .col {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    flex-direction: row;
+    gap: 0;
+    min-width: 0;
+    width: auto;
+  }
+
+  .vault-row .col::before,
+  .vault-row:not(.vault-loading) .col::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  .vault-row .vault-name-col,
+  .vault-row .vault-actions-col {
+    grid-column: auto;
+  }
+
+  .vault-row .vault-actions-col {
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .vault-row .vault-name {
+    font-size: .9rem;
+  }
+
+  .vault-snapshot {
+    justify-content: flex-end;
+    width: auto;
+  }
+
+  .snapshot-chart {
+    max-width: none;
+    width: 80px;
+  }
+
+  .vault-row.vault-loading .col {
+    justify-content: flex-start;
+  }
+
+  .vault-row.vault-loading .vault-actions-col {
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .vault-row.vault-loading .vault-skeleton-chart {
+    width: 80px;
+  }
+
+  .vaults-filters {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .vault-tabs {
+    -webkit-overflow-scrolling: touch;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    width: 100%;
+  }
+
+  .vault-tab {
+    font-size: 1rem;
+    height: auto;
+  }
+
+  .filter-controls {
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .type-filters {
+    -webkit-overflow-scrolling: touch;
+    gap: 0.4rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    width: 100%;
+  }
+
+  .vaults-search-container {
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .vault-strategy-header {
+    padding-bottom: 0.35rem;
+  }
+
+  .vault-strategy-breadcrumb-container {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .vault-detail-action-buttons {
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .vault-detail-deposit-btn,
+  .vault-management-trigger {
+    justify-content: center;
+    min-width: 0;
+    width: calc(50% - 0.25rem);
+  }
+
+  .vault-withdraw-lock-wrapper {
+    display: inline-flex;
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+    width: calc(50% - 0.25rem);
+  }
+
+  .vault-withdraw-lock-wrapper .vault-detail-withdraw-btn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .vault-management-dropdown {
+    width: calc(50% - 0.25rem);
+  }
+
+  .vault-management-trigger {
+    width: 100%;
+  }
+
+  .vault-management-menu {
+    min-width: 220px;
+    right: 0;
+    top: 36px;
+  }
+
+  .vault-close-lock-countdown {
+    left: auto;
+    right: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .vault-strategy-sticky-bar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .vault-strategy-info {
+    width: 100%;
+  }
+
+  .vault-strategy-name {
+    font-size: 1.35rem;
+    letter-spacing: -0.7px;
+    margin-top: 0;
+  }
+
+  .vault-strategy-contract {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    line-height: 1.25;
+  }
+
+  .contract-address {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .vault-strategy-metrics {
+    display: grid;
+    gap: 0.6rem 0.9rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .vault-metric {
+    align-items: flex-start;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .vault-metric-value {
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+  }
+
+  .vault-strategy-overview {
+    display: grid;
+    gap: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .vault-strategy-description {
+    box-sizing: border-box;
+    max-width: none;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .vault-strategy-performance {
+    border-left: none;
+    border-top: 1px solid rgba(179, 184, 249, .1);
+    box-sizing: border-box;
+    padding: 0.9rem 0.85rem 0.75rem;
+    width: 100%;
+  }
+
+  .chart-controls {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: space-between;
+  }
+
+  .chart-type-toggle {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .chart-type-btn {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .time-range-dropdown-container {
+    flex: 0 0 auto;
+  }
+
+  .time-range-dropdown-portal {
+    right: 0;
+  }
+
+  .performance-chart {
+    height: 220px;
+    padding: 0;
+  }
+
+  .vault-strategy-tabs {
+    overflow: visible;
+  }
+
+  .vault-strategy-tabs-container {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .vault-strategy-types-rectangle {
+    min-width: max-content;
+    width: max-content;
+  }
+
+  .vault-tab-content {
+    min-height: 0;
+    overflow: visible;
+    padding-bottom: 0.25rem;
+  }
+
+  .balances-tab,
+  .vault-holdings,
+  .vault-depositors,
+  .vault-dh,
+  .vault-oo {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    overflow-y: visible;
+    width: 100%;
+  }
+
+  .vault-holdings-table,
+  .vault-depositors-table,
+  .vault-dh-table,
+  .vault-oo-table {
+    min-width: max-content;
+    width: max-content;
+  }
+
+  .vault-holdings-header,
+  .vault-holdings-row {
+    min-width: 560px;
+  }
+
+  .vault-depositors-header,
+  .vault-depositors-row {
+    min-width: 950px;
+  }
+
+  .vault-dh-header,
+  .vault-dh-row {
+    min-width: 720px;
+  }
+
+  .vault-oo-header,
+  .vault-oo-row {
+    min-width: 1100px;
+  }
+
+  .vault-data-table-header,
+  .vault-data-table-row {
+    min-width: 650px;
+  }
+}
+
+@media (max-width: 620px) {
+  .vault-detail-deposit-btn,
+  .vault-withdraw-lock-wrapper,
+  .vault-management-dropdown {
+    width: 100%;
+  }
+
+  .vault-withdraw-lock-wrapper {
+    flex: 1 1 100%;
+  }
+
+  .vault-management-menu {
+    box-sizing: border-box;
+    left: 0;
+    min-width: 0;
+    right: 0;
+    width: 100%;
+  }
+
+  .vault-close-lock-countdown {
+    left: 50%;
+    right: auto;
+    top: -38px;
+    transform: translateX(-50%);
+  }
+
+  .vault-withdraw-lock-countdown,
+  .vault-close-lock-countdown {
+    max-width: calc(100vw - 40px);
+    white-space: normal;
+  }
+
+  .vault-strategy-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .time-range-dropdown-container,
+  .time-range-select-button {
+    width: 100%;
+  }
+
+  .time-range-dropdown-portal {
+    left: 0;
+    right: 0;
+  }
+
+  .performance-chart {
+    height: 190px;
+  }
+}
+
+@media (max-width: 900px) {
+  .vaults-page-container {
+    max-width: 100%;
+    padding-inline: 8px;
+  }
+
+  .vaults-header {
+    padding: 0 4px;
+  }
+
+  .vaults-header .create-vault-button {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .vaults-filters {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 0 4px;
+  }
+
+  .vault-tabs {
+    -webkit-overflow-scrolling: touch;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    width: 100%;
+  }
+
+  .vault-tab {
+    font-size: 0.95rem;
+  }
+
+  .filter-controls {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .type-filters {
+    -webkit-overflow-scrolling: touch;
+    gap: 0.4rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    width: 100%;
+  }
+
+  .filter-button {
+    flex: 0 0 auto;
+  }
+
+  .vaults-search-container {
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .vaults-list {
+    overflow: visible;
+  }
+
+  .vaults-list-header {
+    display: none;
+    min-width: 0;
+  }
+
+  .vault-row {
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid rgba(179, 184, 249, 0.08);
+    border-radius: 10px;
+    cursor: pointer;
+    display: grid;
+    gap: 0.6rem 0.85rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 0.55rem;
+    min-width: 0;
+    padding: 0.75rem;
+  }
+
+  .vault-row .col {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .vault-row:not(.vault-loading) .col::before {
+    color: #e0e8fd73;
+    font-size: 0.68rem;
+    letter-spacing: 0.25px;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .vault-row .vault-name-col {
+    grid-column: 1 / -1;
+  }
+
+  .vault-row .vault-name-col::before {
+    content: 'Vault';
+  }
+
+  .vault-row .vault-leader-col::before {
+    content: 'Leader';
+  }
+
+  .vault-row .vault-type-col::before {
+    content: 'Type';
+  }
+
+  .vault-row .vault-tokens-col::before {
+    content: 'Assets';
+  }
+
+  .vault-row .vault-apy-col::before {
+    content: 'TVL';
+  }
+
+  .vault-row .vault-deposits-col::before {
+    content: 'Deposit Cap';
+  }
+
+  .vault-row .vault-your-deposits-col::before {
+    content: 'Your Position';
+  }
+
+  .vault-row .vault-age-col::before {
+    content: 'Status';
+  }
+
+  .vault-row .vault-actions-col {
+    align-items: flex-start;
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .vault-row .vault-actions-col::before {
+    content: 'Snapshot';
+  }
+
+  .vault-row .vault-name {
+    font-size: 0.95rem;
+    line-height: 1.2;
+  }
+
+  .vault-row .leader-token-name,
+  .vault-row .apy-value,
+  .vault-row .deposits-value,
+  .vault-row .age-value {
+    line-height: 1.2;
+  }
+
+  .vault-row .vault-tokens {
+    align-items: center;
+    gap: 0;
+  }
+
+  .col.vault-snapshot-col {
+    justify-content: flex-start;
+  }
+
+  .vault-snapshot {
+    width: 100%;
+  }
+
+  .snapshot-chart {
+    height: 36px;
+    max-width: 220px;
+    width: 100%;
+  }
+
+  .vault-row.vault-loading .col {
+    justify-content: center;
+  }
+
+  .vault-row.vault-loading .vault-actions-col {
+    align-items: stretch;
+  }
+
+  .vault-row.vault-loading .vault-skeleton-chart {
+    width: 100%;
+  }
+
+  .vault-strategy-breadcrumb-container {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .add-liquidity-breadcrumb {
+    flex-wrap: wrap;
+    row-gap: 0.25rem;
+  }
+
+  .vault-detail-action-buttons {
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    position: relative;
+    width: 100%;
+  }
+
+  .vault-detail-deposit-btn,
+  .vault-detail-withdraw-btn,
+  .vault-management-trigger,
+  .vault-withdraw-lock-wrapper {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .vault-withdraw-lock-wrapper {
+    display: flex;
+  }
+
+  .vault-withdraw-lock-wrapper .vault-detail-withdraw-btn {
+    width: 100%;
+  }
+
+  .vault-management-menu {
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    margin-top: 0;
+    opacity: 1;
+    pointer-events: auto;
+    position: static;
+    right: auto;
+    top: auto;
+    transform: none;
+    visibility: visible;
+    width: 100%;
+  }
+
+  .vault-management-menu.visible {
+    display: block;
+  }
+
+  .vault-close-lock-wrapper {
+    width: 100%;
+  }
+
+  .vault-close-lock-countdown {
+    left: 50%;
+    top: -34px;
+    transform: translateX(-50%);
+  }
+
+  .vault-strategy-sticky-bar {
+    align-items: flex-start;
+    gap: 0.85rem;
+  }
+
+  .vault-strategy-info {
+    width: 100%;
+  }
+
+  .vault-strategy-name {
+    font-size: 1.35rem;
+    letter-spacing: -0.6px;
+    line-height: 1.05;
+  }
+
+  .vault-strategy-contract {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.4rem;
+  }
+
+  .contract-address {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .vault-strategy-metrics {
+    display: grid;
+    gap: 0.65rem 0.85rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 0;
+    width: 100%;
+  }
+
+  .vault-metric {
+    align-items: flex-start;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .vault-metric-label {
+    font-size: 0.7rem;
+  }
+
+  .vault-metric-value {
+    font-size: 1rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .vault-strategy-overview {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .vault-strategy-description {
+    box-sizing: border-box;
+    max-width: none;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .vault-strategy-performance {
+    border-left: none;
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
+    box-sizing: border-box;
+    padding: 0.85rem 0.75rem 0.75rem;
+    width: 100%;
+  }
+
+  .chart-controls {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .chart-type-toggle {
+    width: 100%;
+  }
+
+  .chart-type-btn {
+    flex: 1 1 0;
+    justify-content: center;
+    padding-inline: 0.5rem;
+  }
+
+  .time-range-dropdown-container {
+    width: 100%;
+  }
+
+  .time-range-select-button {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .time-range-dropdown-portal {
+    left: 0;
+    min-width: 0;
+    right: 0;
+    width: auto;
+  }
+
+  .performance-chart {
+    height: 210px;
+    padding: 0;
+  }
+
+  .vault-strategy-tabs-container {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .vault-strategy-types-rectangle {
+    min-width: max-content;
+    width: max-content;
+  }
+
+  .vault-strategy-type {
+    font-size: 0.78rem;
+    padding: 10px 14px;
+  }
+
+  .vault-tab-content {
+    display: block;
+    min-height: 0;
+    overflow-x: hidden;
+  }
+
+  .balances-tab,
+  .vault-holdings,
+  .vault-depositors,
+  .vault-dh,
+  .vault-oo {
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: visible;
+    width: 100%;
+  }
+
+  .vault-holdings-table,
+  .vault-depositors-table,
+  .vault-dh-table,
+  .vault-oo-table,
+  .vault-data-table {
+    min-width: 100%;
+    width: max-content;
+  }
+
+  .vault-holdings-header,
+  .vault-holdings-row {
+    min-width: 540px;
+  }
+
+  .vault-depositors-header,
+  .vault-depositors-row {
+    min-width: 940px;
+  }
+
+  .vault-dh-header,
+  .vault-dh-row {
+    min-width: 700px;
+  }
+
+  .vault-oo-header,
+  .vault-oo-row {
+    min-width: 1100px;
+  }
+
+  .vault-data-table-header,
+  .vault-data-table-row {
+    min-width: 640px;
+  }
+
+  .vault-holdings-row,
+  .vault-depositors-row,
+  .vault-dh-row,
+  .vault-oo-row,
+  .vault-data-table-row {
+    height: auto;
+    min-height: 36px;
+  }
+}
+
+@media (max-width: 540px) {
+  .vault-row {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+    padding: 0.7rem;
+  }
+
+  .vault-row .vault-name-col,
+  .vault-row .vault-actions-col {
+    grid-column: 1;
+  }
+
+  .snapshot-chart {
+    max-width: none;
+  }
+
+  .vault-strategy-name {
+    font-size: 1.15rem;
+  }
+
+  .vault-strategy-metrics {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .vault-metric {
+    padding-bottom: 0.15rem;
+  }
+
+  .vault-detail-action-buttons {
+    gap: 0.45rem;
+  }
+
+  .vault-withdraw-lock-countdown,
+  .vault-close-lock-countdown {
+    font-size: 0.68rem;
+    max-width: calc(100vw - 48px);
+    white-space: normal;
+  }
+
+  .vault-close-lock-countdown {
+    top: -40px;
+  }
+
+  .vault-strategy-description,
+  .vault-strategy-performance {
+    padding-inline: 0.7rem;
+  }
+
+  .performance-chart {
+    height: 185px;
+  }
+
+  .vault-strategy-type {
+    font-size: 0.75rem;
+    padding: 10px 12px;
+  }
+}

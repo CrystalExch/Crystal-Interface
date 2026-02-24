@@ -1113,8 +1113,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                             disabled={!!stableSelectedVault?.closed}
                           >
                             {stableSelectedVault?.locked
-                              ? t('Enable Deposits')
-                              : t('Disable Deposits')}
+                              ? t('Enable Deposits (Unlock)')
+                              : t('Disable Deposits (Lock)')}
                           </button>
                           <button
                             className={`vault-management-option ${stableSelectedVault?.closed ? 'disabled' : ''}`}
