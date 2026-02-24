@@ -17,17 +17,15 @@ const TokenInfoPopup: React.FC<TokenInfoPopupProps> = ({ symbol, setpopup }) => 
   if (!info) return null;
 
   return (
-    <div className="token-info-button-container">
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setpopup(7);
-        }}
-        className="token-info-button"
-      >
-        <img src={infoicon} className="token-info-popup-icon" />
-      </button>
-    </div>
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        setpopup(7);
+      }}
+      className="token-info-button"
+    >
+      <img src={infoicon} className="token-info-popup-icon" />
+    </button>
   );
 };
 

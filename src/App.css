@@ -100,19 +100,8 @@ html {
   font-size: 1rem;
   font-weight: 300;
   margin-left: 17px;
-  margin-top: 15px;
+  margin-top: 12px;
   color: #fff;
-}
-
-.tokenselectheader2 {
-  color: #ffffff78;
-  font-size: 0.7rem;
-  font-weight: 300;
-  margin-bottom: -6px;
-  margin-left: 17px;
-  margin-top: 2px;
-  max-width: 300px;
-  width: 70%;
 }
 
 .tokenlist,
@@ -245,7 +234,7 @@ html {
   justify-content: center;
   position: absolute;
   right: 18px;
-  top: 18px;
+  top: 14px;
   transition: 0.2s opacity ease;
 }
 
@@ -7402,7 +7391,7 @@ input::-webkit-inner-spin-button {
   align-items: center;
   color: #e0e8fd90;
   right: 80px;
-  margin-top: 10px
+  margin-top: 4px
 }
 
 .edit-order-size-balance-display .balance-label {
@@ -7434,6 +7423,7 @@ input::-webkit-inner-spin-button {
   font-size: 0.95rem;
   font-weight: 400;
   outline: none;
+  border-right: 1px solid rgba(179, 184, 249, 0.12);
   height: 100%;
 }
 
@@ -7443,10 +7433,9 @@ input::-webkit-inner-spin-button {
 }
 
 .edit-order-size-token-label {
-  padding: 8px 12px;
+  padding: 8px 11px;
   color: #ffffff8b;
   font-size: 0.8rem;
-  border-left: 1px solid rgba(179, 184, 249, 0.12);
   background: transparent;
   border-radius: 0;
   font-weight: 400;

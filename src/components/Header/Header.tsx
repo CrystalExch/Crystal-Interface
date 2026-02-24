@@ -1123,7 +1123,7 @@ const Header: React.FC<HeaderProps> = ({
             out_icon={tokendict[activeMarket.quoteAddress].image}
             price={isMemeRoute && memeTokenData ?
               (memeTokenData.price || 0.000001)?.toString() || 'N/A' :
-              formatSubscript(marketHeader?.currentPrice) || 'N/A'
+              marketHeader?.currentPrice?.toString() || 'N/A'
             }
             priceChangeAmount={isMemeRoute && memeTokenData ?
               memeTokenData.change24h?.toString() || 'N/A' :

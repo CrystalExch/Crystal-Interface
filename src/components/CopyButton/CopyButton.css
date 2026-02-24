@@ -2,6 +2,11 @@
   cursor: pointer;
   display: inline-flex;
   margin-bottom: 2px;
+  transition: opacity 0.3s ease;
+}
+
+.copy-wrapper:hover {
+  opacity: 0.7
 }
 
 .copy-wrapper,.icon-container {

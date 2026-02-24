@@ -57,8 +57,7 @@ export const settings: any = {
       eth: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
       weth: '0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A',
       usdc: '0x754704Bc059F8C67012fEd69BC8A327a5aafb603',
-      balancegetter:
-        '0x545D53D5f6c77c85dd8f94d21f0Ac47118C5643b' as `0x${string}`,
+      balancegetter: '0x545D53D5f6c77c85dd8f94d21f0Ac47118C5643b' as `0x${string}`,
       router: '0x2Cd24c8230618e26C149dce9cfb3fBb3d0a9ed54' as `0x${string}`,
       referralManager: '0x545D53D5f6c77c85dd8f94d21f0Ac47118C5643b' as `0x${string}`,
       launchpadRouter: '0x2Cd24c8230618e26C149dce9cfb3fBb3d0a9ed54' as `0x${string}`,
@@ -165,6 +164,9 @@ export const settings: any = {
           decimals: BigInt(18),
           image: iconmonad,
           website: 'https://www.monad.xyz/',
+          descriptionKey: 'monadDesc',
+          twitter: 'https://twitter.com/monad',
+          discord: 'https://discord.com/invite/monad',
         },
         '0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A': {
           ticker: 'WMON',
@@ -173,6 +175,9 @@ export const settings: any = {
           decimals: BigInt(18),
           image: iconwmonad,
           website: 'https://www.monad.xyz/',
+          descriptionKey: 'wMonDesc',
+          twitter: 'https://twitter.com/monad',
+          discord: 'https://discord.com/invite/monad',
         },
         '0x754704Bc059F8C67012fEd69BC8A327a5aafb603': {
           ticker: 'USDC',
