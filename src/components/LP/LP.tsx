@@ -129,11 +129,11 @@ const LP: React.FC<LPProps> = ({
     if (!tokendict || Object.keys(tokendict).length === 0) {
       return [];
     }
-    return Object.values(tokendict).map((token: any) => ({
+    return Object.entries(tokendict).map(([addr, token]: [string, any]) => ({
       symbol: token.ticker,
       icon: token.image,
       name: token.name,
-      address: token.address
+      address: String(token.address || addr || '').toLowerCase(),
     }));
   }, [tokendict]);
 
@@ -208,12 +208,36 @@ const LP: React.FC<LPProps> = ({
   };
 
   const poolTokenFilterParam = useMemo(() => {
-    return selectedTokens
-      .map((t) => String(t?.address || '').toLowerCase())
-      .filter((a) => !!a)
-      .slice(0, 2)
-      .join(',');
-  }, [selectedTokens]);
+    const nativeAddr = String(settings.chainConfig[activechain]?.eth || '').toLowerCase();
+    const wrappedAddr = String(settings.chainConfig[activechain]?.weth || '').toLowerCase();
+    const canonicalizePoolTokenAddr = (addr: string) => {
+      const a = String(addr || '').toLowerCase();
+      if (!a) return '';
+      if (nativeAddr && wrappedAddr && (a === nativeAddr || a === wrappedAddr)) {
+        return wrappedAddr;
+      }
+      return a;
+    };
+    const symbolToAddress = new Map(
+      availableTokens.map((t) => [
+        String(t.symbol || '').toLowerCase(),
+        canonicalizePoolTokenAddr(String(t.address || '').toLowerCase()),
+      ])
+    );
+    const uniq: string[] = [];
+    for (const t of selectedTokens) {
+      const direct = canonicalizePoolTokenAddr(String(t?.address || '').toLowerCase());
+      const resolved =
+        direct ||
+        symbolToAddress.get(String(t?.symbol || '').toLowerCase()) ||
+        '';
+      if (!/^0x[a-f0-9]{40}$/.test(resolved)) continue;
+      if (uniq.includes(resolved)) continue;
+      uniq.push(resolved);
+      if (uniq.length >= 2) break;
+    }
+    return uniq.join(',');
+  }, [selectedTokens, availableTokens, activechain]);
 
   const togglePoolSort = (key: 'volume' | 'tvl' | 'apy') => {
     setPoolSortBy((prev) => {
@@ -509,8 +533,6 @@ const LP: React.FC<LPProps> = ({
         };
       })
       .filter((m: any) => m !== null) as any[];
-  } else if (poolsInitialized) {
-    filteredVaults = Object.values(markets) as any[];
   } else {
     filteredVaults = [];
   }
