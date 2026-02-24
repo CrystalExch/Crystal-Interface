@@ -78,7 +78,7 @@ const PerpsTokenSkeleton = () => {
           </div>
           <div className="perps-interface-token-identity">
             <div className="perps-interface-token-name-row">
-              <div className="skeleton-text skeleton-symbol" style={{ width: '79px', height: '24px' }}></div>
+              <div className="skeleton-text skeleton-symbol" style={{ width: '83px', height: '24px' }}></div>
             </div>
             <div className="ctrlktooltip">
               Ctrl+K
@@ -1233,25 +1233,73 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [memeImageError, setMemeImageError] = useState(false);
   const [remaining, setRemaining] = useState("")
   const [priceColor, setPriceColor] = useState<string>("")
-  const prevPriceRef = useRef<number | null>(null)
+  const prevPriceRef = useRef<{ instrument: string; value: number } | null>(null)
 
   useEffect(() => {
     setMemeImageError(false);
   }, [memeTokenData?.id, memeTokenData?.image]);
 
   useEffect(() => {
-    if (!perpsTokenInfo?.lastPrice) return
-    const current = Number(perpsTokenInfo.lastPrice)
-    const prev = prevPriceRef.current
+    const isPerpsRoute = route == 'perps' || route == 'predict'
+    const instrument = isPerpsRoute
+      ? `perps:${perpsActiveMarketKey ?? perpsTokenInfo?.contractName ?? ''}`
+      : `spot:${activeMarket?.address ?? ''}`
 
-    if (prev !== null) {
-      if (current > prev) setPriceColor("positive")
-      else if (current < prev) setPriceColor("negative")
+    if (isPerpsRoute) {
+      if (!perpsTokenInfo?.lastPrice) return
+      const current = Number(perpsTokenInfo.lastPrice)
+      if (!Number.isFinite(current)) return
+
+      const prevEntry = prevPriceRef.current
+      if (!prevEntry || prevEntry.instrument !== instrument) {
+        prevPriceRef.current = { instrument, value: current }
+        setPriceColor("")
+        return
+      }
+
+      if (current > prevEntry.value) setPriceColor("positive")
+      else if (current < prevEntry.value) setPriceColor("negative")
       else setPriceColor("")
+
+      prevPriceRef.current = { instrument, value: current }
+      return
     }
 
-    prevPriceRef.current = current
-  }, [perpsTokenInfo?.lastPrice])
+    const normalized = String(price ?? '')
+      .replace(/,/g, '')
+      .replace(/[^0-9.-]/g, '')
+    if (!normalized.trim()) {
+      prevPriceRef.current = null
+      setPriceColor('')
+      return
+    }
+    const current = Number(normalized)
+    if (!Number.isFinite(current)) {
+      prevPriceRef.current = null
+      setPriceColor('')
+      return
+    }
+
+    const prevEntry = prevPriceRef.current
+    if (!prevEntry || prevEntry.instrument !== instrument) {
+      prevPriceRef.current = { instrument, value: current }
+      setPriceColor("")
+      return
+    }
+
+    if (current > prevEntry.value) setPriceColor("positive")
+    else if (current < prevEntry.value) setPriceColor("negative")
+    else setPriceColor("")
+
+    prevPriceRef.current = { instrument, value: current }
+  }, [
+    route,
+    perpsActiveMarketKey,
+    perpsTokenInfo?.contractName,
+    perpsTokenInfo?.lastPrice,
+    activeMarket?.address,
+    price,
+  ])
 
   useEffect(() => {
     if (!perpsTokenInfo?.nextFundingTime) return
@@ -1311,7 +1359,11 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             </div>
             <div className="perps-interface-token-identity">
               <div className="perps-interface-token-name-row">
-                <div className="perps-interface-token-symbol">{perpsTokenInfo.baseAsset}/{perpsTokenInfo.quoteAsset}</div>
+                <div className="perps-interface-token-symbol">
+                  <span className="first-asset">{perpsTokenInfo.baseAsset}</span>
+                  <span>/</span>
+                  <span className="second-asset">{perpsTokenInfo.quoteAsset}</span>
+                </div>
               </div>
               <div className="ctrlktooltip">
                 Ctrl+K
@@ -1992,7 +2044,11 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             </div>
             <div className="perps-interface-token-identity">
               <div className="perps-interface-token-name-row">
-                <div className="perps-interface-token-symbol">{perpsTokenInfo.baseAsset}/{perpsTokenInfo.quoteAsset}</div>
+                <div className="perps-interface-token-symbol">
+                  <span className="first-asset">{perpsTokenInfo.baseAsset}</span>
+                  <span>/</span>
+                  <span className="second-asset">{perpsTokenInfo.quoteAsset}</span>
+                </div>
               </div>
               <div className="ctrlktooltip">
                 Ctrl+K
@@ -2227,7 +2283,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               <>
                 <div className="search-market-text-container">
                   <span className="search-market-text">{t("searchAMarket")}</span>
-                  <span className="second-asset">{t("browsePairs")}</span>
+                  <span className="search-market-subtext">{t("browsePairs")}</span>
                 </div>
               </>
             )}
@@ -2434,13 +2490,12 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       {shouldShowFullHeader && (
         <>
           <div className="token-info-right-section">
-            <div className="price-display-section">
-              <PriceDisplay
-                price={price}
-                activeMarket={activeMarket}
-                isLoading={isLoading}
-              />
-            </div>
+            <PriceDisplay
+              price={price}
+              activeMarket={activeMarket}
+              isLoading={isLoading}
+              priceColor={priceColor}
+            />
           </div>
         </>
       )}

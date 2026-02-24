@@ -403,7 +403,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 <span>{t('referrals')}</span>
               </Link>
             </div>
-
           </div>
         </>
       )}

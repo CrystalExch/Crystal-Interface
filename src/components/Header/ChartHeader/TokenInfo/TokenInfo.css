@@ -28,12 +28,12 @@
 }
 
 .first-asset {
-  margin-right: 2.5px;
+  margin-right: 2px;
   font-weight: 450;
 }
 
 .second-asset{
-  margin-left: 2.5px;
+  margin-left: 2px;
   opacity: 0.95;
 }
 
@@ -175,11 +175,12 @@
     display:none;
   }
 }
+
 .trading-pair {
   display: flex;
   align-items: center;
   color: #fff;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 400;
   margin-bottom: -5px;
 }
@@ -187,7 +188,7 @@
 .token-name {
   align-items: center;
   display: flex;
-  gap: 4px;
+  gap: 3px;
   margin-top: -2px;
 }
 
@@ -201,7 +202,7 @@
   align-items: center;
   display: flex;
   gap: 3px;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .token-name-vertical-divider {
@@ -365,7 +366,7 @@
 
 .market-pair {
   color: #d9dbdf;
-  font-size: 0.775rem;
+  font-size: 0.8rem;
   font-weight: 400;
   white-space: nowrap;
 }
@@ -655,7 +656,7 @@
   justify-self: flex-start;
 }
 
-.token-info-right-section{
+.token-info-right-section {
   display: flex;
   align-items: center;
   border-top-left-radius: 8px;
@@ -663,7 +664,7 @@
   max-height: 47px;
   min-height: 47px;
   gap: 10px;
-  padding:0 15px;
+  padding: 0 10px 0 15px;
 
 }
 
@@ -673,22 +674,19 @@
   margin-top: -5px;
 }
 
-
 .chart-header.simplified .search-market-text {
   color: #a8a9b9;
   font-size: 0.8rem;
   font-weight: 300;
 }
 
-
-.chart-header.simplified .second-asset {
+.search-market-subtext {
   color: #ffffff80;
   font-size: 0.7rem;
   font-weight: 300; 
   margin: 0;
   margin-top: -5px;
 }
-
 
 .market-filter-tabs {
   display: flex;
@@ -1349,6 +1347,7 @@
   -ms-overflow-style: none;
   min-width: 0;
   flex-shrink: 0;
+  margin-right: 8px;
 }
 
 .perps-interface-token-metrics::-webkit-scrollbar {

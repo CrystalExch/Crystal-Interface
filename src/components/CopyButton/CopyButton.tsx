@@ -36,8 +36,8 @@ const CopyButton: React.FC<CopyButtonProps> = ({ textToCopy, label = 'Address' }
     <div className="copy-wrapper" onClick={handleCopy}>
       <div className="icon-container">
         <svg
-          width="14"
-          height="14"
+          width="11"
+          height="11"
           viewBox="0 0 24 24"
           fill="#b8b7b7"
         >

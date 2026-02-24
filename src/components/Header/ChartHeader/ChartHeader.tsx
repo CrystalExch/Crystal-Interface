@@ -103,7 +103,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
-  const [isLoading, setIsLoading] = useState(true);
+  const isLoading = orderdata?.liquidityBuyOrders?.market != activeMarket?.address;
   const shouldShowFullHeader = route == 'trade' && !simpleView;
 
   useEffect(() => {
@@ -136,9 +136,6 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       } else {
         setSellLiquidity('N/A');
       }
-
-      const newIsLoading = orderdata.liquidityBuyOrders?.market != activeMarket.address;
-      setIsLoading(prev => prev !== newIsLoading ? newIsLoading : prev);
     }
   }, [orderdata, activeMarket.address, activeMarket.quoteAsset, activeMarket.quoteDecimals, tradesByMarket]);
 

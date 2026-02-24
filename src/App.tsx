@@ -28814,8 +28814,8 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         })(),
       }}>
         <Routes>
-          <Route path="/" element={<Navigate to="/perps" replace />} />
-          <Route path="*" element={<Navigate to="/perps" replace />} />
+          <Route path="/" element={<Navigate to="/market" replace />} />
+          <Route path="*" element={<Navigate to="/market" replace />} />
           <Route path="/spectra"
             element={
               <TokenExplorer
