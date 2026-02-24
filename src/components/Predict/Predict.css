@@ -12,11 +12,6 @@
   color: #ffffffcf;
 }
 
-.predict-event-page.predict-event-resolved .predict-event-header,
-.predict-event-page.predict-event-resolved .predict-event-main-content {
-  opacity: 0.6;
-  filter: grayscale(0.6);
-}
 
 /* ==========================================
    HEADER SECTION
@@ -550,7 +545,7 @@
 }
 
 .predict-event-buy-yes-btn {
-  color: #666;
+  color: rgba(67, 254, 154, 0.45);
 }
 
 .predict-event-buy-yes-btn:hover {
@@ -559,7 +554,7 @@
 }
 
 .predict-event-buy-no-btn {
-  color: #666;
+  color: rgba(235, 112, 112, 0.45);
 }
 
 .predict-event-buy-no-btn:hover {
