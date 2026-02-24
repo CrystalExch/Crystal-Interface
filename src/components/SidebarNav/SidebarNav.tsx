@@ -187,10 +187,10 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={swap} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Swap')}</span>
             </Link>}
-            {/* !isMobile && (
+            {!isMobile && (
               <Link
-                to="/earn/liquidity"
-                className={`page-mode-button ${path.startsWith('/earn/liquidity') || path.startsWith('/earn/vaults')
+                to="/earn"
+                className={`page-mode-button ${path === '/earn' || path.startsWith('/earn/liquidity') || path.startsWith('/earn/vaults')
                     ? 'active'
                     : ''
                   } ${isResizing ? 'no-transition' : ''}`}
@@ -201,7 +201,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                   {t('Earn')}
                 </span>
               </Link>
-            ) */}
+            )}
             {<Link
               to="/trackers"
               className={`page-mode-button ${path === '/trackers' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -367,23 +367,14 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 <span>{'X / ' + t('twitter')}</span>
               </a>
 
-              {/* (<><Link
-                to="/board"
-                className="mobile-menu-item"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <img src={fun} className="mobile-menu-icon" />
-                <span>{t('crystal.fun')}</span>
-              </Link>
-
               <Link
-                to="/earn/liquidity"
+                to="/earn"
                 className="mobile-menu-item"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <img src={liquidity} className="mobile-menu-icon" />
                 <span>{t('Earn')}</span>
-              </Link></>) */}
+              </Link>
 
               <Link
                 to="/leaderboard"

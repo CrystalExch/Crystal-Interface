@@ -325,6 +325,7 @@ interface TrackedWallet {
 }
 
 const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/95767afd668f34593027c5487b67523e/subgraphs/id/CbkzZ5sJ9sTMExCXGTxKkhZpd5CTUKGkNcuCxiNgiApx';
+const BACKEND_URL = 'http://localhost:8000';
 
 const Loader = () => {
   const [ready, setReady] = useState(false);
@@ -1429,7 +1430,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     try {
       const positionsPromises = walletAddresses.map(async (address) => {
-        const response = await fetch(`https://api.crystal.exchange/user/${address}`);
+        const response = await fetch(`${BACKEND_URL}/user/${address}`);
         const data = await response.json();
         return data.positions || [];
       });
@@ -2822,58 +2823,77 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     (async () => {
       setIsVaultsLoading(true);
       try {
-        const resp = await fetch(`https://api.crystal.exchange/vaults/list?limit=1000`);
-        if (!resp.ok) throw new Error(`backend ${resp.status}`);
-        const payload = await resp.json();
+        const VAULT_LIST_QUERY = `
+          query VaultList {
+            vaults(first: 1000, orderBy: lastUpdatedAt, orderDirection: desc) {
+              id
+              owner
+              name
+              description
+              social1
+              social2
+              social3
+              lockup
+              decreaseOnWithdraw
+              locked
+              closed
+              maxShares
+              totalShares
+              quoteBalance
+              baseBalance
+              quoteAsset { id symbol decimals }
+              baseAsset { id symbol decimals }
+            }
+          }
+        `;
+        const payload = await fetchSubgraph(SUBGRAPH_URL, VAULT_LIST_QUERY);
         const rows: any[] = Array.isArray(payload?.vaults) ? payload.vaults : [];
 
         const mappedBase = rows.map((v: any) => {
-          const qAddr = getAddress(v.quote) as `0x${string}`;
-          const bAddr = getAddress(v.base) as `0x${string}`;
+          const qAddr = getAddress(v?.quoteAsset?.id ?? '') as `0x${string}`;
+          const bAddr = getAddress(v?.baseAsset?.id ?? '') as `0x${string}`;
 
           const quoteDecimals =
-            Number(v.quoteDecimals ?? tokendict[qAddr]?.decimals ?? 18);
+            Number(v?.quoteAsset?.decimals ?? tokendict[qAddr]?.decimals ?? 18);
           const baseDecimals =
-            Number(v.baseDecimals ?? tokendict[bAddr]?.decimals ?? 18);
+            Number(v?.baseAsset?.decimals ?? tokendict[bAddr]?.decimals ?? 18);
 
-          const oc = v.latest ?? { quoteBalance: 0, baseBalance: 0 };
-          const qb = BigInt(String(oc.quoteBalance ?? 0));
-          const bb = BigInt(String(oc.baseBalance ?? 0));
+          const qb = BigInt(String(v?.quoteBalance ?? 0));
+          const bb = BigInt(String(v?.baseBalance ?? 0));
 
           return {
-            id: getAddress(v.vault),
-            address: getAddress(v.vault),
+            id: getAddress(v.id),
+            address: getAddress(v.id),
             owner: String(v.owner || '').toLowerCase(),
             quoteAsset: qAddr,
             baseAsset: bAddr,
             quoteDecimals,
             baseDecimals,
-            quoteTicker: tokendict[qAddr]?.ticker ?? 'QUOTE',
-            baseTicker: tokendict[bAddr]?.ticker ?? 'BASE',
-            totalShares: BigInt(String(v.circulatingShares ?? 0)),
+            quoteTicker: tokendict[qAddr]?.ticker ?? v?.quoteAsset?.symbol ?? 'QUOTE',
+            baseTicker: tokendict[bAddr]?.ticker ?? v?.baseAsset?.symbol ?? 'BASE',
+            totalShares: BigInt(String(v.totalShares ?? 0)),
             maxShares: BigInt(String(v.maxShares ?? 0)),
             quoteBalance: qb,
             baseBalance: bb,
-            lockup: 0,
+            lockup: Number(v.lockup ?? 0),
             locked: Boolean(v.locked),
             closed: Boolean(v.closed),
             name: v.name || 'Vault',
             desc: v.description ?? '',
-            social1: v.socials?.social1 ?? '',
-            social2: v.socials?.social2 ?? '',
-            social3: v.socials?.social3 ?? '',
+            social1: v.social1 ?? '',
+            social2: v.social2 ?? '',
+            social3: v.social3 ?? '',
             type: 'Spot',
             userShares: 0n,
-            decreaseOnWithdraw: false,
-            tvlUsd: Number(v.tvlUsd ?? v.latest.usdValue ?? 0),
-            snapshot: v.snapshot || null,
+            decreaseOnWithdraw: Boolean(v.decreaseOnWithdraw),
+            tvlUsd: 0,
+            snapshot: null,
           };
         });
 
         if (cancelled) return;
 
         const concurrency = 6;
-        const tfForProbe = 1;
         const chunks: typeof mappedBase[] = [];
         for (let i = 0; i < mappedBase.length; i += concurrency) {
           chunks.push(mappedBase.slice(i, i + concurrency));
@@ -2885,14 +2905,30 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const results = await Promise.all(
             chunk.map(async (v) => {
               try {
-                const r = await fetch(
-                  `https://api.crystal.exchange/vaults/${v.address}/${address.toLowerCase()}/${tfForProbe}?limit=1`
-                );
+                const r = await fetch(`${BACKEND_URL}/vaults/${v.address}/${address.toLowerCase()}`);
                 if (!r.ok) throw new Error(String(r.status));
                 const j = await r.json();
                 const s = j?.userBalance?.shares ?? 0;
                 const userShares = typeof s === 'bigint' ? s : BigInt(String(s));
-                return { ...v, userShares };
+                return {
+                  ...v,
+                  userShares,
+                  totalShares: BigInt(String(j?.vault?.params?.circulatingShares ?? v.totalShares ?? 0)),
+                  maxShares: BigInt(String(j?.vault?.params?.maxShares ?? v.maxShares ?? 0)),
+                  quoteBalance: BigInt(String(j?.latestBalance?.quoteBalance ?? v.quoteBalance ?? 0)),
+                  baseBalance: BigInt(String(j?.latestBalance?.baseBalance ?? v.baseBalance ?? 0)),
+                  lockup: Number(j?.vault?.params?.lockup ?? v.lockup ?? 0),
+                  locked: Boolean(j?.status?.locked ?? v.locked),
+                  closed: Boolean(j?.status?.closed ?? v.closed),
+                  decreaseOnWithdraw: Boolean(j?.vault?.params?.decreaseOnWithdraw ?? v.decreaseOnWithdraw),
+                  tvlUsd: Number(j?.tvlUsd ?? j?.latestBalance?.usdValue ?? v.tvlUsd ?? 0),
+                  quoteDecimals: Number(j?.vault?.decimals?.quoteDecimals ?? v.quoteDecimals ?? 18),
+                  baseDecimals: Number(j?.vault?.decimals?.baseDecimals ?? v.baseDecimals ?? 18),
+                  desc: j?.vault?.description ?? v.desc,
+                  social1: j?.vault?.socials?.social1 ?? v.social1,
+                  social2: j?.vault?.socials?.social2 ?? v.social2,
+                  social3: j?.vault?.socials?.social3 ?? v.social3,
+                };
               } catch {
                 return v;
               }
@@ -2955,11 +2991,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
         const tf = mapRangeToTf(vaultStrategyTimeRange);
         const userAddr = address ?? '0x0000000000000000000000000000000000000000';
-        const url = `https://api.crystal.exchange/vaults/${selectedVaultStrategy}/${userAddr}/${tf}`;
+        const summaryUrl = `${BACKEND_URL}/vaults/${selectedVaultStrategy}/${userAddr}`;
+        const historyUrl = `${BACKEND_URL}/vaults/${selectedVaultStrategy}/history/${tf}`;
 
-        const res = await fetch(url, { method: 'GET' });
-        if (!res.ok) throw new Error(`backend ${res.status}`);
-        const data = await res.json();
+        const [summaryRes, historyRes] = await Promise.all([
+          fetch(summaryUrl, { method: 'GET' }),
+          fetch(historyUrl, { method: 'GET' }),
+        ]);
+        if (!summaryRes.ok) throw new Error(`backend ${summaryRes.status}`);
+        if (!historyRes.ok) throw new Error(`backend ${historyRes.status}`);
+        const data = await summaryRes.json();
+        data.history = await historyRes.json();
 
         const respDepositors = Array.isArray(data?.depositors) ? data.depositors : [];
         const paramsTotal = data?.vault?.params?.circulatingShares ?? 0;
@@ -3189,13 +3231,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       setSeriesError(null);
       try {
         const tf = mapRangeToTf(vaultStrategyTimeRange);
-        const url = `https://api.crystal.exchange/vaults/${selectedVaultStrategy}/${tf}`;
+        const url = `${BACKEND_URL}/vaults/${selectedVaultStrategy}/history/${tf}`;
         const res = await fetch(url, { method: 'GET' });
         if (!res.ok) throw new Error(`backend ${res.status}`);
         const j = await res.json();
 
-        const tvlArr = Array.isArray(j?.history?.series?.tvl) ? j.history.series.tvl : [];
-        const pnlArr = Array.isArray(j?.history?.series?.pnl) ? j.history.series.pnl : [];
+        const tvlArr = Array.isArray(j?.series?.tvl) ? j.series.tvl : [];
+        const pnlArr = Array.isArray(j?.series?.pnl) ? j.series.pnl : [];
 
         const vSeries = tvlArr.map((p: any) => {
           const ts = Number(p.timestamp || 0);
@@ -4755,7 +4797,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
     (async () => {
       try {
-        const res = await fetch('https://api.crystal.exchange/tokens', {
+        const res = await fetch(`${BACKEND_URL}/tokens`, {
           method: 'GET',
           headers: { 'content-type': 'application/json' },
         });
@@ -6789,7 +6831,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             : "";
 
         const res = await fetch(
-          `https://api.crystal.exchange/token/${id}/${chartRes}${trackedParam}`,
+          `${BACKEND_URL}/token/${id}/${chartRes}${trackedParam}`,
           {
             method: "GET",
             headers: { "content-type": "application/json" },
@@ -7126,7 +7168,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       try {
         const responses = await Promise.all(
           allAddresses.map((addr) =>
-            fetch(`https://api.crystal.exchange/user/${addr}`, {
+            fetch(`${BACKEND_URL}/user/${addr}`, {
               method: 'GET',
               headers: { 'content-type': 'application/json' },
             }),
