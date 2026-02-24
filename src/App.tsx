@@ -2625,6 +2625,94 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     };
   }, []);
 
+  useEffect(() => {
+    if (!['earn'].includes(location.pathname.split('/')[1])) return;
+    if (!selectedVaultStrategy) return;
+
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const data = encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: 'getBalances',
+          args: [],
+        });
+
+        const res = await fetch(HTTP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'eth_call',
+            params: [{ to: selectedVaultStrategy, data }, 'latest'],
+          }),
+        });
+
+        const j = await res.json();
+        if (cancelled) return;
+        if (!j?.result) return;
+
+        const decoded: any = decodeFunctionResult({
+          abi: CrystalVaultsAbi,
+          functionName: 'getBalances',
+          data: j.result,
+        });
+
+        const quoteBalance = BigInt(String(decoded?.[0] ?? 0));
+        const baseBalance = BigInt(String(decoded?.[1] ?? 0));
+        const vaddr = String(selectedVaultStrategy).toLowerCase();
+
+        setselectedVault((prev: any) => {
+          if (!prev) return prev;
+          if (String(prev?.address || '').toLowerCase() !== vaddr) return prev;
+          const totalShares = BigInt(String(prev?.totalShares ?? 0));
+          const userShares = BigInt(String(prev?.userShares ?? 0));
+          const userQuoteBalance = totalShares > 0n ? (quoteBalance * userShares) / totalShares : 0n;
+          const userBaseBalance = totalShares > 0n ? (baseBalance * userShares) / totalShares : 0n;
+          return {
+            ...prev,
+            quoteBalance,
+            baseBalance,
+            userQuoteBalance,
+            userBaseBalance,
+          };
+        });
+
+        setVaultList((prev: any[]) =>
+          (Array.isArray(prev) ? prev : []).map((v: any) => {
+            if (String(v?.address || '').toLowerCase() !== vaddr) return v;
+            const totalShares = BigInt(String(v?.totalShares ?? 0));
+            const userShares = BigInt(String(v?.userShares ?? 0));
+            const userQuoteBalance = totalShares > 0n ? (quoteBalance * userShares) / totalShares : 0n;
+            const userBaseBalance = totalShares > 0n ? (baseBalance * userShares) / totalShares : 0n;
+            return {
+              ...v,
+              quoteBalance,
+              baseBalance,
+              userQuoteBalance,
+              userBaseBalance,
+              latestBalance: {
+                ...(v?.latestBalance || {}),
+                quoteBalance: String(quoteBalance),
+                baseBalance: String(baseBalance),
+              },
+            };
+          })
+        );
+      } catch {
+      }
+    };
+
+    run();
+    const id = window.setInterval(run, 2000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [selectedVaultStrategy, HTTP_URL, location.pathname, setselectedVault, setVaultList]);
+
   const vaultChartData = vaultStrategyChartType === 'value' ? valueSeries : pnlSeries;
 
   const calculateSharesFromPercentage = (percentage: string, userShares: any) => {

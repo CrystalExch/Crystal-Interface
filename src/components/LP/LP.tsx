@@ -11,6 +11,7 @@ import { TokenAbi } from '../../abis/TokenAbi.ts';
 import customRound from '../../utils/customRound.tsx';
 import { settings } from "../../settings";
 import { config } from '../../wagmi';
+import SortArrow from '../OrderCenter/SortArrow/SortArrow';
 import './LP.css';
 
 import verified from '../../assets/verified.png';
@@ -38,14 +39,15 @@ interface LPProps {
   refetch?: () => void;
 }
 
+const _nowSec = Math.floor(Date.now() / 1000);
 const defaultPerformanceData = [
-  { name: 'Jan', value: 12.4 },
-  { name: 'Feb', value: 14.8 },
-  { name: 'Mar', value: 18.2 },
-  { name: 'Apr', value: 16.9 },
-  { name: 'May', value: 21.3 },
-  { name: 'Jun', value: 22.7 },
-  { name: 'Jul', value: 24.5 },
+  { ts: _nowSec - 6 * 86400, name: 'Jan', value: 12.4 },
+  { ts: _nowSec - 5 * 86400, name: 'Feb', value: 14.8 },
+  { ts: _nowSec - 4 * 86400, name: 'Mar', value: 18.2 },
+  { ts: _nowSec - 3 * 86400, name: 'Apr', value: 16.9 },
+  { ts: _nowSec - 2 * 86400, name: 'May', value: 21.3 },
+  { ts: _nowSec - 1 * 86400, name: 'Jun', value: 22.7 },
+  { ts: _nowSec, name: 'Jul', value: 24.5 },
 ];
 
 const BACKEND_BASE_URL = 'http://localhost:8000';
@@ -81,6 +83,8 @@ const LP: React.FC<LPProps> = ({
   const [hoveredTvl, setHoveredTvl] = useState<number | null>(null);
   const [selectedVault, setSelectedVault] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [poolSortBy, setPoolSortBy] = useState<'volume' | 'tvl' | 'apy'>('volume');
+  const [poolSortDir, setPoolSortDir] = useState<'asc' | 'desc'>('desc');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedTokens, setSelectedTokens] = useState<Token[]>([]);
   const [activeFilter, setActiveFilter] = useState<'All' | 'LSTs' | 'Stables' | 'Unverified' | 'Verified'>('All');
@@ -117,6 +121,7 @@ const LP: React.FC<LPProps> = ({
 
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const selectedPoolDataRef = useRef<any>(undefined);
 
   const { favorites, toggleFavorite } = useSharedContext();
 
@@ -137,63 +142,147 @@ const LP: React.FC<LPProps> = ({
   const [poolsInitialized, setPoolsInitialized] = useState(false);
   const [poolStatsMap, setPoolStatsMap] = useState<Record<string, any>>({});
   const performanceSeries = useMemo(() => {
-    if (!selectedVaultData || !selectedVaultData.apyHistory) {
-      return defaultPerformanceData;
+    if (!selectedVaultData) {
+      return [];
     }
 
     try {
-      const history = selectedVaultData.apyHistory as { timestamp: number; apy: number }[];
+      const tvlHistory = selectedVaultData.tvlHistory as { timestamp: number; tvl: number }[] | undefined;
+      if (Array.isArray(tvlHistory) && tvlHistory.length > 0) {
+        const sorted = [...tvlHistory]
+          .map((p) => ({ timestamp: Number(p.timestamp || 0), tvl: Number(p.tvl || 0) }))
+          .filter((p) => Number.isFinite(p.timestamp) && Number.isFinite(p.tvl))
+          .sort((a, b) => a.timestamp - b.timestamp);
 
-      if (!Array.isArray(history) || history.length === 0) {
-        return defaultPerformanceData;
+        const maxPoints = 240;
+        const sampled =
+          sorted.length <= maxPoints
+            ? sorted
+            : sorted.filter((_, i) => i % Math.ceil(sorted.length / maxPoints) === 0);
+
+        return sampled.map(point => ({
+          ts: point.timestamp,
+          name: new Date(point.timestamp * 1000).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+          }),
+          value: point.tvl,
+        }));
       }
 
-      return history.map(point => ({
-        name: new Date(point.timestamp * 1000).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-        }),
-        value: Number(point.apy) * 100,
-      }));
+      const history = selectedVaultData.apyHistory as { timestamp: number; apy: number }[] | undefined;
+
+      if (!Array.isArray(history) || history.length === 0) {
+        return [];
+      }
+
+      return history
+        .map(point => ({
+          ts: Number(point.timestamp || 0),
+          name: new Date(Number(point.timestamp || 0) * 1000).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+          }),
+          value: Number(point.apy) * 100,
+        }))
+        .sort((a, b) => a.ts - b.ts);
     } catch {
-      return defaultPerformanceData;
+      return [];
     }
   }, [selectedVaultData]);
 
   const hasInitializedFavorites = useRef(false);
 
   const [loadingVaultDetails, setLoadingVaultDetails] = useState(false);
-
   useEffect(() => {
-    if (!selectedVault) return;
+    selectedPoolDataRef.current = selectedVaultData;
+  }, [selectedVaultData]);
 
-    (async () => {
-      setLoadingVaultDetails(true);
+  const formatPerformanceTick = (ts: number) => {
+    const d = new Date(Number(ts || 0) * 1000);
+    if (!Number.isFinite(Number(ts || 0))) return '';
+    if ((performanceSeries?.length || 0) > 48) {
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  };
+
+  const poolTokenFilterParam = useMemo(() => {
+    return selectedTokens
+      .map((t) => String(t?.address || '').toLowerCase())
+      .filter((a) => !!a)
+      .slice(0, 2)
+      .join(',');
+  }, [selectedTokens]);
+
+  const togglePoolSort = (key: 'volume' | 'tvl' | 'apy') => {
+    setPoolSortBy((prev) => {
+      if (prev === key) {
+        setPoolSortDir((dir) => (dir === 'desc' ? 'asc' : 'desc'));
+        return prev;
+      }
+      setPoolSortDir('desc');
+      return key;
+    });
+  };
+
+  const poolSortArrowDirection = (key: 'volume' | 'tvl' | 'apy') => {
+    if (poolSortBy !== key) return undefined;
+    return poolSortDir === 'asc' ? 'desc' : 'asc';
+  };
+
+  const refreshSelectedPoolDetail = useMemo(() => {
+    return async (opts?: { silent?: boolean }) => {
+      if (!selectedVault) return;
+      const silent = !!opts?.silent;
+      if (!silent) setLoadingVaultDetails(true);
       try {
-        const marketInfo = markets?.[selectedVault];
-        if (!marketInfo || !marketInfo.address) {
-          setSelectedVaultData(undefined);
+        const selectedKey = String(selectedVault).toLowerCase();
+        const localMarketInfo = markets?.[selectedVault];
+        const poolSeedRaw =
+          (Array.isArray(poolsList) ? poolsList : []).find((p: any) => {
+            const addr = String(p?.address || p?.poolAddress || '').toLowerCase();
+            const marketAddr = String(p?.market || '').toLowerCase();
+            const mk =
+              `${String(p?.baseTicker === 'WMON' ? 'MON' : p?.baseTicker || '')}${String(p?.quoteTicker === 'WMON' ? 'MON' : p?.quoteTicker || '')}`.toLowerCase();
+            return addr === selectedKey || marketAddr === selectedKey || mk === selectedKey;
+          }) || null;
+        const poolSeed = poolSeedRaw ? {
+          ...poolSeedRaw,
+          marketKey:
+            `${String(poolSeedRaw?.baseTicker === 'WMON' ? 'MON' : poolSeedRaw?.baseTicker || '')}${String(poolSeedRaw?.quoteTicker === 'WMON' ? 'MON' : poolSeedRaw?.quoteTicker || '')}`,
+        } : null;
+
+        const poolAddressRaw = String(
+          poolSeed?.address ||
+          poolSeed?.poolAddress ||
+          poolSeed?.market ||
+          localMarketInfo?.address ||
+          ''
+        );
+        const poolAddressLower = poolAddressRaw.toLowerCase();
+
+        if (!poolAddressRaw) {
+          if (!silent) setSelectedVaultData(undefined);
           return;
         }
 
-        const poolAddress = marketInfo.address as `0x${string}`;
-        const poolAddressLower = poolAddress.toLowerCase();
-
-        const res = await fetch(`${BACKEND_BASE_URL}/pools/${poolAddressLower}`);
-        if (!res.ok) {
-          console.error('failed to fetch pool stats for', poolAddressLower);
-          setSelectedVaultData({
-            ...marketInfo,
-          });
-          return;
+        let poolStats: any = null;
+        try {
+          const res = await fetch(`${BACKEND_BASE_URL}/pools/${poolAddressLower}`);
+          if (res.ok) {
+            poolStats = await res.json();
+          } else {
+            console.error('failed to fetch pool stats for', poolAddressLower);
+          }
+        } catch (e) {
+          console.error('failed to fetch pool stats for', poolAddressLower, e);
         }
-
-        const poolStats = await res.json();
 
         const contracts: any[] = [
           {
             abi: TokenAbi as any,
-            address: poolAddress,
+            address: poolAddressRaw as `0x${string}`,
             functionName: 'totalSupply',
             args: [],
           },
@@ -203,41 +292,52 @@ const LP: React.FC<LPProps> = ({
         if (hasAccount) {
           contracts.push({
             abi: TokenAbi as any,
-            address: poolAddress,
+            address: poolAddressRaw as `0x${string}`,
             functionName: 'balanceOf',
             args: [account.address as `0x${string}`],
           });
         }
 
-        const readResults = (await readContracts(config, {
-          contracts,
-        })) as any[];
-
         let totalShares = 0n;
         let userShares = 0n;
-
-        if (readResults[0]?.status === 'success') {
-          totalShares = readResults[0].result as bigint;
+        try {
+          const readResults = (await readContracts(config, { contracts })) as any[];
+          if (readResults[0]?.status === 'success') {
+            totalShares = readResults[0].result as bigint;
+          }
+          if (hasAccount && readResults[1]?.status === 'success') {
+            userShares = readResults[1].result as bigint;
+          }
+        } catch (e) {
+          console.error('failed to read LP balances', e);
         }
 
-        if (hasAccount && readResults[1]?.status === 'success') {
-          userShares = readResults[1].result as bigint;
-        }
+        const reserveQuote = poolStats?.reserveQuote != null ? BigInt(poolStats.reserveQuote) : 0n;
+        const reserveBase = poolStats?.reserveBase != null ? BigInt(poolStats.reserveBase) : 0n;
 
-        const reserveQuote = poolStats.reserveQuote != null ? BigInt(poolStats.reserveQuote) : 0n;
-        const reserveBase = poolStats.reserveBase != null ? BigInt(poolStats.reserveBase) : 0n;
-
-        const tvlUsd = Number(poolStats.tvlUsd ?? 0);
+        const tvlUsd = Number(poolStats?.tvlUsd ?? poolSeed?.tvlUsd ?? 0);
         let userBalanceUsd = 0;
-
         if (tvlUsd > 0 && totalShares > 0n && userShares > 0n) {
           const frac = Number(userShares) / Number(totalShares);
           userBalanceUsd = tvlUsd * frac;
         }
 
+        const baseAddress = String(localMarketInfo?.baseAddress || poolSeed?.baseAddress || poolStats?.base || poolStats?.baseAddress || '');
+        const quoteAddress = String(localMarketInfo?.quoteAddress || poolSeed?.quoteAddress || poolStats?.quote || poolStats?.quoteAddress || '');
+        const baseAsset = localMarketInfo?.baseAsset || poolSeed?.baseAsset || poolStats?.baseTicker || '';
+        const quoteAsset = localMarketInfo?.quoteAsset || poolSeed?.quoteAsset || poolStats?.quoteTicker || '';
+
         const vaultDict = {
-          ...marketInfo,
-          ...poolStats,
+          ...(localMarketInfo || {}),
+          ...(poolSeed || {}),
+          ...(poolStats || {}),
+          address: poolAddressRaw,
+          market: String(poolStats?.market || poolSeed?.market || poolAddressLower).toLowerCase(),
+          poolAddress: poolAddressRaw,
+          baseAddress,
+          quoteAddress,
+          baseAsset,
+          quoteAsset,
           quoteBalance: reserveQuote,
           baseBalance: reserveBase,
           userShares,
@@ -248,15 +348,43 @@ const LP: React.FC<LPProps> = ({
         setSelectedVaultData(vaultDict);
       } catch (e) {
         console.error(e);
-        setSelectedVaultData(undefined);
+        if (!silent) setSelectedVaultData(undefined);
       } finally {
-        setLoadingVaultDetails(false);
+        if (!silent) setLoadingVaultDetails(false);
       }
-    })();
-  }, [selectedVault, account.address, markets]);
+    };
+  }, [selectedVault, markets, poolsList, account.address]);
+
+  useEffect(() => {
+    if (!selectedVault) return;
+    let cancelled = false;
+
+    const run = async (silent = false) => {
+      if (cancelled) return;
+      await refreshSelectedPoolDetail({ silent });
+    };
+
+    const cur = selectedPoolDataRef.current;
+    const selectedKey = String(selectedVault).toLowerCase();
+    const hasCurrentData = !!cur && (
+      String(cur?.marketKey || '').toLowerCase() === selectedKey ||
+      String(cur?.address || '').toLowerCase() === selectedKey ||
+      String(cur?.market || '').toLowerCase() === selectedKey
+    );
+
+    void run(hasCurrentData);
+    const intervalId = window.setInterval(() => {
+      void run(true);
+    }, 5000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [selectedVault, refreshSelectedPoolDetail]);
 
   const showVaultDetail = (vault: any) => {
-    setSelectedVault(vault.baseAsset + vault.quoteAsset);
+    setSelectedVault(vault.marketKey || (vault.baseAsset + vault.quoteAsset));
     setActiveVaultDetailTab('deposit');
     setVaultInputStrings({ base: '', quote: '' });
     setWithdrawAmount('');
@@ -293,6 +421,7 @@ const LP: React.FC<LPProps> = ({
 
   const formatUsd = (value: number): string => {
     if (!Number.isFinite(value) || value <= 0) return '$0.00';
+    if (value < 0.01) return '<$0.01';
     if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
     if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
     if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
@@ -358,11 +487,25 @@ const LP: React.FC<LPProps> = ({
             : pool.quoteTicker);
 
         const marketInfo = markets[marketKey];
-        if (!marketInfo) return null;
+        const poolAddressRaw = String(pool.address || pool.poolAddress || pool.market || marketInfo?.address || '');
+        const baseAddressRaw = String(marketInfo?.baseAddress || pool.base || pool.baseAddress || '');
+        const quoteAddressRaw = String(marketInfo?.quoteAddress || pool.quote || pool.quoteAddress || '');
+        const poolAddress = poolAddressRaw.toLowerCase();
+        if (!poolAddress || !baseAddressRaw || !quoteAddressRaw) return null;
 
         return {
-          ...marketInfo,
+          ...(marketInfo || {}),
+          ...pool,
+          marketKey,
           poolId: pool.id ?? pool.address ?? pool.poolAddress ?? marketKey,
+          address: poolAddress,
+          poolAddress: poolAddressRaw || poolAddress,
+          market: String(pool.market || poolAddress).toLowerCase(),
+          baseAddress: baseAddressRaw,
+          quoteAddress: quoteAddressRaw,
+          baseAsset: marketInfo?.baseAsset || pool.baseTicker || '',
+          quoteAsset: marketInfo?.quoteAsset || pool.quoteTicker || '',
+          verified: marketInfo?.verified ?? false,
         };
       })
       .filter((m: any) => m !== null) as any[];
@@ -663,6 +806,7 @@ const LP: React.FC<LPProps> = ({
       await sendUserOperationAsync({ uo: depositUo });
 
       setDepositVaultStep('success');
+      void refreshSelectedPoolDetail({ silent: true });
 
       setTimeout(() => {
         setVaultInputStrings({ base: '', quote: '' });
@@ -670,6 +814,7 @@ const LP: React.FC<LPProps> = ({
         setVaultSecondTokenExceedsBalance(false);
         setDepositVaultStep('idle');
         setDepositVaultError('');
+        void refreshSelectedPoolDetail({ silent: true });
         refetch?.();
       }, 2000);
 
@@ -740,6 +885,7 @@ const LP: React.FC<LPProps> = ({
       await sendUserOperationAsync({ uo: withdrawUo });
 
       setWithdrawVaultStep('success');
+      void refreshSelectedPoolDetail({ silent: true });
 
       setTimeout(() => {
         setWithdrawAmount('');
@@ -748,6 +894,7 @@ const LP: React.FC<LPProps> = ({
         setWithdrawExceedsBalance(false);
         setWithdrawVaultStep('idle');
         setWithdrawVaultError('');
+        void refreshSelectedPoolDetail({ silent: true });
         refetch?.();
       }, 2000);
 
@@ -827,16 +974,28 @@ const LP: React.FC<LPProps> = ({
   }, [availableTokens]);
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+
+    const run = async () => {
       try {
-        const res = await fetch(`${BACKEND_BASE_URL}/pools/list`);
+        const params = new URLSearchParams({
+          page: '1',
+          limit: '50',
+          sort: poolSortBy,
+          order: poolSortDir,
+        });
+        if (poolTokenFilterParam.length > 0) {
+          params.set('tokens', poolTokenFilterParam);
+        }
+        const res = await fetch(`${BACKEND_BASE_URL}/pools/list?${params.toString()}`);
         if (!res.ok) {
-          setPoolsInitialized(true);
+          if (!cancelled) setPoolsInitialized(true);
           return;
         }
 
         const data = await res.json();
         const pools = (data && data.pools) || [];
+        if (cancelled) return;
 
         setPoolsList(pools);
 
@@ -845,6 +1004,7 @@ const LP: React.FC<LPProps> = ({
         for (const p of pools as any[]) {
           const addr = (p.address || p.poolAddress || '').toLowerCase();
           const marketKey = (p.market || '').toLowerCase();
+          const symbolKey = `${String(p.baseTicker || '')}${String(p.quoteTicker || '')}`.toLowerCase();
 
           if (addr) {
             map[addr] = p;
@@ -853,16 +1013,27 @@ const LP: React.FC<LPProps> = ({
           if (marketKey) {
             map[marketKey] = p;
           }
+
+          if (symbolKey) {
+            map[symbolKey] = p;
+          }
         }
 
         setPoolStatsMap(map);
         setPoolsInitialized(true);
       } catch (e) {
         console.error('failed to fetch pools list', e);
-        setPoolsInitialized(true);
+        if (!cancelled) setPoolsInitialized(true);
       }
-    })();
-  }, []);
+    };
+
+    void run();
+    const intervalId = window.setInterval(run, 10000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [activechain, poolTokenFilterParam, poolSortBy, poolSortDir]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1349,15 +1520,76 @@ const LP: React.FC<LPProps> = ({
           <div className="lp-vaults-grid" key={selectedVault}>
             <div className="lp-vaults-list-header">
               <div className="lp-col lp-asset-col">Pool</div>
-              <div className="lp-col lp-supply-col">TVL</div>
-              <div className="lp-col lp-supply-apy-col">24h Volume</div>
+              <div
+                className="lp-col lp-supply-col"
+                role="button"
+                tabIndex={0}
+                onClick={() => togglePoolSort('tvl')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    togglePoolSort('tvl');
+                  }
+                }}
+                title="Sort by TVL"
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  TVL
+                  <SortArrow
+                    sortDirection={poolSortArrowDirection('tvl')}
+                    onClick={() => togglePoolSort('tvl')}
+                  />
+                </span>
+              </div>
+              <div
+                className="lp-col lp-supply-apy-col"
+                role="button"
+                tabIndex={0}
+                onClick={() => togglePoolSort('volume')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    togglePoolSort('volume');
+                  }
+                }}
+                title="Sort by 24h volume"
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  24h Volume
+                  <SortArrow
+                    sortDirection={poolSortArrowDirection('volume')}
+                    onClick={() => togglePoolSort('volume')}
+                  />
+                </span>
+              </div>
               <div className="lp-col lp-borrowed-col">24h Fees</div>
-              <div className="lp-col lp-borrow-apy-col">24h APY</div>
+              <div
+                className="lp-col lp-borrow-apy-col"
+                role="button"
+                tabIndex={0}
+                onClick={() => togglePoolSort('apy')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    togglePoolSort('apy');
+                  }
+                }}
+                title="Sort by 24h APY (estimated)"
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  24h APY (est.)
+                  <SortArrow
+                    sortDirection={poolSortArrowDirection('apy')}
+                    onClick={() => togglePoolSort('apy')}
+                  />
+                </span>
+              </div>
             </div>
 
             {filteredVaults.length > 0 ? (
               filteredVaults.map((vault) => {
                 const stats =
+                  vault ||
                   poolStatsMap[vault.address?.toLowerCase() || ''] ||
                   poolStatsMap[(vault.baseAsset + vault.quoteAsset).toLowerCase()] ||
                   {};
@@ -1370,12 +1602,12 @@ const LP: React.FC<LPProps> = ({
                     ? Number(stats.apy24h) * 100
                     : 0;
 
-                return (
-                  <div
-                    key={vault.address + vault.quoteAddress + vault.baseAddress}
-                    className="lp-card"
-                    onClick={() => showVaultDetail(vault)}
-                  >
+                  return (
+                    <div
+                      key={vault.poolId || (vault.address + vault.quoteAddress + vault.baseAddress)}
+                      className="lp-card"
+                      onClick={() => showVaultDetail(vault)}
+                    >
                     <div className="lp-summary">
                       <div className="lp-col lp-asset-col">
                         <div className="lp-token-pair-icons">
@@ -1551,7 +1783,7 @@ const LP: React.FC<LPProps> = ({
                       </div>
                       <div className="lp-detail-stats">
                         <div className="lp-detail-stat">
-                          <span className="lp-stat-label">APY</span>
+                          <span className="lp-stat-label">APY (est.)</span>
                           <span className="lp-stat-value">
                             {`${customRound(Number(selectedVaultData.apy24hPercent ?? 0), 2).toLocaleString()}%`}
                           </span>
@@ -1581,36 +1813,46 @@ const LP: React.FC<LPProps> = ({
                       <h4 className="lp-performance-chart-header">
                         PERFORMANCE
                       </h4>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={performanceSeries} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                          <defs>
-                            <linearGradient id="performanceGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#aaaecf" stopOpacity={0.4} />
-                              <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
-                              <stop offset="100%" stopColor="#aaaecf" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
-                          <XAxis
-                            dataKey="name"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: '#e0e8fd90', fontSize: 12 }}
-                          />
-                          <YAxis hide />
-                          <Tooltip
-                            contentStyle={{ display: 'none' }}
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="value"
-                            stroke="#aaaecf"
-                            strokeWidth={2}
-                            fill="url(#performanceGrad)"
-                            dot={false}
-                            activeDot={{ r: 4, fill: "rgb(6,6,6)", stroke: "#aaaecf", strokeWidth: 2 }}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
+                      {performanceSeries.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={performanceSeries} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                            <defs>
+                              <linearGradient id="performanceGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#aaaecf" stopOpacity={0.4} />
+                                <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
+                                <stop offset="100%" stopColor="#aaaecf" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <XAxis
+                              type="number"
+                              dataKey="ts"
+                              domain={['dataMin', 'dataMax']}
+                              scale="time"
+                              tickFormatter={formatPerformanceTick}
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fill: '#e0e8fd90', fontSize: 12 }}
+                            />
+                            <YAxis hide />
+                            <Tooltip
+                              contentStyle={{ display: 'none' }}
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="value"
+                              stroke="#aaaecf"
+                              strokeWidth={2}
+                              fill="url(#performanceGrad)"
+                              dot={false}
+                              activeDot={{ r: 4, fill: "rgb(6,6,6)", stroke: "#aaaecf", strokeWidth: 2 }}
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e0e8fd90', fontSize: 13 }}>
+                          No TVL history yet
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
