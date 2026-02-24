@@ -19,6 +19,7 @@ import { encodeFunctionData, getAddress } from 'viem';
 import { CrystalVaultsAbi } from '../../abis/CrystalVaultsAbi';
 import { settings } from '../../settings';
 import { formatSig } from '../OrderCenter/utils';
+import SortArrow from '../OrderCenter/SortArrow/SortArrow';
 
 import './LPVaults.css';
 import { createPortal } from 'react-dom';
@@ -48,6 +49,13 @@ interface LPVaultsProps {
   tradesByMarket: any;
   getMarket: any;
   vaultList: any;
+  vaultListSearchQuery: string;
+  setVaultListSearchQuery: (q: string) => void;
+  vaultListStatusFilter: 'Active' | 'Closed' | 'All';
+  setVaultListStatusFilter: (f: 'Active' | 'Closed' | 'All') => void;
+  vaultListSortBy: 'latest_deposit' | 'tvl' | 'user_position';
+  vaultListSortOrder: 'asc' | 'desc';
+  onVaultListSortChange: (sortBy: 'latest_deposit' | 'tvl' | 'user_position', order: 'asc' | 'desc') => void;
   isLoading: any;
   depositors: any;
   depositHistory: any;
@@ -90,15 +98,7 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({
         .filter(p => Number.isFinite(p.ts) && Number.isFinite(p.value))
         .sort((a, b) => a.ts - b.ts)
       : [];
-    if (arr.length > 0) return arr;
-
-    const last = Number(snapshot?.stats?.lastUsd ?? 0);
-    if (!Number.isFinite(last) || last <= 0) return [];
-    const now = Date.now() / 1000;
-    return [
-      { ts: Math.floor(now) - 1, value: last },
-      { ts: Math.floor(now), value: last },
-    ];
+    return arr;
   }, [snapshot]);
 
   const pct = Number(snapshot?.stats?.pctChange ?? 0);
@@ -132,44 +132,51 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({
     yMax += pad;
   }
 
+  const spark = useMemo(() => {
+    const width = 80;
+    const height = 32;
+    const pad = 2;
+    const innerW = Math.max(1, width - pad * 2);
+    const innerH = Math.max(1, height - pad * 2);
+    const denom = Math.max(1, pts.length - 1);
+    const ySpan = Math.max(1e-12, yMax - yMin);
+    const single = pts.length === 1;
+
+    const xy = pts.map((p, i) => {
+      const x = single ? (pad + innerW / 2) : (pad + (innerW * i) / denom);
+      const t = (Number(p.value) - yMin) / ySpan;
+      const y = pad + (1 - t) * innerH;
+      return { x, y };
+    });
+
+    const line = xy.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const area = single ? '' : `${line} L ${pad + innerW} ${pad + innerH} L ${pad} ${pad + innerH} Z`;
+    const dot = single ? xy[0] : null;
+    return { width, height, line, area, dot };
+  }, [pts, yMin, yMax]);
+
   return (
     <div className={`vault-snapshot ${className}`}>
       <div className="snapshot-chart">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={pts} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-            <defs>
-              <linearGradient id={`gradient-${vaultId}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={stroke} stopOpacity={0.3} />
-                <stop offset="100%" stopColor={stroke} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-
-            <XAxis
-              dataKey="ts"
-              type="number"
-              domain={["dataMin", "dataMax"]}
-              hide
-            />
-            <YAxis
-              type="number"
-              domain={[yMin, yMax]}
-              hide
-              allowDecimals
-            />
-
-            <Area
-              type="monotoneX"
-              dataKey="value"
-              stroke={stroke}
-              strokeWidth={1.5}
-              fill={`url(#gradient-${vaultId})`}
-              dot={false}
-              activeDot={false}
-              isAnimationActive={false}
-              connectNulls
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+        <svg
+          viewBox={`0 0 ${spark.width} ${spark.height}`}
+          width="100%"
+          height="100%"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id={`gradient-${vaultId}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={stroke} stopOpacity={0.3} />
+              <stop offset="100%" stopColor={stroke} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          {spark.area ? <path d={spark.area} fill={`url(#gradient-${vaultId})`} /> : null}
+          {spark.dot ? (
+            <circle cx={spark.dot.x} cy={spark.dot.y} r="1.8" fill={stroke} />
+          ) : null}
+          <path d={spark.line} fill="none" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
     </div>
   );
@@ -346,6 +353,13 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   tradesByMarket,
   getMarket,
   vaultList,
+  vaultListSearchQuery,
+  setVaultListSearchQuery,
+  vaultListStatusFilter,
+  setVaultListStatusFilter,
+  vaultListSortBy,
+  vaultListSortOrder,
+  onVaultListSortChange,
   isLoading,
   depositors,
   depositHistory,
@@ -365,10 +379,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   setVaultStrategyChartType,
   chartData,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [vaultFilter, setVaultFilter] = useState<'Active' | 'Closed' | 'All'>(
-    'Active',
-  );
   const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'deposited' | 'my-vaults'>(
     'all',
   );
@@ -386,7 +396,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const markets = settings.chainConfig[activechain].markets;
 
   const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
-    const typeMatch = vaultFilter === 'All' || (vaultFilter == 'Active' && vault.closed == false) || (vaultFilter == 'Closed' && vault.closed == true);
+    const typeMatch = vaultListStatusFilter === 'All' || (vaultListStatusFilter == 'Active' && vault.closed == false) || (vaultListStatusFilter == 'Closed' && vault.closed == true);
     const myVaultsMatch =
       activeVaultTab === 'all' || (activeVaultTab === 'deposited' &&
         address &&
@@ -395,12 +405,23 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         address &&
         vault.owner.toLowerCase() === address.toLowerCase());
     const searchMatch =
-      searchQuery === '' ||
-      vault.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      vault.owner.toLowerCase().includes(searchQuery.toLowerCase());
+      vaultListSearchQuery === '' ||
+      vault.name.toLowerCase().includes(vaultListSearchQuery.toLowerCase()) ||
+      vault.owner.toLowerCase().includes(vaultListSearchQuery.toLowerCase());
 
     return typeMatch && myVaultsMatch && searchMatch;
   });
+
+  const toggleServerSort = (sortBy: 'tvl' | 'user_position') => {
+    const nextOrder =
+      vaultListSortBy === sortBy && vaultListSortOrder === 'desc' ? 'asc' : 'desc';
+    onVaultListSortChange(sortBy, nextOrder);
+  };
+
+  const sortArrowDirection = (sortBy: 'tvl' | 'user_position') =>
+    vaultListSortBy === sortBy
+      ? (vaultListSortOrder === 'asc' ? 'desc' : 'asc')
+      : undefined;
 
   const selectedVaultRef = useRef<any>(null);
   const stableSelectedVault = React.useMemo(() => {
@@ -659,7 +680,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     (vaultList || []).filter(
                       (vault: any) =>
                         address &&
-                        vault.userShares > 0 && (vaultFilter === 'All' || (vaultFilter == 'Active' && vault.closed == false) || (vaultFilter == 'Closed' && vault.closed == true)),
+                        vault.userShares > 0 && (vaultListStatusFilter === 'All' || (vaultListStatusFilter == 'Active' && vault.closed == false) || (vaultListStatusFilter == 'Closed' && vault.closed == true)),
                     ).length
                   }
                   )
@@ -673,7 +694,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     (vaultList || []).filter(
                       (vault: any) =>
                         address &&
-                        vault.owner.toLowerCase() === address.toLowerCase() && (vaultFilter === 'All' || (vaultFilter == 'Active' && vault.closed == false) || (vaultFilter == 'Closed' && vault.closed == true)),
+                        vault.owner.toLowerCase() === address.toLowerCase() && (vaultListStatusFilter === 'All' || (vaultListStatusFilter == 'Active' && vault.closed == false) || (vaultListStatusFilter == 'Closed' && vault.closed == true)),
                     ).length
                   }
                   )
@@ -685,8 +706,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   {(['Active', 'Closed', 'All'] as const).map((filter) => (
                     <button
                       key={filter}
-                      className={`filter-button ${vaultFilter === filter ? 'active' : ''}`}
-                      onClick={() => setVaultFilter(filter)}
+                      className={`filter-button ${vaultListStatusFilter === filter ? 'active' : ''}`}
+                      onClick={() => setVaultListStatusFilter(filter)}
                     >
                       {filter}
                     </button>
@@ -698,8 +719,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   <input
                     type="text"
                     placeholder="Search"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    value={vaultListSearchQuery}
+                    onChange={(e) => setVaultListSearchQuery(e.target.value)}
                     className="vaults-search-input"
                   />
                 </div>
@@ -712,9 +733,49 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                 <div className="col vault-leader-col">Leader</div>
                 <div className="col vault-type-col">Type</div>
                 <div className="col vault-tokens-col">Assets</div>
-                <div className="col vault-apy-col">TVL</div>
+                <div
+                  className="col vault-apy-col"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => toggleServerSort('tvl')}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleServerSort('tvl');
+                    }
+                  }}
+                  title="Sort by TVL"
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    TVL
+                    <SortArrow
+                      sortDirection={sortArrowDirection('tvl')}
+                      onClick={() => toggleServerSort('tvl')}
+                    />
+                  </span>
+                </div>
                 <div className="col vault-deposits-col">Deposit Cap</div>
-                <div className="col vault-your-deposits-col">Your Position</div>
+                <div
+                  className="col vault-your-deposits-col"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => toggleServerSort('user_position')}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleServerSort('user_position');
+                    }
+                  }}
+                  title="Sort by your position value"
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    Your Position
+                    <SortArrow
+                      sortDirection={sortArrowDirection('user_position')}
+                      onClick={() => toggleServerSort('user_position')}
+                    />
+                  </span>
+                </div>
                 <div className="col vault-age-col">Status</div>
                 <div className="col vault-actions-col">Snapshot</div>
               </div>
@@ -1142,6 +1203,31 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
                   <div className="performance-chart">
                     {(() => {
+                      if (seriesLoading) {
+                        return (
+                          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e0e8fd90', fontSize: 13 }}>
+                            Loading chart...
+                          </div>
+                        );
+                      }
+
+                      if (seriesError) {
+                        return (
+                          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgb(235, 112, 112)', fontSize: 13 }}>
+                            Failed to load chart
+                          </div>
+                        );
+                      }
+
+                      const hasPoints = Array.isArray(chartData) && chartData.length > 0;
+                      if (!hasPoints) {
+                        return (
+                          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e0e8fd90', fontSize: 13 }}>
+                            Waiting for first balance sample...
+                          </div>
+                        );
+                      }
+
                       const vals = Array.isArray(chartData)
                         ? chartData.map((p: any) => Number(p?.value)).filter((v: number) => Number.isFinite(v))
                         : [];

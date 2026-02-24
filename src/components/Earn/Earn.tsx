@@ -37,6 +37,13 @@ interface EarnProps {
   calculateUSDValue: any;
   getMarket: any;
   vaultList: any;
+  vaultListSearchQuery: string;
+  setVaultListSearchQuery: (q: string) => void;
+  vaultListStatusFilter: 'Active' | 'Closed' | 'All';
+  setVaultListStatusFilter: (f: 'Active' | 'Closed' | 'All') => void;
+  vaultListSortBy: 'latest_deposit' | 'tvl' | 'user_position';
+  vaultListSortOrder: 'asc' | 'desc';
+  onVaultListSortChange: (sortBy: 'latest_deposit' | 'tvl' | 'user_position', order: 'asc' | 'desc') => void;
   isLoading: any;
   depositors: any;
   depositHistory: any;
@@ -149,6 +156,13 @@ const Earn: React.FC<EarnProps> = (props) => {
             tradesByMarket={props.tradesByMarket}
             getMarket={props.getMarket}
             vaultList={props.vaultList}
+            vaultListSearchQuery={props.vaultListSearchQuery}
+            setVaultListSearchQuery={props.setVaultListSearchQuery}
+            vaultListStatusFilter={props.vaultListStatusFilter}
+            setVaultListStatusFilter={props.setVaultListStatusFilter}
+            vaultListSortBy={props.vaultListSortBy}
+            vaultListSortOrder={props.vaultListSortOrder}
+            onVaultListSortChange={props.onVaultListSortChange}
             isLoading={props.isLoading}
             depositors={props.depositors}
             depositHistory={props.depositHistory}

@@ -2307,6 +2307,11 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
   const [vaultList, setVaultList] = useState<any>([]);
   const [isVaultsLoading, setIsVaultsLoading] = useState(true);
+  const [vaultListSearchQuery, setVaultListSearchQuery] = useState('');
+  const [vaultListSearchQueryDebounced, setVaultListSearchQueryDebounced] = useState('');
+  const [vaultListStatusFilter, setVaultListStatusFilter] = useState<'Active' | 'Closed' | 'All'>('Active');
+  const [vaultListSortBy, setVaultListSortBy] = useState<'latest_deposit' | 'tvl' | 'user_position'>('tvl');
+  const [vaultListSortOrder, setVaultListSortOrder] = useState<'asc' | 'desc'>('desc');
   const [depositors, setDepositors] = useState<any[]>([]);
   const [depositHistory, setDepositHistory] = useState<any[]>([]);
   const [withdrawHistory, setWithdrawHistory] = useState<any[]>([]);
@@ -2511,6 +2516,13 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [vaultStrategyChartType, setVaultStrategyChartType] = useState<
     'value' | 'pnl'
   >('value');
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setVaultListSearchQueryDebounced(vaultListSearchQuery);
+    }, 250);
+    return () => clearTimeout(t);
+  }, [vaultListSearchQuery]);
 
   const vaultChartData = vaultStrategyChartType === 'value' ? valueSeries : pnlSeries;
 
@@ -2817,12 +2829,104 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
 
   // fetch vaults list
   useEffect(() => {
-    if (!['earn'].includes(location.pathname.split('/')[1]) || !address) return;
+    if (!['earn'].includes(location.pathname.split('/')[1])) return;
     let cancelled = false;
 
     (async () => {
       setIsVaultsLoading(true);
       try {
+        const viewerAddressLower = (address ?? '0x0000000000000000000000000000000000000000').toLowerCase();
+
+        const safeAddr = (value: any) => {
+          try {
+            return getAddress(String(value || '')) as `0x${string}`;
+          } catch {
+            return String(value || '').toLowerCase() as `0x${string}`;
+          }
+        };
+
+        const mapBackendVaultRow = (v: any) => {
+          const qAddr = safeAddr(v?.quoteAsset ?? v?.quote);
+          const bAddr = safeAddr(v?.baseAsset ?? v?.base);
+          const owner = String(v?.owner || '').toLowerCase();
+          return {
+            id: safeAddr(v?.id ?? v?.address),
+            address: safeAddr(v?.address ?? v?.id),
+            owner,
+            quoteAsset: qAddr,
+            baseAsset: bAddr,
+            quoteDecimals: Number(v?.quoteDecimals ?? 18),
+            baseDecimals: Number(v?.baseDecimals ?? 18),
+            quoteTicker: tokendict[qAddr]?.ticker ?? v?.quoteTicker ?? 'QUOTE',
+            baseTicker: tokendict[bAddr]?.ticker ?? v?.baseTicker ?? 'BASE',
+            totalShares: BigInt(String(v?.totalShares ?? 0)),
+            maxShares: BigInt(String(v?.maxShares ?? 0)),
+            quoteBalance: BigInt(String(v?.quoteBalance ?? v?.latestBalance?.quoteBalance ?? 0)),
+            baseBalance: BigInt(String(v?.baseBalance ?? v?.latestBalance?.baseBalance ?? 0)),
+            lockup: Number(v?.lockup ?? 0),
+            locked: Boolean(v?.locked),
+            closed: Boolean(v?.closed),
+            name: v?.name || 'Vault',
+            desc: v?.desc ?? v?.description ?? '',
+            social1: v?.social1 ?? '',
+            social2: v?.social2 ?? '',
+            social3: v?.social3 ?? '',
+            type: v?.type ?? 'Spot',
+            userShares: BigInt(String(v?.userShares ?? 0)),
+            isCreator: !!address && owner === address.toLowerCase(),
+            decreaseOnWithdraw: Boolean(v?.decreaseOnWithdraw),
+            tvlUsd: Number(v?.tvlUsd ?? v?.latestBalance?.usdValue ?? 0),
+            snapshot: v?.snapshot ?? null,
+          };
+        };
+
+        try {
+          const pageSize = 50;
+          let page = 1;
+          const backendRows: any[] = [];
+          const serverTopOnly =
+            vaultListSortBy === 'tvl' || vaultListSortBy === 'user_position';
+          const backendStatus =
+            vaultListStatusFilter === 'Active'
+              ? 'active'
+              : vaultListStatusFilter === 'Closed'
+                ? 'closed'
+                : 'all';
+          const backendSearch = String(vaultListSearchQueryDebounced || '').trim();
+          while (!cancelled) {
+            const qs = new URLSearchParams({
+              user: viewerAddressLower,
+              status: backendStatus,
+              sort: vaultListSortBy,
+              order: vaultListSortOrder,
+              page: String(page),
+              limit: String(serverTopOnly ? 50 : pageSize),
+              include_snapshot: '1',
+              snapshot_timeframe: '1',
+              snapshot_points: '48',
+            });
+            if (backendSearch.length > 0) {
+              qs.set('search', backendSearch);
+            }
+            const res = await fetch(`${BACKEND_URL}/vaults/list?${qs.toString()}`);
+            if (!res.ok) throw new Error(`backend vaults list ${res.status}`);
+            const j = await res.json();
+            if (!j?.ok) throw new Error('backend vaults list invalid response');
+            const rows = Array.isArray(j?.vaults) ? j.vaults : [];
+            backendRows.push(...rows);
+            if (serverTopOnly) break;
+            if (!j?.hasMore || rows.length === 0) break;
+            page += 1;
+            if (page > 1000) break;
+          }
+          if (!cancelled) {
+            setVaultList(backendRows.map(mapBackendVaultRow));
+            return;
+          }
+        } catch (backendErr) {
+          console.warn('backend vault list fetch failed, falling back to subgraph', backendErr);
+        }
+
         const VAULT_LIST_QUERY = `
           query VaultList {
             vaults(first: 1000, orderBy: lastUpdatedAt, orderDirection: desc) {
@@ -2894,6 +2998,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         if (cancelled) return;
 
         const concurrency = 6;
+        const viewerAddress = viewerAddressLower;
         const chunks: typeof mappedBase[] = [];
         for (let i = 0; i < mappedBase.length; i += concurrency) {
           chunks.push(mappedBase.slice(i, i + concurrency));
@@ -2905,7 +3010,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           const results = await Promise.all(
             chunk.map(async (v) => {
               try {
-                const r = await fetch(`${BACKEND_URL}/vaults/${v.address}/${address.toLowerCase()}`);
+                const r = await fetch(`${BACKEND_URL}/vaults/${v.address}/${viewerAddress}?snapshot_timeframe=1`);
                 if (!r.ok) throw new Error(String(r.status));
                 const j = await r.json();
                 const s = j?.userBalance?.shares ?? 0;
@@ -2928,6 +3033,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   social1: j?.vault?.socials?.social1 ?? v.social1,
                   social2: j?.vault?.socials?.social2 ?? v.social2,
                   social3: j?.vault?.socials?.social3 ?? v.social3,
+                  snapshot: j?.snapshot ?? v.snapshot ?? null,
                 };
               } catch {
                 return v;
@@ -2951,7 +3057,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     return () => {
       cancelled = true;
     };
-  }, [address, activechain, tokendict, !['earn'].includes(location.pathname.split('/')[1])]);
+  }, [address, activechain, tokendict, vaultListSearchQueryDebounced, vaultListStatusFilter, vaultListSortBy, vaultListSortOrder, !['earn'].includes(location.pathname.split('/')[1])]);
 
   // details when a vault is selected
   useEffect(() => {
@@ -3203,7 +3309,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [selectedVaultStrategy, !['earn'].includes(location.pathname.split('/')[1])]);
+  }, [selectedVaultStrategy, address, vaultStrategyTimeRange, !['earn'].includes(location.pathname.split('/')[1])]);
 
   useEffect(() => {
     if (!['earn'].includes(location.pathname.split('/')[1])) return;
@@ -29063,6 +29169,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 calculateUSDValue={calculateUSDValue}
                 getMarket={getMarket}
                 vaultList={vaultList}
+                vaultListSearchQuery={vaultListSearchQuery}
+                setVaultListSearchQuery={setVaultListSearchQuery}
+                vaultListStatusFilter={vaultListStatusFilter}
+                setVaultListStatusFilter={setVaultListStatusFilter}
+                vaultListSortBy={vaultListSortBy}
+                vaultListSortOrder={vaultListSortOrder}
+                onVaultListSortChange={(sortBy, order) => {
+                  setIsVaultsLoading(true);
+                  setVaultListSortBy(sortBy);
+                  setVaultListSortOrder(order);
+                }}
                 isLoading={isVaultsLoading}
                 depositors={depositors}
                 depositHistory={depositHistory}
@@ -29123,6 +29240,17 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                 calculateUSDValue={calculateUSDValue}
                 getMarket={getMarket}
                 vaultList={vaultList}
+                vaultListSearchQuery={vaultListSearchQuery}
+                setVaultListSearchQuery={setVaultListSearchQuery}
+                vaultListStatusFilter={vaultListStatusFilter}
+                setVaultListStatusFilter={setVaultListStatusFilter}
+                vaultListSortBy={vaultListSortBy}
+                vaultListSortOrder={vaultListSortOrder}
+                onVaultListSortChange={(sortBy, order) => {
+                  setIsVaultsLoading(true);
+                  setVaultListSortBy(sortBy);
+                  setVaultListSortOrder(order);
+                }}
                 isLoading={isVaultsLoading}
                 depositors={depositors}
                 depositHistory={depositHistory}
