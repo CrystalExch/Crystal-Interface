@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-
+import {
+  Plus,
+} from 'lucide-react';
 import LP from '../LP/LP';
 import LPVaults from '../LPVaults/LPVaults';
 
@@ -68,6 +70,7 @@ interface EarnProps {
 const Earn: React.FC<EarnProps> = (props) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [showAddLiquidity, setShowAddLiquidity] = useState(false);
   const [activeTab, setActiveTab] = useState<'liquidity' | 'vaults'>('liquidity');
 
   useEffect(() => {
@@ -93,12 +96,8 @@ const Earn: React.FC<EarnProps> = (props) => {
 
   return (
     <div className="earn-page-container">
-      <div className="earn-page-header">
-        <div className="earn-title-section">
-          <h1 className="earn-main-title">Earn</h1>
-          <p className="earn-subtitle">Earn rewards by providing liquidity to both passive and automated strategies</p>
-        </div>
-        <div className="earn-toggle-container">
+      <div className="portfolio-top-row">
+        <div className="portfolio-tab-selector" style={{height: '100%'}}>
           <div className="earn-toggle" data-active={activeTab}>
             <button
               className={`earn-toggle-tab ${activeTab === 'liquidity' ? 'active' : ''}`}
@@ -114,6 +113,33 @@ const Earn: React.FC<EarnProps> = (props) => {
             </button>
           </div>
         </div>
+        {activeTab === 'liquidity' ? <button
+          className={`create-vault-button ${!props.account.connected ? 'disabled' : ''}`}
+          onClick={() => {
+            if (!props.account.connected) {
+              props.setpopup(4);
+            } else {
+              props.setpopup(29);
+            }
+          }}
+          disabled={!props.account.connected}
+        >
+          <Plus size={16} />
+          Create Vault
+        </button> : <button
+          className={`add-liquidity-button ${!props.account.connected ? 'disabled' : ''}`}
+          onClick={() => {
+            if (props.account.connected) {
+              setShowAddLiquidity(true);
+            } else {
+              props.setpopup(4);
+            }
+          }}
+          disabled={!props.account.connected}
+        >
+          <Plus size={16} />
+          Add Liquidity
+        </button>}
       </div>
 
       <div className="earn-content">
@@ -132,6 +158,8 @@ const Earn: React.FC<EarnProps> = (props) => {
             setChain={props.setChain}
             address={props.address}
             refetch={props.refetch}
+            showAddLiquidity={showAddLiquidity}
+            setShowAddLiquidity={setShowAddLiquidity}
           />
         ) : (
           <LPVaults

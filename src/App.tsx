@@ -2240,14 +2240,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const isCloseEnough = (value: number, target: number) =>
     Math.abs(value - target) <= Math.max(1e-12, Math.abs(target) * 1e-4);
 
-  const isChartFocused = () =>
-    typeof document !== 'undefined' && !document.hidden;
-
   const stepKlineLerp = () => {
-    if (!isChartFocused()) {
-      klineRafRef.current = null;
-      return;
-    }
     let hasActive = false;
     const targets = klineTargetsRef.current;
 
@@ -2316,7 +2309,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   ) => {
     if (!key) return;
     klineTargetsRef.current[key] = bar;
-    const focused = isChartFocused();
+    const focused = typeof document !== 'undefined' && !document.hidden;
     const shouldLerp = focused && !options?.immediate;
 
     if (!realtimeCallbackRef.current[key]) {
@@ -2337,43 +2330,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     }
 
     if (klineRafRef.current === null) {
-      klineRafRef.current = requestAnimationFrame(stepKlineLerp);
-    }
-  };
-
-  const handleVisibilityChange = () => {
-    if (!isChartFocused()) {
-      if (klineRafRef.current !== null) {
-        cancelAnimationFrame(klineRafRef.current);
-        klineRafRef.current = null;
-      }
-      const targets = klineTargetsRef.current;
-      Object.keys(targets).forEach((key) => {
-        const target = targets[key];
-        if (target && realtimeCallbackRef.current[key]) {
-          klineCurrentRef.current[key] = { ...target };
-          realtimeCallbackRef.current[key](target);
-        }
-      });
-      return;
-    }
-
-    const targets = klineTargetsRef.current;
-    const hasPending = Object.keys(targets).some((key) => {
-      const target = targets[key];
-      const current = klineCurrentRef.current[key];
-      if (!target || !current || target.time !== current.time) {
-        return false;
-      }
-      return !(
-        isCloseEnough(current.close, target.close) &&
-        isCloseEnough(current.volume, target.volume) &&
-        isCloseEnough(current.high, target.high) &&
-        isCloseEnough(current.low, target.low)
-      );
-    });
-
-    if (hasPending && klineRafRef.current === null) {
       klineRafRef.current = requestAnimationFrame(stepKlineLerp);
     }
   };
@@ -11451,10 +11407,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       };
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleVisibilityChange);
-    window.addEventListener('blur', handleVisibilityChange);
-
     connectWebSocket();
 
     return () => {
@@ -11468,9 +11420,6 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         clearTimeout(reconnectIntervalRef.current);
         reconnectIntervalRef.current = null;
       }
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleVisibilityChange);
-      window.removeEventListener('blur', handleVisibilityChange);
       if (klineRafRef.current !== null) {
         cancelAnimationFrame(klineRafRef.current);
         klineRafRef.current = null;

@@ -259,24 +259,12 @@
   flex-shrink: 0;
   max-height: 53px;
   min-height: 53px;
-  padding-right: 10px;
+  padding-right: 6px;
   gap: 6px;
 }
 
-.right-header-trade {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  max-height: 53px;
-  min-height: 53px;
-  border-top-right-radius: 8px;
-  border-bottom-right-radius: 8px;
-  padding-right: 5px;
-  gap: 6px;
-}
-
-@media(max-width:1020px) {
-  .right-header-trade {
+@media(max-width:1400px) {
+  .right-header {
     background-color: transparent;
   }
   .meme-search-placeholder{
@@ -822,7 +810,8 @@
 }
 
 .meme-button-search-icon {
-  color: rgb(159, 156, 156);
+  filter: brightness(0) saturate(100%) invert(79%) sepia(11%) saturate(337%) hue-rotate(185deg) brightness(92%) contrast(89%);
+  color: #fff;
 }
 
 .meme-search-icon {
@@ -831,13 +820,11 @@
 }
 
 .meme-search-keybind {
-  padding: 0px 10px;
+  padding: 0px 6px;
   border: 1px solid rgba(179, 184, 249, 0.15);
-  border-radius: 6px;
+  border-radius: 4px;
   color: white;
 }
-
-
 
 .perps-bridge-balance-mon {
   display: flex;
@@ -921,12 +908,13 @@
 }
 
 .header-action-icon {
-  background-color: #4b518e2e;
+  background-color: #4b518e35;
   color: #aaaecf;
   border-radius: 50%;
   padding: 8px;
   width: 37px;
   height: 37px;
+  transition: background-color ease 0.2s;
 }
 
 .header-action-item {
@@ -937,15 +925,15 @@
   font-size: 0.8rem;
   letter-spacing: -0.3px;
   width: 33%;
+  transition: color ease 0.2s;
 }
 
 .header-action-item:hover {
-  color: #d8dcff;
+  color: #aaaecff0;
 }
 
 .header-action-item:hover .header-action-icon {
-  background-color: #4b518e42;
-
+  background-color: #4b518e2e;
 }
 
 .wallet-dropdown-header-left-side {

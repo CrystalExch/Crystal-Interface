@@ -1960,11 +1960,9 @@
   height: 34px;
   letter-spacing: -.5px;
   padding: .5rem .75rem;
-  position: absolute;
-  right: 0;
-  top: -80px;
   transition: all .2s ease;
   white-space: nowrap;
+  margin: 8px 8px 8px 0px;
 }
 
 .vaults-filters {

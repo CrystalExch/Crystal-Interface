@@ -37,6 +37,8 @@ interface LPProps {
   setChain: () => void;
   address: string;
   refetch?: () => void;
+  showAddLiquidity: any;
+  setShowAddLiquidity: any;
 }
 
 const _nowSec = Math.floor(Date.now() / 1000);
@@ -121,6 +123,8 @@ const LP: React.FC<LPProps> = ({
   setChain,
   address,
   refetch,
+  showAddLiquidity,
+  setShowAddLiquidity
 }) => {
   const [depositVaultStep, setDepositVaultStep] = useState<'idle' | 'validating' | 'approve-quote' | 'approve-base' | 'depositing' | 'success'>('idle');
   const [withdrawVaultStep, setWithdrawVaultStep] = useState<'idle' | 'validating' | 'withdrawing' | 'success'>('idle');
@@ -145,7 +149,6 @@ const LP: React.FC<LPProps> = ({
   const [activeFilter, setActiveFilter] = useState<'All' | 'LSTs' | 'Stables' | 'Unverified' | 'Verified'>('All');
   const [firstTokenExceedsBalance, setFirstTokenExceedsBalance] = useState(false);
   const [secondTokenExceedsBalance, setSecondTokenExceedsBalance] = useState(false);
-  const [showAddLiquidity, setShowAddLiquidity] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [activeTokenSelection, setActiveTokenSelection] = useState<'first' | 'second' | null>(null);
   const [addLiquidityTokens, setAddLiquidityTokens] = useState<{ first: string, second: string }>({
@@ -1568,21 +1571,6 @@ const LP: React.FC<LPProps> = ({
               )}
             </div>
           </div>
-          <button
-            className={`add-liquidity-button ${!account.connected ? 'disabled' : ''}`}
-            onClick={() => {
-              if (account.connected) {
-                setShowAddLiquidity(true);
-              } else {
-                setpopup(4);
-              }
-            }}
-            disabled={!account.connected}
-          >
-            <Plus size={16} />
-            Add Liquidity
-          </button>
-
         </div>
       )}
 
