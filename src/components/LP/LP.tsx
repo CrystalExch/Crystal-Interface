@@ -51,6 +51,61 @@ const defaultPerformanceData = [
 ];
 
 const BACKEND_BASE_URL = 'http://localhost:8000';
+const LP_CHART_MAX_POINTS = 48;
+const LP_CHART_WINDOW_SECONDS = 24 * 3600;
+
+const sampleSeriesEvenlyByTime = <T extends { ts: number }>(
+  points: T[],
+  maxPoints: number = LP_CHART_MAX_POINTS,
+  windowSeconds: number | null = LP_CHART_WINDOW_SECONDS,
+): T[] => {
+  const limit = Math.max(1, Number(maxPoints || LP_CHART_MAX_POINTS));
+  const sorted = (Array.isArray(points) ? points : [])
+    .filter((p) => Number.isFinite(Number(p?.ts)))
+    .map((p) => ({ ...p, ts: Number(p.ts) } as T))
+    .sort((a, b) => a.ts - b.ts);
+  if (sorted.length <= limit) return sorted;
+
+  const endTs = Number(sorted[sorted.length - 1]?.ts || 0);
+  const firstTs = Number(sorted[0]?.ts || 0);
+  const startTs = windowSeconds && windowSeconds > 0
+    ? Math.max(firstTs, endTs - Number(windowSeconds))
+    : firstTs;
+  const windowed = sorted.filter((p) => p.ts >= startTs && p.ts <= endTs);
+  if (windowed.length <= limit) return windowed;
+  if (windowed.length === 0) return sorted.slice(-limit);
+
+  const span = Math.max(0, endTs - startTs);
+  if (span <= 0) return windowed.slice(-limit);
+
+  const chosen: number[] = [];
+  let nextMinIdx = 0;
+  for (let i = 0; i < limit; i++) {
+    const target = startTs + (span * i) / Math.max(1, limit - 1);
+    let bestIdx = -1;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (let j = nextMinIdx; j < windowed.length; j++) {
+      const d = Math.abs(windowed[j].ts - target);
+      if (d < bestDist) {
+        bestDist = d;
+        bestIdx = j;
+      }
+      if (windowed[j].ts > target && d > bestDist) break;
+    }
+    if (bestIdx < nextMinIdx) bestIdx = nextMinIdx;
+    if (bestIdx < 0 || bestIdx >= windowed.length) break;
+    chosen.push(bestIdx);
+    nextMinIdx = bestIdx + 1;
+    if (nextMinIdx >= windowed.length) break;
+  }
+
+  if (chosen.length === 0) return windowed.slice(-limit);
+  if (chosen[chosen.length - 1] !== windowed.length - 1 && chosen.length < limit) {
+    chosen.push(windowed.length - 1);
+  }
+  const uniq = Array.from(new Set(chosen)).sort((a, b) => a - b);
+  return uniq.map((idx) => windowed[idx]).slice(0, limit);
+};
 
 const LP: React.FC<LPProps> = ({
   setpopup,
@@ -154,20 +209,14 @@ const LP: React.FC<LPProps> = ({
           .filter((p) => Number.isFinite(p.timestamp) && Number.isFinite(p.tvl))
           .sort((a, b) => a.timestamp - b.timestamp);
 
-        const maxPoints = 240;
-        const sampled =
-          sorted.length <= maxPoints
-            ? sorted
-            : sorted.filter((_, i) => i % Math.ceil(sorted.length / maxPoints) === 0);
-
-        return sampled.map(point => ({
+        return sampleSeriesEvenlyByTime(sorted.map(point => ({
           ts: point.timestamp,
           name: new Date(point.timestamp * 1000).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
           }),
           value: point.tvl,
-        }));
+        })));
       }
 
       const history = selectedVaultData.apyHistory as { timestamp: number; apy: number }[] | undefined;
@@ -176,7 +225,7 @@ const LP: React.FC<LPProps> = ({
         return [];
       }
 
-      return history
+      return sampleSeriesEvenlyByTime(history
         .map(point => ({
           ts: Number(point.timestamp || 0),
           name: new Date(Number(point.timestamp || 0) * 1000).toLocaleDateString('en-US', {
@@ -185,7 +234,7 @@ const LP: React.FC<LPProps> = ({
           }),
           value: Number(point.apy) * 100,
         }))
-        .sort((a, b) => a.ts - b.ts);
+        .sort((a, b) => a.ts - b.ts));
     } catch {
       return [];
     }

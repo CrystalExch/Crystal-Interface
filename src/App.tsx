@@ -2668,6 +2668,68 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     'value' | 'pnl'
   >('value');
 
+  const vaultChartWindowSeconds = (r: '1D' | '1W' | '1M' | 'All') => {
+    if (r === '1D') return 24 * 3600;
+    if (r === '1W') return 7 * 24 * 3600;
+    if (r === '1M') return 30 * 24 * 3600;
+    return null;
+  };
+
+  const sampleChartSeriesEvenly = (
+    points: Array<{ ts: number; name: string; value: number }>,
+    opts?: { maxPoints?: number; windowSeconds?: number | null }
+  ) => {
+    const maxPoints = Math.max(1, Number(opts?.maxPoints ?? 48));
+    const windowSeconds = opts?.windowSeconds ?? null;
+    const sorted = (Array.isArray(points) ? points : [])
+      .filter((p) => Number.isFinite(Number(p?.ts)) && Number.isFinite(Number(p?.value)))
+      .map((p) => ({ ...p, ts: Number(p.ts), value: Number(p.value) }))
+      .sort((a, b) => a.ts - b.ts);
+    if (sorted.length <= maxPoints) return sorted;
+
+    const endTs = Number(sorted[sorted.length - 1]?.ts || 0);
+    const firstTs = Number(sorted[0]?.ts || 0);
+    const startTs = windowSeconds && windowSeconds > 0
+      ? Math.max(firstTs, endTs - Number(windowSeconds))
+      : firstTs;
+
+    const windowed = sorted.filter((p) => p.ts >= startTs && p.ts <= endTs);
+    if (windowed.length <= maxPoints) return windowed;
+    if (windowed.length === 0) return sorted.slice(-maxPoints);
+
+    const span = Math.max(0, endTs - startTs);
+    if (span <= 0) return windowed.slice(-maxPoints);
+
+    const chosen: number[] = [];
+    let nextMinIdx = 0;
+    for (let i = 0; i < maxPoints; i++) {
+      const target = startTs + (span * i) / Math.max(1, maxPoints - 1);
+      let bestIdx = -1;
+      let bestDist = Number.POSITIVE_INFINITY;
+      for (let j = nextMinIdx; j < windowed.length; j++) {
+        const d = Math.abs(windowed[j].ts - target);
+        if (d < bestDist) {
+          bestDist = d;
+          bestIdx = j;
+        }
+        if (windowed[j].ts > target && d > bestDist) break;
+      }
+      if (bestIdx < nextMinIdx) bestIdx = nextMinIdx;
+      if (bestIdx < 0 || bestIdx >= windowed.length) break;
+      chosen.push(bestIdx);
+      nextMinIdx = bestIdx + 1;
+      if (nextMinIdx >= windowed.length) break;
+    }
+
+    if (chosen.length === 0) return windowed.slice(-maxPoints);
+    if (chosen[chosen.length - 1] !== windowed.length - 1 && chosen.length < maxPoints) {
+      chosen.push(windowed.length - 1);
+    }
+
+    const uniq = Array.from(new Set(chosen)).sort((a, b) => a - b);
+    return uniq.map((idx) => windowed[idx]).slice(0, maxPoints);
+  };
+
   useEffect(() => {
     const t = setTimeout(() => {
       setVaultListSearchQueryDebounced(vaultListSearchQuery);
@@ -3522,9 +3584,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             return { ts, name: fmtLabel(ts, vaultStrategyTimeRange), value: Number(p.pnlUsd || 0) };
           });
 
+          const sampledValueSeries = sampleChartSeriesEvenly(vSeries, {
+            maxPoints: 48,
+            windowSeconds: vaultChartWindowSeconds(vaultStrategyTimeRange),
+          });
+          const sampledPnlSeries = sampleChartSeriesEvenly(pSeries, {
+            maxPoints: 48,
+            windowSeconds: vaultChartWindowSeconds(vaultStrategyTimeRange),
+          });
+
           if (!cancelled) {
-            setValueSeries(vSeries);
-            setPnlSeries(pSeries);
+            setValueSeries(sampledValueSeries);
+            setPnlSeries(sampledPnlSeries);
           }
         } catch (e: any) {
           if (!cancelled) setSeriesError(e?.message || 'failed to load history');
@@ -3738,9 +3809,18 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
           };
         });
 
+        const sampledValueSeries = sampleChartSeriesEvenly(vSeries, {
+          maxPoints: 48,
+          windowSeconds: vaultChartWindowSeconds(vaultStrategyTimeRange),
+        });
+        const sampledPnlSeries = sampleChartSeriesEvenly(pSeries, {
+          maxPoints: 48,
+          windowSeconds: vaultChartWindowSeconds(vaultStrategyTimeRange),
+        });
+
         if (!cancelled) {
-          setValueSeries(vSeries);
-          setPnlSeries(pSeries);
+          setValueSeries(sampledValueSeries);
+          setPnlSeries(sampledPnlSeries);
         }
       } catch (e: any) {
         if (!cancelled) setSeriesError(e?.message || 'failed to load history');
@@ -11442,7 +11522,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                   usdVolume
                 }
               }
-              trades(first: 50, orderBy: id, orderDirection: desc) {
+              trades(first: 50, orderBy: rank, orderDirection: asc) {
                 trade {
                   id
                   amountIn
