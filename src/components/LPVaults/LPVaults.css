@@ -4819,6 +4819,7 @@
     align-items: stretch;
     flex-direction: column;
     gap: 0.6rem;
+    padding-bottom: 10px;
   }
 
   .vault-detail-action-buttons {

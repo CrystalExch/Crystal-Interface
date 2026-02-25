@@ -465,6 +465,9 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
 }
 
 .predict-event-outcomes-body {

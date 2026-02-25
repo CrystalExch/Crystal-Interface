@@ -993,7 +993,6 @@ const Header: React.FC<HeaderProps> = ({
   const [isMemeSearchOpen, setIsMemeSearchOpen] = useState(false);
   const [copiedToken, setCopiedToken] = useState<any>(null);
   const isPerpsRoute = location.pathname.startsWith('/perps')
-  const isPredictRoute = location.pathname.startsWith('/event')
   const isMemeRoute =  location.pathname.startsWith('/meme/');
   const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
   const memeTokenData = isMemeRoute && tokenData ? tokenData : undefined;
@@ -1118,8 +1117,8 @@ const Header: React.FC<HeaderProps> = ({
         </div>
         <div className="left-header">
           <ChartHeader
-            in_icon={tokendict[activeMarket.baseAddress].image}
-            out_icon={tokendict[activeMarket.quoteAddress].image}
+            in_icon={tokendict?.[activeMarket?.baseAddress]?.image || ''}
+            out_icon={tokendict?.[activeMarket?.quoteAddress]?.image || ''}
             price={isMemeRoute && memeTokenData ?
               (memeTokenData.price || 0.000001)?.toString() || 'N/A' :
               marketHeader?.currentPrice?.toString() || 'N/A'
@@ -1147,7 +1146,7 @@ const Header: React.FC<HeaderProps> = ({
             simpleView={simpleView}
             tradesByMarket={tradesByMarket}
             memeTokenData={memeTokenData}
-            route={isMemeRoute ? 'meme' : isPerpsRoute ? 'perps' : isPredictRoute ? 'predict' : isTradeRoute ? 'trade' : ''}
+            route={isMemeRoute ? 'meme' : isPerpsRoute ? 'perps' : isTradeRoute ? 'trade' : ''}
             perpsActiveMarketKey={perpsActiveMarketKey}
             perpsMarketsData={perpsMarketsData}
             perpsFilterOptions={perpsFilterOptions}
