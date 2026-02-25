@@ -236,6 +236,9 @@ const Perps: React.FC<PerpsProps> = ({
   const accwsRef = useRef<WebSocket | null>(null);
   const accpingIntervalRef = useRef<any>(null);
   const accreconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const klineTargetsRef = useRef<Record<string, any>>({});
+  const klineCurrentRef = useRef<Record<string, any>>({});
+  const klineRafRef = useRef<number | null>(null);
 
   const starkPubFromPriv = (privHex: string) => {
     const P = BigInt("0x800000000000011000000000000000000000000000000000000000000000001"), A = 1n;
@@ -1257,6 +1260,159 @@ const Perps: React.FC<PerpsProps> = ({
       }
     };
 
+    const lerpNumber = (current: number, target: number) =>
+      current + (target - current) * 0.1;
+
+    const isCloseEnough = (value: number, target: number) =>
+      Math.abs(value - target) <= Math.max(1e-12, Math.abs(target) * 1e-4);
+
+    const isChartFocused = () =>
+      typeof document !== 'undefined' && !document.hidden;
+
+    const toKlineBar = (candle: any) => ({
+      time: Number(candle.klineTime),
+      open: Number(candle.open),
+      high: Number(candle.high),
+      low: Number(candle.low),
+      close: Number(candle.close),
+      volume: Number(candle.value),
+    });
+
+    const stepKlineLerp = () => {
+      if (!isChartFocused()) {
+        klineRafRef.current = null;
+        return;
+      }
+      let hasActive = false;
+      const targets = klineTargetsRef.current;
+
+      Object.keys(targets).forEach((key) => {
+        const target = targets[key];
+        if (!target || !realtimeCallbackRef.current[key]) {
+          return;
+        }
+
+        const current = klineCurrentRef.current[key];
+        if (!current || current.time !== target.time) {
+          const seed = {
+            time: target.time,
+            open: target.open,
+            high: target.open,
+            low: target.open,
+            close: target.open,
+            volume: 0,
+          };
+          klineCurrentRef.current[key] = seed;
+          realtimeCallbackRef.current[key](seed);
+          hasActive = true;
+          return;
+        }
+
+        const next = { ...current };
+        next.open = target.open;
+        next.close = lerpNumber(current.close, target.close);
+        next.volume = lerpNumber(current.volume, target.volume);
+        next.high =
+          target.high > current.high
+            ? target.high
+            : lerpNumber(current.high, target.high);
+        next.low =
+          target.low < current.low
+            ? target.low
+            : lerpNumber(current.low, target.low);
+        next.high = Math.max(next.high, next.open, next.close);
+        next.low = Math.min(next.low, next.open, next.close);
+
+        const done =
+          isCloseEnough(next.close, target.close) &&
+          isCloseEnough(next.volume, target.volume)
+
+        if (done) {
+          klineCurrentRef.current[key] = { ...target };
+          realtimeCallbackRef.current[key](target);
+        } else {
+          klineCurrentRef.current[key] = next;
+          realtimeCallbackRef.current[key](next);
+          hasActive = true;
+        }
+      });
+
+      if (hasActive) {
+        klineRafRef.current = requestAnimationFrame(stepKlineLerp);
+      } else {
+        klineRafRef.current = null;
+      }
+    };
+
+    const queueKlineUpdate = (
+      key: string,
+      bar: any,
+      options?: { immediate?: boolean },
+    ) => {
+      klineTargetsRef.current[key] = bar;
+      const focused = isChartFocused();
+      const shouldLerp = focused && !options?.immediate;
+
+      if (!realtimeCallbackRef.current[key]) {
+        (pendingBarsRef.current[key] ??= []).push(bar);
+        if (!shouldLerp) {
+          klineCurrentRef.current[key] = { ...bar };
+        }
+        return;
+      }
+
+      if (!shouldLerp) {
+        if (klineRafRef.current !== null) {
+          cancelAnimationFrame(klineRafRef.current);
+          klineRafRef.current = null;
+        }
+        klineCurrentRef.current[key] = { ...bar };
+        realtimeCallbackRef.current[key](bar);
+        return;
+      }
+
+      if (klineRafRef.current === null) {
+        klineRafRef.current = requestAnimationFrame(stepKlineLerp);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (!isChartFocused()) {
+        if (klineRafRef.current !== null) {
+          cancelAnimationFrame(klineRafRef.current);
+          klineRafRef.current = null;
+        }
+        const targets = klineTargetsRef.current;
+        Object.keys(targets).forEach((key) => {
+          const target = targets[key];
+          if (target && realtimeCallbackRef.current[key]) {
+            klineCurrentRef.current[key] = { ...target };
+            realtimeCallbackRef.current[key](target);
+          }
+        });
+        return;
+      }
+
+      const targets = klineTargetsRef.current;
+      const hasPending = Object.keys(targets).some((key) => {
+        const target = targets[key];
+        const current = klineCurrentRef.current[key];
+        if (!target || !current || target.time !== current.time) {
+          return false;
+        }
+        return !(
+          isCloseEnough(current.close, target.close) &&
+          isCloseEnough(current.volume, target.volume) &&
+          isCloseEnough(current.high, target.high) &&
+          isCloseEnough(current.low, target.low)
+        );
+      });
+
+      if (hasPending && klineRafRef.current === null) {
+        klineRafRef.current = requestAnimationFrame(stepKlineLerp);
+      }
+    };
+
     const connectWebSocket = () => {
       if (liveStreamCancelled) return;
       fetchData();
@@ -1359,58 +1515,19 @@ const Perps: React.FC<PerpsProps> = ({
             }
           }
           else if (message.content.channel.startsWith('kline')) {
-            if (message.content.dataType == 'Snapshot') {
-              const key = msg?.[0].contractName + (msg?.[0].klineType === 'DAY_1'
-                ? '1D'
-                : msg?.[0].klineType === 'HOUR_4'
-                  ? '240'
-                  : msg?.[0].klineType === 'HOUR_1'
-                    ? '60'
-                    : msg?.[0].klineType.startsWith('MINUTE_')
-                      ? msg?.[0].klineType.slice('MINUTE_'.length)
-                      : msg?.[0].klineType)
-
-              const mapKlines = (klines: any[]) =>
-                klines.map(candle => ({
-                  time: Number(candle.klineTime),
-                  open: Number(candle.open),
-                  high: Number(candle.high),
-                  low: Number(candle.low),
-                  close: Number(candle.close),
-                  volume: Number(candle.value),
-                }))
-              if (realtimeCallbackRef.current[key]) {
-                realtimeCallbackRef.current[key](mapKlines(msg)[0]);
-              }
-              else {
-                (pendingBarsRef.current[key] ??= []).push(mapKlines(msg)[0])
-              }
-            }
-            else {
-              const key = msg?.[0].contractName + (msg?.[0].klineType === 'DAY_1'
-                ? '1D'
-                : msg?.[0].klineType === 'HOUR_4'
-                  ? '240'
-                  : msg?.[0].klineType === 'HOUR_1'
-                    ? '60'
-                    : msg?.[0].klineType.startsWith('MINUTE_')
-                      ? msg?.[0].klineType.slice('MINUTE_'.length)
-                      : msg?.[0].klineType)
-              const mapKlines = (klines: any[]) =>
-                klines.map(candle => ({
-                  time: Number(candle.klineTime),
-                  open: Number(candle.open),
-                  high: Number(candle.high),
-                  low: Number(candle.low),
-                  close: Number(candle.close),
-                  volume: Number(candle.value),
-                }))
-              if (realtimeCallbackRef.current[key]) {
-                realtimeCallbackRef.current[key](mapKlines(msg)[0]);
-              }
-              else {
-                (pendingBarsRef.current[key] ??= []).push(mapKlines(msg)[0])
-              }
+            const key = msg?.[0].contractName + (msg?.[0].klineType === 'DAY_1'
+              ? '1D'
+              : msg?.[0].klineType === 'HOUR_4'
+                ? '240'
+                : msg?.[0].klineType === 'HOUR_1'
+                  ? '60'
+                  : msg?.[0].klineType.startsWith('MINUTE_')
+                    ? msg?.[0].klineType.slice('MINUTE_'.length)
+                    : msg?.[0].klineType)
+            if (key) {
+              queueKlineUpdate(key, toKlineBar(msg?.[0]), {
+                immediate: message.content.dataType == 'Snapshot',
+              });
             }
           }
           else if (message.content.channel.startsWith('ticker')) {
@@ -1470,6 +1587,10 @@ const Perps: React.FC<PerpsProps> = ({
       };
     };
 
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+    window.addEventListener('blur', handleVisibilityChange);
+
     connectWebSocket();
 
     return () => {
@@ -1482,6 +1603,15 @@ const Perps: React.FC<PerpsProps> = ({
         clearTimeout(reconnectIntervalRef.current);
         reconnectIntervalRef.current = null;
       }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+      window.removeEventListener('blur', handleVisibilityChange);
+      if (klineRafRef.current !== null) {
+        cancelAnimationFrame(klineRafRef.current);
+        klineRafRef.current = null;
+      }
+      klineTargetsRef.current = {};
+      klineCurrentRef.current = {};
       if (wsRef.current) {
         wsRef.current.close();
         wsRef.current = null;

@@ -334,7 +334,7 @@ const Loader = () => {
   const location = useLocation();
 
   useEffect(() => {
-    if (true) {
+    if (location.pathname.startsWith("/perps")) {
       setReady(true)
       return;
     };
@@ -485,7 +485,7 @@ const Loader = () => {
 
   return (
     <>
-      {/* {<FullScreenOverlay isVisible={(stateloading || addressinfoloading)} />} */}
+      {<FullScreenOverlay isVisible={(stateloading || addressinfoloading)} />}
       {ready && <App stateloading={stateloading} setstateloading={setstateloading} addressinfoloading={addressinfoloading} setaddressinfoloading={setaddressinfoloading} />}
     </>
   );
@@ -1372,7 +1372,7 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const [usedRefAddress, setUsedRefAddress] = useState(
     '0x0000000000000000000000000000000000000000' as `0x${string}`,
   );
-  const [simpleView, setSimpleView] = useState(() => location.pathname.slice(1) !== 'market');
+  const [simpleView, setSimpleView] = useState(() => location.pathname.slice(1) == 'swap');
   const [hideNotificationPopups, setHideNotificationPopups] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_hide_notification_popups') || 'false');
   });
@@ -2218,6 +2218,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const realtimeCallbackRef = useRef<any>({});
+  const klineTargetsRef = useRef<Record<string, any>>({});
+  const klineCurrentRef = useRef<Record<string, any>>({});
+  const klineRafRef = useRef<number | null>(null);
   const initialMousePosRef = useRef(0);
   const initialHeightRef = useRef(0);
   const txPending = useRef(false);
@@ -2230,6 +2233,151 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const prevAmountsQuote = useRef(amountsQuote)
   const backAudioRef = useRef<HTMLAudioElement>(null);
+
+  const lerpNumber = (current: number, target: number) =>
+    current + (target - current) * 0.1;
+
+  const isCloseEnough = (value: number, target: number) =>
+    Math.abs(value - target) <= Math.max(1e-12, Math.abs(target) * 1e-4);
+
+  const isChartFocused = () =>
+    typeof document !== 'undefined' && !document.hidden;
+
+  const stepKlineLerp = () => {
+    if (!isChartFocused()) {
+      klineRafRef.current = null;
+      return;
+    }
+    let hasActive = false;
+    const targets = klineTargetsRef.current;
+
+    Object.keys(targets).forEach((key) => {
+      const target = targets[key];
+      if (!target || !realtimeCallbackRef.current[key]) {
+        return;
+      }
+
+      const current = klineCurrentRef.current[key];
+      if (!current || current.time !== target.time) {
+        const seed = {
+          time: target.time,
+          open: target.lastClose,
+          high: target.lastClose,
+          low: target.lastClose,
+          close: target.lastClose,
+          volume: 0,
+        };
+        klineCurrentRef.current[key] = seed;
+        realtimeCallbackRef.current[key](seed);
+        hasActive = true;
+        return;
+      }
+
+      const next = { ...current };
+      next.open = target.open;
+      next.close = lerpNumber(current.close, target.close);
+      next.volume = lerpNumber(current.volume, target.volume);
+      next.high =
+        target.high > current.high
+          ? target.high
+          : lerpNumber(current.high, target.high);
+      next.low =
+        target.low < current.low
+          ? target.low
+          : lerpNumber(current.low, target.low);
+      next.high = Math.max(next.high, next.open, next.close);
+      next.low = Math.min(next.low, next.open, next.close);
+
+      const done =
+        isCloseEnough(next.close, target.close) &&
+        isCloseEnough(next.volume, target.volume)
+
+      if (done) {
+        klineCurrentRef.current[key] = { ...target };
+        realtimeCallbackRef.current[key](target);
+      } else {
+        klineCurrentRef.current[key] = next;
+        realtimeCallbackRef.current[key](next);
+        hasActive = true;
+      }
+    });
+
+    if (hasActive) {
+      klineRafRef.current = requestAnimationFrame(stepKlineLerp);
+    } else {
+      klineRafRef.current = null;
+    }
+  };
+
+  const queueKlineUpdate = (
+    key: string,
+    bar: any,
+    options?: { immediate?: boolean },
+  ) => {
+    if (!key) return;
+    klineTargetsRef.current[key] = bar;
+    const focused = isChartFocused();
+    const shouldLerp = focused && !options?.immediate;
+
+    if (!realtimeCallbackRef.current[key]) {
+      if (!shouldLerp) {
+        klineCurrentRef.current[key] = { ...bar };
+      }
+      return;
+    }
+
+    if (!shouldLerp) {
+      if (klineRafRef.current !== null) {
+        cancelAnimationFrame(klineRafRef.current);
+        klineRafRef.current = null;
+      }
+      klineCurrentRef.current[key] = { ...bar };
+      realtimeCallbackRef.current[key](bar);
+      return;
+    }
+
+    if (klineRafRef.current === null) {
+      klineRafRef.current = requestAnimationFrame(stepKlineLerp);
+    }
+  };
+
+  const handleVisibilityChange = () => {
+    if (!isChartFocused()) {
+      if (klineRafRef.current !== null) {
+        cancelAnimationFrame(klineRafRef.current);
+        klineRafRef.current = null;
+      }
+      const targets = klineTargetsRef.current;
+      Object.keys(targets).forEach((key) => {
+        const target = targets[key];
+        if (target && realtimeCallbackRef.current[key]) {
+          klineCurrentRef.current[key] = { ...target };
+          realtimeCallbackRef.current[key](target);
+        }
+      });
+      return;
+    }
+
+    const targets = klineTargetsRef.current;
+    const hasPending = Object.keys(targets).some((key) => {
+      const target = targets[key];
+      const current = klineCurrentRef.current[key];
+      if (!target || !current || target.time !== current.time) {
+        return false;
+      }
+      return !(
+        isCloseEnough(current.close, target.close) &&
+        isCloseEnough(current.volume, target.volume) &&
+        isCloseEnough(current.high, target.high) &&
+        isCloseEnough(current.low, target.low)
+      );
+    });
+
+    if (hasPending && klineRafRef.current === null) {
+      klineRafRef.current = requestAnimationFrame(stepKlineLerp);
+    }
+  };
+
   // more constants
   const languageOptions = [
     { code: 'EN', name: 'English' },
@@ -9930,13 +10078,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         close: closePrice,
                         volume: lastBar.volume + rawVolume,
                       };
-                      if (realtimeCallbackRef.current[existingIntervalLabel]) {
-                        realtimeCallbackRef.current[existingIntervalLabel]({
+                      if (existingIntervalLabel) {
+                        queueKlineUpdate(existingIntervalLabel, {
                           ...lastBar,
                           high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
                           low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
                           close: closePrice,
                           volume: lastBar.volume + rawVolume,
+                          lastClose: lastBar.close,
                         });
                       }
                     } else {
@@ -9948,14 +10097,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                         close: closePrice,
                         volume: rawVolume,
                       });
-                      if (realtimeCallbackRef.current[existingIntervalLabel]) {
-                        realtimeCallbackRef.current[existingIntervalLabel]({
+                      if (existingIntervalLabel) {
+                        queueKlineUpdate(existingIntervalLabel, {
                           time: flooredTradeTimeSec * 1000,
                           open: lastBar?.close ?? openPrice,
                           high: Math.max(lastBar?.close ?? openPrice, closePrice),
                           low: Math.min(lastBar?.close ?? openPrice, closePrice),
                           close: closePrice,
                           volume: rawVolume,
+                          lastClose: lastBar.close,
                         });
                       }
                     }
@@ -10783,13 +10933,14 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           close: closePrice,
                           volume: lastBar.volume + rawVolume,
                         };
-                        if (realtimeCallbackRef.current[existingIntervalLabel]) {
-                          realtimeCallbackRef.current[existingIntervalLabel]({
+                        if (existingIntervalLabel) {
+                          queueKlineUpdate(existingIntervalLabel, {
                             ...lastBar,
                             high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
                             low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
                             close: closePrice,
                             volume: lastBar.volume + rawVolume,
+                            lastClose: lastBar.close,
                           });
                         }
                       } else {
@@ -10801,14 +10952,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
                           close: closePrice,
                           volume: rawVolume,
                         });
-                        if (realtimeCallbackRef.current[existingIntervalLabel]) {
-                          realtimeCallbackRef.current[existingIntervalLabel]({
+                        if (existingIntervalLabel) {
+                          queueKlineUpdate(existingIntervalLabel, {
                             time: flooredTradeTimeSec * 1000,
                             open: lastBar?.close ?? openPrice,
                             high: Math.max(lastBar?.close ?? openPrice, closePrice),
                             low: Math.min(lastBar?.close ?? openPrice, closePrice),
                             close: closePrice,
                             volume: rawVolume,
+                            lastClose: lastBar.close,
                           });
                         }
                       }
@@ -11219,6 +11371,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
       };
     };
 
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+    window.addEventListener('blur', handleVisibilityChange);
+
     connectWebSocket();
 
     return () => {
@@ -11232,6 +11388,15 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         clearTimeout(reconnectIntervalRef.current);
         reconnectIntervalRef.current = null;
       }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+      window.removeEventListener('blur', handleVisibilityChange);
+      if (klineRafRef.current !== null) {
+        cancelAnimationFrame(klineRafRef.current);
+        klineRafRef.current = null;
+      }
+      klineTargetsRef.current = {};
+      klineCurrentRef.current = {};
       if (wsRef.current) {
         wsRef.current.close();
         wsRef.current = null;
@@ -30007,12 +30172,9 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
             } />
           <Route path="/swap" element={TradeLayout(swap)} />
           <Route path="/market" element={TradeLayout(swap)} />
-          <Route path="/sneakymarket" element={TradeLayout(swap)} />
           <Route path="/limit" element={TradeLayout(limit)} />
-          <Route path="/sneakylimit" element={TradeLayout(limit)} />
           <Route path="/send" element={TradeLayout(send)} />
           <Route path="/scale" element={TradeLayout(scale)} />
-          <Route path="/sneakyscale" element={TradeLayout(scale)} />
         </Routes>
         <TransactionPopupManager
           transactions={transactions}

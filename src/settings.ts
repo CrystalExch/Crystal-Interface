@@ -12,6 +12,7 @@ import iconyaki from './assets/iconyaki.png';
 import iconsmon from './assets/iconsmon.png';
 import iconshmon from './assets/iconshmon.png';
 import iconaprmon from './assets/iconaprmon.png';
+import iconxaut from './assets/iconxaut.png';
 import MonadLogo from './assets/monad.svg';
 
 export const settings: any = {
@@ -151,10 +152,35 @@ export const settings: any = {
           image: iconausd,
           website: 'https://www.agora.finance/',
         },
+        XAUt0USDC: {
+          quoteAsset: 'USDC',
+          baseAsset: 'WMON',
+          path: [
+            '0x754704Bc059F8C67012fEd69BC8A327a5aafb603',
+            '0x01bFF41798a0BcF287b996046Ca68b395DbC1071',
+          ],
+          quoteAddress: '0x754704Bc059F8C67012fEd69BC8A327a5aafb603',
+          baseAddress: '0x01bFF41798a0BcF287b996046Ca68b395DbC1071',
+          quoteDecimals: BigInt(6),
+          baseDecimals: BigInt(6),
+          address: '0x2BbDd429044d054fb294d50981034Bd202b7CA13'.toLowerCase(),
+          marketType: 2,
+          precision: 5,
+          scaleFactor: BigInt(10 ** 9),
+          priceFactor: BigInt(1000000000),
+          tickSize: BigInt(1),
+          minSize: BigInt(1000000),
+          maxPrice: BigInt(1000000000000000),
+          fee: BigInt(99970),
+          makerRebate: BigInt(99995),
+          image: iconxaut,
+          website: 'https://usdt0.to/gold',
+        },
       },
       addresstomarket: Object.fromEntries([
         ['0x235D84fA575B0370d47433A5b94e7547aA2f023d', 'MONUSDC'],
-        ['0x8A34f54F0f5F2fEDfe2BEB1E46cFC7a25c0Df99b', 'AUSDUSDC']
+        ['0x8A34f54F0f5F2fEDfe2BEB1E46cFC7a25c0Df99b', 'AUSDUSDC'],
+        ['0x2BbDd429044d054fb294d50981034Bd202b7CA13', 'XAUt0USDC']
       ].map(([key, value]) => [key.toLowerCase(), value])),
       tokendict: {
         '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE': {
@@ -192,6 +218,13 @@ export const settings: any = {
           address: '0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a',
           decimals: BigInt(6),
           image: iconausd,
+        },
+        '0x01bFF41798a0BcF287b996046Ca68b395DbC1071': {
+          ticker: 'XAUt0',
+          name: 'Tether Gold',
+          address: '0x01bFF41798a0BcF287b996046Ca68b395DbC1071',
+          decimals: BigInt(6),
+          image: iconxaut,
         },
       },
       nadFunBondingCurve: '0xA7283d07812a02AFB7C09B60f8896bCEA3F90aCE' as `0x${string}`,

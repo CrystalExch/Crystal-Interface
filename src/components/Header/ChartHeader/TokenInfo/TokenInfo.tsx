@@ -88,7 +88,7 @@ const PerpsTokenSkeleton = () => {
 
         <div className="perps-interface-token-header-right">
           <div className="perps-interface-token-metrics">
-            <div className="perps-skeleton-text" style={{ width: '80px', height: '20px' }}></div>
+            <div className="perps-skeleton-text" style={{ width: '74px', height: '20px' }}></div>
 
             <div className="perps-interface-token-metric">
               <div className="skeleton-text skeleton-label" style={{ width: '40px', height: '12px' }}></div>
