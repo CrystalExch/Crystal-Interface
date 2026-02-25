@@ -2,7 +2,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ExternalLink,
-  Plus,
   Search,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
@@ -753,22 +752,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       <div className="lp-content-wrapper">
         {!selectedVaultStrategy && (
           <>
-            <div className="vaults-header">
-              <button
-                className={`create-vault-button ${!account.connected ? 'disabled' : ''}`}
-                onClick={() => {
-                  if (!account.connected) {
-                    setpopup(4);
-                  } else {
-                    setpopup(29);
-                  }
-                }}
-                disabled={!account.connected}
-              >
-                <Plus size={16} />
-                Create Vault
-              </button>
-            </div>
             <div className="vaults-filters">
               <div className="vault-tabs" data-active={activeVaultTab}>
                 <button

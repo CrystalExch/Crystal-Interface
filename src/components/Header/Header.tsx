@@ -1098,7 +1098,6 @@ const Header: React.FC<HeaderProps> = ({
     document.body.style.overflow = !isMenuOpen ? 'hidden' : 'auto';
   };
 
-  const rightHeaderClass = isTradeRoute && !simpleView ? 'right-header-trade' : 'right-header';
   const marketHeader = marketsData?.find(
     (market: any) => market?.address === activeMarket?.address
   );
@@ -1106,7 +1105,7 @@ const Header: React.FC<HeaderProps> = ({
   const currentWallet = getCurrentWalletInfo();
   const displayAddress = currentWallet ? currentWallet.address : account.address;
 
-  const shouldShowSpecialButton = isMemeRoute || isPerpsRoute || window.innerWidth < 1020;
+  const shouldShowSpecialButton = isTradeRoute || isMemeRoute || isPerpsRoute || window.innerWidth < 1020;
 
   return (
     <>
@@ -1161,7 +1160,7 @@ const Header: React.FC<HeaderProps> = ({
             userAddress={account.address}
           />
         </div>
-        <div className={rightHeaderClass}>
+        <div className="right-header">
           {copiedToken && (
             <div className="copied-token-display" onClick={() => {
               if (!isEditingCopiedAmount && copiedToken.id) {
@@ -1242,7 +1241,6 @@ const Header: React.FC<HeaderProps> = ({
             </div>
           )}
           {shouldShowSpecialButton && (
-
             <button
               type="button"
               className="meme-search-button"
@@ -1256,7 +1254,7 @@ const Header: React.FC<HeaderProps> = ({
 
             </button>
           )}
-          {/* <button
+          {true && <button
             type="button"
             className="history-button"
             onClick={() => setIsTransactionHistoryOpen(true)}
@@ -1268,9 +1266,9 @@ const Header: React.FC<HeaderProps> = ({
             {pendingNotifs > 99 && (
               <span className="tx-notification-badge">99+</span>
             )}
-          </button> */}
+          </button>}
           <div>
-            {false && <button
+            {true && <button
               type="button"
               className="app-settings-button"
               onClick={() => {

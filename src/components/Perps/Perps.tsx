@@ -1266,9 +1266,6 @@ const Perps: React.FC<PerpsProps> = ({
     const isCloseEnough = (value: number, target: number) =>
       Math.abs(value - target) <= Math.max(1e-12, Math.abs(target) * 1e-4);
 
-    const isChartFocused = () =>
-      typeof document !== 'undefined' && !document.hidden;
-
     const toKlineBar = (candle: any) => ({
       time: Number(candle.klineTime),
       open: Number(candle.open),
@@ -1279,10 +1276,6 @@ const Perps: React.FC<PerpsProps> = ({
     });
 
     const stepKlineLerp = () => {
-      if (!isChartFocused()) {
-        klineRafRef.current = null;
-        return;
-      }
       let hasActive = false;
       const targets = klineTargetsRef.current;
 
@@ -1350,7 +1343,7 @@ const Perps: React.FC<PerpsProps> = ({
       options?: { immediate?: boolean },
     ) => {
       klineTargetsRef.current[key] = bar;
-      const focused = isChartFocused();
+      const focused = typeof document !== 'undefined' && !document.hidden;
       const shouldLerp = focused && !options?.immediate;
 
       if (!realtimeCallbackRef.current[key]) {
@@ -1372,43 +1365,6 @@ const Perps: React.FC<PerpsProps> = ({
       }
 
       if (klineRafRef.current === null) {
-        klineRafRef.current = requestAnimationFrame(stepKlineLerp);
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (!isChartFocused()) {
-        if (klineRafRef.current !== null) {
-          cancelAnimationFrame(klineRafRef.current);
-          klineRafRef.current = null;
-        }
-        const targets = klineTargetsRef.current;
-        Object.keys(targets).forEach((key) => {
-          const target = targets[key];
-          if (target && realtimeCallbackRef.current[key]) {
-            klineCurrentRef.current[key] = { ...target };
-            realtimeCallbackRef.current[key](target);
-          }
-        });
-        return;
-      }
-
-      const targets = klineTargetsRef.current;
-      const hasPending = Object.keys(targets).some((key) => {
-        const target = targets[key];
-        const current = klineCurrentRef.current[key];
-        if (!target || !current || target.time !== current.time) {
-          return false;
-        }
-        return !(
-          isCloseEnough(current.close, target.close) &&
-          isCloseEnough(current.volume, target.volume) &&
-          isCloseEnough(current.high, target.high) &&
-          isCloseEnough(current.low, target.low)
-        );
-      });
-
-      if (hasPending && klineRafRef.current === null) {
         klineRafRef.current = requestAnimationFrame(stepKlineLerp);
       }
     };
@@ -1587,10 +1543,6 @@ const Perps: React.FC<PerpsProps> = ({
       };
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleVisibilityChange);
-    window.addEventListener('blur', handleVisibilityChange);
-
     connectWebSocket();
 
     return () => {
@@ -1603,9 +1555,6 @@ const Perps: React.FC<PerpsProps> = ({
         clearTimeout(reconnectIntervalRef.current);
         reconnectIntervalRef.current = null;
       }
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleVisibilityChange);
-      window.removeEventListener('blur', handleVisibilityChange);
       if (klineRafRef.current !== null) {
         cancelAnimationFrame(klineRafRef.current);
         klineRafRef.current = null;
@@ -2475,7 +2424,7 @@ const Perps: React.FC<PerpsProps> = ({
           >
             {isSigning ? (
               <div className="perps-button-spinner"></div>
-            ) : (address ? (Object.keys(signer).length == 0 ? 'Coming Soon!' : (inputString && (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize))) ? `Order size must be >${activeMarket?.minOrderSize} ${activeMarket?.baseAsset}` :
+            ) : (address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : (inputString && (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize))) ? `Order size must be >${activeMarket?.minOrderSize} ${activeMarket?.baseAsset}` :
               Number(realInputString) > (Number(availableBalance - (1 + Number(realInputString)) * Number(userFees[0] || 0)) * Number(leverage)) ? 'Insufficient Margin' : activeOrderType === "Market"
                 ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
                 : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`) : 'Connect Wallet'
@@ -3480,7 +3429,7 @@ const Perps: React.FC<PerpsProps> = ({
                 >
                   {isSigning ? (
                     <div className="perps-button-spinner"></div>
-                  ) : (address ? (Object.keys(signer).length == 0 ? 'Coming Soon!' : (inputString && (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize))) ? `Order size must be >${activeMarket?.minOrderSize} ${activeMarket?.baseAsset}` :
+                  ) : (address ? (Object.keys(signer).length == 0 ? 'Enable Trading' : (inputString && (Math.floor(Number(inputString) / (1 + Number(userFees[0])) / Number(activeOrderType == 'Limit' ? limitPriceString : activeMarket?.lastPrice) / Number(activeMarket?.stepSize)) * Number(activeMarket?.stepSize) < Number(activeMarket?.minOrderSize))) ? `Order size must be >${activeMarket?.minOrderSize} ${activeMarket?.baseAsset}` :
                     Number(realInputString) > (Number(availableBalance - (1 + Number(realInputString)) * Number(userFees[0] || 0)) * Number(leverage)) ? 'Insufficient Margin' : activeOrderType === "Market"
                       ? `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Long " : "Short ") + activeMarket?.baseAsset}`
                       : `${!activeMarket?.baseAsset ? `Place Order` : (activeTradeType == "long" ? "Limit Long " : "Limit Short ") + activeMarket?.baseAsset}`) : 'Connect Wallet'
