@@ -1688,6 +1688,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
       try {
         const endDateMin = encodeURIComponent(new Date().toISOString());
+        //Event query
         const eventsQuery = `/predictapi/events?active=true&archived=false&closed=false&order=volume24hr&ascending=false&limit=${EVENTS_PAGE_SIZE}&offset=${volumeOffsetRef.current}&end_date_min=${endDateMin}`;
         updateEventsQuery('All', eventsQuery);
         const eventsRes = await fetchPolymarketJson(eventsQuery);

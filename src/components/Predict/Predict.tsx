@@ -90,6 +90,26 @@ interface OutcomeData {
 type IntervalType = '1H' | '24H' | '7D' | '30D' | 'ALL';
 type ChartPoint = { time: number; value: number };
 
+const normalizeOutcomeKey = (value: any): string =>
+  String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/['"`]/g, '')
+    .replace(/[^a-z0-9%+\-\s]/g, '')
+    .replace(/\s+/g, ' ');
+
+const toBooleanFlag = (value: any): boolean => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return false;
+    if (['true', '1', 'yes', 'y'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'n'].includes(normalized)) return false;
+  }
+  return Boolean(value);
+};
+
 const toEpochSeconds = (value: any): number | null => {
   if (value == null) return null;
   const numeric = Number(value);
@@ -100,11 +120,26 @@ const toEpochSeconds = (value: any): number | null => {
 };
 
 const toProbabilityPercent = (value: any): number | null => {
-  const numeric = Number(value);
+  const numeric = Number(
+    typeof value === 'string' ? value.replace(/,/g, '') : value,
+  );
   if (!Number.isFinite(numeric)) return null;
-  let normalized = numeric;
-  if (normalized <= 1.000001) normalized *= 100;
-  else if (normalized > 100 && normalized <= 10000) normalized /= 100;
+  let normalized = numeric < 0 ? 0 : numeric;
+  if (normalized <= 1.000001) {
+    normalized *= 100;
+  } else if (normalized <= 100.000001) {
+    // already percent
+  } else if (normalized <= 10_000.000001) {
+    normalized /= 100;
+  } else if (normalized <= 1_000_000.000001) {
+    normalized /= 10_000;
+  } else if (normalized <= 1_000_000_000.000001) {
+    normalized /= 1_000_000;
+  } else if (normalized <= 1_000_000_000_000_000_000.000001) {
+    normalized /= 10_000_000_000_000_000;
+  } else {
+    while (normalized > 100.000001) normalized /= 10;
+  }
   return Math.max(0, Math.min(100, normalized));
 };
 
@@ -128,6 +163,37 @@ const normalizeSeriesHistory = (value: any): ChartPoint[] => {
     return points;
   };
 
+  const pickArraySeriesFromObject = (input: any): any[] => {
+    if (!input || typeof input !== 'object') return [];
+    const directCandidates = [
+      input?.items,
+      input?.points,
+      input?.prices,
+      input?.history,
+      input?.series,
+      input?.data,
+      input?.result,
+      input?.results,
+    ];
+    for (const candidate of directCandidates) {
+      if (Array.isArray(candidate) && candidate.length > 0) return candidate;
+    }
+    const nestedObjectCandidates = [
+      input?.history,
+      input?.series,
+      input?.data,
+      input?.result,
+      input?.results,
+      input?.payload,
+    ];
+    for (const nested of nestedObjectCandidates) {
+      if (!nested || typeof nested !== 'object') continue;
+      const nestedPoints = pickArraySeriesFromObject(nested);
+      if (nestedPoints.length) return nestedPoints;
+    }
+    return [];
+  };
+
   const rawPoints = Array.isArray(value)
     ? value
     : Array.isArray(value?.history)
@@ -138,7 +204,7 @@ const normalizeSeriesHistory = (value: any): ChartPoint[] => {
         ? value.data
         : Array.isArray(value?.series)
           ? value.series
-        : [];
+        : pickArraySeriesFromObject(value);
 
   const deduped = new Map<number, number>();
 
@@ -183,6 +249,10 @@ const normalizeSeriesHistory = (value: any): ChartPoint[] => {
       const prob = toProbabilityPercent(
         point?.p ??
         point?.price ??
+        point?.prob ??
+        point?.mid ??
+        point?.last ??
+        point?.open ??
         point?.value ??
         point?.y ??
         point?.probability ??
@@ -199,6 +269,22 @@ const normalizeSeriesHistory = (value: any): ChartPoint[] => {
   return Array.from(deduped.entries())
     .sort((a, b) => a[0] - b[0])
     .map(([time, value]) => ({ time, value }));
+};
+
+const parseOutcomePrices = (value: any): number[] => {
+  let parsed: any = value;
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      parsed = parsed
+        .split(',')
+        .map((item: string) => item.trim())
+        .filter(Boolean);
+    }
+  }
+  if (!Array.isArray(parsed)) return [];
+  return parsed.map((item) => toProbabilityUnit(item ?? 0));
 };
 
 const getIntervalStart = (interval: IntervalType, nowSec: number): number | null => {
@@ -346,7 +432,11 @@ const Predict: React.FC<PredictProps> = ({
               return parsed.filter(Boolean).map((item) => String(item));
             }
           } catch {
-            return [];
+            return value
+              .split(/[,\s]+/)
+              .map((item) => item.trim())
+              .filter(Boolean)
+              .map((item) => String(item));
           }
         }
         return [];
@@ -354,11 +444,31 @@ const Predict: React.FC<PredictProps> = ({
 
       const getTokenIdsForMarket = (marketData: any): string[] => {
         const clobTokenIds = parseClobTokenIds(marketData?.clobTokenIds);
-        if (clobTokenIds.length) return clobTokenIds;
+        const explicitTokenIds = parseClobTokenIds(
+          marketData?.tokenIds ??
+          marketData?.token_ids ??
+          marketData?.outcomeTokenIds,
+        );
         const tokens = Array.isArray(marketData?.tokens)
-          ? marketData.tokens.map((token: any) => token?.token_id).filter(Boolean)
+          ? marketData.tokens
+              .map((token: any) => token?.token_id ?? token?.tokenId ?? token?.id)
+              .filter(Boolean)
           : [];
-        return tokens.map((item: any) => String(item));
+        const singular = [
+          marketData?.tokenID,
+          marketData?.tokenId,
+          marketData?.token_id,
+          marketData?.yesTokenId,
+          marketData?.noTokenId,
+        ].filter(Boolean);
+
+        return Array.from(
+          new Set(
+            [...clobTokenIds, ...explicitTokenIds, ...tokens, ...singular]
+              .filter(Boolean)
+              .map((item: any) => String(item)),
+          ),
+        );
       };
 
       const fetchOrderbooks = async (tokenIds: string[], signal: AbortSignal) => {
@@ -399,7 +509,7 @@ const Predict: React.FC<PredictProps> = ({
 
       const fetchEvent = async (signal: AbortSignal, includeChat: boolean) => {
         const includeChatParam = includeChat ? '&include_chat=true' : '';
-        const slugParam = `slug=${encodeURIComponent(marketSlug)}${includeChatParam}`;
+        const slugParam = `slug=${encodeURIComponent(marketSlug)}${includeChatParam}&include_history=true`;
         try {
           const activeData = await fetchPolymarketJson(
             `/predictapi/events?active=true&closed=false&${slugParam}`,
@@ -420,30 +530,55 @@ const Predict: React.FC<PredictProps> = ({
         if (cached && now - cached.fetchedAt < SERIES_REFRESH_MS) {
           return cached.history;
         }
-        const seriesResponse = await fetch(`/clob/series?id=${encodeURIComponent(seriesId)}`, { signal }).catch(() => null);
-        const seriesData = seriesResponse ? await seriesResponse.json().catch(() => null) : null;
-        const normalizedHistory = normalizeSeriesHistory(seriesData);
-        if (normalizedHistory.length > 0) {
-          seriesCacheRef.current.set(seriesId, {
-            fetchedAt: now,
-            history: normalizedHistory,
-          });
-          return normalizedHistory;
+        const seriesPaths = [
+          `/clob/series?id=${encodeURIComponent(seriesId)}`,
+          `/clob/prices-history?market=${encodeURIComponent(seriesId)}&interval=max&fidelity=5`,
+          `/clob/prices-history?market=${encodeURIComponent(seriesId)}&interval=max`,
+          `/clob/prices-history?market=${encodeURIComponent(seriesId)}`,
+        ];
+        for (const path of seriesPaths) {
+          const seriesResponse = await fetch(path, { signal }).catch(() => null);
+          const seriesData = seriesResponse ? await seriesResponse.json().catch(() => null) : null;
+          const normalizedHistory = normalizeSeriesHistory(seriesData);
+          if (normalizedHistory.length > 0) {
+            seriesCacheRef.current.set(seriesId, {
+              fetchedAt: now,
+              history: normalizedHistory,
+            });
+            return normalizedHistory;
+          }
         }
         return [];
       };
 
       const fetchBestSeriesHistory = async (marketItem: any, signal: AbortSignal) => {
-        const conditionKey = String(marketItem?.conditionId || marketItem?.condition_id || '').trim();
+        const conditionKey = String(
+          marketItem?.conditionId ||
+          marketItem?.condition_id ||
+          marketItem?.id ||
+          marketItem?.marketId ||
+          '',
+        ).trim();
         const tokenKeys = getTokenIdsForMarket(marketItem);
         const candidateIds = Array.from(new Set([...tokenKeys, conditionKey].filter(Boolean)));
-        if (!candidateIds.length) return [];
+        const histories = candidateIds.length
+          ? await Promise.all(candidateIds.map((id) => fetchSeriesHistory(id, signal)))
+          : [];
+        let nonEmpty = histories.filter((history) => history.length > 1);
 
-        const histories = await Promise.all(
-          candidateIds.map((id) => fetchSeriesHistory(id, signal)),
-        );
-        const nonEmpty = histories.filter((history) => history.length > 1);
-        if (!nonEmpty.length) return [];
+        if (!nonEmpty.length) {
+          const inlineCandidates = [
+            marketItem?.series,
+            marketItem?.history,
+            marketItem?.priceHistory,
+            marketItem?.priceHistoryData,
+            marketItem?.chartData,
+          ];
+          nonEmpty = inlineCandidates
+            .map((candidate) => normalizeSeriesHistory(candidate))
+            .filter((history) => history.length > 1);
+          if (!nonEmpty.length) return [];
+        }
 
         nonEmpty.sort((a, b) => {
           const rangeDelta = getSeriesRange(b) - getSeriesRange(a);
@@ -473,9 +608,7 @@ const Predict: React.FC<PredictProps> = ({
 
               setPredictActiveMarketKey(conditionId);
 
-              const outcomePrices = typeof market.outcomePrices === 'string'
-                ? JSON.parse(market.outcomePrices)
-                : market.outcomePrices || [];
+              const outcomePrices = parseOutcomePrices(market.outcomePrices);
 
               if (options.includeSeries) {
                 const seriesEntries = await Promise.all(
@@ -485,6 +618,7 @@ const Predict: React.FC<PredictProps> = ({
                     return {
                       index,
                       label: getOutcomeLabel(marketItem, index),
+                      normalizedLabel: normalizeOutcomeKey(getOutcomeLabel(marketItem, index)),
                       history,
                     };
                   }),
@@ -495,6 +629,7 @@ const Predict: React.FC<PredictProps> = ({
                   .reduce((acc: Record<string, ChartPoint[]>, item: any) => {
                     acc[item.label] = item.history;
                     acc[`__index_${item.index}`] = item.history;
+                    acc[`__label_${item.normalizedLabel}`] = item.history;
                     return acc;
                   }, {});
 
@@ -514,12 +649,10 @@ const Predict: React.FC<PredictProps> = ({
 
               const baseOutcomePrices = isMultiOutcome
                 ? markets.map((m: any) => {
-                    const prices = typeof m.outcomePrices === 'string'
-                      ? JSON.parse(m.outcomePrices)
-                      : m.outcomePrices || [];
-                    return toProbabilityUnit(prices[0] ?? 0);
+                    const prices = parseOutcomePrices(m.outcomePrices);
+                    return prices[0] ?? 0;
                   })
-                : outcomePrices.map((p: any) => toProbabilityUnit(p ?? 0));
+                : outcomePrices;
 
               const orderbookTokenIdGroups: string[][] = isMultiOutcome
                 ? markets.map((m: any) => getTokenIdsForMarket(m))
@@ -529,7 +662,16 @@ const Predict: React.FC<PredictProps> = ({
               );
 
               const orderbooksByTokenId = await fetchOrderbooks(orderbookFetchTokenIds, controller.signal);
-              const derivedOutcomePrices = baseOutcomePrices;
+              const derivedOutcomePrices = baseOutcomePrices.map((basePrice: number, index: number) => {
+                const tokenIdsForOutcome = isMultiOutcome
+                  ? orderbookTokenIdGroups[index]
+                  : orderbookTokenIdGroups[0];
+                const preferredTokenId = tokenIdsForOutcome?.[index] ?? tokenIdsForOutcome?.[0];
+                const book = preferredTokenId ? orderbooksByTokenId[String(preferredTokenId)] : null;
+                if (!book) return basePrice;
+                const normalized = toProbabilityUnit(getOrderbookPrice(book, basePrice));
+                return Number.isFinite(normalized) ? normalized : basePrice;
+              });
 
               const chatChannels = Array.isArray(event.series)
                 ? event.series.flatMap((series: any) => series?.chats || [])
@@ -559,8 +701,10 @@ const Predict: React.FC<PredictProps> = ({
                 endDate: market.endDate,
                 startDate: market.startDate || market.creationDate,
                 enableDisplay: true,
-                active: market.active,
-                closed: market.closed ?? event.closed ?? false,
+                activeRaw: market.active,
+                closedRaw: market.closed ?? event.closed ?? false,
+                active: toBooleanFlag(market.active),
+                closed: toBooleanFlag(market.closed ?? event.closed ?? false),
                 tokenID: tokenID,
                 orderbooks: orderbooksByTokenId,
                 orderbookTokenIds: orderbookTokenIdGroups,
@@ -617,7 +761,7 @@ const Predict: React.FC<PredictProps> = ({
         probability: price,
         volume: marketVolume || (activeMarket?.volume24hr || 0) / outcomeLabels.length,
         yesPrice: price,
-        noPrice: 1 - price,
+        noPrice: Math.max(0, Math.min(1, 1 - price)),
         color: OUTCOME_COLORS[idx % OUTCOME_COLORS.length],
       };
     });
@@ -882,7 +1026,19 @@ const Predict: React.FC<PredictProps> = ({
 
       const directByIndex = filterSeriesByInterval(chartData[`__index_${index}`] || [], selectedInterval);
       const directByLabel = filterSeriesByInterval(chartData[outcome.name] || [], selectedInterval);
-      const directOutcomeData = directByIndex.length > 1 ? directByIndex : directByLabel;
+      const normalizedKey = normalizeOutcomeKey(outcome.name);
+      const directByNormalized = filterSeriesByInterval(
+        chartData[`__label_${normalizedKey}`] || [],
+        selectedInterval,
+      );
+      const directCandidates = [directByLabel, directByNormalized, directByIndex]
+        .filter((candidate) => candidate.length > 1)
+        .sort((a, b) => {
+          const rangeDelta = getSeriesRange(b) - getSeriesRange(a);
+          if (Math.abs(rangeDelta) > 0.0001) return rangeDelta;
+          return b.length - a.length;
+        });
+      const directOutcomeData = directCandidates[0] || [];
       let pointsToPlot: ChartPoint[] = [];
       const directRange = getSeriesRange(directOutcomeData);
       const primaryRange = getSeriesRange(primaryData);
@@ -981,7 +1137,9 @@ const Predict: React.FC<PredictProps> = ({
   const liquidity = activeMarket?.liquidity || 0;
   const endDate = activeMarket?.endDate || '';
   const countdown = getCountdown(endDate);
-  const isResolved = Boolean(activeMarket?.closed || activeMarket?.active === false);
+  const isClosed = toBooleanFlag(activeMarket?.closed ?? activeMarket?.closedRaw);
+  const isActive = toBooleanFlag(activeMarket?.active ?? activeMarket?.activeRaw ?? true);
+  const isResolved = isClosed || !isActive;
   const statusLabel = isResolved ? 'Resolved' : 'Live';
   const statusTitle = endDate
     ? `${isResolved ? 'Resolved' : 'Ends'} ${formatDate(endDate)}`
@@ -1115,8 +1273,12 @@ const Predict: React.FC<PredictProps> = ({
                   <div className="predict-event-outcome-col predict-event-outcome-prob-col">
                     <span className="predict-event-probability-value">{(outcome.probability * 100).toFixed(0)}%</span>
                   </div>
-                  <div className="predict-event-outcome-col predict-event-outcome-actions-col">
+                  <div
+                    className="predict-event-outcome-col predict-event-outcome-actions-col"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button
+                      type="button"
                       className="predict-event-buy-yes-btn"
                       disabled={isTradingDisabled}
                       onClick={(e) => {
@@ -1128,6 +1290,7 @@ const Predict: React.FC<PredictProps> = ({
                       Buy Yes {(outcome.yesPrice * 100).toFixed(1)}c
                     </button>
                     <button
+                      type="button"
                       className="predict-event-buy-no-btn"
                       disabled={isTradingDisabled}
                       onClick={(e) => {
