@@ -908,12 +908,13 @@
 }
 
 .header-action-icon {
-  background-color: #4b518e2e;
+  background-color: #4b518e35;
   color: #aaaecf;
   border-radius: 50%;
   padding: 8px;
   width: 37px;
   height: 37px;
+  transition: background-color ease 0.2s;
 }
 
 .header-action-item {
@@ -924,15 +925,15 @@
   font-size: 0.8rem;
   letter-spacing: -0.3px;
   width: 33%;
+  transition: color ease 0.2s;
 }
 
 .header-action-item:hover {
-  color: #d8dcff;
+  color: #aaaecff0;
 }
 
 .header-action-item:hover .header-action-icon {
-  background-color: #4b518e42;
-
+  background-color: #4b518e2e;
 }
 
 .wallet-dropdown-header-left-side {
