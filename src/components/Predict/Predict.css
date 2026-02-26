@@ -756,7 +756,7 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;;
+  justify-content: center;
   gap: 4px;
 }
 
@@ -964,11 +964,40 @@
 }
 
 .predict-event-limit-value {
-  min-width: 50px;
-  text-align: center;
+  min-width: 70px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 6px;
+}
+
+.predict-event-limit-value-input {
+  width: 36px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #ffffffcf;
   font-size: 0.95rem;
   font-weight: 400;
-  color: #ffffffcf;
+  letter-spacing: -0.3px;
+  text-align: right;
+}
+
+.predict-event-limit-value-input::placeholder {
+  color: #666;
+}
+
+.predict-event-limit-value-input:disabled {
+  color: #666;
+  cursor: not-allowed;
+}
+
+.predict-event-limit-value-suffix {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: #ffffff7b;
   letter-spacing: -0.3px;
 }
 

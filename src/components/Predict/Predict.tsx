@@ -18,6 +18,10 @@ const OUTCOME_COLORS = [
 ];
 const DEFAULT_TICK_SIZE = 0.01;
 const SERIES_REFRESH_MS = 5 * 60 * 1000;
+const SERIES_FAILURE_TTL_MS = 5 * 60 * 1000;
+const SERIES_BACKGROUND_REFRESH_MS = 10 * 60 * 1000;
+const EVENT_REFRESH_MS = 60 * 1000;
+const EVENT_CACHE_TTL_MS = 30 * 60 * 1000;
 
 interface PredictProps {
   layoutSettings?: string;
@@ -79,17 +83,55 @@ interface PredictProps {
 }
 
 interface OutcomeData {
+  chartKey: string;
   name: string;
   probability: number;
   volume: number;
   yesPrice: number;
   noPrice: number;
   color: string;
+  isConcluded?: boolean;
 }
 
 type IntervalType = '1H' | '24H' | '7D' | '30D' | 'ALL';
 type ChartPoint = { time: number; value: number };
+type CachedEventSnapshot = {
+  conditionId: string;
+  cachedAt: number;
+  marketData: any;
+  chartData?: Record<string, ChartPoint[]>;
+};
+type SeriesEndpointConfig = { key: string; path: string };
 
+const FAST_SERIES_ENDPOINT_KEYS = new Set(['prices-max']);
+
+const buildSeriesEndpointConfigs = (seriesId: string): SeriesEndpointConfig[] => {
+  const encoded = encodeURIComponent(seriesId);
+  return [
+    { key: 'series', path: `/clob/series?id=${encoded}` },
+    { key: 'prices-max-fidelity', path: `/clob/prices-history?market=${encoded}&interval=max&fidelity=5` },
+    { key: 'prices-max', path: `/clob/prices-history?market=${encoded}&interval=max` },
+    { key: 'prices-default', path: `/clob/prices-history?market=${encoded}` },
+  ];
+};
+
+const rankSeriesEndpointConfigs = (
+  configs: SeriesEndpointConfig[],
+  preferredKey: string | undefined,
+  exhaustive: boolean,
+): SeriesEndpointConfig[] => {
+  const ranked = preferredKey
+    ? [
+        ...configs.filter((cfg) => cfg.key === preferredKey),
+        ...configs.filter((cfg) => cfg.key !== preferredKey),
+      ]
+    : configs;
+
+  if (exhaustive) return ranked;
+  return ranked.filter((cfg) => FAST_SERIES_ENDPOINT_KEYS.has(cfg.key));
+};
+
+// Normalizes outcome labels so dynamic chart keys can be matched safely across APIs.
 const normalizeOutcomeKey = (value: any): string =>
   String(value ?? '')
     .trim()
@@ -98,6 +140,7 @@ const normalizeOutcomeKey = (value: any): string =>
     .replace(/[^a-z0-9%+\-\s]/g, '')
     .replace(/\s+/g, ' ');
 
+// Coerces polymarket-style mixed booleans ("0", "1", true/false) into a real boolean.
 const toBooleanFlag = (value: any): boolean => {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'number') return value !== 0;
@@ -110,6 +153,7 @@ const toBooleanFlag = (value: any): boolean => {
   return Boolean(value);
 };
 
+// Converts timestamps from multiple possible formats into unix seconds for charting.
 const toEpochSeconds = (value: any): number | null => {
   if (value == null) return null;
   const numeric = Number(value);
@@ -119,6 +163,7 @@ const toEpochSeconds = (value: any): number | null => {
   return Math.floor(parsed);
 };
 
+// Normalizes probability values from different scales into a 0-100 percentage.
 const toProbabilityPercent = (value: any): number | null => {
   const numeric = Number(
     typeof value === 'string' ? value.replace(/,/g, '') : value,
@@ -143,12 +188,14 @@ const toProbabilityPercent = (value: any): number | null => {
   return Math.max(0, Math.min(100, normalized));
 };
 
+// Converts any probability representation into a 0-1 unit interval for UI math.
 const toProbabilityUnit = (value: any): number => {
   const percent = toProbabilityPercent(value);
   if (percent == null) return 0;
   return Math.max(0, Math.min(1, percent / 100));
 };
 
+// Accepts many history payload shapes and returns sorted chart points in {time, value} form.
 const normalizeSeriesHistory = (value: any): ChartPoint[] => {
   const zipSeriesArrays = (times: any[], probs: any[]): ChartPoint[] => {
     const size = Math.min(times.length, probs.length);
@@ -271,6 +318,7 @@ const normalizeSeriesHistory = (value: any): ChartPoint[] => {
     .map(([time, value]) => ({ time, value }));
 };
 
+// Parses outcome prices from API payloads (JSON string, CSV-like string, or array) into 0-1 units.
 const parseOutcomePrices = (value: any): number[] => {
   let parsed: any = value;
   if (typeof parsed === 'string') {
@@ -287,6 +335,7 @@ const parseOutcomePrices = (value: any): number[] => {
   return parsed.map((item) => toProbabilityUnit(item ?? 0));
 };
 
+// Maps selected chart interval to a lower bound timestamp for history filtering.
 const getIntervalStart = (interval: IntervalType, nowSec: number): number | null => {
   switch (interval) {
     case '1H':
@@ -302,6 +351,7 @@ const getIntervalStart = (interval: IntervalType, nowSec: number): number | null
   }
 };
 
+// Filters points by selected interval, but preserves a tail fallback when data is sparse.
 const filterSeriesByInterval = (points: ChartPoint[], interval: IntervalType): ChartPoint[] => {
   if (!points.length || interval === 'ALL') return points;
   const start = getIntervalStart(interval, Math.floor(Date.now() / 1000));
@@ -311,6 +361,7 @@ const filterSeriesByInterval = (points: ChartPoint[], interval: IntervalType): C
   return points.slice(-Math.min(points.length, 200));
 };
 
+// Picks a human-readable outcome label from polymarket market metadata with safe fallback.
 const getOutcomeLabel = (market: any, index: number): string => {
   const label =
     market?.groupItemTitle ??
@@ -322,6 +373,7 @@ const getOutcomeLabel = (market: any, index: number): string => {
   return `Outcome ${index + 1}`;
 };
 
+// Computes movement amplitude for a time series; used to choose the best candidate history.
 const getSeriesRange = (points: ChartPoint[]): number => {
   if (points.length < 2) return 0;
   let min = Number.POSITIVE_INFINITY;
@@ -354,6 +406,9 @@ const Predict: React.FC<PredictProps> = ({
   const activeRequestRef = useRef<AbortController | null>(null);
   const selectedOutcomeRef = useRef<string | null>(null);
   const seriesCacheRef = useRef<Map<string, { fetchedAt: number; history: ChartPoint[] }>>(new Map());
+  const failedSeriesCacheRef = useRef<Map<string, { failedAt: number }>>(new Map());
+  const seriesEndpointPreferenceRef = useRef<Map<string, string>>(new Map());
+  const seriesInFlightRef = useRef<Map<string, Promise<ChartPoint[]>>>(new Map());
 
   // Chart state
   const [selectedInterval, setSelectedInterval] = useState<IntervalType>('ALL');
@@ -368,6 +423,7 @@ const Predict: React.FC<PredictProps> = ({
 
   // Limit order state
   const [limitPrice, setLimitPrice] = useState(0);
+  const [limitPriceInput, setLimitPriceInput] = useState('0');
   const [shares, setShares] = useState('');
   const [expirationEnabled, setExpirationEnabled] = useState(false);
 
@@ -390,6 +446,7 @@ const Predict: React.FC<PredictProps> = ({
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRefs = useRef<Map<string, ISeriesApi<'Line'>>>(new Map());
   const chartYRangeRef = useRef<{ min: number; max: number } | null>(null);
+  const predictMarketsRef = useRef<Record<string, any>>({});
 
   // Get current market data
   const activeMarket = predictMarketsData[predictActiveMarketKey] || {};
@@ -403,10 +460,78 @@ const Predict: React.FC<PredictProps> = ({
     selectedOutcomeRef.current = selectedOutcome;
   }, [selectedOutcome]);
 
+  useEffect(() => {
+    predictMarketsRef.current = predictMarketsData || {};
+  }, [predictMarketsData]);
+
   // Fetch market data when marketSlug changes
   useEffect(() => {
     if (marketSlug) {
-      setChartData({});
+      const cacheKey = `predict:event:${marketSlug}`;
+
+      // Reads last good event payload for this slug so transient API outages don't blank the page.
+      const readCachedEvent = (): CachedEventSnapshot | null => {
+        if (typeof window === 'undefined') return null;
+        try {
+          const raw = window.sessionStorage.getItem(cacheKey);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw) as CachedEventSnapshot;
+          if (!parsed?.conditionId || !parsed?.marketData || !parsed?.cachedAt) return null;
+          if (Date.now() - parsed.cachedAt > EVENT_CACHE_TTL_MS) return null;
+          return parsed;
+        } catch {
+          return null;
+        }
+      };
+
+      // Persists last known-good event payload for this slug to session storage.
+      const writeCachedEvent = (payload: CachedEventSnapshot) => {
+        if (typeof window === 'undefined') return;
+        try {
+          window.sessionStorage.setItem(cacheKey, JSON.stringify(payload));
+        } catch {
+          // Ignore storage write failures.
+        }
+      };
+
+      // Applies cached data to store/chart so UI remains usable when live fetch fails.
+      const applyCachedEvent = (cached: CachedEventSnapshot) => {
+        if (!cached?.conditionId || !cached?.marketData) return false;
+        setPredictActiveMarketKey(cached.conditionId);
+        setPredictMarketsData((prev: any) => ({
+          ...prev,
+          [cached.conditionId]: {
+            ...(prev?.[cached.conditionId] || {}),
+            ...cached.marketData,
+            orderbooks: {
+              ...(prev?.[cached.conditionId]?.orderbooks || {}),
+              ...(cached.marketData?.orderbooks || {}),
+            },
+          },
+        }));
+        if (cached.chartData && Object.keys(cached.chartData).length > 0) {
+          setChartData(cached.chartData);
+        }
+        return true;
+      };
+
+      const existingEntry = Object.entries(predictMarketsRef.current || {}).find(([, marketData]) =>
+        marketData?.eventSlug === marketSlug,
+      );
+      if (existingEntry) {
+        const [conditionId, marketData] = existingEntry;
+        setPredictActiveMarketKey(conditionId);
+        if (marketData?.chartData && Object.keys(marketData.chartData).length > 0) {
+          setChartData(marketData.chartData);
+        }
+      } else {
+        const cached = readCachedEvent();
+        if (!cached || !applyCachedEvent(cached)) {
+          setChartData({});
+        }
+      }
+
+      // Shared JSON fetch wrapper for predictapi endpoints with explicit error context.
       const fetchPolymarketJson = async (path: string, signal: AbortSignal) => {
         const response = await fetch(path, { signal });
         if (!response.ok) {
@@ -421,6 +546,7 @@ const Predict: React.FC<PredictProps> = ({
         }
       };
 
+      // Normalizes token-id containers from various market fields into string token IDs.
       const parseClobTokenIds = (value: any): string[] => {
         if (Array.isArray(value)) {
           return value.filter(Boolean).map((item) => String(item));
@@ -442,6 +568,7 @@ const Predict: React.FC<PredictProps> = ({
         return [];
       };
 
+      // Collects all possible token-id representations for one market and deduplicates them.
       const getTokenIdsForMarket = (marketData: any): string[] => {
         const clobTokenIds = parseClobTokenIds(marketData?.clobTokenIds);
         const explicitTokenIds = parseClobTokenIds(
@@ -471,6 +598,40 @@ const Predict: React.FC<PredictProps> = ({
         );
       };
 
+      // Returns token IDs in stable outcome order for orderbook pricing (prefer market.tokens order).
+      const getOrderbookTokenIdsForMarket = (marketData: any): string[] => {
+        const tokenObjects = Array.isArray(marketData?.tokens) ? marketData.tokens : [];
+        const tokenIdsFromObjects = tokenObjects
+          .map((token: any) => token?.token_id ?? token?.tokenId ?? token?.id)
+          .filter(Boolean)
+          .map((item: any) => String(item));
+        if (tokenIdsFromObjects.length) {
+          return Array.from(new Set(tokenIdsFromObjects));
+        }
+
+        const clobTokenIds = parseClobTokenIds(marketData?.clobTokenIds);
+        if (clobTokenIds.length) return clobTokenIds;
+
+        const explicitTokenIds = parseClobTokenIds(
+          marketData?.tokenIds ??
+          marketData?.token_ids ??
+          marketData?.outcomeTokenIds,
+        );
+        if (explicitTokenIds.length) return explicitTokenIds;
+
+        const singular = [
+          marketData?.yesTokenId,
+          marketData?.noTokenId,
+          marketData?.tokenID,
+          marketData?.tokenId,
+          marketData?.token_id,
+        ]
+          .filter(Boolean)
+          .map((item: any) => String(item));
+        return Array.from(new Set(singular));
+      };
+
+      // Batch-fetches orderbooks for the requested token IDs from the clob books endpoint.
       const fetchOrderbooks = async (tokenIds: string[], signal: AbortSignal) => {
         if (!tokenIds.length) return {};
         try {
@@ -499,14 +660,7 @@ const Predict: React.FC<PredictProps> = ({
         }
       };
 
-      const getOrderbookPrice = (book: any, fallback: number) => {
-        const bestAsk = book?.asks?.[0]?.price;
-        const bestBid = book?.bids?.[0]?.price;
-        const price = bestAsk ?? bestBid;
-        const parsed = price != null ? Number(price) : fallback;
-        return Number.isFinite(parsed) ? parsed : fallback;
-      };
-
+      // Fetches one event by slug from predictapi; tries active/open filter first, then fallback lookup.
       const fetchEvent = async (signal: AbortSignal, includeChat: boolean) => {
         const includeChatParam = includeChat ? '&include_chat=true' : '';
         const slugParam = `slug=${encodeURIComponent(marketSlug)}${includeChatParam}&include_history=true`;
@@ -524,34 +678,98 @@ const Predict: React.FC<PredictProps> = ({
         return fetchPolymarketJson(`/predictapi/events?${slugParam}`, signal);
       };
 
-      const fetchSeriesHistory = async (seriesId: string, signal: AbortSignal) => {
+      // Retries event lookup once to smooth transient DNS/proxy failures from the dev server.
+      const fetchEventWithRetry = async (signal: AbortSignal, includeChat: boolean) => {
+        let lastError: unknown = null;
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          try {
+            return await fetchEvent(signal, includeChat);
+          } catch (error) {
+            lastError = error;
+            if ((error as Error)?.name === 'AbortError' || signal.aborted) throw error;
+            if (attempt === 0) {
+              await new Promise((resolve) => {
+                window.setTimeout(resolve, 400);
+              });
+            }
+          }
+        }
+        throw lastError;
+      };
+
+      // Returns ranked history endpoints, biased toward the last endpoint that succeeded.
+      const getRankedSeriesEndpoints = (seriesId: string, exhaustive: boolean): SeriesEndpointConfig[] => {
+        const configs = buildSeriesEndpointConfigs(seriesId);
+        return rankSeriesEndpointConfigs(
+          configs,
+          seriesEndpointPreferenceRef.current.get(seriesId),
+          exhaustive,
+        );
+      };
+
+      // Fetches and caches a history series with fast vs exhaustive modes, failure TTL, and in-flight dedupe.
+      const fetchSeriesHistory = async (
+        seriesId: string,
+        signal: AbortSignal,
+        options?: { exhaustive?: boolean; allowFailedRetry?: boolean },
+      ) => {
+        const exhaustive = Boolean(options?.exhaustive);
+        const allowFailedRetry = Boolean(options?.allowFailedRetry);
         const cached = seriesCacheRef.current.get(seriesId);
         const now = Date.now();
         if (cached && now - cached.fetchedAt < SERIES_REFRESH_MS) {
           return cached.history;
         }
-        const seriesPaths = [
-          `/clob/series?id=${encodeURIComponent(seriesId)}`,
-          `/clob/prices-history?market=${encodeURIComponent(seriesId)}&interval=max&fidelity=5`,
-          `/clob/prices-history?market=${encodeURIComponent(seriesId)}&interval=max`,
-          `/clob/prices-history?market=${encodeURIComponent(seriesId)}`,
-        ];
-        for (const path of seriesPaths) {
-          const seriesResponse = await fetch(path, { signal }).catch(() => null);
-          const seriesData = seriesResponse ? await seriesResponse.json().catch(() => null) : null;
-          const normalizedHistory = normalizeSeriesHistory(seriesData);
-          if (normalizedHistory.length > 0) {
-            seriesCacheRef.current.set(seriesId, {
-              fetchedAt: now,
-              history: normalizedHistory,
-            });
-            return normalizedHistory;
-          }
+        const failed = failedSeriesCacheRef.current.get(seriesId);
+        if (!allowFailedRetry && failed && now - failed.failedAt < SERIES_FAILURE_TTL_MS) {
+          return [];
         }
-        return [];
+
+        const inFlightKey = `${seriesId}:${exhaustive ? 'full' : 'fast'}`;
+        const inFlight = seriesInFlightRef.current.get(inFlightKey);
+        if (inFlight) {
+          return inFlight;
+        }
+
+        const loadPromise = (async () => {
+          if (signal.aborted) return [];
+          const endpoints = getRankedSeriesEndpoints(seriesId, exhaustive);
+          for (const endpoint of endpoints) {
+            const seriesResponse = await fetch(endpoint.path, { signal }).catch(() => null);
+            if (signal.aborted) return [];
+            if (!seriesResponse?.ok) continue;
+            const seriesData = seriesResponse ? await seriesResponse.json().catch(() => null) : null;
+            const normalizedHistory = normalizeSeriesHistory(seriesData);
+            if (normalizedHistory.length > 0) {
+              seriesCacheRef.current.set(seriesId, {
+                fetchedAt: now,
+                history: normalizedHistory,
+              });
+              failedSeriesCacheRef.current.delete(seriesId);
+              seriesEndpointPreferenceRef.current.set(seriesId, endpoint.key);
+              return normalizedHistory;
+            }
+          }
+          if (!signal.aborted) {
+            failedSeriesCacheRef.current.set(seriesId, { failedAt: now });
+          }
+          return [];
+        })();
+
+        seriesInFlightRef.current.set(inFlightKey, loadPromise);
+        try {
+          return await loadPromise;
+        } finally {
+          seriesInFlightRef.current.delete(inFlightKey);
+        }
       };
 
-      const fetchBestSeriesHistory = async (marketItem: any, signal: AbortSignal) => {
+      // Tries all candidate IDs for a market and chooses the best non-flat history for chart rendering.
+      const fetchBestSeriesHistory = async (
+        marketItem: any,
+        signal: AbortSignal,
+        options?: { exhaustive?: boolean; allowFailedRetry?: boolean },
+      ) => {
         const conditionKey = String(
           marketItem?.conditionId ||
           marketItem?.condition_id ||
@@ -560,13 +778,29 @@ const Predict: React.FC<PredictProps> = ({
           '',
         ).trim();
         const tokenKeys = getTokenIdsForMarket(marketItem);
-        const candidateIds = Array.from(new Set([...tokenKeys, conditionKey].filter(Boolean)));
-        const histories = candidateIds.length
-          ? await Promise.all(candidateIds.map((id) => fetchSeriesHistory(id, signal)))
-          : [];
-        let nonEmpty = histories.filter((history) => history.length > 1);
+        const candidateIds = Array.from(new Set(
+          (options?.exhaustive
+            ? [...tokenKeys, conditionKey]
+            : (tokenKeys.length ? tokenKeys : [conditionKey])
+          ).filter(Boolean),
+        ));
+        let bestHistory: ChartPoint[] = [];
+        for (const candidateId of candidateIds) {
+          const history = await fetchSeriesHistory(candidateId, signal, {
+            exhaustive: options?.exhaustive,
+            allowFailedRetry: options?.allowFailedRetry,
+          });
+          if (history.length <= 1) continue;
+          if (!bestHistory.length || getSeriesRange(history) > getSeriesRange(bestHistory)) {
+            bestHistory = history;
+          }
+          const isGoodEnough = getSeriesRange(history) > 0.15 || history.length >= 40;
+          if (!options?.exhaustive || isGoodEnough) {
+            break;
+          }
+        }
 
-        if (!nonEmpty.length) {
+        if (!bestHistory.length) {
           const inlineCandidates = [
             marketItem?.series,
             marketItem?.history,
@@ -574,27 +808,34 @@ const Predict: React.FC<PredictProps> = ({
             marketItem?.priceHistoryData,
             marketItem?.chartData,
           ];
-          nonEmpty = inlineCandidates
+          const inlineHistories = inlineCandidates
             .map((candidate) => normalizeSeriesHistory(candidate))
             .filter((history) => history.length > 1);
-          if (!nonEmpty.length) return [];
+          if (!inlineHistories.length) return [];
+          inlineHistories.sort((a, b) => {
+            const rangeDelta = getSeriesRange(b) - getSeriesRange(a);
+            if (Math.abs(rangeDelta) > 0.0001) return rangeDelta;
+            return b.length - a.length;
+          });
+          return inlineHistories[0];
         }
-
-        nonEmpty.sort((a, b) => {
-          const rangeDelta = getSeriesRange(b) - getSeriesRange(a);
-          if (Math.abs(rangeDelta) > 0.0001) return rangeDelta;
-          return b.length - a.length;
-        });
-        return nonEmpty[0];
+        return bestHistory;
       };
 
-      const fetchMarketData = async (options: { includeChat: boolean; includeSeries: boolean }) => {
+      // Main event-page refresh pipeline: event fetch, chart history fetch, orderbook fetch, and store update.
+      const fetchMarketData = async (
+        options: {
+          includeChat: boolean;
+          includeSeries: boolean;
+          allowSeriesFailedRetry?: boolean;
+        },
+      ) => {
         activeRequestRef.current?.abort();
         const controller = new AbortController();
         activeRequestRef.current = controller;
 
         try {
-          const data = await fetchEvent(controller.signal, options.includeChat);
+          const data = await fetchEventWithRetry(controller.signal, options.includeChat);
 
           if (data && data.length > 0) {
             const event = data[0];
@@ -609,11 +850,43 @@ const Predict: React.FC<PredictProps> = ({
               setPredictActiveMarketKey(conditionId);
 
               const outcomePrices = parseOutcomePrices(market.outcomePrices);
+              const baseOutcomePrices = isMultiOutcome
+                ? markets.map((m: any) => {
+                    const prices = parseOutcomePrices(m.outcomePrices);
+                    return prices[0] ?? 0;
+                  })
+                : outcomePrices;
 
+              let nextChartData: Record<string, ChartPoint[]> | null = null;
               if (options.includeSeries) {
+                type RankedSeriesMarket = {
+                  marketItem: any;
+                  index: number;
+                  probability: number;
+                };
+                const rankedSeriesMarkets = isMultiOutcome
+                  ? markets
+                      .map((marketItem: any, index: number) => ({
+                        marketItem,
+                        index,
+                        probability: Number(baseOutcomePrices[index] ?? 0),
+                      }))
+                      .sort((a: RankedSeriesMarket, b: RankedSeriesMarket) => b.probability - a.probability)
+                      .slice(0, 4)
+                  : [{ marketItem: market, index: 0, probability: Number(baseOutcomePrices[0] ?? 0) }];
+
                 const seriesEntries = await Promise.all(
-                  markets.map(async (marketItem: any, index: number) => {
-                    const history = await fetchBestSeriesHistory(marketItem, controller.signal);
+                  rankedSeriesMarkets.map(async ({ marketItem, index }: RankedSeriesMarket) => {
+                    let history = await fetchBestSeriesHistory(marketItem, controller.signal, {
+                      exhaustive: false,
+                      allowFailedRetry: options.allowSeriesFailedRetry,
+                    });
+                    if (history.length === 0) {
+                      history = await fetchBestSeriesHistory(marketItem, controller.signal, {
+                        exhaustive: true,
+                        allowFailedRetry: options.allowSeriesFailedRetry,
+                      });
+                    }
                     if (history.length === 0) return null;
                     return {
                       index,
@@ -638,39 +911,44 @@ const Predict: React.FC<PredictProps> = ({
                   if (firstSeries?.length) {
                     chartPoints.Primary = firstSeries;
                   }
+                  nextChartData = chartPoints;
                   setChartData(chartPoints);
                 } else {
-                  const fallbackSeries = await fetchSeriesHistory(conditionId, controller.signal);
+                  const fallbackSeries = await fetchSeriesHistory(conditionId, controller.signal, {
+                    exhaustive: true,
+                    allowFailedRetry: options.allowSeriesFailedRetry,
+                  });
                   if (fallbackSeries.length > 0) {
-                    setChartData({ Primary: fallbackSeries });
+                    const fallbackChart = { Primary: fallbackSeries };
+                    nextChartData = fallbackChart;
+                    setChartData(fallbackChart);
                   }
                 }
               }
 
-              const baseOutcomePrices = isMultiOutcome
-                ? markets.map((m: any) => {
-                    const prices = parseOutcomePrices(m.outcomePrices);
-                    return prices[0] ?? 0;
-                  })
-                : outcomePrices;
-
               const orderbookTokenIdGroups: string[][] = isMultiOutcome
-                ? markets.map((m: any) => getTokenIdsForMarket(m))
-                : [getTokenIdsForMarket(market)];
+                ? markets.map((m: any) => getOrderbookTokenIdsForMarket(m))
+                : [getOrderbookTokenIdsForMarket(market)];
+              const outcomeLabels = isMultiOutcome
+                ? markets.map((m: any) => getOutcomeLabel(m, 0))
+                : (typeof market.outcomes === 'string' ? JSON.parse(market.outcomes) : market.outcomes) || ['Yes', 'No'];
+              const selectedOutcomeIndex = Math.max(
+                0,
+                outcomeLabels.indexOf(selectedOutcomeRef.current || outcomeLabels[0]),
+              );
+              const orderbookGroupsToFetch = options.includeSeries
+                ? orderbookTokenIdGroups
+                : [orderbookTokenIdGroups[selectedOutcomeIndex] || orderbookTokenIdGroups[0]];
               const orderbookFetchTokenIds = Array.from(
-                new Set(orderbookTokenIdGroups.flat().filter(Boolean)),
+                new Set(orderbookGroupsToFetch.flat().filter(Boolean)),
               );
 
               const orderbooksByTokenId = await fetchOrderbooks(orderbookFetchTokenIds, controller.signal);
-              const derivedOutcomePrices = baseOutcomePrices.map((basePrice: number, index: number) => {
-                const tokenIdsForOutcome = isMultiOutcome
-                  ? orderbookTokenIdGroups[index]
-                  : orderbookTokenIdGroups[0];
-                const preferredTokenId = tokenIdsForOutcome?.[index] ?? tokenIdsForOutcome?.[0];
-                const book = preferredTokenId ? orderbooksByTokenId[String(preferredTokenId)] : null;
-                if (!book) return basePrice;
-                const normalized = toProbabilityUnit(getOrderbookPrice(book, basePrice));
-                return Number.isFinite(normalized) ? normalized : basePrice;
+              // Use polymarket outcomePrices as the source of truth for displayed probabilities.
+              // Orderbooks are still fetched for the orderbook panel only.
+              const displayOutcomePrices = baseOutcomePrices.map((basePrice: number) => {
+                const normalized = toProbabilityUnit(basePrice);
+                return Number.isFinite(normalized) ? normalized : 0;
               });
 
               const chatChannels = Array.isArray(event.series)
@@ -683,7 +961,7 @@ const Predict: React.FC<PredictProps> = ({
                 contractId: conditionId,
                 baseAsset: event.title || market.question,
                 quoteAsset: 'USD',
-                lastPrice: derivedOutcomePrices[0] || 0,
+                lastPrice: displayOutcomePrices[0] || 0,
                 value: market.volume || market.volume24hr || 0,
                 liquidity: market.liquidity || 0,
                 openInterest: Number.isFinite(openInterestValue) ? openInterestValue : 0,
@@ -693,7 +971,7 @@ const Predict: React.FC<PredictProps> = ({
                 outcomes: isMultiOutcome
                   ? markets.map((m: any) => m.groupItemTitle || m.question)
                   : (typeof market.outcomes === 'string' ? JSON.parse(market.outcomes) : market.outcomes) || ['Yes', 'No'],
-                outcomePrices: derivedOutcomePrices,
+                outcomePrices: displayOutcomePrices,
                 eventTitle: event.title,
                 eventSlug: event.slug,
                 iconURL: event.image || event.icon,
@@ -714,12 +992,32 @@ const Predict: React.FC<PredictProps> = ({
                 description: market.description || event.description,
                 tags: event.tags || [],
                 source: 'polymarket',
+                chartData: nextChartData,
               };
 
               setPredictMarketsData((prev: any) => ({
                 ...prev,
-                [conditionId]: marketData,
+                [conditionId]: {
+                  ...marketData,
+                  chartData: marketData.chartData ?? prev?.[conditionId]?.chartData,
+                  orderbooks: {
+                    ...(prev?.[conditionId]?.orderbooks || {}),
+                    ...marketData.orderbooks,
+                  },
+                },
               }));
+
+              writeCachedEvent({
+                conditionId,
+                cachedAt: Date.now(),
+                chartData: nextChartData ?? predictMarketsRef.current?.[conditionId]?.chartData,
+                marketData: {
+                  ...marketData,
+                  chartData: nextChartData ?? predictMarketsRef.current?.[conditionId]?.chartData,
+                  // Keep cache light; live orderbooks are re-fetched when available.
+                  orderbooks: {},
+                },
+              });
 
               if (marketData.outcomes?.length > 0 && !selectedOutcomeRef.current) {
                 setSelectedOutcome(marketData.outcomes[0]);
@@ -729,15 +1027,31 @@ const Predict: React.FC<PredictProps> = ({
         } catch (error) {
           if ((error as Error).name !== 'AbortError') {
             console.error('Error fetching market data:', error);
+            const cached = readCachedEvent();
+            if (cached) {
+              applyCachedEvent(cached);
+            }
           }
         }
       };
 
-      fetchMarketData({ includeChat: true, includeSeries: true });
+      // Track last heavy chart-series refresh; light refresh still runs every EVENT_REFRESH_MS.
+      let lastSeriesRefreshAt = Date.now();
+      fetchMarketData({ includeChat: true, includeSeries: true, allowSeriesFailedRetry: true });
 
       const refreshId = window.setInterval(() => {
-        fetchMarketData({ includeChat: false, includeSeries: true });
-      }, 60_000);
+        if (typeof document !== 'undefined' && document.hidden) return;
+        const now = Date.now();
+        const shouldRefreshSeries = now - lastSeriesRefreshAt >= SERIES_BACKGROUND_REFRESH_MS;
+        fetchMarketData({
+          includeChat: false,
+          includeSeries: shouldRefreshSeries,
+          allowSeriesFailedRetry: shouldRefreshSeries,
+        });
+        if (shouldRefreshSeries) {
+          lastSeriesRefreshAt = now;
+        }
+      }, EVENT_REFRESH_MS);
       return () => {
         window.clearInterval(refreshId);
         activeRequestRef.current?.abort();
@@ -748,29 +1062,58 @@ const Predict: React.FC<PredictProps> = ({
 
   // Process outcomes data
   const outcomes: OutcomeData[] = useMemo(() => {
-    const outcomeLabels = Array.isArray(activeMarket?.outcomes) ? activeMarket.outcomes : ['Yes', 'No'];
-    const outcomePrices = Array.isArray(activeMarket?.outcomePrices) ? activeMarket.outcomePrices : [0.5, 0.5];
+    if (!activeMarket || Object.keys(activeMarket).length === 0) return [];
+    const outcomeLabels = Array.isArray(activeMarket?.outcomes)
+      ? activeMarket.outcomes.filter((item: any) => item != null && String(item).trim() !== '')
+      : [];
+    const outcomePrices = Array.isArray(activeMarket?.outcomePrices) ? activeMarket.outcomePrices : [];
+    if (!outcomeLabels.length || !outcomePrices.length) return [];
     const markets = activeMarket?.markets || [];
+    const isMultiOutcome = markets.length > 1;
 
     const outcomeData = outcomeLabels.map((label: string, idx: number) => {
       const price = Number(outcomePrices[idx] ?? 0);
-      const marketVolume = markets[idx]?.volume24hr || markets[idx]?.volume || 0;
+      const marketForOutcome = isMultiOutcome ? markets[idx] : markets[0];
+      const marketVolume = marketForOutcome?.volume24hr || marketForOutcome?.volume || 0;
+
+      const closedFlag = toBooleanFlag(
+        marketForOutcome?.closed ??
+        marketForOutcome?.resolved ??
+        marketForOutcome?.isResolved ??
+        false,
+      );
+      const explicitlyInactive = marketForOutcome?.active != null && !toBooleanFlag(marketForOutcome.active);
+      const endDateRaw =
+        marketForOutcome?.endDate ??
+        marketForOutcome?.end_date ??
+        marketForOutcome?.endDatetime ??
+        marketForOutcome?.endTime;
+      const endDateMs = endDateRaw ? Date.parse(String(endDateRaw)) : NaN;
+      const endedByDate = Number.isFinite(endDateMs) && endDateMs <= Date.now();
+      const isConcluded = isMultiOutcome && (closedFlag || explicitlyInactive || endedByDate);
 
       return {
+        chartKey: `__index_${idx}`,
         name: label,
         probability: price,
         volume: marketVolume || (activeMarket?.volume24hr || 0) / outcomeLabels.length,
         yesPrice: price,
         noPrice: Math.max(0, Math.min(1, 1 - price)),
         color: OUTCOME_COLORS[idx % OUTCOME_COLORS.length],
+        isConcluded,
       };
     });
 
-    if (outcomeLabels.length > 2) {
-      outcomeData.sort((a: OutcomeData, b: OutcomeData) => b.probability - a.probability);
+    const filteredOutcomeData = isMultiOutcome
+      ? outcomeData.filter((outcome: OutcomeData) => !outcome.isConcluded)
+      : outcomeData;
+    const displayOutcomeData = filteredOutcomeData.length ? filteredOutcomeData : outcomeData;
+
+    if (displayOutcomeData.length > 2) {
+      displayOutcomeData.sort((a: OutcomeData, b: OutcomeData) => b.probability - a.probability);
     }
 
-    return outcomeData;
+    return displayOutcomeData;
   }, [activeMarket]);
   const chartOutcomes = useMemo(() => outcomes.slice(0, 4), [outcomes]);
 
@@ -795,6 +1138,13 @@ const Predict: React.FC<PredictProps> = ({
   // Get selected outcome data
   const selectedOutcomeData = useMemo(() => {
     return outcomes.find(o => o.name === selectedOutcome);
+  }, [outcomes, selectedOutcome]);
+
+  useEffect(() => {
+    if (!outcomes.length) return;
+    if (!selectedOutcome || !outcomes.some((outcome: OutcomeData) => outcome.name === selectedOutcome)) {
+      setSelectedOutcome(outcomes[0].name);
+    }
   }, [outcomes, selectedOutcome]);
 
   useEffect(() => {
@@ -842,6 +1192,7 @@ const Predict: React.FC<PredictProps> = ({
 
   const orderbookData = useMemo(() => {
     const book = orderbookInfo.book;
+    // Converts raw book levels into typed numeric {price, size} rows.
     const normalizeOrders = (orders: any[]) =>
       orders
         .map((order) => {
@@ -896,11 +1247,39 @@ const Predict: React.FC<PredictProps> = ({
 
   const orderbookIsLoading = Boolean(orderbookInfo.tokenId && !orderbookInfo.book);
   const orderbookSymbol = selectedOutcome || 'Shares';
+  // Converts selected orderbook row price into a prefilled limit-order value (in cents).
   const handleOrderbookLimit = useCallback((price: number) => {
     if (!Number.isFinite(price)) return;
     setOrderType('Limit');
     setLimitPrice(Math.round(price * 100));
   }, []);
+
+  useEffect(() => {
+    setLimitPriceInput(String(limitPrice));
+  }, [limitPrice]);
+
+  const clampLimitPrice = useCallback((value: number) => {
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(0, Math.min(99, Math.round(value)));
+  }, []);
+
+  const handleLimitPriceInputChange = useCallback((rawValue: string) => {
+    const digitsOnly = rawValue.replace(/[^0-9]/g, '');
+    if (digitsOnly === '') {
+      setLimitPriceInput('');
+      setLimitPrice(0);
+      return;
+    }
+    const parsed = clampLimitPrice(Number(digitsOnly));
+    setLimitPriceInput(String(parsed));
+    setLimitPrice(parsed);
+  }, [clampLimitPrice]);
+
+  const handleLimitPriceInputBlur = useCallback(() => {
+    const parsed = clampLimitPrice(Number(limitPriceInput || '0'));
+    setLimitPriceInput(String(parsed));
+    setLimitPrice(parsed);
+  }, [clampLimitPrice, limitPriceInput]);
 
   // Calculate potential win
   const toWin = useMemo(() => {
@@ -911,7 +1290,7 @@ const Predict: React.FC<PredictProps> = ({
     return potentialWin.toFixed(2);
   }, [amount, selectedOutcomeData, selectedSide]);
 
-  // Format countdown
+  // Builds a compact "Xd Yh" / "Xh Ym" countdown string from the event end date.
   const getCountdown = useCallback((endDate: string) => {
     if (!endDate) return null;
     const end = new Date(endDate).getTime();
@@ -987,10 +1366,10 @@ const Predict: React.FC<PredictProps> = ({
           };
         },
       });
-      seriesRefs.current.set(outcome.name, lineSeries);
+      seriesRefs.current.set(outcome.chartKey, lineSeries);
     });
 
-    // Handle resize
+    // Keeps chart dimensions synced with the container on viewport changes.
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
@@ -1021,10 +1400,10 @@ const Predict: React.FC<PredictProps> = ({
     const isBinaryMarket = chartOutcomes.length === 2;
 
     chartOutcomes.forEach((outcome, index) => {
-      const series = seriesRefs.current.get(outcome.name);
+      const series = seriesRefs.current.get(outcome.chartKey);
       if (!series) return;
 
-      const directByIndex = filterSeriesByInterval(chartData[`__index_${index}`] || [], selectedInterval);
+      const directByIndex = filterSeriesByInterval(chartData[outcome.chartKey] || [], selectedInterval);
       const directByLabel = filterSeriesByInterval(chartData[outcome.name] || [], selectedInterval);
       const normalizedKey = normalizeOutcomeKey(outcome.name);
       const directByNormalized = filterSeriesByInterval(
@@ -1093,7 +1472,7 @@ const Predict: React.FC<PredictProps> = ({
     chartRef.current.timeScale().fitContent();
   }, [chartData, chartOutcomes, selectedInterval]);
 
-  // Handle sort
+  // Toggles outcome table sorting by column and direction.
   const handleSort = (column: string) => {
     setSortConfig(prev => ({
       column,
@@ -1101,19 +1480,19 @@ const Predict: React.FC<PredictProps> = ({
     }));
   };
 
-  // Handle preset amount
+  // Adds quick-select dollar presets to the market-order amount.
   const handlePreset = (value: number) => {
     setAmount(prev => (Number(prev || 0) + value).toString());
   };
 
-  // Handle place order (placeholder)
+  // Placeholder order submit handler (currently logs intent; real execution is TODO).
   const handlePlaceOrder = () => {
     if (!selectedOutcome || !amount || Number(amount) <= 0) return;
     console.log('Place order:', { selectedOutcome, selectedSide, orderType, amount });
     // TODO: Implement actual order placement
   };
 
-  // Format large numbers
+  // Formats large volume figures into compact currency strings.
   const formatVolume = (vol: number | string | undefined | null) => {
     const numVol = Number(vol) || 0;
     if (numVol >= 1e9) return `$${(numVol / 1e9).toFixed(1)}B`;
@@ -1122,7 +1501,7 @@ const Predict: React.FC<PredictProps> = ({
     return `$${numVol.toFixed(0)}`;
   };
 
-  // Format date
+  // Formats event dates for header display.
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
@@ -1209,7 +1588,7 @@ const Predict: React.FC<PredictProps> = ({
             {/* Chart Legend */}
             <div className="predict-event-chart-legend">
               {chartOutcomes.map((outcome, idx) => (
-                <div key={outcome.name} className="predict-event-legend-item">
+                <div key={`${outcome.chartKey}-${idx}`} className="predict-event-legend-item">
                   <span className="predict-event-legend-color" style={{ backgroundColor: outcome.color }} />
                   <span className="predict-event-legend-name">{outcome.name}</span>
                   <span className="predict-event-legend-value">{(outcome.probability * 100).toFixed(0)}%</span>
@@ -1260,9 +1639,9 @@ const Predict: React.FC<PredictProps> = ({
               </div>
             </div>
             <div className="predict-event-outcomes-body">
-              {sortedOutcomes.map(outcome => (
+              {sortedOutcomes.map((outcome, idx) => (
                 <div
-                  key={outcome.name}
+                  key={`${outcome.chartKey}-${idx}`}
                   className={`predict-event-outcome-row ${selectedOutcome === outcome.name ? 'selected' : ''}`}
                   onClick={() => setSelectedOutcome(outcome.name)}
                 >
@@ -1434,15 +1813,28 @@ const Predict: React.FC<PredictProps> = ({
                     <button
                       className="predict-event-limit-btn"
                       disabled={isTradingDisabled}
-                      onClick={() => setLimitPrice(prev => Math.max(0, prev - 1))}
+                      onClick={() => setLimitPrice((prev) => clampLimitPrice(prev - 1))}
                     >
                       −
                     </button>
-                    <span className="predict-event-limit-value">{limitPrice}¢</span>
+                    <div className="predict-event-limit-value">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={limitPriceInput}
+                        disabled={isTradingDisabled}
+                        onChange={(e) => handleLimitPriceInputChange(e.target.value)}
+                        onBlur={handleLimitPriceInputBlur}
+                        className="predict-event-limit-value-input"
+                        aria-label="Limit price in cents"
+                      />
+                      <span className="predict-event-limit-value-suffix">¢</span>
+                    </div>
                     <button
                       className="predict-event-limit-btn"
                       disabled={isTradingDisabled}
-                      onClick={() => setLimitPrice(prev => Math.min(99, prev + 1))}
+                      onClick={() => setLimitPrice((prev) => clampLimitPrice(prev + 1))}
                     >
                       +
                     </button>

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Buffer } from 'buffer';
+import { Buffer } from 'buffer/';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { WagmiProvider } from 'wagmi';
@@ -37,7 +37,7 @@ const initialState = cookieToInitialState(
   alchemyconfig,
 );
 
-globalThis.Buffer = Buffer;
+(globalThis as any).Buffer = Buffer;
 
 const queryClient = new QueryClient();
 
