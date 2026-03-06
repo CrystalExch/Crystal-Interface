@@ -25,6 +25,12 @@ export default defineConfig({
         rewrite: path => path.replace(/^\/predictapi/, ''),
         secure: true
       },
+      '/predictdata': {
+        target: 'https://data-api.polymarket.com',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/predictdata/, ''),
+        secure: true
+      },
       '/clob': {
         target: 'https://clob.polymarket.com',
         changeOrigin: true,

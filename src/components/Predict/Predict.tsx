@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { useParams } from 'react-router-dom';
 import { createChart, ColorType, IChartApi, ISeriesApi } from 'lightweight-charts';
 import { formatCommas } from '../../utils/numberDisplayFormat';
-import OrderBook from '../Orderbook/Orderbook';
 import './Predict.css';
 
 // Color palette for outcome lines
@@ -22,6 +21,10 @@ const SERIES_FAILURE_TTL_MS = 5 * 60 * 1000;
 const SERIES_BACKGROUND_REFRESH_MS = 10 * 60 * 1000;
 const EVENT_REFRESH_MS = 60 * 1000;
 const EVENT_CACHE_TTL_MS = 30 * 60 * 1000;
+const LIVE_TRADES_MAX_ITEMS = 60;
+const LIVE_TRADES_SEED_LIMIT = 40;
+const LIVE_TRADES_WS_RECONNECT_MS = 3000;
+const LIVE_TRADES_WS_PING_MS = 10000;
 
 interface PredictProps {
   layoutSettings?: string;
@@ -95,6 +98,19 @@ interface OutcomeData {
 
 type IntervalType = '1H' | '24H' | '7D' | '30D' | 'ALL';
 type ChartPoint = { time: number; value: number };
+type LiveTrade = {
+  key: string;
+  timestamp: number;
+  side: 'BUY' | 'SELL' | 'UNKNOWN';
+  price: number;
+  size: number;
+  assetId: string;
+  conditionId: string;
+  outcome: string;
+  trader: string;
+  txHash: string;
+  source: 'history' | 'stream';
+};
 type CachedEventSnapshot = {
   conditionId: string;
   cachedAt: number;
@@ -386,6 +402,55 @@ const getSeriesRange = (points: ChartPoint[]): number => {
   return max - min;
 };
 
+const parseTradeTimestampSeconds = (value: any): number => {
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) {
+    return numeric > 1e12 ? Math.floor(numeric / 1000) : Math.floor(numeric);
+  }
+  const parsed = Date.parse(String(value ?? ''));
+  if (Number.isFinite(parsed)) {
+    return Math.floor(parsed / 1000);
+  }
+  return Math.floor(Date.now() / 1000);
+};
+
+const parseTradeSide = (value: any): 'BUY' | 'SELL' | 'UNKNOWN' => {
+  const side = String(value ?? '').trim().toUpperCase();
+  if (side === 'BUY') return 'BUY';
+  if (side === 'SELL') return 'SELL';
+  return 'UNKNOWN';
+};
+
+const formatActivityTime = (tsSeconds: number): string => {
+  const now = Math.floor(Date.now() / 1000);
+  const delta = Math.max(0, now - tsSeconds);
+  if (delta < 60) return `${delta}s ago`;
+  if (delta < 3600) return `${Math.floor(delta / 60)}m ago`;
+  if (delta < 86400) return `${Math.floor(delta / 3600)}h ago`;
+  return `${Math.floor(delta / 86400)}d ago`;
+};
+
+const formatActivityPrice = (rawPrice: number): string => {
+  if (!Number.isFinite(rawPrice)) return '--';
+  if (rawPrice <= 1.000001) return `${(rawPrice * 100).toFixed(1)}%`;
+  if (rawPrice <= 100.000001) return `${rawPrice.toFixed(1)}%`;
+  return `$${formatCommas(rawPrice.toFixed(2))}`;
+};
+
+const formatActivitySize = (rawSize: number): string => {
+  if (!Number.isFinite(rawSize) || rawSize <= 0) return '0';
+  const rounded = rawSize >= 1000
+    ? rawSize.toFixed(0)
+    : rawSize.toFixed(2).replace(/\.?0+$/, '');
+  return formatCommas(rounded);
+};
+
+const truncateIdentifier = (value: string): string => {
+  if (!value) return '';
+  if (value.length <= 14) return value;
+  return `${value.slice(0, 6)}...${value.slice(-4)}`;
+};
+
 const Predict: React.FC<PredictProps> = ({
   layoutSettings,
   orderbookPosition,
@@ -433,6 +498,10 @@ const Predict: React.FC<PredictProps> = ({
     direction: 'desc'
   });
   const [activityTab, setActivityTab] = useState<'all' | 'openOrders'>('all');
+  const [isActivityHidden, setIsActivityHidden] = useState(false);
+  const [liveTrades, setLiveTrades] = useState<LiveTrade[]>([]);
+  const [liveTradesConnected, setLiveTradesConnected] = useState(false);
+  const [liveTradesError, setLiveTradesError] = useState<string | null>(null);
   const [obInterval, setOBInterval] = useState<number>(DEFAULT_TICK_SIZE);
   const [amountsQuote, setAmountsQuote] = useState<string>(() => {
     const stored = localStorage.getItem('predict_ob_amounts_quote');
@@ -455,6 +524,87 @@ const Predict: React.FC<PredictProps> = ({
   const effectiveActiveTab = activeTab ?? localActiveTab;
   const handleActiveTab = setActiveTab ?? setLocalActiveTab;
   const effectiveOrderbookPosition = orderbookPosition ?? 'right';
+  const activityTokenIds = useMemo(() => {
+    const out = new Set<string>();
+    const collect = (value: any) => {
+      if (value == null) return;
+      if (Array.isArray(value)) {
+        value.forEach(collect);
+        return;
+      }
+      if (typeof value === 'object') {
+        collect(value?.token_id ?? value?.tokenId ?? value?.id);
+        return;
+      }
+      if (typeof value === 'string') {
+        const raw = value.trim();
+        if (!raw) return;
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            parsed.forEach(collect);
+            return;
+          }
+        } catch {
+          const split = raw
+            .split(/[,\s]+/)
+            .map((item) => item.trim())
+            .filter(Boolean);
+          if (split.length > 1) {
+            split.forEach(collect);
+            return;
+          }
+        }
+        out.add(raw);
+        return;
+      }
+      out.add(String(value));
+    };
+
+    collect(activeMarket?.orderbookTokenIds);
+    if (Array.isArray(activeMarket?.markets)) {
+      activeMarket.markets.forEach((marketItem: any) => {
+        collect(marketItem?.clobTokenIds);
+        collect(marketItem?.tokenIds);
+        collect(marketItem?.token_ids);
+        collect(marketItem?.outcomeTokenIds);
+        collect(marketItem?.yesTokenId);
+        collect(marketItem?.noTokenId);
+        if (Array.isArray(marketItem?.tokens)) {
+          marketItem.tokens.forEach((tokenItem: any) => collect(tokenItem));
+        }
+      });
+    }
+    return Array.from(out);
+  }, [activeMarket?.orderbookTokenIds, activeMarket?.markets, activeMarket?.contractId]);
+
+  const activityOutcomeByAsset = useMemo(() => {
+    const lookup = new Map<string, string>();
+    const outcomesList = Array.isArray(activeMarket?.outcomes) ? activeMarket.outcomes : [];
+    const tokenGroups = Array.isArray(activeMarket?.orderbookTokenIds) ? activeMarket.orderbookTokenIds : [];
+    const isSingleBinary = tokenGroups.length === 1 && outcomesList.length === 2;
+
+    tokenGroups.forEach((group: any, idx: number) => {
+      if (!Array.isArray(group)) return;
+      const baseLabel = String(outcomesList[idx] ?? `Outcome ${idx + 1}`);
+      const yesAsset = group[0];
+      const noAsset = group[1];
+      if (yesAsset) {
+        lookup.set(
+          String(yesAsset),
+          isSingleBinary ? String(outcomesList[0] ?? 'Yes') : `${baseLabel} Yes`,
+        );
+      }
+      if (noAsset) {
+        lookup.set(
+          String(noAsset),
+          isSingleBinary ? String(outcomesList[1] ?? 'No') : `${baseLabel} No`,
+        );
+      }
+    });
+
+    return lookup;
+  }, [activeMarket?.outcomes, activeMarket?.orderbookTokenIds, activeMarket?.contractId]);
 
   useEffect(() => {
     selectedOutcomeRef.current = selectedOutcome;
@@ -1162,6 +1312,198 @@ const Predict: React.FC<PredictProps> = ({
     setOBInterval(baseInterval);
   }, [baseInterval]);
 
+  // Seeds the recent-activity list from data-api and appends live trade ticks from Polymarket market WS.
+  useEffect(() => {
+    const conditionId = String(activeMarket?.contractId || '').trim();
+    if (!conditionId) {
+      setLiveTrades([]);
+      setLiveTradesConnected(false);
+      setLiveTradesError(null);
+      return;
+    }
+
+    let cancelled = false;
+    let ws: WebSocket | null = null;
+    let pingTimer: ReturnType<typeof setInterval> | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const cleanupTimers = () => {
+      if (pingTimer) {
+        clearInterval(pingTimer);
+        pingTimer = null;
+      }
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+    };
+
+    const mergeTrades = (incoming: LiveTrade[]) => {
+      if (!incoming.length) return;
+      setLiveTrades((prev) => {
+        const deduped = new Map<string, LiveTrade>();
+        [...incoming, ...prev].forEach((trade) => {
+          if (!deduped.has(trade.key)) {
+            deduped.set(trade.key, trade);
+          }
+        });
+        return Array.from(deduped.values())
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, LIVE_TRADES_MAX_ITEMS);
+      });
+    };
+
+    const mapTrade = (raw: any, source: 'history' | 'stream'): LiveTrade | null => {
+      const assetId = String(raw?.asset ?? raw?.asset_id ?? '').trim();
+      const side = parseTradeSide(raw?.side);
+      const price = Number(raw?.price ?? raw?.last_trade_price ?? raw?.lastTradePrice ?? 0);
+      const size = Number(raw?.size ?? raw?.amount ?? raw?.quantity ?? 0);
+      if (!assetId || !Number.isFinite(price) || !Number.isFinite(size)) {
+        return null;
+      }
+      const timestamp = parseTradeTimestampSeconds(raw?.timestamp ?? raw?.time ?? raw?.createdAt);
+      const txHash = String(raw?.transactionHash ?? raw?.txHash ?? raw?.tx_hash ?? '').trim();
+      const trader = String(raw?.proxyWallet ?? raw?.maker ?? raw?.taker ?? raw?.user ?? '').trim();
+      const outcome = String(raw?.outcome ?? activityOutcomeByAsset.get(assetId) ?? '').trim();
+      const stableKey = txHash
+        ? `${txHash}:${assetId}:${side}`
+        : `${assetId}:${timestamp}:${side}:${price}:${size}`;
+      return {
+        key: stableKey,
+        timestamp,
+        side,
+        price,
+        size,
+        assetId,
+        conditionId,
+        outcome,
+        trader,
+        txHash,
+        source,
+      };
+    };
+
+    const seedRecentTrades = async () => {
+      try {
+        const response = await fetch(
+          `/predictdata/trades?market=${encodeURIComponent(conditionId)}&limit=${LIVE_TRADES_SEED_LIMIT}`,
+        );
+        if (!response.ok) {
+          const body = await response.text().catch(() => '');
+          throw new Error(`trade seed failed (${response.status}) ${body.slice(0, 120)}`);
+        }
+        const rows = await response.json().catch(() => []);
+        if (!Array.isArray(rows)) return;
+        const seeded = rows
+          .map((row: any) => mapTrade(row, 'history'))
+          .filter(Boolean) as LiveTrade[];
+        if (!cancelled) {
+          mergeTrades(seeded);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.warn('Predict trade seed failed:', error);
+          setLiveTradesError('Could not load recent trades');
+        }
+      }
+    };
+
+    const scheduleReconnect = () => {
+      if (cancelled) return;
+      cleanupTimers();
+      reconnectTimer = setTimeout(() => {
+        if (!cancelled) connectLiveStream();
+      }, LIVE_TRADES_WS_RECONNECT_MS);
+    };
+
+    const connectLiveStream = () => {
+      if (!activityTokenIds.length || cancelled) {
+        setLiveTradesConnected(false);
+        return;
+      }
+
+      try {
+        ws = new WebSocket('wss://ws-subscriptions-clob.polymarket.com/ws/market');
+      } catch (error) {
+        console.warn('Predict trade stream init failed:', error);
+        scheduleReconnect();
+        return;
+      }
+
+      ws.onopen = () => {
+        if (cancelled || !ws) return;
+        setLiveTradesConnected(true);
+        setLiveTradesError(null);
+        try {
+          ws.send(JSON.stringify({ assets_ids: activityTokenIds, type: 'market' }));
+        } catch (error) {
+          console.warn('Predict trade stream subscribe failed:', error);
+        }
+
+        cleanupTimers();
+        pingTimer = setInterval(() => {
+          if (!ws || ws.readyState !== WebSocket.OPEN) return;
+          try {
+            ws.send('PING');
+          } catch (error) {
+            console.warn('Predict trade stream ping failed:', error);
+          }
+        }, LIVE_TRADES_WS_PING_MS);
+      };
+
+      ws.onmessage = (event) => {
+        if (cancelled) return;
+        try {
+          const rawData = typeof event.data === 'string' ? event.data : String(event.data);
+          if (rawData === 'PONG' || rawData === 'CONNECTED') return;
+          const payload = JSON.parse(rawData);
+          const events = Array.isArray(payload) ? payload : [payload];
+          const updates = events
+            .filter((item: any) => item?.event_type === 'last_trade_price')
+            .map((item: any) => mapTrade(item, 'stream'))
+            .filter(Boolean) as LiveTrade[];
+          mergeTrades(updates);
+        } catch (error) {
+          // Ignore unknown frames.
+          if (import.meta.env.DEV) {
+            console.debug('Predict trade stream parse skipped:', error);
+          }
+        }
+      };
+
+      ws.onerror = (error) => {
+        if (cancelled) return;
+        console.warn('Predict trade stream error:', error);
+        setLiveTradesConnected(false);
+        setLiveTradesError('Trade stream disconnected');
+      };
+
+      ws.onclose = () => {
+        if (cancelled) return;
+        setLiveTradesConnected(false);
+        scheduleReconnect();
+      };
+    };
+
+    setLiveTrades([]);
+    setLiveTradesConnected(false);
+    setLiveTradesError(null);
+    seedRecentTrades();
+    connectLiveStream();
+
+    return () => {
+      cancelled = true;
+      cleanupTimers();
+      if (ws) {
+        try {
+          ws.close();
+        } catch {
+          // Ignore close failures.
+        }
+      }
+    };
+  }, [activeMarket?.contractId, activityTokenIds, activityOutcomeByAsset]);
+
   const orderbookInfo = useMemo(() => {
     const tokenGroups = activeMarket?.orderbookTokenIds;
     const outcomesList = Array.isArray(activeMarket?.outcomes) ? activeMarket.outcomes : [];
@@ -1529,6 +1871,7 @@ const Predict: React.FC<PredictProps> = ({
   const commentsAvailable = Number.isFinite(commentsCount);
   const holdersAvailable = Number.isFinite(holdersCount);
   const chatChannels = Array.isArray(activeMarket?.chats) ? activeMarket.chats : [];
+  const activityTrades = activityTab === 'all' ? liveTrades : [];
 
   return (
     <div className={`predict-event-page ${isResolved ? 'predict-event-resolved' : ''}`}>
@@ -1912,27 +2255,94 @@ const Predict: React.FC<PredictProps> = ({
           <div className="predict-event-recent-activity">
             <div className="predict-event-activity-header">
               <span className="predict-event-activity-title">Recent Activity</span>
-              <button className="predict-event-activity-hide-btn">Hide</button>
-            </div>
-            <div className="predict-event-activity-tabs">
-              <button
-                className={`predict-event-activity-tab ${activityTab === 'all' ? 'active' : ''}`}
-                onClick={() => setActivityTab('all')}
-              >
-                All
-              </button>
-              <button
-                className={`predict-event-activity-tab ${activityTab === 'openOrders' ? 'active' : ''}`}
-                onClick={() => setActivityTab('openOrders')}
-              >
-                Open Orders
-              </button>
-            </div>
-            <div className="predict-event-activity-list">
-              <div className="predict-event-activity-empty">
-                No recent activity
+              <div className="predict-event-activity-controls">
+                {activityTab === 'all' && (
+                  <span
+                    className={`predict-event-activity-status-pill ${
+                      liveTradesConnected ? 'connected' : 'disconnected'
+                    }`}
+                  >
+                    {liveTradesConnected ? 'Live' : 'Reconnecting'}
+                  </span>
+                )}
+                <button
+                  className="predict-event-activity-hide-btn"
+                  onClick={() => setIsActivityHidden((prev) => !prev)}
+                >
+                  {isActivityHidden ? 'Show' : 'Hide'}
+                </button>
               </div>
             </div>
+            {!isActivityHidden && (
+              <>
+                <div className="predict-event-activity-tabs">
+                  <button
+                    className={`predict-event-activity-tab ${activityTab === 'all' ? 'active' : ''}`}
+                    onClick={() => setActivityTab('all')}
+                  >
+                    All
+                  </button>
+                  <button
+                    className={`predict-event-activity-tab ${activityTab === 'openOrders' ? 'active' : ''}`}
+                    onClick={() => setActivityTab('openOrders')}
+                  >
+                    Open Orders
+                  </button>
+                </div>
+                <div className="predict-event-activity-list">
+                  {activityTab === 'openOrders' && (
+                    <div className="predict-event-activity-empty">
+                      Open orders activity will appear here
+                    </div>
+                  )}
+                  {activityTab === 'all' && liveTradesError && (
+                    <div className="predict-event-activity-message error">
+                      {liveTradesError}
+                    </div>
+                  )}
+                  {activityTab === 'all' && activityTrades.length === 0 && (
+                    <div className="predict-event-activity-empty">
+                      {liveTradesConnected ? 'Waiting for trades...' : 'Connecting to trade stream...'}
+                    </div>
+                  )}
+                  {activityTab === 'all' && activityTrades.length > 0 && (
+                    <div className="predict-event-activity-rows">
+                      {activityTrades.map((trade) => {
+                        const sideClass = trade.side === 'BUY'
+                          ? 'buy'
+                          : trade.side === 'SELL'
+                            ? 'sell'
+                            : 'unknown';
+                        const sideLabel = trade.side === 'UNKNOWN' ? 'TRADE' : trade.side;
+                        const tradeOutcome = trade.outcome || truncateIdentifier(trade.assetId);
+
+                        return (
+                          <div key={trade.key} className="predict-event-activity-row">
+                            <div className="predict-event-activity-main">
+                              <span className={`predict-event-activity-side ${sideClass}`}>
+                                {sideLabel}
+                              </span>
+                              <span className="predict-event-activity-outcome">{tradeOutcome}</span>
+                            </div>
+                            <div className="predict-event-activity-metrics">
+                              <span className="predict-event-activity-price">
+                                {formatActivityPrice(trade.price)}
+                              </span>
+                              <span className="predict-event-activity-size">
+                                {formatActivitySize(trade.size)}
+                              </span>
+                              <span className="predict-event-activity-time">
+                                {formatActivityTime(trade.timestamp)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

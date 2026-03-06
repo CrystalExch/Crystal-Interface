@@ -80,6 +80,21 @@ interface Token {
   circulatingSupply: number;
 }
 
+type PredictLiveTrade = {
+  key: string;
+  conditionId: string;
+  asset: string;
+  market: string;
+  outcome: string;
+  side: 'BUY' | 'SELL' | 'UNKNOWN';
+  price: number;
+  size: number;
+  amount: number;
+  timestamp: number; // unix seconds
+  txHash: string;
+  source: 'seed' | 'stream';
+};
+
 type ColumnKey = 'new' | 'graduating' | 'graduated';
 
 const Tooltip: React.FC<{
@@ -1148,6 +1163,68 @@ const formatMarketPercent = (value: number, precision = 1) => {
   return formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted;
 };
 
+const normalizePolymarketList = (value: any): any[] => {
+  if (value == null) return [];
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    const raw = value.trim();
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      const split = raw
+        .split(/[,\s]+/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+      if (split.length > 1) return split;
+    }
+    return [raw];
+  }
+  return [];
+};
+
+const collectPolymarketTokenIds = (value: any): string[] => {
+  const ids = new Set<string>();
+
+  const visit = (node: any) => {
+    if (node == null) return;
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    if (typeof node === 'object') {
+      visit(node?.token_id ?? node?.tokenId ?? node?.id);
+      return;
+    }
+    const raw = String(node).trim();
+    if (!raw) return;
+    ids.add(raw);
+  };
+
+  visit(normalizePolymarketList(value));
+  return Array.from(ids);
+};
+
+const normalizeTradeTimestampSeconds = (value: any): number => {
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) {
+    if (numeric > 1e12) return Math.floor(numeric / 1000);
+    return Math.floor(numeric);
+  }
+  const parsed = Date.parse(String(value ?? ''));
+  if (Number.isFinite(parsed)) return Math.floor(parsed / 1000);
+  return Math.floor(Date.now() / 1000);
+};
+
+const normalizeTradeSide = (sideRaw: any, isBuyRaw?: any): 'BUY' | 'SELL' | 'UNKNOWN' => {
+  const side = String(sideRaw ?? '').trim().toUpperCase();
+  if (side === 'BUY' || side === 'BID') return 'BUY';
+  if (side === 'SELL' || side === 'ASK') return 'SELL';
+  if (typeof isBuyRaw === 'boolean') return isBuyRaw ? 'BUY' : 'SELL';
+  return 'UNKNOWN';
+};
+
 const toFiniteNumber = (value: unknown) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -1522,6 +1599,12 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const liveTradeSeededRef = useRef(false);
+  const tradeAssetMetaRef = useRef<
+    Map<string, { conditionId: string; market: string; outcome: string }>
+  >(new Map());
+  const tradeConditionTitleRef = useRef<Map<string, string>>(new Map());
+  const liveTradeAssetsRef = useRef<string[]>([]);
   const currentPageMarketsRef = useRef<string[]>([]);
   const priceUpdateInFlightRef = useRef(false);
   const eventsQueryRef = useRef<string>('');
@@ -1543,17 +1626,136 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         wsRef.current = null;
       }
 
-      const ws = new WebSocket('wss://ws-live-data.polymarket.com/');
+      const assetIds = liveTradeAssetsRef.current;
+      if (!assetIds.length) {
+        reconnectIntervalRef.current = setTimeout(() => {
+          if (!liveStreamCancelled) startTradeStream();
+        }, LIVE_TRADES_WS_RECONNECT_MS);
+        return;
+      }
+
+      const trackedAssets = new Set(assetIds);
+
+      const mapTrade = (
+        raw: any,
+        source: 'seed' | 'stream',
+      ): PredictLiveTrade | null => {
+        const asset = String(
+          raw?.asset ?? raw?.asset_id ?? raw?.assetId ?? '',
+        ).trim();
+        if (!asset) return null;
+
+        const assetMeta = tradeAssetMetaRef.current.get(asset);
+        const conditionId = String(
+          raw?.conditionId ??
+            raw?.condition_id ??
+            raw?.market ??
+            raw?.marketId ??
+            assetMeta?.conditionId ??
+            '',
+        ).trim();
+        let price = Number(
+          raw?.price ?? raw?.last_trade_price ?? raw?.lastTradePrice ?? 0,
+        );
+        if (!Number.isFinite(price)) return null;
+        if (price > 1.000001 && price <= 100.000001) {
+          price /= 100;
+        }
+
+        const size = Number(raw?.size ?? raw?.quantity ?? raw?.shares ?? 0);
+        const amountRaw = Number(
+          raw?.amount ?? raw?.notional ?? raw?.usd ?? raw?.value ?? NaN,
+        );
+        const amount = Number.isFinite(amountRaw) && amountRaw > 0
+          ? amountRaw
+          : Math.max(
+              0,
+              (Number.isFinite(size) ? size : 0) * Math.max(0, price),
+            );
+        const side = normalizeTradeSide(raw?.side ?? raw?.type, raw?.isBuy);
+        const timestamp = normalizeTradeTimestampSeconds(
+          raw?.timestamp ?? raw?.time ?? raw?.ts ?? raw?.createdAt,
+        );
+        const txHash = String(
+          raw?.transactionHash ?? raw?.txHash ?? raw?.tx_hash ?? '',
+        ).trim();
+        const market = String(
+          raw?.title ??
+            raw?.marketName ??
+            raw?.eventName ??
+            raw?.market ??
+            assetMeta?.market ??
+            tradeConditionTitleRef.current.get(conditionId) ??
+            'Unknown',
+        ).trim();
+        const outcome = String(raw?.outcome ?? assetMeta?.outcome ?? '').trim();
+        const key = txHash
+          ? `${txHash}:${asset}:${side}:${timestamp}`
+          : `${asset}:${conditionId}:${side}:${timestamp}:${price}:${size}:${source}`;
+
+        return {
+          key,
+          conditionId,
+          asset,
+          market,
+          outcome,
+          side,
+          price,
+          size: Number.isFinite(size) ? size : 0,
+          amount,
+          timestamp,
+          txHash,
+          source,
+        };
+      };
+
+      const mergeTrades = (incoming: PredictLiveTrade[]) => {
+        if (!incoming.length) return;
+        setLiveTrades((prev) => {
+          const deduped = new Map<string, PredictLiveTrade>();
+          [...incoming, ...prev].forEach((trade) => {
+            if (!deduped.has(trade.key)) {
+              deduped.set(trade.key, trade);
+            }
+          });
+          return Array.from(deduped.values())
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .slice(0, MAX_LIVE_TRADES);
+        });
+      };
+
+      const seedTrades = async () => {
+        if (liveTradeSeededRef.current) return;
+        liveTradeSeededRef.current = true;
+        try {
+          const response = await fetch(
+            `/predictdata/trades?limit=${LIVE_TRADES_SEED_LIMIT}`,
+          );
+          if (!response.ok) return;
+          const rows = await response.json().catch(() => []);
+          if (!Array.isArray(rows)) return;
+          const seeded = rows
+            .map((row: any) => mapTrade(row, 'seed'))
+            .filter((trade): trade is PredictLiveTrade => {
+              if (!trade) return false;
+              return !trackedAssets.size || trackedAssets.has(trade.asset);
+            });
+          if (!liveStreamCancelled) {
+            mergeTrades(seeded);
+          }
+        } catch (error) {
+          console.warn('Polymarket trade seed failed:', error);
+        }
+      };
+
+      seedTrades();
+
+      const ws = new WebSocket('wss://ws-subscriptions-clob.polymarket.com/ws/market');
       wsRef.current = ws;
 
       ws.onopen = () => {
         try {
-          ws.send(
-            JSON.stringify({
-              type: 'subscribe',
-              channels: ['trades'],
-            }),
-          );
+          ws.send(JSON.stringify({ assets_ids: assetIds, type: 'market' }));
         } catch (error) {
           console.warn('Polymarket trade stream subscribe failed:', error);
         }
@@ -1564,67 +1766,35 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         pingIntervalRef.current = setInterval(() => {
           if (wsRef.current?.readyState === WebSocket.OPEN) {
             try {
-              wsRef.current.send(JSON.stringify({ type: 'ping' }));
+              wsRef.current.send('PING');
             } catch (error) {
               console.warn('Polymarket trade stream ping failed:', error);
             }
           }
-        }, 20000);
+        }, LIVE_TRADES_WS_PING_MS);
       };
 
       ws.onmessage = (event) => {
         if (liveStreamCancelled) return;
         try {
-          const payload = JSON.parse(event.data);
-          const trades = Array.isArray(payload)
-            ? payload
-            : Array.isArray(payload?.trades)
-              ? payload.trades
-              : Array.isArray(payload?.data?.trades)
-                ? payload.data.trades
-                : payload?.trade
-                  ? [payload.trade]
-                  : payload?.data?.trade
-                    ? [payload.data.trade]
-                    : [];
+          const rawFrame = typeof event.data === 'string'
+            ? event.data
+            : String(event.data);
+          if (rawFrame === 'PONG' || rawFrame === 'CONNECTED') return;
 
-          if (!trades.length) return;
-
-          setLiveTrades((prev) => {
-            const combined = [...trades, ...prev];
-            const uniqueMap = new Map<string, any>();
-
-            combined.forEach((trade) => {
-              const timestamp =
-                trade?.timestamp ??
-                trade?.time ??
-                trade?.ts ??
-                trade?.createdAt;
-              const normalizedTimestamp =
-                typeof timestamp === 'string'
-                  ? new Date(timestamp).getTime()
-                  : timestamp;
-              const tradeId =
-                trade?.id ||
-                trade?.trade_id ||
-                trade?.transactionHash ||
-                trade?.tx_hash ||
-                `${trade?.market || trade?.conditionId || trade?.marketId || 'market'}-${normalizedTimestamp}`;
-
-              if (!uniqueMap.has(tradeId)) {
-                uniqueMap.set(tradeId, {
-                  ...trade,
-                  timestamp: normalizedTimestamp,
-                });
-              }
+          const parsed = JSON.parse(rawFrame);
+          const frames = Array.isArray(parsed) ? parsed : [parsed];
+          const updates = frames
+            .filter((frame: any) => frame?.event_type === 'last_trade_price')
+            .map((frame: any) => mapTrade(frame, 'stream'))
+            .filter((trade): trade is PredictLiveTrade => {
+              if (!trade) return false;
+              return !trackedAssets.size || trackedAssets.has(trade.asset);
             });
 
-            return Array.from(uniqueMap.values())
-              .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-              .slice(0, MAX_LIVE_TRADES);
-          });
-        } catch (error) {
-          console.warn('Polymarket trade stream parse failed:', error);
+          mergeTrades(updates);
+        } catch {
+          // Ignore non-trade frames.
         }
       };
 
@@ -1638,7 +1808,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
           if (!liveStreamCancelled) {
             startTradeStream();
           }
-        }, 5000);
+        }, LIVE_TRADES_WS_RECONNECT_MS);
       };
 
       ws.onerror = (error) => {
@@ -2208,7 +2378,11 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
   const formatTimeAgo = (timestamp: number) => {
     const formatTimeAgoStatic = (createdTimestamp: number, now: number) => {
-      const ageSec = now - createdTimestamp;
+      const normalizedTimestamp = createdTimestamp > 1e12
+        ? Math.floor(createdTimestamp / 1000)
+        : Math.floor(createdTimestamp);
+      if (!Number.isFinite(normalizedTimestamp)) return '0s';
+      const ageSec = Math.max(0, now - normalizedTimestamp);
 
       if (ageSec < 60) {
         return `${Math.ceil(ageSec)}s`;
@@ -3224,9 +3398,15 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const [favoriteMarkets, setFavoriteMarkets] = useState<Set<string>>(new Set());
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const hasSetDefaultCategoryRef = useRef(false);
-  const [liveTrades, setLiveTrades] = useState<any[]>([]);
+  const [liveTrades, setLiveTrades] = useState<PredictLiveTrade[]>([]);
   const [tradeMinSize, setTradeMinSize] = useState('');
   const [tradeSideFilter, setTradeSideFilter] = useState<'all' | 'buy' | 'sell'>('all');
+  const [tradeStreamHeight, setTradeStreamHeight] = useState<number>(() => {
+    const stored = localStorage.getItem('predict_trade_stream_height');
+    const parsed = Number(stored);
+    if (!Number.isFinite(parsed)) return 420;
+    return Math.max(220, Math.min(760, Math.floor(parsed)));
+  });
   const [activeMultiScrollCard, setActiveMultiScrollCard] = useState<string | null>(null);
   const [outcomePulseMap, setOutcomePulseMap] = useState<Record<string, number>>({});
   const [isPredictLoading, setIsPredictLoading] = useState(
@@ -3238,6 +3418,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [itemsPerPage, setItemsPerPage] = useState(40);
     const MAX_LIVE_TRADES = 50;
+    const LIVE_TRADES_SEED_LIMIT = 80;
+    const LIVE_TRADES_WS_RECONNECT_MS = 1500;
+    const LIVE_TRADES_WS_PING_MS = 10000;
     const EVENTS_PAGE_SIZE = 100;
     const TAG_EVENTS_LIMIT = 100;
     const DEFAULT_TAG_ORDER = [
@@ -3335,6 +3518,119 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   useEffect(() => {
     itemsPerPageRef.current = itemsPerPage;
   }, [itemsPerPage]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      'predict_trade_stream_height',
+      Math.max(220, Math.min(760, Math.floor(tradeStreamHeight))).toString(),
+    );
+  }, [tradeStreamHeight]);
+
+  const liveTradeSubscription = useMemo(() => {
+    const assetIds = new Set<string>();
+    const assetMeta = new Map<
+      string,
+      { conditionId: string; market: string; outcome: string }
+    >();
+    const conditionTitles = new Map<string, string>();
+
+    Object.values(predictMarketsData || {}).forEach((token: any) => {
+      const tokenConditionId = String(
+        token?.contractId ?? token?.conditionId ?? '',
+      ).trim();
+      const tokenTitle = String(
+        token?.eventTitle ?? token?.question ?? token?.baseAsset ?? '',
+      ).trim();
+      const tokenOutcomes = normalizePolymarketList(token?.outcomes).map(String);
+
+      if (tokenConditionId && tokenTitle) {
+        conditionTitles.set(tokenConditionId, tokenTitle);
+      }
+
+      const registerAsset = (
+        assetIdRaw: string,
+        conditionIdRaw?: string,
+        marketRaw?: string,
+        outcomeRaw?: string,
+      ) => {
+        const assetId = String(assetIdRaw || '').trim();
+        if (!assetId) return;
+        assetIds.add(assetId);
+
+        if (assetMeta.has(assetId)) return;
+
+        const conditionId = String(conditionIdRaw ?? tokenConditionId ?? '').trim();
+        const market = String(marketRaw ?? tokenTitle ?? '').trim();
+        const outcome = String(outcomeRaw ?? '').trim();
+        assetMeta.set(assetId, { conditionId, market, outcome });
+      };
+
+      collectPolymarketTokenIds(token?.clobTokenIds).forEach((assetId, index) => {
+        registerAsset(
+          assetId,
+          tokenConditionId,
+          tokenTitle,
+          tokenOutcomes[index] ?? '',
+        );
+      });
+
+      if (Array.isArray(token?.markets)) {
+        token.markets.forEach((market: any, marketIndex: number) => {
+          const marketConditionId = String(
+            market?.conditionId ?? market?.id ?? market?.marketId ?? tokenConditionId,
+          ).trim();
+          const marketTitle = String(
+            market?.question ??
+              market?.groupItemTitle ??
+              token?.eventTitle ??
+              token?.question ??
+              token?.baseAsset ??
+              '',
+          ).trim();
+          const marketOutcomes = normalizePolymarketList(
+            market?.outcomes ?? market?.outcomeNames,
+          ).map(String);
+
+          if (marketConditionId && marketTitle) {
+            conditionTitles.set(marketConditionId, marketTitle);
+          }
+
+          collectPolymarketTokenIds(market?.clobTokenIds).forEach(
+            (assetId, assetIndex) => {
+              registerAsset(
+                assetId,
+                marketConditionId,
+                marketTitle,
+                marketOutcomes[assetIndex] ??
+                  tokenOutcomes[marketIndex] ??
+                  (assetIndex === 0 ? 'Yes' : assetIndex === 1 ? 'No' : ''),
+              );
+            },
+          );
+        });
+      }
+    });
+
+    const sortedAssets = Array.from(assetIds).sort();
+    const limitedAssets = sortedAssets.slice(0, 900);
+
+    return {
+      assetIds: limitedAssets,
+      assetIdsSignature: limitedAssets.join(','),
+      assetMeta,
+      conditionTitles,
+    };
+  }, [predictMarketsData]);
+
+  useEffect(() => {
+    liveTradeAssetsRef.current = liveTradeSubscription.assetIds;
+    tradeAssetMetaRef.current = liveTradeSubscription.assetMeta;
+    tradeConditionTitleRef.current = liveTradeSubscription.conditionTitles;
+  }, [
+    liveTradeSubscription.assetIds,
+    liveTradeSubscription.assetMeta,
+    liveTradeSubscription.conditionTitles,
+  ]);
 
     const fetchPolymarketJson = useCallback(async (path: string) => {
       const response = await fetch(path, {
@@ -3870,13 +4166,16 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   }, []);
 
   const getTradeAmount = useCallback((trade: any) => {
-    const raw = trade?.amount ?? trade?.size ?? trade?.quantity ?? 0;
+    const raw =
+      trade?.amount ??
+      (Number(trade?.size ?? trade?.quantity ?? 0) *
+        Number(trade?.price ?? trade?.last_trade_price ?? 0));
     const parsed = typeof raw === 'string' ? parseFloat(raw) : Number(raw);
     return Number.isFinite(parsed) ? parsed : 0;
   }, []);
 
   const isTradeBuy = useCallback((trade: any) => {
-    return trade?.side === 'BUY' || trade?.type === 'buy' || trade?.isBuy;
+    return normalizeTradeSide(trade?.side ?? trade?.type, trade?.isBuy) === 'BUY';
   }, []);
 
   const filteredLiveTrades = useMemo(() => {
@@ -3897,21 +4196,8 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const liveTradeCounts = useMemo(() => {
     const counts: Record<string, { buy: number; sell: number }> = {};
     liveTrades.forEach((trade) => {
-      const rawMarket =
-        trade?.conditionId ??
-        trade?.market ??
-        trade?.marketId ??
-        trade?.condition_id ??
-        trade?.market_id ??
-        trade?.marketID ??
-        trade?.conditionID ??
-        '';
-      const resolvedMarket =
-        typeof rawMarket === 'object'
-          ? rawMarket?.conditionId ?? rawMarket?.id ?? rawMarket?.marketId
-          : rawMarket;
-      if (!resolvedMarket) return;
-      const id = String(resolvedMarket);
+      const id = String(trade?.conditionId ?? '').trim();
+      if (!id) return;
       const entry = counts[id] || { buy: 0, sell: 0 };
       if (isTradeBuy(trade)) {
         entry.buy += 1;
@@ -4052,10 +4338,43 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         <option value="sell">Sell</option>
                       </select>
                     </div>
+                    <div className="predict-trade-filter-group predict-trade-height-group">
+                      <span className="predict-trade-filter-label">Height</span>
+                      <button
+                        type="button"
+                        className="predict-trade-height-btn"
+                        onClick={() =>
+                          setTradeStreamHeight((prev) =>
+                            Math.max(220, Math.min(760, prev - 40)),
+                          )
+                        }
+                        aria-label="Decrease live trades height"
+                      >
+                        -
+                      </button>
+                      <button
+                        type="button"
+                        className="predict-trade-height-btn"
+                        onClick={() =>
+                          setTradeStreamHeight((prev) =>
+                            Math.max(220, Math.min(760, prev + 40)),
+                          )
+                        }
+                        aria-label="Increase live trades height"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="predict-trade-stream-list">
+              <div
+                className="predict-trade-stream-list"
+                style={{
+                  height: `${tradeStreamHeight}px`,
+                  maxHeight: 'calc(100vh - 170px)',
+                }}
+              >
                 {filteredLiveTrades.length === 0 ? (
                   <div className="predict-trade-stream-empty">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2">
@@ -4065,12 +4384,16 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                   </div>
                 ) : (
                   filteredLiveTrades.map((trade, idx) => {
-                    const timestamp = trade?.timestamp ?? trade?.time ?? trade?.ts ?? trade?.createdAt ?? Date.now();
-                    const timeAgo = formatTimeAgo(typeof timestamp === 'string' ? new Date(timestamp).getTime() : timestamp);
-                    const isBuy = isTradeBuy(trade);
+                    const timestamp = trade.timestamp;
+                    const timeAgo = formatTimeAgo(timestamp);
+                    const side = trade.side;
+                    const sideClass = side === 'BUY' ? 'buy' : 'sell';
                     const amount = getTradeAmount(trade);
-                    const price = trade?.price || 0;
-                    const market = trade?.market || trade?.marketName || trade?.eventName || 'Unknown';
+                    const rawPrice = trade.price;
+                    const price = rawPrice > 1.000001 && rawPrice <= 100.000001
+                      ? rawPrice / 100
+                      : rawPrice;
+                    const market = trade.market || 'Unknown';
 
                     return (
                       <div key={idx} className="predict-trade-stream-item">
@@ -4079,8 +4402,8 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                           <span className="predict-trade-stream-time">{timeAgo}</span>
                         </div>
                         <div className="predict-trade-stream-item-details">
-                          <span className={`predict-trade-stream-side ${isBuy ? 'buy' : 'sell'}`}>
-                            {isBuy ? 'YES' : 'NO'}
+                          <span className={`predict-trade-stream-side ${sideClass}`}>
+                            {side === 'UNKNOWN' ? 'TRADE' : side}
                           </span>
                           <span className="predict-trade-stream-price">{formatMarketPercent(price)}¢</span>
                           <span className="predict-trade-stream-amount">${formatCommas(amount.toFixed(0))}</span>

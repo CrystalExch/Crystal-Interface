@@ -3471,8 +3471,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
         const fmtLabel = (ts: number, r: '1D' | '1W' | '1M' | 'All') => {
           const d = new Date(ts * 1000);
           const pad = (n: number) => n.toString().padStart(2, '0');
-          if (r === '1D') return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-          if (r === '1W' || r === '1M') return `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
+          const md = `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
+          const hm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+          if (r === '1D' || r === '1W') return `${md} ${hm}`;
+          if (r === '1M') return md;
           return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
         };
 
@@ -3729,8 +3731,10 @@ function App({ stateloading, setstateloading, addressinfoloading, setaddressinfo
     const fmtLabel = (ts: number, r: '1D' | '1W' | '1M' | 'All') => {
       const d = new Date(ts * 1000);
       const pad = (n: number) => n.toString().padStart(2, '0');
-      if (r === '1D') return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-      if (r === '1W' || r === '1M') return `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
+      const md = `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`;
+      const hm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      if (r === '1D' || r === '1W') return `${md} ${hm}`;
+      if (r === '1M') return md;
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     };
 
