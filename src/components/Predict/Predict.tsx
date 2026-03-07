@@ -421,6 +421,22 @@ const parseTradeSide = (value: any): 'BUY' | 'SELL' | 'UNKNOWN' => {
   return 'UNKNOWN';
 };
 
+const decodeRouteMarketSlug = (value: any): string => {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+};
+
+const normalizeMarketSlug = (value: any): string =>
+  decodeRouteMarketSlug(value).toLowerCase();
+
+const normalizeTradeAssetId = (value: any): string =>
+  String(value ?? '').trim().toLowerCase();
+
 const formatActivityTime = (tsSeconds: number): string => {
   const now = Math.floor(Date.now() / 1000);
   const delta = Math.max(0, now - tsSeconds);
@@ -443,12 +459,6 @@ const formatActivitySize = (rawSize: number): string => {
     ? rawSize.toFixed(0)
     : rawSize.toFixed(2).replace(/\.?0+$/, '');
   return formatCommas(rounded);
-};
-
-const truncateIdentifier = (value: string): string => {
-  if (!value) return '';
-  if (value.length <= 14) return value;
-  return `${value.slice(0, 6)}...${value.slice(-4)}`;
 };
 
 const Predict: React.FC<PredictProps> = ({
@@ -518,7 +528,19 @@ const Predict: React.FC<PredictProps> = ({
   const predictMarketsRef = useRef<Record<string, any>>({});
 
   // Get current market data
-  const activeMarket = predictMarketsData[predictActiveMarketKey] || {};
+  const routeMarketSlug = decodeRouteMarketSlug(marketSlug);
+  const normalizedRouteMarketSlug = normalizeMarketSlug(routeMarketSlug);
+  const activeMarketFromStore = predictMarketsData[predictActiveMarketKey] || {};
+  const normalizedActiveMarketSlugs = [
+    normalizeMarketSlug(activeMarketFromStore?.eventSlug),
+    normalizeMarketSlug(activeMarketFromStore?.marketSlug),
+    normalizeMarketSlug(activeMarketFromStore?.slug),
+  ].filter(Boolean);
+  const activeMarket =
+    normalizedRouteMarketSlug &&
+    !normalizedActiveMarketSlugs.includes(normalizedRouteMarketSlug)
+      ? {}
+      : activeMarketFromStore;
   const effectiveViewMode = viewMode ?? localViewMode;
   const handleViewMode = setViewMode ?? setLocalViewMode;
   const effectiveActiveTab = activeTab ?? localActiveTab;
@@ -583,6 +605,47 @@ const Predict: React.FC<PredictProps> = ({
     const outcomesList = Array.isArray(activeMarket?.outcomes) ? activeMarket.outcomes : [];
     const tokenGroups = Array.isArray(activeMarket?.orderbookTokenIds) ? activeMarket.orderbookTokenIds : [];
     const isSingleBinary = tokenGroups.length === 1 && outcomesList.length === 2;
+    const setOutcomeLabel = (assetId: any, rawLabel: any) => {
+      const asset = String(assetId ?? '').trim();
+      const label = String(rawLabel ?? '').trim();
+      if (!asset || !label) return;
+      lookup.set(asset, label);
+      lookup.set(normalizeTradeAssetId(asset), label);
+    };
+    const collectTokenIds = (value: any, output: string[]) => {
+      if (value == null) return;
+      if (Array.isArray(value)) {
+        value.forEach((item) => collectTokenIds(item, output));
+        return;
+      }
+      if (typeof value === 'object') {
+        collectTokenIds(value?.token_id ?? value?.tokenId ?? value?.id, output);
+        return;
+      }
+      if (typeof value === 'string') {
+        const raw = value.trim();
+        if (!raw) return;
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((item) => collectTokenIds(item, output));
+            return;
+          }
+        } catch {
+          const split = raw
+            .split(/[,\s]+/)
+            .map((item) => item.trim())
+            .filter(Boolean);
+          if (split.length > 1) {
+            split.forEach((item) => collectTokenIds(item, output));
+            return;
+          }
+        }
+        output.push(raw);
+        return;
+      }
+      output.push(String(value));
+    };
 
     tokenGroups.forEach((group: any, idx: number) => {
       if (!Array.isArray(group)) return;
@@ -590,21 +653,79 @@ const Predict: React.FC<PredictProps> = ({
       const yesAsset = group[0];
       const noAsset = group[1];
       if (yesAsset) {
-        lookup.set(
-          String(yesAsset),
+        setOutcomeLabel(
+          yesAsset,
           isSingleBinary ? String(outcomesList[0] ?? 'Yes') : `${baseLabel} Yes`,
         );
       }
       if (noAsset) {
-        lookup.set(
-          String(noAsset),
+        setOutcomeLabel(
+          noAsset,
           isSingleBinary ? String(outcomesList[1] ?? 'No') : `${baseLabel} No`,
         );
       }
     });
 
+    if (Array.isArray(activeMarket?.markets)) {
+      activeMarket.markets.forEach((marketItem: any, idx: number) => {
+        const baseLabel = String(
+          outcomesList[idx] ??
+            marketItem?.groupItemTitle ??
+            marketItem?.shortTitle ??
+            marketItem?.title ??
+            marketItem?.name ??
+            marketItem?.question ??
+            `Outcome ${idx + 1}`,
+        ).trim();
+        const tokenIds: string[] = [];
+        collectTokenIds(marketItem?.clobTokenIds, tokenIds);
+        collectTokenIds(marketItem?.tokenIds, tokenIds);
+        collectTokenIds(marketItem?.token_ids, tokenIds);
+        collectTokenIds(marketItem?.outcomeTokenIds, tokenIds);
+        collectTokenIds(marketItem?.yesTokenId, tokenIds);
+        collectTokenIds(marketItem?.noTokenId, tokenIds);
+        if (Array.isArray(marketItem?.tokens)) {
+          marketItem.tokens.forEach((tokenItem: any) => {
+            const tokenId = tokenItem?.token_id ?? tokenItem?.tokenId ?? tokenItem?.id ?? tokenItem;
+            const tokenLabel = String(
+              tokenItem?.outcome ?? tokenItem?.title ?? tokenItem?.name ?? '',
+            ).trim();
+            if (tokenLabel) {
+              setOutcomeLabel(tokenId, tokenLabel);
+            }
+            collectTokenIds(tokenId, tokenIds);
+          });
+        }
+
+        const uniqueTokenIds = Array.from(
+          new Set(
+            tokenIds
+              .map((item) => String(item ?? '').trim())
+              .filter(Boolean),
+          ),
+        );
+        if (!uniqueTokenIds.length) return;
+
+        if (uniqueTokenIds.length === 1) {
+          setOutcomeLabel(uniqueTokenIds[0], baseLabel);
+          return;
+        }
+
+        if (isSingleBinary) {
+          setOutcomeLabel(uniqueTokenIds[0], String(outcomesList[0] ?? 'Yes'));
+          setOutcomeLabel(uniqueTokenIds[1], String(outcomesList[1] ?? 'No'));
+          uniqueTokenIds.slice(2).forEach((tokenId) => setOutcomeLabel(tokenId, baseLabel));
+          return;
+        }
+
+        setOutcomeLabel(uniqueTokenIds[0], `${baseLabel} Yes`);
+        setOutcomeLabel(uniqueTokenIds[1], `${baseLabel} No`);
+        uniqueTokenIds.slice(2).forEach((tokenId) => setOutcomeLabel(tokenId, baseLabel));
+      });
+    }
+
     return lookup;
-  }, [activeMarket?.outcomes, activeMarket?.orderbookTokenIds, activeMarket?.contractId]);
+  }, [activeMarket?.outcomes, activeMarket?.orderbookTokenIds, activeMarket?.markets, activeMarket?.contractId]);
 
   useEffect(() => {
     selectedOutcomeRef.current = selectedOutcome;
@@ -617,7 +738,9 @@ const Predict: React.FC<PredictProps> = ({
   // Fetch market data when marketSlug changes
   useEffect(() => {
     if (marketSlug) {
-      const cacheKey = `predict:event:${marketSlug}`;
+      const requestedRouteSlug = decodeRouteMarketSlug(marketSlug);
+      const normalizedRequestedSlug = normalizeMarketSlug(requestedRouteSlug);
+      const cacheKey = `predict:event:${requestedRouteSlug}`;
 
       // Reads last good event payload for this slug so transient API outages don't blank the page.
       const readCachedEvent = (): CachedEventSnapshot | null => {
@@ -665,9 +788,14 @@ const Predict: React.FC<PredictProps> = ({
         return true;
       };
 
-      const existingEntry = Object.entries(predictMarketsRef.current || {}).find(([, marketData]) =>
-        marketData?.eventSlug === marketSlug,
-      );
+      const existingEntry = Object.entries(predictMarketsRef.current || {}).find(([, marketData]) => {
+        const candidateSlugs = [
+          normalizeMarketSlug(marketData?.eventSlug),
+          normalizeMarketSlug(marketData?.marketSlug),
+          normalizeMarketSlug(marketData?.slug),
+        ].filter(Boolean);
+        return candidateSlugs.includes(normalizedRequestedSlug);
+      });
       if (existingEntry) {
         const [conditionId, marketData] = existingEntry;
         setPredictActiveMarketKey(conditionId);
@@ -810,10 +938,13 @@ const Predict: React.FC<PredictProps> = ({
         }
       };
 
-      // Fetches one event by slug from predictapi; tries active/open filter first, then fallback lookup.
-      const fetchEvent = async (signal: AbortSignal, includeChat: boolean) => {
+      const fetchEventBySlug = async (
+        slugValue: string,
+        signal: AbortSignal,
+        includeChat: boolean,
+      ) => {
         const includeChatParam = includeChat ? '&include_chat=true' : '';
-        const slugParam = `slug=${encodeURIComponent(marketSlug)}${includeChatParam}&include_history=true`;
+        const slugParam = `slug=${encodeURIComponent(slugValue)}${includeChatParam}&include_history=true`;
         try {
           const activeData = await fetchPolymarketJson(
             `/predictapi/events?active=true&closed=false&${slugParam}`,
@@ -826,6 +957,37 @@ const Predict: React.FC<PredictProps> = ({
           // Fall through to non-filtered lookup.
         }
         return fetchPolymarketJson(`/predictapi/events?${slugParam}`, signal);
+      };
+
+      // Fetches one event for the route slug; supports both event slugs and market slugs.
+      const fetchEvent = async (signal: AbortSignal, includeChat: boolean) => {
+        const direct = await fetchEventBySlug(requestedRouteSlug, signal, includeChat);
+        if (Array.isArray(direct) && direct.length > 0) {
+          return direct;
+        }
+
+        try {
+          const marketLookup = await fetchPolymarketJson(
+            `/predictapi/markets?slug=${encodeURIComponent(requestedRouteSlug)}&limit=1`,
+            signal,
+          );
+          const marketRow = Array.isArray(marketLookup) ? marketLookup[0] : null;
+          const eventSlugFromMarket = String(
+            marketRow?.eventSlug ??
+              marketRow?.events?.[0]?.slug ??
+              '',
+          ).trim();
+          if (eventSlugFromMarket) {
+            const resolved = await fetchEventBySlug(eventSlugFromMarket, signal, includeChat);
+            if (Array.isArray(resolved) && resolved.length > 0) {
+              return resolved;
+            }
+          }
+        } catch {
+          // Ignore fallback lookup failures.
+        }
+
+        return direct;
       };
 
       // Retries event lookup once to smooth transient DNS/proxy failures from the dev server.
@@ -1124,6 +1286,7 @@ const Predict: React.FC<PredictProps> = ({
                 outcomePrices: displayOutcomePrices,
                 eventTitle: event.title,
                 eventSlug: event.slug,
+                marketSlug: requestedRouteSlug,
                 iconURL: event.image || event.icon,
                 question: market.question,
                 endDate: market.endDate,
@@ -1364,7 +1527,12 @@ const Predict: React.FC<PredictProps> = ({
       const timestamp = parseTradeTimestampSeconds(raw?.timestamp ?? raw?.time ?? raw?.createdAt);
       const txHash = String(raw?.transactionHash ?? raw?.txHash ?? raw?.tx_hash ?? '').trim();
       const trader = String(raw?.proxyWallet ?? raw?.maker ?? raw?.taker ?? raw?.user ?? '').trim();
-      const outcome = String(raw?.outcome ?? activityOutcomeByAsset.get(assetId) ?? '').trim();
+      const outcome = String(
+        raw?.outcome ??
+          activityOutcomeByAsset.get(assetId) ??
+          activityOutcomeByAsset.get(normalizeTradeAssetId(assetId)) ??
+          '',
+      ).trim();
       const stableKey = txHash
         ? `${txHash}:${assetId}:${side}`
         : `${assetId}:${timestamp}:${side}:${price}:${size}`;
@@ -2266,6 +2434,7 @@ const Predict: React.FC<PredictProps> = ({
                   </span>
                 )}
                 <button
+                  type="button"
                   className="predict-event-activity-hide-btn"
                   onClick={() => setIsActivityHidden((prev) => !prev)}
                 >
@@ -2277,12 +2446,14 @@ const Predict: React.FC<PredictProps> = ({
               <>
                 <div className="predict-event-activity-tabs">
                   <button
+                    type="button"
                     className={`predict-event-activity-tab ${activityTab === 'all' ? 'active' : ''}`}
                     onClick={() => setActivityTab('all')}
                   >
                     All
                   </button>
                   <button
+                    type="button"
                     className={`predict-event-activity-tab ${activityTab === 'openOrders' ? 'active' : ''}`}
                     onClick={() => setActivityTab('openOrders')}
                   >
@@ -2314,15 +2485,22 @@ const Predict: React.FC<PredictProps> = ({
                             ? 'sell'
                             : 'unknown';
                         const sideLabel = trade.side === 'UNKNOWN' ? 'TRADE' : trade.side;
-                        const tradeOutcome = trade.outcome || truncateIdentifier(trade.assetId);
+                        const tradeOutcome = String(
+                          trade.outcome ||
+                            activityOutcomeByAsset.get(trade.assetId) ||
+                            activityOutcomeByAsset.get(normalizeTradeAssetId(trade.assetId)) ||
+                            'Unknown outcome',
+                        ).trim();
 
                         return (
-                          <div key={trade.key} className="predict-event-activity-row">
+                          <div key={trade.key} className={`predict-event-activity-row ${sideClass}`}>
                             <div className="predict-event-activity-main">
                               <span className={`predict-event-activity-side ${sideClass}`}>
                                 {sideLabel}
                               </span>
-                              <span className="predict-event-activity-outcome">{tradeOutcome}</span>
+                              <span className="predict-event-activity-outcome" title={tradeOutcome}>
+                                {tradeOutcome}
+                              </span>
                             </div>
                             <div className="predict-event-activity-metrics">
                               <span className="predict-event-activity-price">

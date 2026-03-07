@@ -85,6 +85,7 @@ type PredictLiveTrade = {
   conditionId: string;
   asset: string;
   market: string;
+  marketSlug?: string;
   outcome: string;
   side: 'BUY' | 'SELL' | 'UNKNOWN';
   price: number;
@@ -93,6 +94,42 @@ type PredictLiveTrade = {
   timestamp: number; // unix seconds
   txHash: string;
   source: 'seed' | 'stream';
+};
+
+type TradeAssetMeta = {
+  conditionId: string;
+  market: string;
+  outcome: string;
+  marketSlug?: string;
+};
+
+const HEX_LIKE_MARKET_ID_REGEX = /^0x[a-f0-9]{16,}$/i;
+const NUMERIC_MARKET_ID_REGEX = /^\d{18,}$/;
+
+const isPlaceholderMarketLabel = (value: string) => {
+  const label = String(value || '').trim();
+  if (!label) return true;
+  if (label.toLowerCase() === 'unknown') return true;
+  if (HEX_LIKE_MARKET_ID_REGEX.test(label)) return true;
+  if (NUMERIC_MARKET_ID_REGEX.test(label)) return true;
+  return false;
+};
+
+const mergeAndTrimTrades = (
+  incoming: PredictLiveTrade[],
+  existing: PredictLiveTrade[],
+  max: number,
+): PredictLiveTrade[] => {
+  const deduped = new Map<string, PredictLiveTrade>();
+  [...incoming, ...existing].forEach((trade) => {
+    if (!deduped.has(trade.key)) {
+      deduped.set(trade.key, trade);
+    }
+  });
+
+  return Array.from(deduped.values())
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, max);
 };
 
 type ColumnKey = 'new' | 'graduating' | 'graduated';
@@ -1184,6 +1221,13 @@ const normalizePolymarketList = (value: any): any[] => {
   return [];
 };
 
+const normalizePolymarketNumberList = (value: any): number[] =>
+  normalizePolymarketList(value)
+    .map((item) =>
+      Number(typeof item === 'string' ? item.replace(/,/g, '') : item),
+    )
+    .filter((item) => Number.isFinite(item));
+
 const collectPolymarketTokenIds = (value: any): string[] => {
   const ids = new Set<string>();
 
@@ -1223,6 +1267,16 @@ const normalizeTradeSide = (sideRaw: any, isBuyRaw?: any): 'BUY' | 'SELL' | 'UNK
   if (side === 'SELL' || side === 'ASK') return 'SELL';
   if (typeof isBuyRaw === 'boolean') return isBuyRaw ? 'BUY' : 'SELL';
   return 'UNKNOWN';
+};
+
+const toEventRouteSlug = (value: any): string => {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  try {
+    return encodeURIComponent(decodeURIComponent(raw));
+  } catch {
+    return encodeURIComponent(raw);
+  }
 };
 
 const toFiniteNumber = (value: unknown) => {
@@ -1600,11 +1654,13 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const liveTradeSeededRef = useRef(false);
-  const tradeAssetMetaRef = useRef<
-    Map<string, { conditionId: string; market: string; outcome: string }>
-  >(new Map());
+  const tradeAssetMetaRef = useRef<Map<string, TradeAssetMeta>>(new Map());
   const tradeConditionTitleRef = useRef<Map<string, string>>(new Map());
   const liveTradeAssetsRef = useRef<string[]>([]);
+  const tradeMetaLookupInFlightRef = useRef<Set<string>>(new Set());
+  const tradeMetaLookupDoneRef = useRef<Set<string>>(new Set());
+  const bufferedTradesRef = useRef<PredictLiveTrade[]>([]);
+  const isTradeStreamPausedRef = useRef(false);
   const currentPageMarketsRef = useRef<string[]>([]);
   const priceUpdateInFlightRef = useRef(false);
   const eventsQueryRef = useRef<string>('');
@@ -1634,7 +1690,108 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         return;
       }
 
-      const trackedAssets = new Set(assetIds);
+      const queueTradeMetaLookup = (
+        assetIdRaw: string,
+        fallbackConditionIdRaw?: string,
+      ) => {
+        const assetId = String(assetIdRaw || '').trim();
+        if (!assetId) return;
+        if (tradeMetaLookupInFlightRef.current.has(assetId)) return;
+        if (tradeMetaLookupDoneRef.current.has(assetId)) return;
+
+        tradeMetaLookupInFlightRef.current.add(assetId);
+
+        void (async () => {
+          let resolved = false;
+          try {
+            const response = await fetch(
+              `/predictapi/markets?clob_token_ids=${encodeURIComponent(assetId)}`,
+            );
+            if (!response.ok) return;
+
+            const payload = await response.json().catch(() => []);
+            const marketRow = Array.isArray(payload) ? payload[0] : null;
+            if (!marketRow) return;
+
+            const outcomes = normalizePolymarketList(marketRow?.outcomes).map(String);
+            const clobTokenIds = collectPolymarketTokenIds(marketRow?.clobTokenIds);
+            const assetIndex = clobTokenIds.findIndex((id) => id === assetId);
+            const resolvedOutcome = outcomes[assetIndex] ?? '';
+            const resolvedConditionId = String(
+              marketRow?.conditionId ?? fallbackConditionIdRaw ?? '',
+            ).trim();
+            const resolvedMarket = String(
+              marketRow?.question ??
+                marketRow?.events?.[0]?.title ??
+                marketRow?.title ??
+                '',
+            ).trim();
+            const resolvedSlug = String(
+              marketRow?.eventSlug ??
+                marketRow?.events?.[0]?.slug ??
+                '',
+            ).trim();
+
+            const existingMeta = tradeAssetMetaRef.current.get(assetId);
+            const nextMeta: TradeAssetMeta = {
+              conditionId:
+                resolvedConditionId ||
+                existingMeta?.conditionId ||
+                String(fallbackConditionIdRaw || '').trim(),
+              market: resolvedMarket || existingMeta?.market || '',
+              outcome: resolvedOutcome || existingMeta?.outcome || '',
+              marketSlug: resolvedSlug || existingMeta?.marketSlug,
+            };
+            tradeAssetMetaRef.current.set(assetId, nextMeta);
+            resolved = Boolean(nextMeta.conditionId || nextMeta.market || nextMeta.marketSlug);
+
+            if (nextMeta.conditionId && nextMeta.market) {
+              tradeConditionTitleRef.current.set(nextMeta.conditionId, nextMeta.market);
+            }
+
+            setLiveTrades((prev) => {
+              let changed = false;
+              const next = prev.map((trade) => {
+                if (trade.asset !== assetId) return trade;
+
+                const nextConditionId = nextMeta.conditionId || trade.conditionId;
+                const nextMarket =
+                  isPlaceholderMarketLabel(trade.market) && nextMeta.market
+                    ? nextMeta.market
+                    : trade.market;
+                const nextOutcome = trade.outcome || nextMeta.outcome;
+                const nextSlug = trade.marketSlug || nextMeta.marketSlug;
+
+                if (
+                  nextConditionId === trade.conditionId &&
+                  nextMarket === trade.market &&
+                  nextOutcome === trade.outcome &&
+                  nextSlug === trade.marketSlug
+                ) {
+                  return trade;
+                }
+
+                changed = true;
+                return {
+                  ...trade,
+                  conditionId: nextConditionId,
+                  market: nextMarket,
+                  outcome: nextOutcome,
+                  marketSlug: nextSlug,
+                };
+              });
+              return changed ? next : prev;
+            });
+          } catch (error) {
+            console.warn('Live trade metadata lookup failed:', error);
+          } finally {
+            tradeMetaLookupInFlightRef.current.delete(assetId);
+            if (resolved) {
+              tradeMetaLookupDoneRef.current.add(assetId);
+            }
+          }
+        })();
+      };
 
       const mapTrade = (
         raw: any,
@@ -1679,25 +1836,41 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         const txHash = String(
           raw?.transactionHash ?? raw?.txHash ?? raw?.tx_hash ?? '',
         ).trim();
-        const market = String(
+        const rawMarket = String(
           raw?.title ??
             raw?.marketName ??
             raw?.eventName ??
             raw?.market ??
             assetMeta?.market ??
             tradeConditionTitleRef.current.get(conditionId) ??
-            'Unknown',
+            '',
         ).trim();
+        const conditionTitle = String(
+          tradeConditionTitleRef.current.get(conditionId) ?? '',
+        ).trim();
+        const market = isPlaceholderMarketLabel(rawMarket) && conditionTitle
+          ? conditionTitle
+          : rawMarket || conditionTitle || 'Unknown';
         const outcome = String(raw?.outcome ?? assetMeta?.outcome ?? '').trim();
+        const marketSlug = String(
+          raw?.eventSlug ??
+            assetMeta?.marketSlug ??
+            '',
+        ).trim();
         const key = txHash
           ? `${txHash}:${asset}:${side}:${timestamp}`
           : `${asset}:${conditionId}:${side}:${timestamp}:${price}:${size}:${source}`;
+
+        if (isPlaceholderMarketLabel(market) || !marketSlug) {
+          queueTradeMetaLookup(asset, conditionId);
+        }
 
         return {
           key,
           conditionId,
           asset,
           market,
+          marketSlug: marketSlug || undefined,
           outcome,
           side,
           price,
@@ -1711,16 +1884,16 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
       const mergeTrades = (incoming: PredictLiveTrade[]) => {
         if (!incoming.length) return;
+        if (isTradeStreamPausedRef.current) {
+          bufferedTradesRef.current = mergeAndTrimTrades(
+            incoming,
+            bufferedTradesRef.current,
+            MAX_LIVE_TRADES * 8,
+          );
+          return;
+        }
         setLiveTrades((prev) => {
-          const deduped = new Map<string, PredictLiveTrade>();
-          [...incoming, ...prev].forEach((trade) => {
-            if (!deduped.has(trade.key)) {
-              deduped.set(trade.key, trade);
-            }
-          });
-          return Array.from(deduped.values())
-            .sort((a, b) => b.timestamp - a.timestamp)
-            .slice(0, MAX_LIVE_TRADES);
+          return mergeAndTrimTrades(incoming, prev, MAX_LIVE_TRADES);
         });
       };
 
@@ -1737,8 +1910,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
           const seeded = rows
             .map((row: any) => mapTrade(row, 'seed'))
             .filter((trade): trade is PredictLiveTrade => {
-              if (!trade) return false;
-              return !trackedAssets.size || trackedAssets.has(trade.asset);
+              return Boolean(trade);
             });
           if (!liveStreamCancelled) {
             mergeTrades(seeded);
@@ -1788,8 +1960,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
             .filter((frame: any) => frame?.event_type === 'last_trade_price')
             .map((frame: any) => mapTrade(frame, 'stream'))
             .filter((trade): trade is PredictLiveTrade => {
-              if (!trade) return false;
-              return !trackedAssets.size || trackedAssets.has(trade.asset);
+              return Boolean(trade);
             });
 
           mergeTrades(updates);
@@ -1852,67 +2023,75 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
     const fetchVolumeMarketsPage = async () => {
       if (volumeFetchInFlightRef.current || !hasMoreVolumeMarketsRef.current) {
-        return;
+        return false;
       }
       volumeFetchInFlightRef.current = true;
 
       try {
-        const endDateMin = encodeURIComponent(new Date().toISOString());
-        //Event query
-        const eventsQuery = `/predictapi/events?active=true&archived=false&closed=false&order=volume24hr&ascending=false&limit=${EVENTS_PAGE_SIZE}&offset=${volumeOffsetRef.current}&end_date_min=${endDateMin}`;
-        updateEventsQuery('All', eventsQuery);
-        const eventsRes = await fetchPolymarketJson(eventsQuery);
+        let addedAny = false;
+        let guard = 0;
 
-        if (liveStreamCancelled) return;
+        while (!liveStreamCancelled && hasMoreVolumeMarketsRef.current && !addedAny && guard < 5) {
+          const endDateMin = encodeURIComponent(new Date().toISOString());
+          const eventsQuery = `/predictapi/events?active=true&archived=false&closed=false&order=volume24hr&ascending=false&limit=${EVENTS_PAGE_SIZE}&offset=${volumeOffsetRef.current}&end_date_min=${endDateMin}`;
+          updateEventsQuery('All', eventsQuery);
+          const eventsRes = await fetchPolymarketJson(eventsQuery);
 
-        const allEvents = Array.isArray(eventsRes) ? eventsRes : [];
-        if (allEvents.length === 0) {
-          hasMoreVolumeMarketsRef.current = false;
-          return;
+          if (liveStreamCancelled) return false;
+
+          const allEvents = Array.isArray(eventsRes) ? eventsRes : [];
+          if (allEvents.length === 0) {
+            hasMoreVolumeMarketsRef.current = false;
+            break;
+          }
+
+          hasMoreVolumeMarketsRef.current = allEvents.length >= EVENTS_PAGE_SIZE;
+          volumeOffsetRef.current += EVENTS_PAGE_SIZE;
+
+          const groupedMarkets = buildGroupedMarkets(allEvents);
+          const entries = groupedMarkets
+            .map((market: any) => formatMarketEntry(market))
+            .filter(Boolean) as [string, any][];
+
+          const freshEntries = entries.filter(([marketId]) => {
+            if (!marketId) return false;
+            if (seenMarketIdsRef.current.has(marketId)) return false;
+            seenMarketIdsRef.current.add(marketId);
+            return true;
+          });
+
+          if (freshEntries.length === 0) {
+            guard += 1;
+            continue;
+          }
+
+          addedAny = true;
+          const newMarketIds = freshEntries.map(([marketId]) => marketId);
+          marketIdsRef.current = [...marketIdsRef.current, ...newMarketIds];
+
+          const newEntriesMap = Object.fromEntries(freshEntries);
+          let mergedMarkets: any = {};
+
+          setPredictMarketsData((prev: any) => {
+            mergedMarkets = {
+              ...prev,
+              ...newEntriesMap,
+            };
+            predictMarketsRef.current = mergedMarkets;
+            return mergedMarkets;
+          });
+
+          if (Object.keys(mergedMarkets).length > 0) {
+            updateVolumeCategories(
+              Object.values(mergedMarkets),
+              marketIdsRef.current,
+            );
+          }
         }
-
-        hasMoreVolumeMarketsRef.current = false;
-
-        volumeOffsetRef.current += EVENTS_PAGE_SIZE;
-
-        const groupedMarkets = buildGroupedMarkets(allEvents);
-        const entries = groupedMarkets
-          .map((market: any) => formatMarketEntry(market))
-          .filter(Boolean) as [string, any][];
-
-        const freshEntries = entries.filter(([marketId]) => {
-          if (!marketId) return false;
-          if (seenMarketIdsRef.current.has(marketId)) return false;
-          seenMarketIdsRef.current.add(marketId);
-          return true;
-        });
-
-        if (freshEntries.length === 0) return;
-
-        const newMarketIds = freshEntries.map(([marketId]) => marketId);
-        marketIdsRef.current = [...marketIdsRef.current, ...newMarketIds];
-
-        const newEntriesMap = Object.fromEntries(freshEntries);
-        let mergedMarkets: any = {};
-
-        setPredictMarketsData((prev: any) => {
-          mergedMarkets = {
-            ...prev,
-            ...newEntriesMap,
-          };
-          predictMarketsRef.current = mergedMarkets;
-          return mergedMarkets;
-        });
-
-        if (Object.keys(mergedMarkets).length > 0) {
-          updateVolumeCategories(
-            Object.values(mergedMarkets),
-            marketIdsRef.current,
-          );
-        }
+        return addedAny;
       } catch (error) {
         console.error('Error fetching Polymarket data:', error);
-        hasMoreVolumeMarketsRef.current = false;
+        return false;
       } finally {
         volumeFetchInFlightRef.current = false;
         if (!liveStreamCancelled) {
@@ -1991,10 +2170,8 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                 (market: any) => market.groupItemTitle || market.question,
               );
               const outcomePrices = activeMarkets.map((market: any) => {
-                const prices = typeof market.outcomePrices === 'string'
-                  ? JSON.parse(market.outcomePrices)
-                  : market.outcomePrices || [];
-                return parseFloat(prices[0] || 0);
+                const prices = normalizePolymarketNumberList(market.outcomePrices);
+                return Number(prices[0] || 0);
               });
               registerOutcomeChanges(eventKey, prev[eventKey], outcomePrices);
               const numericOutcomePrices = outcomePrices.filter((price: number) =>
@@ -2043,16 +2220,11 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
             activeMarkets.forEach((market: any) => {
               // Only update if this market is in the current page
               if (updated[market.conditionId] && currentMarketSet.has(market.conditionId)) {
-                const outcomes = typeof market.outcomes === 'string'
-                  ? JSON.parse(market.outcomes)
-                  : market.outcomes || [];
-
-                const outcomePrices = typeof market.outcomePrices === 'string'
-                  ? JSON.parse(market.outcomePrices)
-                  : market.outcomePrices || [];
+                const outcomes = normalizePolymarketList(market.outcomes);
+                const outcomePrices = normalizePolymarketNumberList(market.outcomePrices);
                 registerOutcomeChanges(market.conditionId, prev[market.conditionId], outcomePrices);
 
-                const primaryPrice = parseFloat(outcomePrices[0] || 0);
+                const primaryPrice = Number(outcomePrices[0] || 0);
                 const buyTransactions = Number(
                   market.buyTransactions ??
                     market.buyTxs ??
@@ -2134,6 +2306,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         wsRef.current.close();
         wsRef.current = null;
       }
+      bufferedTradesRef.current = [];
+      isTradeStreamPausedRef.current = false;
+      tradeMetaLookupInFlightRef.current.clear();
     };
   }, []);
 
@@ -3130,16 +3305,168 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     (t: Token) => {
       setTokenData(t);
       const marketKey = (t as any).contractId || (t as any).contractName;
-      const marketSlug = (t as any).eventSlug || (t as any).slug || marketKey;
+      const marketSlugRaw =
+        (t as any).eventSlug ||
+        (t as any).slug ||
+        (t as any)?.markets?.[0]?.eventSlug ||
+        (t as any)?.markets?.[0]?.slug ||
+        marketKey;
+      const marketSlug = toEventRouteSlug(marketSlugRaw);
       if (marketKey) {
         setPredictActiveMarketKey(marketKey);
       }
       if (setOnlyThisMarket) {
         setOnlyThisMarket(true);
       }
-      navigate(`/event/${marketSlug}`);
+      if (marketSlug) {
+        navigate(`/event/${marketSlug}`);
+      }
     },
     [navigate, setOnlyThisMarket, setPredictActiveMarketKey],
+  );
+
+  const handleLiveTradeClick = useCallback(
+    async (trade: PredictLiveTrade) => {
+      const navigateToEventSlug = (candidateRaw: string): boolean => {
+        const routeSlug = toEventRouteSlug(candidateRaw);
+        if (!routeSlug) return false;
+        navigate(`/event/${routeSlug}`);
+        return true;
+      };
+
+      const knownMarket = predictMarketsRef.current?.[trade.conditionId];
+      if (knownMarket) {
+        setTokenData(knownMarket);
+        setPredictActiveMarketKey(knownMarket.contractId || trade.conditionId);
+        if (setOnlyThisMarket) {
+          setOnlyThisMarket(true);
+        }
+        const knownSlug =
+          knownMarket.eventSlug ||
+          knownMarket.marketSlug ||
+          knownMarket.slug ||
+          trade.marketSlug;
+        if (knownSlug && navigateToEventSlug(String(knownSlug))) {
+          return;
+        }
+      }
+
+      let nextConditionId = String(trade.conditionId || '').trim();
+      const metaSlug = String(
+        tradeAssetMetaRef.current.get(trade.asset)?.marketSlug || '',
+      ).trim();
+
+      if (nextConditionId && predictMarketsRef.current?.[nextConditionId]) {
+        setPredictActiveMarketKey(nextConditionId);
+      }
+      if (setOnlyThisMarket) {
+        setOnlyThisMarket(true);
+      }
+
+      if (trade.marketSlug && navigateToEventSlug(trade.marketSlug)) {
+        return;
+      }
+      if (metaSlug && navigateToEventSlug(metaSlug)) {
+        return;
+      }
+
+      let nextEventSlug = metaSlug;
+
+      // Live stream frames can omit market metadata for assets we have not loaded yet.
+      // Resolve by asset id so trade rows always have a market title and a navigable slug.
+      if (!nextEventSlug || isPlaceholderMarketLabel(trade.market)) {
+        try {
+          const response = await fetch(
+            `/predictapi/markets?clob_token_ids=${encodeURIComponent(trade.asset)}`,
+          );
+          if (response.ok) {
+            const payload = await response.json().catch(() => []);
+            const marketRow = Array.isArray(payload) ? payload[0] : null;
+            if (marketRow) {
+              const outcomes = normalizePolymarketList(marketRow?.outcomes).map(String);
+              const clobTokenIds = collectPolymarketTokenIds(marketRow?.clobTokenIds);
+              const assetIndex = clobTokenIds.findIndex((id) => id === trade.asset);
+              const resolvedOutcome = outcomes[assetIndex] ?? '';
+              const resolvedConditionId = String(
+                marketRow?.conditionId ?? nextConditionId ?? '',
+              ).trim();
+              const resolvedMarket = String(
+                marketRow?.question ??
+                  marketRow?.events?.[0]?.title ??
+                  marketRow?.title ??
+                  trade.market,
+              ).trim();
+              const resolvedEventSlug = String(
+                marketRow?.eventSlug ??
+                  marketRow?.events?.[0]?.slug ??
+                  '',
+              ).trim();
+
+              nextConditionId = resolvedConditionId || nextConditionId;
+              nextEventSlug =
+                resolvedEventSlug ||
+                String(marketRow?.slug ?? '').trim() ||
+                nextEventSlug;
+
+              const currentMeta = tradeAssetMetaRef.current.get(trade.asset);
+              tradeAssetMetaRef.current.set(trade.asset, {
+                conditionId: nextConditionId || currentMeta?.conditionId || '',
+                market: resolvedMarket || currentMeta?.market || trade.market,
+                outcome: resolvedOutcome || currentMeta?.outcome || trade.outcome,
+                marketSlug: nextEventSlug || currentMeta?.marketSlug,
+              });
+
+              if (nextConditionId && resolvedMarket) {
+                tradeConditionTitleRef.current.set(nextConditionId, resolvedMarket);
+              }
+
+              setLiveTrades((prev) =>
+                prev.map((row) => {
+                  if (row.asset !== trade.asset) return row;
+                  return {
+                    ...row,
+                    conditionId: nextConditionId || row.conditionId,
+                    market:
+                      isPlaceholderMarketLabel(row.market) && resolvedMarket
+                        ? resolvedMarket
+                        : row.market,
+                    outcome: row.outcome || resolvedOutcome,
+                    marketSlug: row.marketSlug || nextEventSlug,
+                  };
+                }),
+              );
+            }
+          }
+        } catch (error) {
+          console.warn('Live trade market lookup failed:', error);
+        }
+      }
+
+      if (nextConditionId && predictMarketsRef.current?.[nextConditionId]) {
+        setPredictActiveMarketKey(nextConditionId);
+        const fallbackLoadedSlug = String(
+          predictMarketsRef.current[nextConditionId]?.eventSlug ??
+            predictMarketsRef.current[nextConditionId]?.marketSlug ??
+            predictMarketsRef.current[nextConditionId]?.slug ??
+            '',
+        ).trim();
+        if (fallbackLoadedSlug && navigateToEventSlug(fallbackLoadedSlug)) {
+          return;
+        }
+      }
+
+      if (nextEventSlug) {
+        if (navigateToEventSlug(nextEventSlug)) {
+          return;
+        }
+      }
+
+      const fallbackSlug = String(trade.marketSlug || metaSlug || '').trim();
+      if (fallbackSlug && navigateToEventSlug(fallbackSlug)) {
+        return;
+      }
+    },
+    [navigate, setOnlyThisMarket, setPredictActiveMarketKey, setTokenData],
   );
 
   const hideToken = useCallback(
@@ -3399,14 +3726,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const hasSetDefaultCategoryRef = useRef(false);
   const [liveTrades, setLiveTrades] = useState<PredictLiveTrade[]>([]);
+  const [isTradeStreamPaused, setIsTradeStreamPaused] = useState(false);
   const [tradeMinSize, setTradeMinSize] = useState('');
   const [tradeSideFilter, setTradeSideFilter] = useState<'all' | 'buy' | 'sell'>('all');
-  const [tradeStreamHeight, setTradeStreamHeight] = useState<number>(() => {
-    const stored = localStorage.getItem('predict_trade_stream_height');
-    const parsed = Number(stored);
-    if (!Number.isFinite(parsed)) return 420;
-    return Math.max(220, Math.min(760, Math.floor(parsed)));
-  });
   const [activeMultiScrollCard, setActiveMultiScrollCard] = useState<string | null>(null);
   const [outcomePulseMap, setOutcomePulseMap] = useState<Record<string, number>>({});
   const [isPredictLoading, setIsPredictLoading] = useState(
@@ -3418,11 +3740,12 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [itemsPerPage, setItemsPerPage] = useState(40);
     const MAX_LIVE_TRADES = 50;
-    const LIVE_TRADES_SEED_LIMIT = 80;
+    const LIVE_TRADES_SEED_LIMIT = 200;
     const LIVE_TRADES_WS_RECONNECT_MS = 1500;
     const LIVE_TRADES_WS_PING_MS = 10000;
     const EVENTS_PAGE_SIZE = 100;
     const TAG_EVENTS_LIMIT = 100;
+    const MAX_TAG_EVENTS_PAGES = 10;
     const DEFAULT_TAG_ORDER = [
       'Politics',
       'Sports',
@@ -3446,7 +3769,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     const hasMoreVolumeMarketsRef = useRef(true);
     const volumeFetchInFlightRef = useRef(false);
     const trendingListRef = useRef<HTMLDivElement | null>(null);
-    const fetchVolumePageRef = useRef<(() => void) | null>(null);
+    const fetchVolumePageRef = useRef<(() => Promise<boolean>) | null>(null);
 
     const normalizeTagName = (value: string) =>
       value
@@ -3519,19 +3842,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     itemsPerPageRef.current = itemsPerPage;
   }, [itemsPerPage]);
 
-  useEffect(() => {
-    localStorage.setItem(
-      'predict_trade_stream_height',
-      Math.max(220, Math.min(760, Math.floor(tradeStreamHeight))).toString(),
-    );
-  }, [tradeStreamHeight]);
-
   const liveTradeSubscription = useMemo(() => {
     const assetIds = new Set<string>();
-    const assetMeta = new Map<
-      string,
-      { conditionId: string; market: string; outcome: string }
-    >();
+    const assetMeta = new Map<string, TradeAssetMeta>();
     const conditionTitles = new Map<string, string>();
 
     Object.values(predictMarketsData || {}).forEach((token: any) => {
@@ -3552,6 +3865,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         conditionIdRaw?: string,
         marketRaw?: string,
         outcomeRaw?: string,
+        marketSlugRaw?: string,
       ) => {
         const assetId = String(assetIdRaw || '').trim();
         if (!assetId) return;
@@ -3562,7 +3876,14 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
         const conditionId = String(conditionIdRaw ?? tokenConditionId ?? '').trim();
         const market = String(marketRaw ?? tokenTitle ?? '').trim();
         const outcome = String(outcomeRaw ?? '').trim();
-        assetMeta.set(assetId, { conditionId, market, outcome });
+        const marketSlug = String(
+          marketSlugRaw ??
+            token?.eventSlug ??
+            token?.marketSlug ??
+            token?.slug ??
+            '',
+        ).trim();
+        assetMeta.set(assetId, { conditionId, market, outcome, marketSlug });
       };
 
       collectPolymarketTokenIds(token?.clobTokenIds).forEach((assetId, index) => {
@@ -3571,6 +3892,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
           tokenConditionId,
           tokenTitle,
           tokenOutcomes[index] ?? '',
+          token?.eventSlug ?? token?.marketSlug ?? token?.slug ?? '',
         );
       });
 
@@ -3604,6 +3926,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                 marketOutcomes[assetIndex] ??
                   tokenOutcomes[marketIndex] ??
                   (assetIndex === 0 ? 'Yes' : assetIndex === 1 ? 'No' : ''),
+                market?.eventSlug ?? market?.slug ?? token?.eventSlug ?? '',
               );
             },
           );
@@ -3723,10 +4046,8 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
             eventArchived: eventMeta.eventArchived,
             outcomes: activeMarkets.map((m: any) => m.groupItemTitle || m.question),
             outcomePrices: activeMarkets.map((m: any) => {
-              const prices = typeof m.outcomePrices === 'string'
-                ? JSON.parse(m.outcomePrices)
-                : m.outcomePrices || [];
-              return parseFloat(prices[0] || 0);
+              const prices = normalizePolymarketNumberList(m.outcomePrices);
+              return Number(prices[0] || 0);
             }),
             markets: activeMarkets,
             volume24hr: activeMarkets.reduce((sum: number, m: any) => sum + (m.volume24hr || 0), 0),
@@ -3763,13 +4084,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     const formatMarketEntry = useCallback((market: any) => {
       if (!market?.conditionId) return null;
 
-      const outcomes = typeof market.outcomes === 'string'
-        ? JSON.parse(market.outcomes)
-        : market.outcomes || [];
+      const outcomes = normalizePolymarketList(market.outcomes);
 
-      const outcomePrices = typeof market.outcomePrices === 'string'
-        ? JSON.parse(market.outcomePrices)
-        : market.outcomePrices || [];
+      const outcomePrices = normalizePolymarketNumberList(market.outcomePrices);
 
       const numericOutcomePrices = outcomePrices
         .map((price: any) => Number(price))
@@ -3987,18 +4304,42 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       tagFetchInFlightRef.current.add(category);
 
       try {
-        const endDateMin = encodeURIComponent(new Date().toISOString());
-        const eventsQuery = `/predictapi/events?active=true&archived=false&closed=false&${tagParam}&order=volume24hr&ascending=false&limit=${TAG_EVENTS_LIMIT}&offset=0&end_date_min=${endDateMin}`;
-        updateEventsQuery(category, eventsQuery);
-        const page = await fetchPolymarketJson(eventsQuery);
+        const collectedGroupedMarkets: any[] = [];
+        let offset = 0;
+        let pageCount = 0;
+        let hasMorePages = true;
 
-        if (!Array.isArray(page) || page.length === 0) {
+        while (hasMorePages && pageCount < MAX_TAG_EVENTS_PAGES) {
+          const endDateMin = encodeURIComponent(new Date().toISOString());
+          const eventsQuery = `/predictapi/events?active=true&archived=false&closed=false&${tagParam}&order=volume24hr&ascending=false&limit=${TAG_EVENTS_LIMIT}&offset=${offset}&end_date_min=${endDateMin}`;
+          if (pageCount === 0) {
+            updateEventsQuery(category, eventsQuery);
+          }
+
+          const page = await fetchPolymarketJson(eventsQuery);
+          const rows = Array.isArray(page) ? page : [];
+          if (rows.length === 0) break;
+
+          const groupedMarkets = buildGroupedMarkets(rows);
+          if (groupedMarkets.length > 0) {
+            collectedGroupedMarkets.push(...groupedMarkets);
+          }
+
+          hasMorePages = rows.length >= TAG_EVENTS_LIMIT;
+          offset += TAG_EVENTS_LIMIT;
+          pageCount += 1;
+        }
+
+        if (!collectedGroupedMarkets.length) {
+          setPredictFilterOptions((prev: any) => ({
+            ...(prev || {}),
+            [category]: [],
+          }));
           tagFetchedRef.current.add(category);
           return;
         }
 
-        const groupedMarkets = buildGroupedMarkets(page);
-        const entries = groupedMarkets
+        const entries = collectedGroupedMarkets
           .map((market: any) => formatMarketEntry(market))
           .filter(Boolean) as [string, any][];
 
@@ -4011,7 +4352,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
         const categoryMarketIds = Array.from(
           new Set(
-            groupedMarkets
+            collectedGroupedMarkets
               .map((market: any) => market.conditionId)
               .filter(Boolean),
           ),
@@ -4031,7 +4372,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
           setIsPredictLoading(false);
         }
       }
-    }, [buildGroupedMarkets, fetchPolymarketJson, formatMarketEntry, resolveTagMeta, setPredictFilterOptions, setPredictMarketsData]);
+    }, [MAX_TAG_EVENTS_PAGES, TAG_EVENTS_LIMIT, buildGroupedMarkets, fetchPolymarketJson, formatMarketEntry, resolveTagMeta, setPredictFilterOptions, setPredictMarketsData]);
 
     const scrollTrendingListToTop = useCallback(() => {
       const grid = trendingListRef.current;
@@ -4090,7 +4431,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     const groupedKeys = new Set<string>();
     filtered.forEach((token: any) => {
       if (Array.isArray(token.markets) && token.markets.length > 0) {
-        const key = token.eventSlug || token.eventTitle;
+        const key = token.eventSlug ? `event:${token.eventSlug}` : '';
         if (key) groupedKeys.add(key);
       }
     });
@@ -4098,7 +4439,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     if (groupedKeys.size > 0) {
       filtered = filtered.filter((token: any) => {
         if (Array.isArray(token.markets) && token.markets.length > 0) return true;
-        const key = token.eventSlug || token.eventTitle;
+        const key = token.eventSlug ? `event:${token.eventSlug}` : '';
         if (!key) return true;
         return !groupedKeys.has(key);
       });
@@ -4177,6 +4518,24 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const isTradeBuy = useCallback((trade: any) => {
     return normalizeTradeSide(trade?.side ?? trade?.type, trade?.isBuy) === 'BUY';
   }, []);
+
+  const flushBufferedTradeUpdates = useCallback(() => {
+    if (!bufferedTradesRef.current.length) return;
+    const pending = bufferedTradesRef.current;
+    bufferedTradesRef.current = [];
+    setLiveTrades((prev) => mergeAndTrimTrades(pending, prev, MAX_LIVE_TRADES));
+  }, [MAX_LIVE_TRADES]);
+
+  const handleLiveTradesMouseEnter = useCallback(() => {
+    isTradeStreamPausedRef.current = true;
+    setIsTradeStreamPaused(true);
+  }, []);
+
+  const handleLiveTradesMouseLeave = useCallback(() => {
+    isTradeStreamPausedRef.current = false;
+    setIsTradeStreamPaused(false);
+    flushBufferedTradeUpdates();
+  }, [flushBufferedTradeUpdates]);
 
   const filteredLiveTrades = useMemo(() => {
     const min = parseFloat(tradeMinSize);
@@ -4300,7 +4659,14 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       <div className="explorer-container">
         <div className="predict-layout-with-stream">
             {/* Live Trade Stream Sidebar */}
-            <div className="predict-trade-stream-sidebar">
+            <div
+              className="predict-trade-stream-sidebar"
+              onMouseEnter={handleLiveTradesMouseEnter}
+              onMouseLeave={handleLiveTradesMouseLeave}
+            >
+              {isTradeStreamPaused && (
+                <div className="predict-trade-stream-paused-tooltip">Paused</div>
+              )}
               <div className="predict-trade-stream-header">
                 <div className="predict-trade-stream-title-row">
                   <h3>Live Trades</h3>
@@ -4325,9 +4691,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         }
                       />
                     </div>
-                    <div className="predict-trade-filter-group">
+                    <div className="predict-trade-filter-group predict-trade-side-group">
                       <select
-                        className="predict-trade-filter-select"
+                        className="predict-trade-filter-select predict-trade-side-select"
                         value={tradeSideFilter}
                         onChange={(e) =>
                           setTradeSideFilter(e.target.value as 'all' | 'buy' | 'sell')
@@ -4338,41 +4704,14 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                         <option value="sell">Sell</option>
                       </select>
                     </div>
-                    <div className="predict-trade-filter-group predict-trade-height-group">
-                      <span className="predict-trade-filter-label">Height</span>
-                      <button
-                        type="button"
-                        className="predict-trade-height-btn"
-                        onClick={() =>
-                          setTradeStreamHeight((prev) =>
-                            Math.max(220, Math.min(760, prev - 40)),
-                          )
-                        }
-                        aria-label="Decrease live trades height"
-                      >
-                        -
-                      </button>
-                      <button
-                        type="button"
-                        className="predict-trade-height-btn"
-                        onClick={() =>
-                          setTradeStreamHeight((prev) =>
-                            Math.max(220, Math.min(760, prev + 40)),
-                          )
-                        }
-                        aria-label="Increase live trades height"
-                      >
-                        +
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
               <div
                 className="predict-trade-stream-list"
                 style={{
-                  height: `${tradeStreamHeight}px`,
-                  maxHeight: 'calc(100vh - 170px)',
+                  height: 'calc(100vh - 100px)',
+                  maxHeight: 'calc(100vh - 100px)',
                 }}
               >
                 {filteredLiveTrades.length === 0 ? (
@@ -4383,7 +4722,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                     <p>{liveTrades.length === 0 ? 'Waiting for trades...' : 'No trades match filters.'}</p>
                   </div>
                 ) : (
-                  filteredLiveTrades.map((trade, idx) => {
+                  filteredLiveTrades.map((trade) => {
                     const timestamp = trade.timestamp;
                     const timeAgo = formatTimeAgo(timestamp);
                     const side = trade.side;
@@ -4396,16 +4735,30 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                     const market = trade.market || 'Unknown';
 
                     return (
-                      <div key={idx} className="predict-trade-stream-item">
+                      <div
+                        key={trade.key}
+                        className="predict-trade-stream-item"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleLiveTradeClick(trade)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleLiveTradeClick(trade);
+                          }
+                        }}
+                      >
                         <div className="predict-trade-stream-item-header">
-                          <span className="predict-trade-stream-market">{market.length > 30 ? market.substring(0, 30) + '...' : market}</span>
+                          <span className="predict-trade-stream-market" title={market}>
+                            {market.length > 30 ? market.substring(0, 30) + '...' : market}
+                          </span>
                           <span className="predict-trade-stream-time">{timeAgo}</span>
                         </div>
                         <div className="predict-trade-stream-item-details">
                           <span className={`predict-trade-stream-side ${sideClass}`}>
                             {side === 'UNKNOWN' ? 'TRADE' : side}
                           </span>
-                          <span className="predict-trade-stream-price">{formatMarketPercent(price)}¢</span>
+                          <span className="predict-trade-stream-price">{formatMarketPercent(price)}&cent;</span>
                           <span className="predict-trade-stream-amount">${formatCommas(amount.toFixed(0))}</span>
                         </div>
                       </div>
@@ -4525,9 +4878,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                     ? (() => {
                         const entries = token.markets && token.markets.length
                           ? token.markets.map((market: any, index: number) => {
-                              const prices = typeof market.outcomePrices === 'string'
-                                ? JSON.parse(market.outcomePrices)
-                                : market.outcomePrices || [];
+                              const prices = normalizePolymarketNumberList(
+                                market.outcomePrices,
+                              );
                               const probability = Number(
                                 prices[0] ?? outcomePrices[index] ?? 0,
                               );
@@ -5441,18 +5794,28 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
                   </span>
                   <button
                     className="predict-pagination-btn"
-                    onClick={() => {
-                      const canAdvanceBeyond =
+                    onClick={async () => {
+                      const atCurrentEnd = perpsCurrentPage >= totalPages;
+                      const shouldFetchMore =
                         selectedCategory === 'All' &&
-                        hasMoreVolumeMarketsRef.current;
-                      if (canAdvanceBeyond) {
-                        fetchVolumePageRef.current?.();
+                        hasMoreVolumeMarketsRef.current &&
+                        atCurrentEnd;
+
+                      if (shouldFetchMore) {
+                        const loaded = await fetchVolumePageRef.current?.();
+                        if (!loaded) {
+                          scrollTrendingListToTop();
+                          return;
+                        }
                       }
-                      setPerpsCurrentPage((prev) =>
-                        canAdvanceBeyond
-                          ? prev + 1
-                          : Math.min(totalPages, prev + 1),
-                      );
+
+                      setPerpsCurrentPage((prev) => {
+                        if (prev < totalPages) return prev + 1;
+                        if (selectedCategory === 'All' && hasMoreVolumeMarketsRef.current) {
+                          return prev + 1;
+                        }
+                        return prev;
+                      });
                       scrollTrendingListToTop();
                     }}
                     disabled={

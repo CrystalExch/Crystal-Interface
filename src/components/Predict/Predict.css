@@ -1150,121 +1150,170 @@
 /* Recent Activity */
 .predict-event-recent-activity {
   margin-top: auto;
-  border-top: 1px solid rgba(179, 184, 249, 0.07);
-  padding-top: 16px;
+  border: 1px solid rgba(179, 184, 249, 0.11);
+  background: rgba(8, 8, 8, 0.78);
+  border-radius: 12px;
+  padding: 12px;
 }
 
 .predict-event-activity-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+  gap: 8px;
 }
 
 .predict-event-activity-controls {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .predict-event-activity-title {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #ffffffcf;
-  letter-spacing: -0.3px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(245, 248, 255, 0.92);
+  letter-spacing: 0.01em;
 }
 
 .predict-event-activity-status-pill {
-  font-size: 0.68rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.64rem;
   line-height: 1;
-  padding: 4px 8px;
+  padding: 4px 9px;
   border-radius: 999px;
-  border: 1px solid transparent;
-  letter-spacing: 0.02em;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  font-weight: 500;
+  font-weight: 700;
+}
+
+.predict-event-activity-status-pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
 }
 
 .predict-event-activity-status-pill.connected {
-  color: #6ee7b7;
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.35);
+  color: rgba(158, 245, 208, 0.98);
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.34);
+}
+
+.predict-event-activity-status-pill.connected::before {
+  background: rgba(16, 185, 129, 0.95);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 
 .predict-event-activity-status-pill.disconnected {
-  color: #fda4af;
-  background: rgba(244, 63, 94, 0.1);
-  border-color: rgba(244, 63, 94, 0.35);
+  color: rgba(255, 194, 194, 0.96);
+  background: rgba(244, 63, 94, 0.14);
+  border-color: rgba(244, 63, 94, 0.34);
+}
+
+.predict-event-activity-status-pill.disconnected::before {
+  background: rgba(244, 63, 94, 0.95);
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.2);
 }
 
 .predict-event-activity-hide-btn {
-  background: none;
-  border: none;
-  color: #666;
-  font-size: 0.8rem;
-  font-weight: 300;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(220, 227, 252, 0.85);
+  font-size: 0.67rem;
+  font-weight: 600;
   cursor: pointer;
-  letter-spacing: -0.3px;
-  transition: 0.2s ease;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 }
 
 .predict-event-activity-hide-btn:hover {
-  color: #ffffffcf;
+  color: rgba(241, 245, 255, 0.98);
+  border-color: rgba(179, 184, 249, 0.33);
+  background: rgba(179, 184, 249, 0.11);
 }
 
 .predict-event-activity-tabs {
-  display: flex;
-  gap: 0;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.07);
-  margin-bottom: 12px;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 10px;
 }
 
 .predict-event-activity-tab {
-  background: none;
-  border: none;
-  padding: 8px 16px;
-  color: #666;
-  font-size: 0.85rem;
-  font-weight: 300;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 6px 10px;
+  color: rgba(177, 186, 214, 0.72);
+  font-size: 0.7rem;
+  font-weight: 600;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: 0.2s ease;
-  letter-spacing: -0.3px;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .predict-event-activity-tab:hover {
-  color: #ffffffcf;
+  color: rgba(239, 243, 255, 0.93);
+  background: rgba(179, 184, 249, 0.08);
 }
 
 .predict-event-activity-tab.active {
-  color: #d8dcff;
-  border-bottom-color: #d8dcff;
+  color: rgba(240, 244, 255, 0.96);
+  border-color: rgba(179, 184, 249, 0.32);
+  background: rgba(179, 184, 249, 0.16);
 }
 
 .predict-event-activity-list {
-  min-height: 80px;
+  min-height: 92px;
 }
 
 .predict-event-activity-message {
-  padding: 10px 0;
-  color: #93a0c6;
-  font-size: 0.78rem;
-  font-weight: 300;
-  letter-spacing: -0.2px;
+  padding: 12px 8px;
+  color: rgba(171, 186, 232, 0.85);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.14);
+  background: rgba(179, 184, 249, 0.08);
 }
 
 .predict-event-activity-message.error {
-  color: #fca5a5;
+  color: rgba(255, 194, 194, 0.96);
+  border-color: rgba(244, 63, 94, 0.34);
+  background: rgba(244, 63, 94, 0.12);
 }
 
 .predict-event-activity-rows {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 210px;
+  max-height: 232px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 2px;
+}
+
+.predict-event-activity-rows::-webkit-scrollbar {
+  width: 4px;
+}
+
+.predict-event-activity-rows::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
 }
 
 .predict-event-activity-row {
@@ -1272,10 +1321,24 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(179, 184, 249, 0.12);
-  background: rgba(10, 14, 35, 0.48);
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.14);
+  background: rgba(8, 8, 8, 0.92);
+  transition: border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.predict-event-activity-row.buy {
+  border-color: rgba(38, 178, 109, 0.24);
+}
+
+.predict-event-activity-row.sell {
+  border-color: rgba(208, 89, 89, 0.26);
+}
+
+.predict-event-activity-row:hover {
+  background: rgba(179, 184, 249, 0.06);
+  border-color: rgba(179, 184, 249, 0.28);
 }
 
 .predict-event-activity-main {
@@ -1286,32 +1349,32 @@
 }
 
 .predict-event-activity-side {
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   line-height: 1;
-  padding: 4px 6px;
+  padding: 3px 7px;
   border-radius: 6px;
-  border: 1px solid transparent;
-  letter-spacing: 0.02em;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .predict-event-activity-side.buy {
-  color: #6ee7b7;
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.3);
+  color: rgba(132, 229, 186, 0.96);
+  background: rgba(38, 178, 109, 0.18);
+  border-color: rgba(38, 178, 109, 0.34);
 }
 
 .predict-event-activity-side.sell {
-  color: #fda4af;
-  background: rgba(244, 63, 94, 0.1);
-  border-color: rgba(244, 63, 94, 0.3);
+  color: rgba(242, 151, 151, 0.96);
+  background: rgba(208, 89, 89, 0.16);
+  border-color: rgba(208, 89, 89, 0.34);
 }
 
 .predict-event-activity-side.unknown {
-  color: #c4b5fd;
-  background: rgba(124, 58, 237, 0.12);
-  border-color: rgba(124, 58, 237, 0.35);
+  color: rgba(214, 219, 242, 0.88);
+  background: rgba(130, 140, 170, 0.12);
+  border-color: rgba(130, 140, 170, 0.3);
 }
 
 .predict-event-activity-outcome {
@@ -1319,35 +1382,35 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #e7ebff;
-  font-size: 0.78rem;
-  letter-spacing: -0.2px;
+  color: rgba(237, 241, 255, 0.94);
+  font-size: 0.76rem;
+  letter-spacing: 0.01em;
 }
 
 .predict-event-activity-metrics {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .predict-event-activity-price {
-  color: #d8dcff;
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: -0.2px;
+  color: rgba(229, 235, 255, 0.9);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .predict-event-activity-size {
-  color: #a9b0d8;
-  font-size: 0.76rem;
+  color: rgba(190, 198, 226, 0.82);
+  font-size: 0.72rem;
   min-width: 44px;
   text-align: right;
 }
 
 .predict-event-activity-time {
-  color: #7d85ad;
-  font-size: 0.72rem;
+  color: rgba(147, 155, 184, 0.78);
+  font-size: 0.68rem;
   min-width: 56px;
   text-align: right;
 }
@@ -1356,11 +1419,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 80px;
-  color: #666;
-  font-size: 0.85rem;
-  font-weight: 300;
-  letter-spacing: -0.3px;
+  height: 92px;
+  color: rgba(168, 177, 204, 0.66);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-align: center;
+  border: 1px dashed rgba(179, 184, 249, 0.16);
+  border-radius: 8px;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
 }
 
 /* ==========================================
@@ -1510,6 +1577,40 @@
 
   .predict-event-order-type-dropdown select {
     width: 100%;
+  }
+
+  .predict-event-recent-activity {
+    padding: 10px;
+  }
+
+  .predict-event-activity-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .predict-event-activity-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .predict-event-activity-tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .predict-event-activity-tab {
+    flex: 1;
+  }
+
+  .predict-event-activity-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .predict-event-activity-metrics {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 
