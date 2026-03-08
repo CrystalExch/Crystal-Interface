@@ -22,9 +22,14 @@ const SERIES_BACKGROUND_REFRESH_MS = 10 * 60 * 1000;
 const EVENT_REFRESH_MS = 60 * 1000;
 const EVENT_CACHE_TTL_MS = 30 * 60 * 1000;
 const LIVE_TRADES_MAX_ITEMS = 60;
-const LIVE_TRADES_SEED_LIMIT = 40;
 const LIVE_TRADES_WS_RECONNECT_MS = 3000;
 const LIVE_TRADES_WS_PING_MS = 10000;
+const ACTIVITY_PANEL_DEFAULT_HEIGHT = 232;
+const ACTIVITY_PANEL_MIN_HEIGHT = 132;
+const ACTIVITY_PANEL_MAX_HEIGHT = 520;
+const CHART_SPLIT_DEFAULT_RATIO = 52;
+const CHART_SPLIT_MIN_RATIO = 30;
+const CHART_SPLIT_MAX_RATIO = 75;
 
 interface PredictProps {
   layoutSettings?: string;
@@ -109,7 +114,14 @@ type LiveTrade = {
   outcome: string;
   trader: string;
   txHash: string;
-  source: 'history' | 'stream';
+  source: 'stream';
+};
+type OpenOrderActivityRow = {
+  key: string;
+  side: 'BUY' | 'SELL';
+  price: number;
+  size: number;
+  outcome: string;
 };
 type CachedEventSnapshot = {
   conditionId: string;
@@ -509,6 +521,10 @@ const Predict: React.FC<PredictProps> = ({
   });
   const [activityTab, setActivityTab] = useState<'all' | 'openOrders'>('all');
   const [isActivityHidden, setIsActivityHidden] = useState(false);
+  const [activityPanelHeight, setActivityPanelHeight] = useState<number>(ACTIVITY_PANEL_DEFAULT_HEIGHT);
+  const [isActivityResizing, setIsActivityResizing] = useState(false);
+  const [chartSplitRatio, setChartSplitRatio] = useState<number>(CHART_SPLIT_DEFAULT_RATIO);
+  const [isChartSplitResizing, setIsChartSplitResizing] = useState(false);
   const [liveTrades, setLiveTrades] = useState<LiveTrade[]>([]);
   const [liveTradesConnected, setLiveTradesConnected] = useState(false);
   const [liveTradesError, setLiveTradesError] = useState<string | null>(null);
@@ -526,10 +542,17 @@ const Predict: React.FC<PredictProps> = ({
   const seriesRefs = useRef<Map<string, ISeriesApi<'Line'>>>(new Map());
   const chartYRangeRef = useRef<{ min: number; max: number } | null>(null);
   const predictMarketsRef = useRef<Record<string, any>>({});
+  const activityResizeStateRef = useRef<{ startY: number; startHeight: number } | null>(null);
+  const leftPanelRef = useRef<HTMLDivElement>(null);
+  const chartSplitResizeStateRef = useRef<{ startY: number; startRatio: number; panelHeight: number } | null>(null);
 
   // Get current market data
   const routeMarketSlug = decodeRouteMarketSlug(marketSlug);
   const normalizedRouteMarketSlug = normalizeMarketSlug(routeMarketSlug);
+  const activeRouteSlugRef = useRef(normalizedRouteMarketSlug);
+  useEffect(() => {
+    activeRouteSlugRef.current = normalizedRouteMarketSlug;
+  }, [normalizedRouteMarketSlug]);
   const activeMarketFromStore = predictMarketsData[predictActiveMarketKey] || {};
   const normalizedActiveMarketSlugs = [
     normalizeMarketSlug(activeMarketFromStore?.eventSlug),
@@ -1159,6 +1182,12 @@ const Predict: React.FC<PredictProps> = ({
               const tokenID = market.tokenID || market.tokens?.[0]?.token_id;
               const isMultiOutcome = markets.length > 1;
 
+              if (
+                controller.signal.aborted ||
+                activeRouteSlugRef.current !== normalizedRequestedSlug
+              ) {
+                return;
+              }
               setPredictActiveMarketKey(conditionId);
 
               const outcomePrices = parseOutcomePrices(market.outcomePrices);
@@ -1475,7 +1504,7 @@ const Predict: React.FC<PredictProps> = ({
     setOBInterval(baseInterval);
   }, [baseInterval]);
 
-  // Seeds the recent-activity list from data-api and appends live trade ticks from Polymarket market WS.
+  // Streams recent-activity rows from Polymarket market WS only (no historical pre-seeding).
   useEffect(() => {
     const conditionId = String(activeMarket?.contractId || '').trim();
     if (!conditionId) {
@@ -1516,7 +1545,7 @@ const Predict: React.FC<PredictProps> = ({
       });
     };
 
-    const mapTrade = (raw: any, source: 'history' | 'stream'): LiveTrade | null => {
+    const mapTrade = (raw: any, source: 'stream'): LiveTrade | null => {
       const assetId = String(raw?.asset ?? raw?.asset_id ?? '').trim();
       const side = parseTradeSide(raw?.side);
       const price = Number(raw?.price ?? raw?.last_trade_price ?? raw?.lastTradePrice ?? 0);
@@ -1549,31 +1578,6 @@ const Predict: React.FC<PredictProps> = ({
         txHash,
         source,
       };
-    };
-
-    const seedRecentTrades = async () => {
-      try {
-        const response = await fetch(
-          `/predictdata/trades?market=${encodeURIComponent(conditionId)}&limit=${LIVE_TRADES_SEED_LIMIT}`,
-        );
-        if (!response.ok) {
-          const body = await response.text().catch(() => '');
-          throw new Error(`trade seed failed (${response.status}) ${body.slice(0, 120)}`);
-        }
-        const rows = await response.json().catch(() => []);
-        if (!Array.isArray(rows)) return;
-        const seeded = rows
-          .map((row: any) => mapTrade(row, 'history'))
-          .filter(Boolean) as LiveTrade[];
-        if (!cancelled) {
-          mergeTrades(seeded);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.warn('Predict trade seed failed:', error);
-          setLiveTradesError('Could not load recent trades');
-        }
-      }
     };
 
     const scheduleReconnect = () => {
@@ -1656,7 +1660,6 @@ const Predict: React.FC<PredictProps> = ({
     setLiveTrades([]);
     setLiveTradesConnected(false);
     setLiveTradesError(null);
-    seedRecentTrades();
     connectLiveStream();
 
     return () => {
@@ -1754,6 +1757,168 @@ const Predict: React.FC<PredictProps> = ({
       spreadData,
     };
   }, [orderbookInfo.book, amountsQuote, baseInterval]);
+
+  const openOrderRows = useMemo<OpenOrderActivityRow[]>(() => {
+    const bids = Array.isArray(orderbookData?.roundedBuyOrders) ? orderbookData.roundedBuyOrders : [];
+    const asks = Array.isArray(orderbookData?.roundedSellOrders) ? orderbookData.roundedSellOrders : [];
+
+    const topBids = bids.slice(0, 30).map((order: any, index: number) => ({
+      key: `buy-${index}-${order?.price}-${order?.size}`,
+      side: 'BUY' as const,
+      price: Number(order?.price ?? 0),
+      size: Number(order?.size ?? 0),
+      outcome: selectedOutcome || 'Yes',
+    }));
+    const topAsks = asks.slice(0, 30).map((order: any, index: number) => ({
+      key: `sell-${index}-${order?.price}-${order?.size}`,
+      side: 'SELL' as const,
+      price: Number(order?.price ?? 0),
+      size: Number(order?.size ?? 0),
+      outcome: selectedOutcome || 'No',
+    }));
+
+    return [...topBids, ...topAsks].filter(
+      (order) => Number.isFinite(order.price) && Number.isFinite(order.size) && order.size > 0,
+    );
+  }, [orderbookData?.roundedBuyOrders, orderbookData?.roundedSellOrders, selectedOutcome]);
+
+  const clampActivityPanelHeight = useCallback((value: number) => {
+    if (!Number.isFinite(value)) return ACTIVITY_PANEL_DEFAULT_HEIGHT;
+    return Math.min(ACTIVITY_PANEL_MAX_HEIGHT, Math.max(ACTIVITY_PANEL_MIN_HEIGHT, Math.round(value)));
+  }, []);
+
+  const beginActivityResize = useCallback((clientY: number) => {
+    activityResizeStateRef.current = {
+      startY: clientY,
+      startHeight: activityPanelHeight,
+    };
+    setIsActivityResizing(true);
+  }, [activityPanelHeight]);
+
+  const handleActivityResizeMouseDown = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    beginActivityResize(event.clientY);
+  }, [beginActivityResize]);
+
+  const handleActivityResizeTouchStart = useCallback((event: React.TouchEvent<HTMLButtonElement>) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    beginActivityResize(touch.clientY);
+  }, [beginActivityResize]);
+
+  useEffect(() => {
+    if (!isActivityResizing) return;
+
+    const applyClientY = (clientY: number) => {
+      const state = activityResizeStateRef.current;
+      if (!state) return;
+      const delta = state.startY - clientY;
+      const nextHeight = clampActivityPanelHeight(state.startHeight + delta);
+      setActivityPanelHeight(nextHeight);
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      applyClientY(event.clientY);
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const touch = event.touches?.[0];
+      if (!touch) return;
+      event.preventDefault();
+      applyClientY(touch.clientY);
+    };
+
+    const stopResize = () => {
+      setIsActivityResizing(false);
+      activityResizeStateRef.current = null;
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', stopResize);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', stopResize);
+    document.body.style.userSelect = 'none';
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', stopResize);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', stopResize);
+      document.body.style.userSelect = '';
+    };
+  }, [clampActivityPanelHeight, isActivityResizing]);
+
+  const clampChartSplitRatio = useCallback((value: number) => {
+    if (!Number.isFinite(value)) return CHART_SPLIT_DEFAULT_RATIO;
+    return Math.min(CHART_SPLIT_MAX_RATIO, Math.max(CHART_SPLIT_MIN_RATIO, value));
+  }, []);
+
+  const beginChartSplitResize = useCallback((clientY: number) => {
+    const leftPanel = leftPanelRef.current;
+    if (!leftPanel) return;
+    const panelHeight = leftPanel.getBoundingClientRect().height;
+    if (!Number.isFinite(panelHeight) || panelHeight <= 0) return;
+    chartSplitResizeStateRef.current = {
+      startY: clientY,
+      startRatio: chartSplitRatio,
+      panelHeight,
+    };
+    setIsChartSplitResizing(true);
+  }, [chartSplitRatio]);
+
+  const handleChartSplitMouseDown = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    beginChartSplitResize(event.clientY);
+  }, [beginChartSplitResize]);
+
+  const handleChartSplitTouchStart = useCallback((event: React.TouchEvent<HTMLButtonElement>) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    beginChartSplitResize(touch.clientY);
+  }, [beginChartSplitResize]);
+
+  useEffect(() => {
+    if (!isChartSplitResizing) return;
+
+    const applyClientY = (clientY: number) => {
+      const state = chartSplitResizeStateRef.current;
+      if (!state || state.panelHeight <= 0) return;
+      const deltaPx = clientY - state.startY;
+      const deltaRatio = (deltaPx / state.panelHeight) * 100;
+      const nextRatio = clampChartSplitRatio(state.startRatio + deltaRatio);
+      setChartSplitRatio(nextRatio);
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      applyClientY(event.clientY);
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const touch = event.touches?.[0];
+      if (!touch) return;
+      event.preventDefault();
+      applyClientY(touch.clientY);
+    };
+
+    const stopResize = () => {
+      setIsChartSplitResizing(false);
+      chartSplitResizeStateRef.current = null;
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', stopResize);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', stopResize);
+    document.body.style.userSelect = 'none';
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', stopResize);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', stopResize);
+      document.body.style.userSelect = '';
+    };
+  }, [clampChartSplitRatio, isChartSplitResizing]);
 
   const orderbookIsLoading = Boolean(orderbookInfo.tokenId && !orderbookInfo.book);
   const orderbookSymbol = selectedOutcome || 'Shares';
@@ -1901,6 +2066,18 @@ const Predict: React.FC<PredictProps> = ({
     };
   }, [chartOutcomes]);
 
+  useEffect(() => {
+    if (!chartRef.current || !chartContainerRef.current) return;
+    const rafId = window.requestAnimationFrame(() => {
+      if (!chartRef.current || !chartContainerRef.current) return;
+      chartRef.current.applyOptions({
+        width: chartContainerRef.current.clientWidth,
+        height: chartContainerRef.current.clientHeight,
+      });
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [chartSplitRatio]);
+
   // Update chart data
   useEffect(() => {
     if (!chartRef.current || chartOutcomes.length === 0) return;
@@ -2040,6 +2217,7 @@ const Predict: React.FC<PredictProps> = ({
   const holdersAvailable = Number.isFinite(holdersCount);
   const chatChannels = Array.isArray(activeMarket?.chats) ? activeMarket.chats : [];
   const activityTrades = activityTab === 'all' ? liveTrades : [];
+  const activityOpenOrders = activityTab === 'openOrders' ? openOrderRows : [];
 
   return (
     <div className={`predict-event-page ${isResolved ? 'predict-event-resolved' : ''}`}>
@@ -2093,9 +2271,12 @@ const Predict: React.FC<PredictProps> = ({
 
       <div className="predict-event-main-content">
         {/* LEFT PANEL */}
-        <div className="predict-event-left-panel">
+        <div
+          className={`predict-event-left-panel ${isChartSplitResizing ? 'resizing-split' : ''}`}
+          ref={leftPanelRef}
+        >
           {/* Chart Section */}
-          <div className="predict-event-chart-section">
+          <div className="predict-event-chart-section" style={{ flex: `0 0 ${chartSplitRatio}%` }}>
             {/* Chart Legend */}
             <div className="predict-event-chart-legend">
               {chartOutcomes.map((outcome, idx) => (
@@ -2124,8 +2305,19 @@ const Predict: React.FC<PredictProps> = ({
             </div>
           </div>
 
+          <button
+            type="button"
+            className={`predict-event-panel-splitter ${isChartSplitResizing ? 'active' : ''}`}
+            onMouseDown={handleChartSplitMouseDown}
+            onTouchStart={handleChartSplitTouchStart}
+            aria-label="Resize chart and outcomes panels"
+            aria-orientation="horizontal"
+          >
+            <span className="predict-event-panel-splitter-grip" />
+          </button>
+
           {/* Outcomes Table */}
-          <div className="predict-event-outcomes-table">
+          <div className="predict-event-outcomes-table" style={{ flex: `1 1 ${100 - chartSplitRatio}%` }}>
             <div className="predict-event-outcomes-header">
               <div
                 className="predict-event-outcome-col predict-event-outcome-name-col"
@@ -2420,7 +2612,7 @@ const Predict: React.FC<PredictProps> = ({
           </p>
 
           {/* Recent Activity */}
-          <div className="predict-event-recent-activity">
+          <div className={`predict-event-recent-activity ${isActivityResizing ? 'resizing' : ''}`}>
             <div className="predict-event-activity-header">
               <span className="predict-event-activity-title">Recent Activity</span>
               <div className="predict-event-activity-controls">
@@ -2442,6 +2634,16 @@ const Predict: React.FC<PredictProps> = ({
                 </button>
               </div>
             </div>
+            <button
+              type="button"
+              className={`predict-event-activity-resize-handle ${isActivityResizing ? 'active' : ''}`}
+              onMouseDown={handleActivityResizeMouseDown}
+              onTouchStart={handleActivityResizeTouchStart}
+              aria-label="Resize recent activity panel"
+              aria-orientation="horizontal"
+            >
+              <span />
+            </button>
             {!isActivityHidden && (
               <>
                 <div className="predict-event-activity-tabs">
@@ -2460,12 +2662,7 @@ const Predict: React.FC<PredictProps> = ({
                     Open Orders
                   </button>
                 </div>
-                <div className="predict-event-activity-list">
-                  {activityTab === 'openOrders' && (
-                    <div className="predict-event-activity-empty">
-                      Open orders activity will appear here
-                    </div>
-                  )}
+                <div className="predict-event-activity-list" style={{ height: `${activityPanelHeight}px` }}>
                   {activityTab === 'all' && liveTradesError && (
                     <div className="predict-event-activity-message error">
                       {liveTradesError}
@@ -2511,6 +2708,41 @@ const Predict: React.FC<PredictProps> = ({
                               </span>
                               <span className="predict-event-activity-time">
                                 {formatActivityTime(trade.timestamp)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {activityTab === 'openOrders' && activityOpenOrders.length === 0 && (
+                    <div className="predict-event-activity-empty">
+                      No open orders in the current book
+                    </div>
+                  )}
+                  {activityTab === 'openOrders' && activityOpenOrders.length > 0 && (
+                    <div className="predict-event-activity-rows">
+                      {activityOpenOrders.map((order) => {
+                        const sideClass = order.side === 'BUY' ? 'buy' : 'sell';
+                        return (
+                          <div key={order.key} className={`predict-event-activity-row ${sideClass}`}>
+                            <div className="predict-event-activity-main">
+                              <span className={`predict-event-activity-side ${sideClass}`}>
+                                {order.side}
+                              </span>
+                              <span className="predict-event-activity-outcome" title={order.outcome}>
+                                {order.outcome}
+                              </span>
+                            </div>
+                            <div className="predict-event-activity-metrics">
+                              <span className="predict-event-activity-price">
+                                {formatActivityPrice(order.price)}
+                              </span>
+                              <span className="predict-event-activity-size">
+                                {formatActivitySize(order.size)}
+                              </span>
+                              <span className="predict-event-activity-time">
+                                Book
                               </span>
                             </div>
                           </div>

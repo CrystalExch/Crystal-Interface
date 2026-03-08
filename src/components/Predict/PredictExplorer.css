@@ -146,6 +146,8 @@
     appearance: none;
     -webkit-appearance: none;
     height: 100%;
+    box-sizing: border-box;
+    display: block;
     min-width: 58px;
     padding: 0 18px 0 2px;
     border: none;
@@ -167,13 +169,16 @@
 
 .predict-trade-side-group {
     min-width: 76px;
+    height: 30px;
     padding-left: 8px;
     padding-right: 6px;
 }
 
 .predict-trade-side-select {
     min-width: 62px;
-    padding-left: 4px;
+    height: 30px;
+    line-height: 30px;
+    padding: 0 20px 0 6px;
     font-size: 0.7rem;
     font-weight: 600;
     letter-spacing: 0.02em;

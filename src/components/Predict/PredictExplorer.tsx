@@ -93,7 +93,7 @@ type PredictLiveTrade = {
   amount: number;
   timestamp: number; // unix seconds
   txHash: string;
-  source: 'seed' | 'stream';
+  source: 'stream';
 };
 
 type TradeAssetMeta = {
@@ -103,8 +103,18 @@ type TradeAssetMeta = {
   marketSlug?: string;
 };
 
+type PredictTradeCountSnapshot = {
+  buy: number;
+  sell: number;
+  fetchedAt: number;
+};
+
 const HEX_LIKE_MARKET_ID_REGEX = /^0x[a-f0-9]{16,}$/i;
 const NUMERIC_MARKET_ID_REGEX = /^\d{18,}$/;
+const CONDITION_ID_REGEX = /^0x[a-f0-9]{64}$/i;
+const TRADE_COUNT_SNAPSHOT_LIMIT = 250;
+const TRADE_COUNT_CACHE_MS = 2 * 60 * 1000;
+const TRADE_COUNT_FETCH_CONCURRENCY = 5;
 
 const isPlaceholderMarketLabel = (value: string) => {
   const label = String(value || '').trim();
@@ -114,6 +124,9 @@ const isPlaceholderMarketLabel = (value: string) => {
   if (NUMERIC_MARKET_ID_REGEX.test(label)) return true;
   return false;
 };
+
+const isConditionId = (value: unknown): value is string =>
+  CONDITION_ID_REGEX.test(String(value ?? '').trim());
 
 const mergeAndTrimTrades = (
   incoming: PredictLiveTrade[],
@@ -1653,12 +1666,15 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const liveTradeSeededRef = useRef(false);
   const tradeAssetMetaRef = useRef<Map<string, TradeAssetMeta>>(new Map());
   const tradeConditionTitleRef = useRef<Map<string, string>>(new Map());
   const liveTradeAssetsRef = useRef<string[]>([]);
   const tradeMetaLookupInFlightRef = useRef<Set<string>>(new Set());
   const tradeMetaLookupDoneRef = useRef<Set<string>>(new Set());
+  const tradeCountLookupInFlightRef = useRef<Set<string>>(new Set());
+  const historicalTradeCountsRef = useRef<Record<string, PredictTradeCountSnapshot>>(
+    {},
+  );
   const bufferedTradesRef = useRef<PredictLiveTrade[]>([]);
   const isTradeStreamPausedRef = useRef(false);
   const currentPageMarketsRef = useRef<string[]>([]);
@@ -1795,7 +1811,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
 
       const mapTrade = (
         raw: any,
-        source: 'seed' | 'stream',
+        source: 'stream',
       ): PredictLiveTrade | null => {
         const asset = String(
           raw?.asset ?? raw?.asset_id ?? raw?.assetId ?? '',
@@ -1896,31 +1912,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
           return mergeAndTrimTrades(incoming, prev, MAX_LIVE_TRADES);
         });
       };
-
-      const seedTrades = async () => {
-        if (liveTradeSeededRef.current) return;
-        liveTradeSeededRef.current = true;
-        try {
-          const response = await fetch(
-            `/predictdata/trades?limit=${LIVE_TRADES_SEED_LIMIT}`,
-          );
-          if (!response.ok) return;
-          const rows = await response.json().catch(() => []);
-          if (!Array.isArray(rows)) return;
-          const seeded = rows
-            .map((row: any) => mapTrade(row, 'seed'))
-            .filter((trade): trade is PredictLiveTrade => {
-              return Boolean(trade);
-            });
-          if (!liveStreamCancelled) {
-            mergeTrades(seeded);
-          }
-        } catch (error) {
-          console.warn('Polymarket trade seed failed:', error);
-        }
-      };
-
-      seedTrades();
 
       const ws = new WebSocket('wss://ws-subscriptions-clob.polymarket.com/ws/market');
       wsRef.current = ws;
@@ -2309,6 +2300,8 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       bufferedTradesRef.current = [];
       isTradeStreamPausedRef.current = false;
       tradeMetaLookupInFlightRef.current.clear();
+      tradeMetaLookupDoneRef.current.clear();
+      tradeCountLookupInFlightRef.current.clear();
     };
   }, []);
 
@@ -3726,6 +3719,9 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const hasSetDefaultCategoryRef = useRef(false);
   const [liveTrades, setLiveTrades] = useState<PredictLiveTrade[]>([]);
+  const [historicalTradeCounts, setHistoricalTradeCounts] = useState<
+    Record<string, PredictTradeCountSnapshot>
+  >({});
   const [isTradeStreamPaused, setIsTradeStreamPaused] = useState(false);
   const [tradeMinSize, setTradeMinSize] = useState('');
   const [tradeSideFilter, setTradeSideFilter] = useState<'all' | 'buy' | 'sell'>('all');
@@ -3740,7 +3736,6 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [itemsPerPage, setItemsPerPage] = useState(40);
     const MAX_LIVE_TRADES = 50;
-    const LIVE_TRADES_SEED_LIMIT = 200;
     const LIVE_TRADES_WS_RECONNECT_MS = 1500;
     const LIVE_TRADES_WS_PING_MS = 10000;
     const EVENTS_PAGE_SIZE = 100;
@@ -4558,20 +4553,190 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       const id = String(trade?.conditionId ?? '').trim();
       if (!id) return;
       const entry = counts[id] || { buy: 0, sell: 0 };
-      if (isTradeBuy(trade)) {
+      const side = normalizeTradeSide(trade?.side);
+      if (side === 'BUY') {
         entry.buy += 1;
-      } else {
+      } else if (side === 'SELL') {
         entry.sell += 1;
       }
       counts[id] = entry;
     });
     return counts;
-  }, [isTradeBuy, liveTrades]);
+  }, [liveTrades]);
+
+  const loadHistoricalTradeCountForCondition = useCallback(
+    async (conditionIdRaw: string, signal: AbortSignal) => {
+      const conditionId = String(conditionIdRaw || '').trim();
+      if (!isConditionId(conditionId)) return null;
+
+      const response = await fetch(
+        `/predictdata/trades?market=${encodeURIComponent(conditionId)}&limit=${TRADE_COUNT_SNAPSHOT_LIMIT}`,
+        { signal },
+      );
+      if (!response.ok) {
+        throw new Error(`Failed to load trade counts (${response.status})`);
+      }
+
+      const payload = await response.json().catch(() => []);
+      const trades = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : [];
+
+      let buy = 0;
+      let sell = 0;
+      const seenTransactionKeys = new Set<string>();
+
+      trades.forEach((trade: any, index: number) => {
+        const side = normalizeTradeSide(trade?.side ?? trade?.type, trade?.isBuy);
+        if (side === 'UNKNOWN') return;
+
+        const txHash = String(
+          trade?.transactionHash ?? trade?.txHash ?? trade?.hash ?? '',
+        ).trim();
+        const fallbackKey = `${conditionId}:${trade?.timestamp ?? ''}:${trade?.asset ?? ''}:${trade?.size ?? ''}:${trade?.price ?? ''}:${index}`;
+        const dedupeKey = txHash || fallbackKey;
+        if (seenTransactionKeys.has(dedupeKey)) return;
+        seenTransactionKeys.add(dedupeKey);
+
+        if (side === 'BUY') {
+          buy += 1;
+        } else if (side === 'SELL') {
+          sell += 1;
+        }
+      });
+
+      return { buy, sell, fetchedAt: Date.now() } as PredictTradeCountSnapshot;
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const conditionIds = new Set<string>();
+
+    paginatedTokens.forEach((token: any) => {
+      if (Array.isArray(token?.markets) && token.markets.length > 0) {
+        token.markets.forEach((market: any) => {
+          const marketId = String(
+            market?.conditionId ?? market?.id ?? market?.marketId ?? '',
+          ).trim();
+          if (isConditionId(marketId)) {
+            conditionIds.add(marketId);
+          }
+        });
+        return;
+      }
+
+      const marketId = String(token?.contractId ?? '').trim();
+      if (isConditionId(marketId)) {
+        conditionIds.add(marketId);
+      }
+    });
+
+    if (conditionIds.size === 0) return;
+
+    const now = Date.now();
+    const toFetch = Array.from(conditionIds).filter((conditionId) => {
+      if (tradeCountLookupInFlightRef.current.has(conditionId)) return false;
+      const cached = historicalTradeCountsRef.current[conditionId];
+      if (!cached) return true;
+      return now - cached.fetchedAt > TRADE_COUNT_CACHE_MS;
+    });
+
+    if (!toFetch.length) return;
+
+    const abortController = new AbortController();
+    const queue = [...toFetch];
+    let cancelled = false;
+
+    const runWorker = async () => {
+      while (!cancelled) {
+        const conditionId = queue.shift();
+        if (!conditionId) return;
+
+        tradeCountLookupInFlightRef.current.add(conditionId);
+        try {
+          const snapshot = await loadHistoricalTradeCountForCondition(
+            conditionId,
+            abortController.signal,
+          );
+          if (!snapshot || cancelled) continue;
+
+          historicalTradeCountsRef.current[conditionId] = snapshot;
+          setHistoricalTradeCounts((prev) => {
+            const previous = prev[conditionId];
+            if (previous && previous.buy === snapshot.buy && previous.sell === snapshot.sell) {
+              return prev;
+            }
+            return {
+              ...prev,
+              [conditionId]: snapshot,
+            };
+          });
+        } catch (error: any) {
+          if (error?.name !== 'AbortError') {
+            console.warn('Failed to load historical trade counts:', error);
+          }
+        } finally {
+          tradeCountLookupInFlightRef.current.delete(conditionId);
+        }
+      }
+    };
+
+    const workerCount = Math.min(TRADE_COUNT_FETCH_CONCURRENCY, queue.length);
+    const workers = Array.from({ length: workerCount }, () => runWorker());
+    void Promise.all(workers);
+
+    return () => {
+      cancelled = true;
+      abortController.abort();
+    };
+  }, [loadHistoricalTradeCountForCondition, paginatedTokens]);
+
+  const getHistoricalTradeCountsForToken = useCallback(
+    (token: any) => {
+      const readSnapshot = (idRaw?: string) => {
+        const id = String(idRaw ?? '').trim();
+        if (!isConditionId(id)) return { buy: 0, sell: 0, hasData: false };
+        const snapshot = historicalTradeCounts[id];
+        if (!snapshot) return { buy: 0, sell: 0, hasData: false };
+        return { buy: snapshot.buy, sell: snapshot.sell, hasData: true };
+      };
+
+      if (Array.isArray(token?.markets) && token.markets.length > 0) {
+        return token.markets.reduce(
+          (acc: { buyCount: number; sellCount: number; hasData: boolean }, market: any) => {
+            const entry = readSnapshot(
+              market?.conditionId ?? market?.id ?? market?.marketId,
+            );
+            acc.buyCount += entry.buy;
+            acc.sellCount += entry.sell;
+            acc.hasData = acc.hasData || entry.hasData;
+            return acc;
+          },
+          { buyCount: 0, sellCount: 0, hasData: false },
+        );
+      }
+
+      const entry = readSnapshot(token?.contractId);
+      return { buyCount: entry.buy, sellCount: entry.sell, hasData: entry.hasData };
+    },
+    [historicalTradeCounts],
+  );
 
   const getBuySellCountsForToken = useCallback(
     (token: any) => {
       const counts = getBuySellCounts(token);
       if (counts.buyCount > 0 || counts.sellCount > 0) return counts;
+
+      const historical = getHistoricalTradeCountsForToken(token);
+      if (historical.hasData) {
+        return {
+          buyCount: historical.buyCount,
+          sellCount: historical.sellCount,
+        };
+      }
 
       const readFromMap = (id?: string) => {
         if (!id) return { buy: 0, sell: 0 };
@@ -4595,7 +4760,7 @@ const PredictExplorer: React.FC<PredictExplorerProps> = ({
       const fallbackEntry = readFromMap(token?.contractId);
       return { buyCount: fallbackEntry.buy, sellCount: fallbackEntry.sell };
     },
-    [liveTradeCounts],
+    [getHistoricalTradeCountsForToken, liveTradeCounts],
   );
 
   const triggerOutcomePulse = useCallback((keys: string[]) => {
