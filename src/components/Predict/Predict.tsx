@@ -513,6 +513,9 @@ const Predict: React.FC<PredictProps> = ({
   const [limitPriceInput, setLimitPriceInput] = useState('0');
   const [shares, setShares] = useState('');
   const [expirationEnabled, setExpirationEnabled] = useState(false);
+  const [expirationDuration, setExpirationDuration] = useState('5m');
+  const [expirationDropdownOpen, setExpirationDropdownOpen] = useState(false);
+  const expirationDropdownRef = useRef<HTMLDivElement>(null);
 
   // Table state
   const [sortConfig, setSortConfig] = useState<{ column: string; direction: 'asc' | 'desc' }>({
@@ -2219,6 +2222,17 @@ const Predict: React.FC<PredictProps> = ({
   const activityTrades = activityTab === 'all' ? liveTrades : [];
   const activityOpenOrders = activityTab === 'openOrders' ? openOrderRows : [];
 
+  // Close expiration dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (expirationDropdownRef.current && !expirationDropdownRef.current.contains(e.target as Node)) {
+        setExpirationDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
   return (
     <div className={`predict-event-page ${isResolved ? 'predict-event-resolved' : ''}`}>
       {/* HEADER */}
@@ -2579,6 +2593,31 @@ const Predict: React.FC<PredictProps> = ({
                   <span className="predict-event-toggle-knob" />
                 </button>
               </div>
+
+              {expirationEnabled && (
+                <div className="predict-event-expiration-dropdown-wrapper" ref={expirationDropdownRef}>
+                  <button
+                    className={`predict-event-expiration-trigger ${expirationDropdownOpen ? 'open' : ''}`}
+                    onClick={() => setExpirationDropdownOpen(o => !o)}
+                  >
+                    <span>{expirationDuration}</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`predict-event-expiration-arrow ${expirationDropdownOpen ? 'open' : ''}`}>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  <div className={`predict-event-expiration-panel ${expirationDropdownOpen ? 'visible' : ''}`}>
+                    {['5m', '1h', '12h', '24h', 'End of day', 'Custom'].map(opt => (
+                      <button
+                        key={opt}
+                        className={`predict-event-expiration-option ${expirationDuration === opt ? 'selected' : ''}`}
+                        onClick={() => { setExpirationDuration(opt); setExpirationDropdownOpen(false); }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Total */}
               <div className="predict-event-order-summary">

@@ -4326,6 +4326,51 @@
     width: 100%;
   }
 
+  .vaults-list-header {
+    display: none;
+  }
+
+  .vault-row {
+    align-items: stretch;
+    border: 1px solid rgba(179, 184, 249, 0.08);
+    border-radius: 8px;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+  }
+
+  .vault-row .col {
+    flex: none;
+    justify-content: space-between;
+    padding: 0.3rem 0;
+    width: 100%;
+    border-bottom: 1px solid rgba(95, 105, 251, 0.05);
+  }
+
+  .vault-row .col:last-child {
+    border-bottom: none;
+  }
+
+  .vault-row .vault-name-col { justify-content: flex-start; }
+  .vault-row .vault-name-col::before { display: none; }
+  .vault-row .vault-leader-col::before { content: 'Leader'; }
+  .vault-row .vault-type-col::before { content: 'Type'; }
+  .vault-row .vault-tokens-col::before { content: 'Assets'; }
+  .vault-row .vault-apy-col::before { content: 'TVL'; }
+  .vault-row .vault-deposits-col::before { content: 'Deposit Cap'; }
+  .vault-row .vault-your-deposits-col::before { content: 'Your Position'; }
+  .vault-row .vault-age-col::before { content: 'Status'; }
+  .vault-row .vault-actions-col::before { content: 'Snapshot'; }
+
+  .vault-row .col::before {
+    color: rgba(224, 232, 253, 0.45);
+    font-size: 0.72rem;
+    font-weight: 300;
+    letter-spacing: -0.2px;
+  }
+
 }
 
 @media (max-width: 768px) {
